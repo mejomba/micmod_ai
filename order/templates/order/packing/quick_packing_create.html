@@ -961,6 +961,75 @@
         color: #7e8299;
     }
 
+    /* Keep workflow rows compact; show fields only while editing a row. */
+    .packing-layout-workflow-rows .pk-row-top {
+        position: relative;
+    }
+
+    .packing-layout-workflow-rows .pk-row-edit-button {
+        position: absolute;
+        inset-block-start: 0;
+        inset-inline-end: 12px;
+        min-width: 32px;
+        min-height: 30px;
+        padding: 4px 7px;
+    }
+
+    .packing-layout-workflow-rows .pk-row-title {
+        padding-inline-end: 38px;
+    }
+
+    .packing-layout-workflow-rows .pk-row-editor {
+        border-top: 1px solid var(--pk-border);
+        background: #f8fafc;
+        padding: 12px 16px;
+    }
+
+    .packing-layout-workflow-rows .pk-row-editor[hidden] {
+        display: none !important;
+    }
+
+    .packing-layout-workflow-rows .pk-row-editor-fields {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        align-items: start;
+    }
+
+    .packing-layout-workflow-rows .pk-row-editor-fields .pk-editor-description {
+        grid-column: 1 / -1;
+    }
+
+    .packing-layout-workflow-rows .pk-row-editor-fields .form-control {
+        min-width: 0;
+        width: 100%;
+        font-size: .86rem;
+    }
+
+    .packing-layout-workflow-rows .pk-row-editor-actions {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .packing-layout-workflow-rows .packing-existing-row.is-editing {
+        border-color: #9bc6ff;
+    }
+
+    @media (max-width: 900px) {
+        .packing-layout-workflow-rows .pk-row-editor-fields {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 540px) {
+        .packing-layout-workflow-rows .pk-row-editor-fields {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
     .packing-layout-workflow-rows .pk-row-readonly-grid {
         min-width: 0;
         grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -1455,6 +1524,10 @@
                                                                 aria-label="Delete row"
                                                             >×</button>
                                                         </div>
+                                                    {% elif can_edit_items %}
+                                                        <button type="button" class="btn btn-sm btn-light-primary pk-row-edit-button" aria-label="Edit packing row" aria-expanded="false" title="Edit row">
+                                                            <i class="ti ti-pencil" aria-hidden="true"></i>
+                                                        </button>
                                                     {% else %}
                                                         <span class="badge badge-light-secondary" data-key="packing_existing_item">Existing Item</span>
                                                     {% endif %}
@@ -1582,6 +1655,47 @@
                                                     </div>
                                                 {% endif %}
                                             </div>
+                                            {% if can_edit_items and not can_add_items %}
+                                                <div class="pk-row-editor" hidden>
+                                                    <input type="hidden" name="existing-{{ packing_item.pk }}-id" value="{{ packing_item.pk }}" disabled>
+                                                    <div class="pk-row-editor-fields">
+                                                        <div>
+                                                            <label class="pk-mini-label" data-key="packing_quantity_this">Packing Quantity</label>
+                                                            <input type="number" step="any" min="0.000001"
+                                                                   max="{{ packing_item.quick_available_quantity|default_if_none:packing_item.quantity }}"
+                                                                   class="form-control packing-existing-quantity"
+                                                                   name="existing-{{ packing_item.pk }}-quantity"
+                                                                   value="{{ packing_item.quantity|default_if_none:0 }}" required disabled>
+                                                        </div>
+                                                        <div>
+                                                            <label class="pk-mini-label" data-key="packing_carton_number">Carton Number</label>
+                                                            <input type="text" class="form-control"
+                                                                   name="existing-{{ packing_item.pk }}-carton_number"
+                                                                   value="{{ packing_item.carton_number|default_if_none:'' }}" disabled>
+                                                        </div>
+                                                        <div>
+                                                            <label class="pk-mini-label" data-key="packing_gross_weight">Gross Weight</label>
+                                                            <input type="number" step="any" class="form-control"
+                                                                   name="existing-{{ packing_item.pk }}-gross_weight_kg"
+                                                                   value="{{ packing_item.gross_weight_kg|default_if_none:'' }}" disabled>
+                                                        </div>
+                                                        <div>
+                                                            <label class="pk-mini-label" data-key="packing_size">Size</label>
+                                                            <input type="text" maxlength="128" class="form-control"
+                                                                   name="existing-{{ packing_item.pk }}-size"
+                                                                   value="{{ packing_item.size|default_if_none:'' }}" disabled>
+                                                        </div>
+                                                        <div class="pk-editor-description">
+                                                            <label class="pk-mini-label" data-key="packing_description">Description</label>
+                                                            <textarea class="form-control" rows="2" name="existing-{{ packing_item.pk }}-description" disabled>{{ packing_item.description|default_if_none:'' }}</textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="pk-row-editor-actions">
+                                                        <button type="button" class="btn btn-sm btn-light pk-row-cancel-edit">Cancel editing</button>
+                                                        <small class="text-muted">Changes are saved with Save Packing.</small>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
                                         </div>
                                     {% endfor %}
                                 </div>
@@ -1922,7 +2036,7 @@
         document.querySelectorAll('.packing-existing-row').forEach(row => {
             if (row.classList.contains('is-pending-delete')) return;
 
-            const quantityInput = row.querySelector('.packing-existing-quantity');
+            const quantityInput = row.querySelector('.packing-existing-quantity:not(:disabled)');
             const q = quantityInput ? toNumber(quantityInput.value) : toNumber(row.dataset.quantity);
             const unitWeight = toNumber(row.dataset.unitWeight);
             const unitPrice = toNumber(row.dataset.unitPrice);
@@ -2136,6 +2250,45 @@
         });
         initResizableLayout();
         }
+        // Each row is edited separately, then changes are committed with the document.
+        document.querySelectorAll('.pk-row-edit-button').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const row = button.closest('.packing-existing-row');
+                const editor = row?.querySelector('.pk-row-editor');
+                if (!editor) return;
+                editor.hidden = false;
+                editor.querySelectorAll('input, textarea, select').forEach(field => {
+                    field.disabled = false;
+                });
+                row.classList.add('is-editing');
+                button.setAttribute('aria-expanded', 'true');
+                button.disabled = true;
+                editor.querySelector('.packing-existing-quantity')?.focus();
+                updateTotals();
+            });
+        });
+
+        document.querySelectorAll('.pk-row-cancel-edit').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const row = button.closest('.packing-existing-row');
+                const editor = row?.querySelector('.pk-row-editor');
+                const editButton = row?.querySelector('.pk-row-edit-button');
+                if (!editor) return;
+                editor.querySelectorAll('input, textarea, select').forEach(field => {
+                    field.value = field.defaultValue;
+                    field.disabled = true;
+                    field.classList.remove('border-danger', 'text-danger');
+                });
+                editor.hidden = true;
+                row.classList.remove('is-editing');
+                if (editButton) {
+                    editButton.disabled = false;
+                    editButton.setAttribute('aria-expanded', 'false');
+                }
+                updateTotals();
+            });
+        });
+
         document.querySelectorAll('.packing-existing-quantity').forEach(function (input) {
             input.addEventListener('input', function () {
                 const maxQ = toNumber(this.max);
@@ -2200,7 +2353,7 @@
             });
 
             document.querySelectorAll('#existing-packing-items input, #existing-packing-items textarea, #existing-packing-items select').forEach(input => {
-                if (input.name) formData.append(input.name, input.value);
+                if (input.name && !input.disabled) formData.append(input.name, input.value);
             });
 
             $.ajax({
@@ -2237,6 +2390,17 @@
 
         let valid = true;
 
+        document.querySelectorAll('.pk-row-editor:not([hidden]) .packing-existing-quantity').forEach(input => {
+            const q = toNumber(input.value);
+            const maxQ = toNumber(input.max);
+            if (!Number.isFinite(q) || q <= 0 || (maxQ > 0 && q > maxQ)) {
+                valid = false;
+                input.classList.add('border-danger', 'text-danger');
+            } else {
+                input.classList.remove('border-danger', 'text-danger');
+            }
+        });
+
         rows.forEach(row => {
             const quantityInput = row.querySelector('input[name$="-quantity"]');
             const q = toNumber(quantityInput.value);
@@ -2269,7 +2433,7 @@
         });
 
         document.querySelectorAll('#existing-packing-items input, #existing-packing-items textarea, #existing-packing-items select').forEach(input => {
-            if (input.name) formData.append(input.name, input.value);
+            if (input.name && !input.disabled) formData.append(input.name, input.value);
         });
 
         container.querySelectorAll('input, textarea, select').forEach(input => {
