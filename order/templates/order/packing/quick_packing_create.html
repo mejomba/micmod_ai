@@ -1159,58 +1159,6 @@
                                     {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.bl_date form.transportation_company form.origin form.destination form.estimated_shipping_start_date form.estimated_arrive_to_wh_date form.description label='on-border' %}
                                 </div>
 
-                                <div class="mt-3">
-                                    <div class="pk-card-help mb-2" data-key="packing_freight_cost_documents">Freight Cost Documents</div>
-                                    <div class="pk-file-groups">
-                                        {% for file_group in form.iter_packing_freight_groups %}
-                                            <div class="pk-file-group">
-                                                <div class="pk-file-group-head">
-                                                    <div class="pk-file-group-title">
-                                                        <span class="pk-file-group-number">{{ file_group.index }}</span>
-                                                        <span data-key="{{ file_group.label_key }}">{{ file_group.name }}</span>
-                                                    </div>
-                                                    {% if not file_group.editable %}
-                                                        <i class="ti ti-lock text-muted" aria-hidden="true"></i>
-                                                    {% endif %}
-                                                </div>
-
-                                                {% if file_group.field %}
-                                                    {{ file_group.field }}
-                                                    {% if file_group.field.errors %}
-                                                        <div class="text-danger mt-1">{{ file_group.field.errors }}</div>
-                                                    {% endif %}
-                                                {% endif %}
-
-                                                {% if file_group.files %}
-                                                    <div class="pk-file-list">
-                                                        {% for existing_file in file_group.files %}
-                                                            <a
-                                                                class="pk-file-item{% if existing_file.is_image %} is-image{% endif %}"
-                                                                href="/media/{{ existing_file.url }}"
-                                                                target="_blank"
-                                                                rel="noopener"
-                                                                title="{{ existing_file.filename }}"
-                                                            >
-                                                                <span class="pk-file-icon">
-                                                                    {% if existing_file.is_image %}
-                                                                        <i class="ti ti-photo" aria-hidden="true"></i>
-                                                                    {% else %}
-                                                                        <i class="ti ti-file" aria-hidden="true"></i>
-                                                                    {% endif %}
-                                                                </span>
-                                                                <span class="pk-file-name">{{ existing_file.filename }}</span>
-                                                                <span class="pk-file-open" data-key="packing_open_file">Open</span>
-                                                            </a>
-                                                        {% endfor %}
-                                                    </div>
-                                                {% else %}
-                                                    <div class="pk-file-empty" data-key="packing_no_file">No file uploaded</div>
-                                                {% endif %}
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-
                                 <button
                                     type="button"
                                     class="pk-attachments-toggle"
@@ -1272,6 +1220,59 @@
                                                 </div>
                                             {% endfor %}
                                         </div>
+
+                                        <div class="mt-3">
+                                            <div class="pk-card-help mb-2" data-key="packing_freight_cost_documents">Freight Cost Documents</div>
+                                            <div class="pk-file-groups">
+                                                {% for file_group in form.iter_packing_freight_groups %}
+                                                    <div class="pk-file-group">
+                                                        <div class="pk-file-group-head">
+                                                            <div class="pk-file-group-title">
+                                                                <span class="pk-file-group-number">{{ file_group.index }}</span>
+                                                                <span data-key="{{ file_group.label_key }}">{{ file_group.name }}</span>
+                                                            </div>
+                                                            {% if not file_group.editable %}
+                                                                <i class="ti ti-lock text-muted" aria-hidden="true"></i>
+                                                            {% endif %}
+                                                        </div>
+
+                                                        {% if file_group.field %}
+                                                            {{ file_group.field }}
+                                                            {% if file_group.field.errors %}
+                                                                <div class="text-danger mt-1">{{ file_group.field.errors }}</div>
+                                                            {% endif %}
+                                                        {% endif %}
+
+                                                        {% if file_group.files %}
+                                                            <div class="pk-file-list">
+                                                                {% for existing_file in file_group.files %}
+                                                                    <a
+                                                                        class="pk-file-item{% if existing_file.is_image %} is-image{% endif %}"
+                                                                        href="/media/{{ existing_file.url }}"
+                                                                        target="_blank"
+                                                                        rel="noopener"
+                                                                        title="{{ existing_file.filename }}"
+                                                                    >
+                                                                        <span class="pk-file-icon">
+                                                                            {% if existing_file.is_image %}
+                                                                                <i class="ti ti-photo" aria-hidden="true"></i>
+                                                                            {% else %}
+                                                                                <i class="ti ti-file" aria-hidden="true"></i>
+                                                                            {% endif %}
+                                                                        </span>
+                                                                        <span class="pk-file-name">{{ existing_file.filename }}</span>
+                                                                        <span class="pk-file-open" data-key="packing_open_file">Open</span>
+                                                                    </a>
+                                                                {% endfor %}
+                                                            </div>
+                                                        {% else %}
+                                                            <div class="pk-file-empty" data-key="packing_no_file">No file uploaded</div>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+
                                     </div>
                                 </div>
                             </div>
