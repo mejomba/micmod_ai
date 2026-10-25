@@ -314,6 +314,23 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
         if self.object:
             context['trade_price_list'] = self.object.final_item.items.filter(active=True, is_deleted=False) if self.object else self.object.item.items.none()
             context['trade_parent_price_list'] = self.object.final_item.parent.items.filter(~Q(creator_user__groups__name__in=['bazar_user']), active=True, is_deleted=False) if self.object.final_item.parent else self.object.item.items.none()
+            order_dates = self.object.workflows.filter(state='تایید مدیر فروش', wf_status=3
+                                                      ).values_list('created_date', flat=True)
+            inquiry_date = self.object.final_item.items.filter(active=True, is_deleted=False).order_by('-created_date').values_list('created_date', flat=True).first() if self.object else self.object.item.items.none()
+            diffs = [
+                (order_date - inquiry_date)
+                for order_date in order_dates
+                if inquiry_date and order_date
+            ]
+            context['inquiry_order_time_difference'] = [
+                {
+                    "days": d.days,
+                    "seconds": d.seconds,
+                    "hours": d.seconds // 3600,
+                    "total_days": d.total_seconds() / 86400,
+                }
+                for d in diffs
+            ]
 
         context['section_id'] = 'order'
 
@@ -725,6 +742,9 @@ class OrderDataTableListView(AjaxDatatableView):
         ).values_list('item', flat=True)
 
         q = request.POST.get('q')
+        filter_value = request.POST.get('filter_value')
+        filter_type = request.POST.get('filter_type')
+        filter_stage = request.POST.get('filter_stage')
         user_group = request.user.base_group
 
         if self.request.user.is_superuser:
@@ -897,6 +917,13 @@ class OrderDataTableListView(AjaxDatatableView):
                 output_field=DurationField()))
         elif q == 'my_orders':
             qs = qs.filter(creator_user=request.user)
+
+        if filter_type == 'my_orders':
+            qs = qs.filter(trade_user=request.user)
+        if filter_type == 'specific_expert':
+            if filter_stage:
+                qs = qs.filter(trade_user_id=filter_value, last_work_flow__current_state_name=filter_stage)
+            qs = qs.filter(trade_user_id=filter_value)
 
 
         # if user_group == 'trade':
@@ -1153,6 +1180,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
                 {'name': 'order_title', 'orderable': False, 'visible': True, },
                 {'name': 'po_number_trade', 'orderable': False, 'visible': True, },
+                {'name': 'po_number_mac', 'orderable': False, 'visible': True, },
                 {'name': 'comments', 'orderable': True, 'title': '<div>خطای بازرگانی</div>', 'visible': True, 'lookup_field': '__comment_content__icontains'},
                 {'name': 'order_status_icon', 'title': 'ایکون سفارش', 'visible': True, 'orderable': False,
                  'searchable': False},
@@ -1160,6 +1188,7 @@ class OrderDataTableListView(AjaxDatatableView):
                  'lookup_field': '__current_state_name__icontains'},
                 {'name': 'order_type', 'title': 'Order Type', 'visible': True, 'searchable': True, 'orderable': True,},
                 {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True, 'searchable': False, 'orderable': False,},
+                {'name': 'commitment_date_to_customer', 'title': 'Commitment Date To Customer', 'visible': True, 'searchable': False, 'orderable': False,},
                 {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
                 {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'item__part_number', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__icontains'},
@@ -4355,3 +4384,18 @@ class QuickPackingDataTableListView(AjaxDatatableView):
 #
 #         html = render_to_string('factor/safe_factor_create.html', context, request=self.request)
 #         return JsonResponse({'res': html})
+
+def expert_list_api(request):
+    User = get_user_model()
+    users = User.objects.filter(is_active=True)
+    experts = [
+        {'id': u.id, 'username': u.username}
+        for u in users if u.base_group == 'trade'
+    ]
+    return JsonResponse(experts, safe=False)
+
+
+def my_orders(request, *args, **kwargs):
+    my_orders_ = Order.objects.filter(trade_user=request.user, last_work_flow__current_state_name='تایید بازرگانی').values_list('id', flat=True)
+    my_orders_count = my_orders_.count()
+    return JsonResponse({'res': list(my_orders_), 'count': my_orders_count}, safe=False)
