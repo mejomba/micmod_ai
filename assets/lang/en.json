@@ -337,5 +337,6 @@
     "packing_estimated_start_shipping_date": "Estimated Shipping Start Date",
     "packing_estimated_arrive_central_wh_date": "Estimated Central Warehouse Arrival Date",
     "packing_file_10": "Freight Cost (USD)",
-    "packing_file_11": "Freight Cost (IRR)"
+    "packing_file_11": "Freight Cost (IRR)",
+    "packing_freight_cost_documents": "Freight Cost Documents"
 }
