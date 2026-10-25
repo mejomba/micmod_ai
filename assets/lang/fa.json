@@ -931,5 +931,14 @@
     "packing_workflow_assigned_user": "کاربر مسئول",
     "packing_change_user": "تغییر کاربر",
     "packing_apply_change_user": "اعمال",
-    "packing_change_user_required": "یک کاربر انتخاب کنید."
+    "packing_change_user_required": "یک کاربر انتخاب کنید.",
+    "packing_bl_date": "تاریخ بارنامه",
+    "packing_transportation_company": "شرکت حمل کننده",
+    "packing_origin": "مبدا",
+    "packing_destination": "مقصد",
+    "packing_transportation_calendar": "تقویم حمل",
+    "packing_estimated_start_shipping_date": "تاریخ پیش بینی شروع حمل بار",
+    "packing_estimated_arrive_central_wh_date": "تاریخ پیش بینی رسیدن بار به انبار مرکزی",
+    "packing_file_10": "هزینه حمل دلاری",
+    "packing_file_11": "هزینه حمل ریالی"
 }
