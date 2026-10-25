@@ -941,5 +941,12 @@
     "packing_estimated_arrive_central_wh_date": "تاریخ پیش بینی رسیدن بار به انبار مرکزی",
     "packing_file_10": "هزینه حمل دلاری",
     "packing_file_11": "هزینه حمل ریالی",
-    "packing_freight_cost_documents": "اسناد هزینه حمل"
+    "packing_freight_cost_documents": "اسناد هزینه حمل",
+    "bl_date": "تاریخ بارنامه",
+    "transportation_company": "شرکت حمل کننده",
+    "destination": "مقصد",
+    "origin": "مبدا",
+    "estimated_delivery_date": "تخمین زمان رسیدن",
+    "estimated_arrive_to_wh_date": "تاریخ پیش بینی رسیدن بار به انبار مرکزی",
+    "estimated_shipping_start_date": "تاریخ پیش بینی شروع حمل بار"
 }
