@@ -4006,9 +4006,15 @@ class QuickPackingView(LoginRequiredMixin, View):
         if not rows:
             return
 
-        if packing_obj.workflow_state_index() != 0:
+        # Existing rows may be edited in every stage by the current workflow
+        # assignee, their workflow group supervisor, or a superuser.
+        if not packing_obj.user_has_workflow_access(request.user):
+            raise PermissionDenied('Packing workflow access denied.')
+
+        first_stage = packing_obj.workflow_state_index() == 0
+        if not first_stage and any(row['delete'] for row in rows):
             raise PermissionDenied(
-                'Packing items can only be edited or deleted in the first workflow state.'
+                'Packing items can only be deleted in the first workflow state.'
             )
 
         for row in rows:
@@ -4034,25 +4040,41 @@ class QuickPackingView(LoginRequiredMixin, View):
 
             order = Order.objects.select_for_update().get(pk=packing_item.order_id)
 
-            is_valid, validation_error = order.validate_for_packing(
-                row['quantity'],
-                packing_obj,
-                packing_item_obj=packing_item,
-            )
-            if not is_valid:
-                raise ValueError(validation_error)
+            quantity_changed = abs(
+                float(packing_item.quantity or 0) - row['quantity']
+            ) > 0.000001
 
-            item = order.final_item
+            # Do not save unchanged rows, and allow metadata edits when the
+            # upstream GIO capacity has changed since this Packing was created.
+            if not first_stage and not (
+                quantity_changed
+                or float(packing_item.gross_weight_kg or 0) != row['gross_weight_kg']
+                or (packing_item.carton_number or '') != (row['carton_number'] or '')
+                or (packing_item.size or '') != (row['size'] or '')
+                or (packing_item.description or '') != (row['description'] or '')
+            ):
+                continue
+
+            if first_stage or quantity_changed:
+                is_valid, validation_error = order.validate_for_packing(
+                    row['quantity'],
+                    packing_obj,
+                    packing_item_obj=packing_item,
+                )
+                if not is_valid:
+                    raise ValueError(validation_error)
+
             unit_weight = float(order.final_weight or 0)
-            unit_price = float(order.final_price or 0)
-
             packing_item.quantity = row['quantity']
-            packing_item.price = unit_price
+            if first_stage:
+                # Later metadata edits must not silently reprice old items.
+                item = order.final_item
+                packing_item.price = float(order.final_price or 0)
+                packing_item.brand = str(item.brand) if item and item.brand else None
             packing_item.net_weight_kg = unit_weight * row['quantity']
             packing_item.gross_weight_kg = row['gross_weight_kg']
             packing_item.carton_number = row['carton_number']
             packing_item.size = row['size']
-            packing_item.brand = str(item.brand) if item and item.brand else None
             packing_item.description = row['description']
             packing_item.editor_user = request.user
             packing_item.extra_data.request = request
@@ -4240,6 +4262,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             state_index == 0
             and wf_access
         )
+        can_edit_items = bool(packing_obj and wf_access)
 
         packing_items = []
         if packing_obj:
@@ -4249,7 +4272,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                 .select_related('order', 'order__currency')
                 .order_by('id')
             )
-            if can_add_items:
+            if can_edit_items:
                 for packing_item in packing_items:
                     packing_item.quick_available_quantity = (
                         packing_item.order.packing_available_quantity(
@@ -4268,6 +4291,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             'current_state': states[state_index] if states else None,
             'wf_access': wf_access,
             'can_add_items': can_add_items,
+            'can_edit_items': can_edit_items,
             'can_next': bool(wf_access and packing_obj and state_index < len(states) - 1),
             'can_back': bool(wf_access and packing_obj and state_index > 0),
             'can_change_user': bool(packing_obj and self._can_change_user(packing_obj)),
