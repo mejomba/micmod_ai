@@ -1682,7 +1682,7 @@ class PackingDataTableListView(AjaxDatatableView):
 
     def customize_row(self, row, obj):
         row['pk'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
-            reverse('order:packing.update', args=(obj.id,)),
+            reverse('order:quick_packing', args=(obj.id,)),
             obj.id if obj.id else 'بدون عنوان'
         )
         row['carton_qty'] = f'{obj.computed_carton_qty}' if obj.computed_carton_qty else '-'
