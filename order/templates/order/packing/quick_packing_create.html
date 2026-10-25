@@ -586,7 +586,7 @@
     .pk-quantity-box label,
     .pk-mini-label {
         color: var(--pk-muted);
-        font-size: .72rem;
+        font-size: .82rem;
         margin-bottom: 4px;
         display: block;
     }
@@ -896,8 +896,8 @@
         display: grid;
         grid-template-columns: minmax(190px, 245px) minmax(0, 1fr);
         align-items: start;
-        gap: 16px;
-        padding: 12px 16px;
+        gap: 14px;
+        padding: 9px 14px;
     }
 
     .packing-layout-workflow-rows .pk-row-top {
@@ -905,7 +905,7 @@
         min-width: 0;
         align-self: stretch;
         padding-bottom: 0;
-        padding-inline-end: 16px;
+        padding-inline-end: 12px;
         border-bottom: 0;
         border-inline-end: 1px solid var(--pk-border);
     }
@@ -921,17 +921,25 @@
 
     .packing-layout-workflow-rows .pk-row-title {
         width: 100%;
-        overflow-wrap: anywhere;
+        font-size: .9rem;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    /* Give SKU and part number a full-width line each, beneath the order title. */
+    /* Keep order number, SKU and part number on three compact lines.
+       Long identifiers stay accessible through each line's title tooltip. */
     .packing-layout-workflow-rows .pk-row-part {
         display: flex;
         flex-direction: column;
         align-items: stretch;
-        gap: 8px;
+        gap: 2px;
         width: 100%;
-        margin-top: 12px;
+        margin-top: 4px;
+        font-size: .8rem;
+        line-height: 1.3;
+        word-break: normal;
     }
 
     .packing-layout-workflow-rows .pk-row-part > span {
@@ -939,11 +947,13 @@
         width: 100%;
         min-width: 0;
         margin-inline-end: 0 !important;
-        padding: 8px 10px;
-        border: 1px solid #edf0f5;
-        border-radius: 7px;
-        background: #f8fafc;
-        overflow-wrap: anywhere;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .packing-layout-workflow-rows .pk-row-part-label {
@@ -971,7 +981,7 @@
         border-radius: 7px;
     }
 
-    @media (max-width: 1050px) {
+    @media (max-width: 760px) {
         .packing-layout-workflow-rows .pk-row-main {
             grid-template-columns: minmax(0, 1fr);
             gap: 10px;
@@ -1429,10 +1439,10 @@
                                             <div class="pk-row-main">
                                                 <div class="pk-row-top">
                                                     <div class="min-w-0">
-                                                        <div class="pk-row-title">{{ packing_item.order.order_number|default:packing_item.order_id }}</div>
+                                                        <div class="pk-row-title" title="{{ packing_item.order.order_number|default:packing_item.order_id }}">{{ packing_item.order.order_number|default:packing_item.order_id }}</div>
                                                         <div class="pk-row-part">
-                                                            <span class="me-2">SKU: <b>{{ packing_item.order.final_item.sku|default:"-" }}</b></span>
-                                                            <span>{% if state_index > 0 %}<span class="pk-row-part-label" data-key="part_number">Part Number</span>: {% endif %}{{ packing_item.part_number|default:"-" }}</span>
+                                                            <span class="me-2" title="{{ packing_item.order.final_item.sku|default:'-' }}">SKU: <b>{{ packing_item.order.final_item.sku|default:"-" }}</b></span>
+                                                            <span title="{{ packing_item.part_number|default:'-' }}">{% if state_index > 0 %}<span class="pk-row-part-label" data-key="part_number">Part Number</span>: {% endif %}{{ packing_item.part_number|default:"-" }}</span>
                                                         </div>
                                                     </div>
                                                     {% if can_add_items %}
