@@ -1,3 +1,5 @@
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 import datetime
 import time
 from decimal import Decimal
@@ -621,6 +623,15 @@ class FactorListDatatable(AjaxDatatableView):
             self.cols.append({'name': 'official_value', 'title': _('official_value'), 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},)
 
         self.remove_duplicate_col()
+        # factor-bulk-2026-v1: column added after role-specific definitions
+        self.cols.insert(0, {
+            'name': 'bulk_select',
+            'title': 'چاپ',
+            'visible': True,
+            'orderable': False,
+            'searchable': False,
+            'className': 'text-center factor-bulk-column',
+        })
         return self.cols
 
     def get_initial_queryset(self, request=None):
@@ -670,6 +681,11 @@ class FactorListDatatable(AjaxDatatableView):
         return qs
 
     def customize_row(self, row, obj):
+        # factor-bulk-2026-v1: stable primary-key checkbox
+        row['bulk_select'] = (
+            f'<input type="checkbox" class="form-check-input js-factor-bulk" '
+            f'value="{obj.pk}" aria-label="انتخاب فاکتور {obj.pk}">'
+        )
         if obj.q:
             row['q'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
                 reverse('micmod_base:quotations.view', args=(obj.q.id,)),
@@ -870,7 +886,7 @@ class FactorListDatatable(AjaxDatatableView):
         self.cols = unique_cols
 
 
-def print_view(request, id=-1):
+def print_view(request, id=-1, *, context_only=False):
 
     action_ = request.GET.get('action')
     if action_ == 'wh_exit_permit':
@@ -912,8 +928,55 @@ def print_view(request, id=-1):
         factor.created_date = datetime2jalali(factor.created_date).strftime('%y/%m/%d-%H:%M')
         factor.last_update_date = datetime2jalali(factor.last_update_date).strftime('%y/%m/%d-%H:%M')
     greeting['data'] = factor
+    if context_only:
+        return greeting
     return render(request, template_name, greeting)
 
+
+
+# factor-bulk-2026-v1 — Only for the invoice list; old print URL unchanged.
+@login_required
+@require_POST
+def factor_bulk_print(request):
+    from django.http import HttpResponseBadRequest
+
+    values = request.POST.getlist('ids')
+    if not values or len(values) > 30:
+        return HttpResponseBadRequest('تعداد فاکتورهای انتخاب‌شده نامعتبر است (حداکثر ۳۰).')
+    if any(not val.isascii() or not val.isdigit() or int(val) <= 0
+           for val in values):
+        return HttpResponseBadRequest('شناسه فاکتور نامعتبر است.')
+
+    ids = [int(val) for val in values]
+    if len(set(ids)) != len(ids):
+        return HttpResponseBadRequest('شناسه فاکتور تکراری است.')
+
+    # Intersect the base role access with the exact current list-query access.
+    # Some legacy list modes expose wider querysets; the intersection matters.
+    table_view = FactorListDatatable()
+    table_view.request = request
+    list_queryset = table_view.get_initial_queryset(request)
+    role_queryset = Factor.get_qs(request, lst=False)
+
+    visible = set(
+        list_queryset.filter(pk__in=ids).values_list('pk', flat=True).distinct()
+    )
+    permitted = set(
+        role_queryset.filter(pk__in=ids).values_list('pk', flat=True).distinct()
+    )
+    if visible != set(ids) or permitted != set(ids):
+        raise PermissionDenied('امکان چاپ یکی از فاکتورهای انتخاب‌شده وجود ندارد.')
+
+    # Reuse the exact current single-document context, forms and formsets.
+    documents = [
+        print_view(request, id=factor_id, context_only=True)
+        for factor_id in ids
+    ]
+    return render(
+        request,
+        'factor/bulk_print.html',
+        {'documents': documents, 'bulk_mode': True},
+    )
 
 class DirectFactorView(View):
     def get(self, request, *args, **kwargs):
