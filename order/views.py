@@ -4064,14 +4064,17 @@ class QuickPackingView(LoginRequiredMixin, View):
                 if not is_valid:
                     raise ValueError(validation_error)
 
-            unit_weight = float(order.final_weight or 0)
             packing_item.quantity = row['quantity']
             if first_stage:
                 # Later metadata edits must not silently reprice old items.
                 item = order.final_item
                 packing_item.price = float(order.final_price or 0)
                 packing_item.brand = str(item.brand) if item and item.brand else None
-            packing_item.net_weight_kg = unit_weight * row['quantity']
+            if first_stage or quantity_changed:
+                # Keep the previously recorded weight for metadata-only edits.
+                packing_item.net_weight_kg = (
+                    float(order.final_weight or 0) * row['quantity']
+                )
             packing_item.gross_weight_kg = row['gross_weight_kg']
             packing_item.carton_number = row['carton_number']
             packing_item.size = row['size']
