@@ -1015,6 +1015,23 @@ class Packing(BaseModeWF):
     packing_number = models.CharField(_('packing_number'), max_length=255, null=True, blank=True)
     shipment_type = models.CharField(_('shipment_type'), max_length=255, choices=SHIPMENT_TYPE, null=True, blank=True)
     bl_number = models.CharField(_('bl_number'), max_length=255, null=True, blank=True)
+    bl_date = models.DateField(_('bl_date'), null=True, blank=True)
+    transportation_company = models.CharField(
+        _('transportation_company'),
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+    origin = models.CharField(_('origin'), max_length=255, null=True, blank=True)
+    destination = models.CharField(_('destination'), max_length=255, null=True, blank=True)
+    transportation_calendar = models.ForeignKey(
+        'transportation.TransportationCalender',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='order_packings',
+        verbose_name=_('transportation_calendar'),
+    )
     departure_date = models.DateField(_('departure_date'), null=True, blank=True)
     arrival_date = models.DateField(_('arrival_date'), null=True, blank=True)
     sales_manager_needed = models.BooleanField(_('sales_manager_needed'), default=False)
