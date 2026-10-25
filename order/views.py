@@ -3739,7 +3739,6 @@ class QuickPackingView(LoginRequiredMixin, View):
             'transportation_company',
             'origin',
             'destination',
-            'transportation_calendar',
             'estimated_delivery_date',
             'estimated_arrive_to_wh_date',
             'description',
