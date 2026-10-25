@@ -23,8 +23,42 @@
 {% endblock %}
 
 {% block content %}
+    {% if request.user.base_group == 'trade' or request.user.is_superuser %}
+    	<div class="my-1">{% include 'order/partial/my_orders.html' %}</div>
+    {% endif %}
+
+
 
     <div class="border rounded mb-5 p-3">
+    <div class="filter-box d-flex align-items-center gap-2 mb-3">
+
+  <select id="filterType" class="form-select" style="width: auto;">
+    <option value="">-----</option>
+    <option value="my_orders">سفارش‌های من</option>
+    <option value="specific_expert">سفارش‌های کارشناس خاص</option>
+  </select>
+
+    <select id="expertSelect" class="form-select d-none" style="width: auto;">
+        <option value="">-- انتخاب کارشناس --</option>
+    </select>
+
+    <select id="stageSelect" class="form-select d-none" style="width: auto;">
+    <option value="">-- انتخاب مرحله --</option>
+    <option value="پیش نویس">پیش نویس</option>
+    <option value="تایید مدیر فروش">تایید مدیر فروش</option>
+    <option value="تایید بازرگانی">تایید بازرگانی</option>
+    <option value="تایید مهندس">تایید مهندس</option>
+    <option value="ارسال به تامین کننده">ارسال به تامین کننده</option>
+    <option value="تایید تامین کننده">تایید تامین کننده</option>
+    <option value="تایید نهایی بازرگانیelled">تایید نهایی بازرگانی</option>
+    <option value="پرداخت / PACKING / GIO">پرداخت / PACKING / GIO</option>
+    <option value="مرحله نهایی">مرحله نهایی</option>
+  </select>
+
+  <button type="button" id="applyFilterBtn" class="btn btn-primary d-none">تایید</button>
+  <button type="button" id="clearFilterBtn" class="btn btn-outline-secondary d-none">حذف فیلتر</button>
+
+</div>
         <div class="d-flex justify-content-between">
         <span>
 {#            <span class="mt-3 me-3">استفاده از فیلتر</span>#}
@@ -146,35 +180,114 @@
 {% endblock content %}
 
 {% block extra_js %}
+<script language="javascript">
+let extraData = { q: null, filter_type: null, filter_value: null, filter_stage: null };
+let expertsLoaded = false;
 
-    <script language="javascript">
-    $(document).ready(function() {
-        const url = new URL(window.location);
-        const q = url.searchParams.get("q")
-        AjaxDatatableViewUtils.initialize_table(
-            $('#order_list'),
-            "{% url 'order:order.list.datatable' %}",
-            {
-                processing: true,
-                autoWidth: false,
-                full_row_select: false,
-                scrollX: false,
-                bFilter: true,
-                dom: 'Blfrtip',
-                buttons: [
-                    'copyHtml5',
-                    'excelHtml5',
-                    'csvHtml5',
-                    'pdfHtml5'
-                ]
-            }, {
-                // extra_data
-                // ...
-                q:q
-            },
-        );
-    });
-    </script>
+$(document).ready(function() {
+    const url = new URL(window.location);
+    extraData.q = url.searchParams.get("q");
+
+    AjaxDatatableViewUtils.initialize_table(
+        $('#order_list'),
+        "{% url 'order:order.list.datatable' %}",
+        {
+            processing: true,
+            autoWidth: false,
+            full_row_select: false,
+            scrollX: false,
+            bFilter: true,
+            dom: 'Blfrtip',
+            buttons: [
+                'copyHtml5',
+                'excelHtml5',
+                'csvHtml5',
+                'pdfHtml5'
+            ]
+        },
+        extraData
+    );
+});
+
+function loadExperts() {
+    if (expertsLoaded) return;
+
+    fetch("{% url 'order:expert_list_api' %}")
+        .then(response => response.json())
+        .then(data => {
+            const $select = $('#expertSelect');
+            $select.find('option:not(:first)').remove();
+
+            data.forEach(function (user) {
+                const fullName = `${user.username}`.trim();
+                $select.append(`<option value="${user.id}">${fullName}</option>`);
+            });
+
+            expertsLoaded = true;
+        })
+        .catch(err => console.error('خطا در دریافت لیست کارشناسان:', err));
+}
+
+$('#filterType').on('change', function () {
+    const type = $(this).val();
+
+    // ریست همه select های فرعی و دکمه تایید
+    $('#expertSelect').addClass('d-none').val('');
+    $('#stageSelect').addClass('d-none').val('');
+    $('#applyFilterBtn').addClass('d-none');
+
+    if (type === 'my_orders') {
+        $('#applyFilterBtn').removeClass('d-none');
+    } else if (type === 'specific_expert') {
+        loadExperts();
+        $('#expertSelect').removeClass('d-none');
+        $('#stageSelect').removeClass('d-none');
+        $('#applyFilterBtn').removeClass('d-none');
+    }
+});
+
+$('#applyFilterBtn').on('click', function () {
+    const type = $('#filterType').val();
+    let value = null;
+    let stage = null;
+
+    if (!type) {
+        alert('لطفا یک فیلتر انتخاب کنید');
+        return;
+    }
+
+    if (type === 'specific_expert') {
+        value = $('#expertSelect').val();
+        if (!value) {
+            alert('لطفا کارشناس را انتخاب کنید');
+            return;
+        }
+        // انتخاب مرحله اختیاریه؛ اگه می‌خواید اجباری باشه، اینجا هم چک بذارید
+        stage = $('#stageSelect').val() || null;
+    }
+
+    extraData.filter_type = type;
+    extraData.filter_value = value;
+    extraData.filter_stage = stage;
+
+    $('#clearFilterBtn').removeClass('d-none');
+    $('#order_list').DataTable().ajax.reload();
+});
+
+$('#clearFilterBtn').on('click', function () {
+    extraData.filter_type = null;
+    extraData.filter_value = null;
+    extraData.filter_stage = null;
+
+    $('#filterType').val('');
+    $('#expertSelect').addClass('d-none').val('');
+    $('#stageSelect').addClass('d-none').val('');
+    $('#applyFilterBtn').addClass('d-none');
+    $('#clearFilterBtn').addClass('d-none');
+
+    $('#order_list').DataTable().ajax.reload();
+});
+</script>
     <script>
       document.getElementById('filter-orders').addEventListener('change', function () {
         const selected = this.value;
