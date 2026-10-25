@@ -240,7 +240,7 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
 
     field_layout = [
         "packing_number", "currency", "shipment_type", "bl_number", "bl_date",
-        "transportation_company", "origin", "destination", "transportation_calendar",
+        "transportation_company", "origin", "destination",
         "departure_date", "arrival_date",
         "sales_manager_needed", "sales_manager_check_date",
         "delivery_to_salehi_date",
