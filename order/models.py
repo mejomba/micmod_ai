@@ -1033,7 +1033,7 @@ class Packing(BaseModeWF):
     cl_10_date = models.DateField(_('cl_10_date'), null=True, blank=True)
     cl_100_date = models.DateField(_('cl_100_date'), null=True, blank=True)
     arrive_to_wh_date = models.DateField(_('arrive_to_wh_date'), null=True, blank=True)
-    estimated_delivery_date = models.DateField(_('estimated_arrive_date'), null=True, blank=True)
+    estimated_shipping_start_date = models.DateField(_('تاریخ پیش‌بینی شروع حمل بار'), null=True, blank=True)
     estimated_arrive_to_wh_date = models.DateField(_('estimated_arrive_to_wh_date'), null=True, blank=True)
     reserve_bar_date = models.DateField(_('reserve_bar_date'), null=True, blank=True)
     sum_qty = models.FloatField(_('sum_qty'), null=True, blank=True)
@@ -1220,9 +1220,9 @@ class Packing(BaseModeWF):
         return f'{self.bl_number} -- {self.created_date}'
 
     @property
-    def computed_estimated_delivery_date(self):
+    def computed_estimated_shipping_start_date(self):
         # Todo: check this
-        return self.estimated_delivery_date
+        return self.estimated_shipping_start_date
 
     @property
     def computed_carton_qty(self):

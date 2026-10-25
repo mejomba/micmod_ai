@@ -1676,7 +1676,7 @@ class PackingDataTableListView(AjaxDatatableView):
         {'name': 'cl_10_date', 'title': "Clearance Date 10%", 'className': 'py-1', },
         {'name': 'cl_100_date', 'title': "Clearance Date 100%", 'className': 'py-1', },
         {'name': 'arrive_to_wh_date', 'title': "Arrive to wherehouse Date", 'className': 'py-1', },
-        {'name': 'estimated_delivery_date', 'title': "Est Delivery Date", 'className': 'py-1', },
+        {'name': 'estimated_shipping_start_date', 'title': "تاریخ پیش‌بینی شروع حمل بار", 'className': 'py-1', },
         {'name': 'creator_user', 'title': _('creator_user'), 'className': 'py-1', },
     ]
 
@@ -3739,7 +3739,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             'transportation_company',
             'origin',
             'destination',
-            'estimated_delivery_date',
+            'estimated_shipping_start_date',
             'estimated_arrive_to_wh_date',
             'description',
         ] + [f'file_{idx}' for idx in range(1, 12)]

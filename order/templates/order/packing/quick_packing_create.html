@@ -1156,7 +1156,7 @@
 
                             <div id="packing-header">
                                 <div class="packing-meta-grid">
-                                    {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.bl_date form.transportation_company form.origin form.destination form.estimated_delivery_date form.estimated_arrive_to_wh_date form.description label='on-border' %}
+                                    {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.bl_date form.transportation_company form.origin form.destination form.estimated_shipping_start_date form.estimated_arrive_to_wh_date form.description label='on-border' %}
                                 </div>
 
                                 <div class="mt-3">
@@ -1604,7 +1604,7 @@
         'id_transportation_company': 'packing_transportation_company',
         'id_origin': 'packing_origin',
         'id_destination': 'packing_destination',
-        'id_estimated_delivery_date': 'packing_estimated_start_shipping_date',
+        'id_estimated_shipping_start_date': 'packing_estimated_start_shipping_date',
         'id_estimated_arrive_to_wh_date': 'packing_estimated_arrive_central_wh_date'
     };
 

@@ -246,7 +246,7 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
         "delivery_to_salehi_date",
         "cl_90_date", "cl_10_date", "cl_100_date",
         "arrive_to_wh_date",
-        "estimated_delivery_date", "estimated_arrive_to_wh_date",
+        "estimated_shipping_start_date", "estimated_arrive_to_wh_date",
         "reserve_bar_date",
         "sum_qty", "sum_arrived_qty",
         "description", "wh_destination", "sales_10_darsad",
@@ -275,7 +275,7 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
         for name in (
             "bl_date", "departure_date", "arrival_date", "sales_manager_check_date",
             "delivery_to_salehi_date", "cl_90_date", "cl_10_date", "cl_100_date",
-            "arrive_to_wh_date", "estimated_delivery_date",
+            "arrive_to_wh_date", "estimated_shipping_start_date",
             "estimated_arrive_to_wh_date", "reserve_bar_date",
         ):
             if name in self.fields:
@@ -450,7 +450,7 @@ class PackingForm(CustomBaseModelForm):
         self.fields['cl_100_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['description'].widget.attrs['rows'] = 1
         self.fields['sales_10_darsad'].widget.attrs['rows'] = 2
-        self.fields['estimated_delivery_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+        self.fields['estimated_shipping_start_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['estimated_arrive_to_wh_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['reserve_bar_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
 
