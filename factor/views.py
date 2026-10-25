@@ -1701,6 +1701,16 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
         # allowed_hidden = list(set(allowed_hidden))
         # allowed_edit = list(set(allowed_edit))
         # allowed_show = list(set(allowed_show))
+        # SALE_CONDITIONS_EDITOR_PERMISSION
+        # Use exactly the same workflow edit window as sale_type; only sales roles
+        # may submit JSON. All other users see the editor in read-only mode.
+        if ("sale_type" in edit and (
+            "factor.cp_factor_sales" in permissions
+            or "factor.cp_factor_sales_admin" in permissions
+            or self.request.user.is_superuser
+        )):
+            if "sale_type_multi_condition" not in edit:
+                edit.append("sale_type_multi_condition")
         return edit, hidden, show
         return allowed_edit, allowed_hidden, allowed_show
 

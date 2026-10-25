@@ -15,6 +15,7 @@ from accounts.models import User
 from core.forms import CustomBaseModelForm, FormMX
 from extra_data.models import CustomerAddress
 from factor.models import Factor, FactorItem, Delivery, FactorItemSupplyLocation
+from factor.sale_conditions import SaleConditionsFormMixin
 from files.models import File
 from order.models import Order, OrderBazar
 from tools.utils import timer
@@ -37,7 +38,7 @@ class UserSelectWidget(ModelSelect2MultipleWidget):
     ]
 
 
-class FactorModelForm(CustomBaseModelForm):
+class FactorModelForm(SaleConditionsFormMixin, CustomBaseModelForm):
     file_model = File
     file_groups = 4
     has_comment = True
@@ -45,6 +46,7 @@ class FactorModelForm(CustomBaseModelForm):
     class Meta:
         model = Factor
         exclude = ['factor_self', 'guid', 'status', 'group', 'shop_document_id', 'shop_buy_factor_id', 'shop_payment_approved']
+        widgets = {"sale_type_multi_condition": forms.HiddenInput()}
 
     def __init__(self, *args, **kwargs):
         request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
@@ -861,7 +863,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
 # ─── فرم Factor ───────────────────────────────────────────────────────────────
 
 
-class FactorEditForm(FormMX, CustomBaseModelForm):
+class FactorEditForm(SaleConditionsFormMixin, FormMX, CustomBaseModelForm):
     has_comment = True
     # ── پیکربندی فایل ──
     file_model = File  # مدل File (generic FK)
@@ -903,6 +905,7 @@ class FactorEditForm(FormMX, CustomBaseModelForm):
         model = Factor
         fields = "__all__"
         widgets = {
+            "sale_type_multi_condition": forms.HiddenInput(),
             "description": forms.Textarea(attrs={"rows": 1}),
             "official_factor_send_with_this_factor": forms.TextInput(),
             "official_factor_for_this_factor": forms.TextInput(),
