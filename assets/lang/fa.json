@@ -940,5 +940,6 @@
     "packing_estimated_start_shipping_date": "تاریخ پیش بینی شروع حمل بار",
     "packing_estimated_arrive_central_wh_date": "تاریخ پیش بینی رسیدن بار به انبار مرکزی",
     "packing_file_10": "هزینه حمل دلاری",
-    "packing_file_11": "هزینه حمل ریالی"
+    "packing_file_11": "هزینه حمل ریالی",
+    "packing_freight_cost_documents": "اسناد هزینه حمل"
 }
