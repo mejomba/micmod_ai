@@ -536,6 +536,22 @@
         font-size: .95rem;
     }
 
+    /* Small inline row number: does not create a new column or row height. */
+    .pk-row-number {
+        display: inline-block;
+        min-width: 1.5em;
+        padding: 1px 5px;
+        margin-inline-end: 6px;
+        border-radius: 5px;
+        background: var(--pk-primary-soft);
+        color: #3699ff;
+        font-size: .75rem;
+        font-weight: 700;
+        line-height: 1.3;
+        text-align: center;
+        vertical-align: baseline;
+    }
+
     .pk-row-part {
         margin-top: 3px;
         color: #5e6278;
@@ -973,6 +989,15 @@
         min-width: 32px;
         min-height: 30px;
         padding: 4px 7px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .packing-layout-workflow-rows .pk-row-edit-button svg {
+        display: block;
+        width: 17px;
+        height: 17px;
     }
 
     .packing-layout-workflow-rows .pk-row-title {
@@ -1508,7 +1533,7 @@
                                             <div class="pk-row-main">
                                                 <div class="pk-row-top">
                                                     <div class="min-w-0">
-                                                        <div class="pk-row-title" title="{{ packing_item.order.order_number|default:packing_item.order_id }}">{{ packing_item.order.order_number|default:packing_item.order_id }}</div>
+                                                        <div class="pk-row-title" title="{{ packing_item.order.order_number|default:packing_item.order_id }}"><span class="pk-row-number" aria-label="Row number">{{ forloop.counter }}</span>{{ packing_item.order.order_number|default:packing_item.order_id }}</div>
                                                         <div class="pk-row-part">
                                                             <span class="me-2" title="{{ packing_item.order.final_item.sku|default:'-' }}">SKU: <b>{{ packing_item.order.final_item.sku|default:"-" }}</b></span>
                                                             <span title="{{ packing_item.part_number|default:'-' }}">{% if state_index > 0 %}<span class="pk-row-part-label" data-key="part_number">Part Number</span>: {% endif %}{{ packing_item.part_number|default:"-" }}</span>
@@ -1525,8 +1550,11 @@
                                                             >×</button>
                                                         </div>
                                                     {% elif can_edit_items %}
-                                                        <button type="button" class="btn btn-sm btn-light-primary pk-row-edit-button" aria-label="Edit packing row" aria-expanded="false" title="Edit row">
-                                                            <i class="ti ti-pencil" aria-hidden="true"></i>
+                                                        <button type="button" class="btn btn-sm btn-light-primary pk-row-edit-button" aria-label="ویرایش ردیف" aria-expanded="false" title="ویرایش ردیف">
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                                                <path d="M12 20h9"></path>
+                                                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L9 17l-4 1 1-4Z"></path>
+                                                            </svg>
                                                         </button>
                                                     {% else %}
                                                         <span class="badge badge-light-secondary" data-key="packing_existing_item">Existing Item</span>
@@ -2001,7 +2029,12 @@
     }
 
     function syncEmptyState() {
-        const count = document.querySelectorAll('.packing-existing-row:not(.is-pending-delete), #formset-container .packing-selected-row').length;
+        const activeRows = document.querySelectorAll('.packing-existing-row:not(.is-pending-delete), #formset-container .packing-selected-row');
+        activeRows.forEach((row, index) => {
+            const number = row.querySelector('.pk-row-number');
+            if (number) number.textContent = String(index + 1);
+        });
+        const count = activeRows.length;
         if (selectedCount) selectedCount.textContent = count;
         if (emptyState) emptyState.classList.toggle('d-none', count > 0);
     }
@@ -2111,7 +2144,7 @@
             <div class="pk-row-main">
                 <div class="pk-row-top">
                     <div class="min-w-0">
-                        <div class="pk-row-title">${data.orderNumber || ('Order #' + data.orderId)}</div>
+                        <div class="pk-row-title"><span class="pk-row-number" aria-label="Row number">${index}</span>${data.orderNumber || ('Order #' + data.orderId)}</div>
                         <div class="pk-row-part">
                             <span class="me-2">SKU: <b>${data.sku || '-'}</b></span>
                             <span>${data.partNumber || '-'}</span>
