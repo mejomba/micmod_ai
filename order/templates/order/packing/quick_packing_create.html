@@ -1156,7 +1156,7 @@
 
                             <div id="packing-header">
                                 <div class="packing-meta-grid">
-                                    {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.estimated_delivery_date form.description label='on-border' %}
+                                    {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.bl_date form.transportation_company form.origin form.destination form.transportation_calendar form.estimated_delivery_date form.estimated_arrive_to_wh_date form.description label='on-border' %}
                                 </div>
 
                                 <button
@@ -1500,6 +1500,15 @@
     <span data-key="packing_file_7">Order Registration</span>
     <span data-key="packing_file_8">Proforma</span>
     <span data-key="packing_file_9">Insurance Policy</span>
+    <span data-key="packing_file_10">Freight Cost (USD)</span>
+    <span data-key="packing_file_11">Freight Cost (IRR)</span>
+    <span data-key="packing_bl_date">Bill of Lading Date</span>
+    <span data-key="packing_transportation_company">Transportation Company</span>
+    <span data-key="packing_origin">Origin</span>
+    <span data-key="packing_destination">Destination</span>
+    <span data-key="packing_transportation_calendar">Transportation Calendar</span>
+    <span data-key="packing_estimated_start_shipping_date">Estimated Shipping Start Date</span>
+    <span data-key="packing_estimated_arrive_central_wh_date">Estimated Central Warehouse Arrival Date</span>
     <span data-key="packing_workflow_current_state">Current stage</span>
     <span data-key="packing_workflow_assigned_user">Assigned user</span>
     <span data-key="packing_change_user">Change user</span>
@@ -1538,7 +1547,22 @@
         return packingTranslations[key] || fallback || key;
     }
 
+    const packingHeaderLabelKeys = {
+        'id_bl_date': 'packing_bl_date',
+        'id_transportation_company': 'packing_transportation_company',
+        'id_origin': 'packing_origin',
+        'id_destination': 'packing_destination',
+        'id_transportation_calendar': 'packing_transportation_calendar',
+        'id_estimated_delivery_date': 'packing_estimated_start_shipping_date',
+        'id_estimated_arrive_to_wh_date': 'packing_estimated_arrive_central_wh_date'
+    };
+
     function applyDynamicTranslations(root = document) {
+        Object.entries(packingHeaderLabelKeys).forEach(function ([fieldId, key]) {
+            const label = root.querySelector('label[for="' + fieldId + '"]');
+            if (label) label.dataset.key = key;
+        });
+
         root.querySelectorAll('[data-key]').forEach(function (element) {
             const key = element.dataset.key;
             if (packingTranslations[key] !== undefined) {
