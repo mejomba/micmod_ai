@@ -1,0 +1,33 @@
+{% load static %}
+<!doctype html>
+<html dir="rtl" lang="fa">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>چاپ گروهی فاکتورها</title>
+  <style>
+    /* factor-bulk-2026-v1 */
+    body { margin:0; background:#fff; direction:rtl; }
+    .bulk-toolbar { background:#f1f5f9; padding:12px; text-align:center; }
+    .bulk-toolbar button { padding:10px 20px; border:0; border-radius:7px;
+                            color:white; background:#2563eb; cursor:pointer; }
+    .bulk-document .noprint, .bulk-document #calculate-button,
+    .bulk-document #id_print_btn { display:none!important; }
+    @media print {
+      .bulk-toolbar { display:none!important; }
+      .bulk-document:not(:last-child) { break-after:page; page-break-after:always; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bulk-toolbar">
+    <span>{{ documents|length }} فاکتور آماده چاپ</span>
+    <button type="button" onclick="window.print()">چاپ همه فاکتورها</button>
+  </div>
+  {% for doc in documents %}
+  <section class="bulk-document">
+    {% include 'factor/factor_print.html' with data=doc.data form=doc.form formset=doc.formset with_location=doc.with_location location_url_params=doc.location_url_params bulk_mode=True %}
+  </section>
+  {% endfor %}
+</body>
+</html>
