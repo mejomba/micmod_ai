@@ -19,7 +19,18 @@
 
     <style>
 
-    </style>
+    
+/* factor-bulk-2026-v1 */
+.factor-bulk-toolbar {
+  display:flex; align-items:center; flex-wrap:wrap; gap:12px;
+  background:#f6f9ff; border:1px solid #d9e4f3; border-radius:10px;
+  padding:12px 14px; margin:12px 0;
+}
+#factor-bulk-counter { color:#315071; font-weight:600; font-size:12px; }
+#factor_list .factor-bulk-column {text-align:center; }
+#factor_list .js-factor-bulk { width:17px; height:17px; cursor:pointer; }
+
+</style>
 {% endblock %}
 
 {% block content %}
@@ -96,7 +107,23 @@
                     <div class="row">
                         <div class="col-12">
                             <div class="container-fluid">
-                                <div class="table-responsive p-2">
+                                <!-- factor-bulk-2026-v1 -->
+<div id="factor-bulk-toolbar" class="factor-bulk-toolbar" dir="rtl">
+  <label class="d-flex align-items-center gap-2 m-0">
+    <input id="factor-bulk-all" type="checkbox" class="form-check-input">
+    انتخاب تمام ردیف‌های صفحه جاری
+  </label>
+  <span id="factor-bulk-counter">۰ فاکتور انتخاب‌شده</span>
+  <button id="factor-bulk-print" type="button" class="btn btn-primary btn-sm" disabled>
+    چاپ دسته‌جمعی
+  </button>
+  <button id="factor-bulk-clear" type="button" class="btn btn-light btn-sm">پاک‌کردن انتخاب‌ها</button>
+</div>
+<form id="factor-bulk-form" action="{% url 'factor:factor.bulk_print' %}" method="post"
+      target="_blank" style="display:none">
+  {% csrf_token %}
+</form>
+<div class="table-responsive p-2">
                                     <table id="factor_list" width="100%" class="m-table table-striped table-bordered w-100">
 
                                     </table>
@@ -153,7 +180,7 @@
             table.rows({ search: 'applied' }).every(function () {
                 let rowNode = this.node();
 
-                let cell = $(rowNode).find('td').eq(24); //  ستون مبلغ
+                let cell = $(rowNode).find('td').eq(25); //  ستون مبلغ
 
                 let val = cell.text().replaceAll(',', '').trim();
                 val = parseFloat(val) || 0;
@@ -224,4 +251,73 @@
     <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
     <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
 
+<script>
+// factor-bulk-2026-v1: selection persists across AJAX DataTable pages
+$(function () {
+    const selected = new Set();
+    const $table = $('#factor_list');
+    const $all = $('#factor-bulk-all');
+    const $print = $('#factor-bulk-print');
+
+    function updateState() {
+        const $items = $table.find('tbody input.js-factor-bulk');
+        $items.each(function () { this.checked = selected.has(String(this.value)); });
+        const allChecked = $items.length > 0 && $items.toArray().every(el => el.checked);
+        const anyChecked = $items.toArray().some(el => el.checked);
+        $all.prop('checked', allChecked).prop('indeterminate', anyChecked && !allChecked);
+        $('#factor-bulk-counter').text(
+            selected.size.toLocaleString('fa-IR') + ' فاکتور انتخاب‌شده'
+        );
+        $print.prop('disabled', selected.size === 0);
+    }
+
+    $table.on('click', '.js-factor-bulk', function (event) {
+        event.stopPropagation();
+    });
+    $table.on('change', '.js-factor-bulk', function () {
+        const value = String(this.value);
+        if (this.checked) selected.add(value);
+        else selected.delete(value);
+        updateState();
+    });
+    $all.on('change', function () {
+        const checked = this.checked;
+        $table.find('tbody .js-factor-bulk').each(function () {
+            if (checked) selected.add(String(this.value));
+            else selected.delete(String(this.value));
+        });
+        updateState();
+    });
+    $('#factor-bulk-clear').on('click', function () {
+        selected.clear();
+        updateState();
+    });
+    $table.on('init.dt draw.dt', updateState);
+    $print.on('click', function () {
+        if (!selected.size) return;
+        if (selected.size > 30) {
+            alert('حداکثر ۳۰ فاکتور را می‌توان هم‌زمان چاپ کرد.');
+            return;
+        }
+        const form = document.getElementById('factor-bulk-form');
+        form.querySelectorAll('.factor-bulk-hidden').forEach(el => el.remove());
+        selected.forEach(id => {
+            const field = document.createElement('input');
+            field.type = 'hidden';
+            field.className = 'factor-bulk-hidden';
+            field.name = 'ids';
+            field.value = id;
+            form.appendChild(field);
+        });
+        const q = document.createElement('input');
+        q.type = 'hidden';
+        q.className = 'factor-bulk-hidden';
+        q.name = 'q';
+        q.value = new URLSearchParams(location.search).get('q') || '';
+        form.appendChild(q);
+        form.submit();
+    });
+    updateState();
+});
+</script>
 {% endblock extra_js %}
