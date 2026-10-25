@@ -901,12 +901,54 @@
     }
 
     .packing-layout-workflow-rows .pk-row-top {
+        display: block;
         min-width: 0;
         align-self: stretch;
         padding-bottom: 0;
         padding-inline-end: 16px;
         border-bottom: 0;
         border-inline-end: 1px solid var(--pk-border);
+    }
+
+    /* All items already exist in later workflow stages: omit the redundant badge. */
+    .packing-layout-workflow-rows .pk-row-top > .badge {
+        display: none;
+    }
+
+    .packing-layout-workflow-rows .pk-row-top > .min-w-0 {
+        width: 100%;
+    }
+
+    .packing-layout-workflow-rows .pk-row-title {
+        width: 100%;
+        overflow-wrap: anywhere;
+    }
+
+    /* Give SKU and part number a full-width line each, beneath the order title. */
+    .packing-layout-workflow-rows .pk-row-part {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        width: 100%;
+        margin-top: 12px;
+    }
+
+    .packing-layout-workflow-rows .pk-row-part > span {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        margin-inline-end: 0 !important;
+        padding: 8px 10px;
+        border: 1px solid #edf0f5;
+        border-radius: 7px;
+        background: #f8fafc;
+        overflow-wrap: anywhere;
+    }
+
+    .packing-layout-workflow-rows .pk-row-part-label {
+        font-weight: 600;
+        color: #7e8299;
     }
 
     .packing-layout-workflow-rows .pk-row-readonly-grid {
@@ -1390,7 +1432,7 @@
                                                         <div class="pk-row-title">{{ packing_item.order.order_number|default:packing_item.order_id }}</div>
                                                         <div class="pk-row-part">
                                                             <span class="me-2">SKU: <b>{{ packing_item.order.final_item.sku|default:"-" }}</b></span>
-                                                            <span>{{ packing_item.part_number|default:"-" }}</span>
+                                                            <span>{% if state_index > 0 %}<span class="pk-row-part-label" data-key="part_number">Part Number</span>: {% endif %}{{ packing_item.part_number|default:"-" }}</span>
                                                         </div>
                                                     </div>
                                                     {% if can_add_items %}
