@@ -222,8 +222,8 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
     are removed from the bound form and therefore cannot be changed by a
     crafted POST.
     """
-    file_groups = 9
-    file_groups_2 = 9
+    file_groups = 11
+    file_groups_2 = 11
     file_labels = {
         1: "invoice",
         2: "packing",
@@ -234,10 +234,13 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
         7: "order_registration",
         8: "proforma",
         9: "insurance_policy",
+        10: "freight_cost_usd",
+        11: "freight_cost_irr",
     }
 
     field_layout = [
-        "packing_number", "currency", "shipment_type", "bl_number",
+        "packing_number", "currency", "shipment_type", "bl_number", "bl_date",
+        "transportation_company", "origin", "destination", "transportation_calendar",
         "departure_date", "arrival_date",
         "sales_manager_needed", "sales_manager_check_date",
         "delivery_to_salehi_date",
@@ -270,7 +273,7 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
         self._add_file_fields()
 
         for name in (
-            "departure_date", "arrival_date", "sales_manager_check_date",
+            "bl_date", "departure_date", "arrival_date", "sales_manager_check_date",
             "delivery_to_salehi_date", "cl_90_date", "cl_10_date", "cl_100_date",
             "arrive_to_wh_date", "estimated_delivery_date",
             "estimated_arrive_to_wh_date", "reserve_bar_date",
