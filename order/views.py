@@ -3735,9 +3735,15 @@ class QuickPackingView(LoginRequiredMixin, View):
             'currency',
             'shipment_type',
             'bl_number',
+            'bl_date',
+            'transportation_company',
+            'origin',
+            'destination',
+            'transportation_calendar',
             'estimated_delivery_date',
+            'estimated_arrive_to_wh_date',
             'description',
-        ] + [f'file_{idx}' for idx in range(1, 10)]
+        ] + [f'file_{idx}' for idx in range(1, 12)]
 
         if not constraint.get('wf_access') or '__all__' in read:
             allowed_fields = []
@@ -4059,7 +4065,7 @@ class QuickPackingView(LoginRequiredMixin, View):
 
         packing_obj.save_file(
             request=request,
-            file_groups=9,
+            file_groups=11,
             file_model=File,
             obj=packing_obj,
             input_prefix='file',
