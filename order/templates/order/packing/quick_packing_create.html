@@ -2392,8 +2392,11 @@
 
         document.querySelectorAll('.pk-row-editor:not([hidden]) .packing-existing-quantity').forEach(input => {
             const q = toNumber(input.value);
+            const originalQ = toNumber(input.defaultValue);
             const maxQ = toNumber(input.max);
-            if (!Number.isFinite(q) || q <= 0 || (maxQ > 0 && q > maxQ)) {
+            const quantityChanged = Math.abs(q - originalQ) > 0.000001;
+            // Metadata edits remain possible if GIO availability has decreased.
+            if (!Number.isFinite(q) || q <= 0 || (quantityChanged && q > maxQ + 0.000001)) {
                 valid = false;
                 input.classList.add('border-danger', 'text-danger');
             } else {
