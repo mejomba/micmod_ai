@@ -82,8 +82,3 @@ class TransportationCalender(BaseModel):
     capacity_kg = models.DecimalField(max_digits=12, decimal_places=2)
     shipment_type = models.CharField(choices=TransportationMethod)
     description = models.TextField(null=True, blank=True)
-
-    def __str__(self):
-        start = self.estimate_start_shipping_date or '-'
-        arrive = self.estimate_arrive_date or '-'
-        return f'{self.get_shipment_type_display()} | {start} → {arrive} | {self.capacity_kg} kg'
