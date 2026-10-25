@@ -328,5 +328,14 @@
     "packing_workflow_assigned_user": "Assigned user",
     "packing_change_user": "Change user",
     "packing_apply_change_user": "Apply",
-    "packing_change_user_required": "Select a user."
+    "packing_change_user_required": "Select a user.",
+    "packing_bl_date": "Bill of Lading Date",
+    "packing_transportation_company": "Transportation Company",
+    "packing_origin": "Origin",
+    "packing_destination": "Destination",
+    "packing_transportation_calendar": "Transportation Calendar",
+    "packing_estimated_start_shipping_date": "Estimated Shipping Start Date",
+    "packing_estimated_arrive_central_wh_date": "Estimated Central Warehouse Arrival Date",
+    "packing_file_10": "Freight Cost (USD)",
+    "packing_file_11": "Freight Cost (IRR)"
 }
