@@ -33,6 +33,23 @@ def format_elapsed(delta):
     return ' و '.join(parts)
 
 
+def format_elapsed_en(delta):
+    if delta is None:
+        return None
+    seconds = max(0, int(delta.total_seconds()))
+    days, remaining = divmod(seconds, 86400)
+    hours, remaining = divmod(remaining, 3600)
+    minutes = remaining // 60
+    parts = []
+    if days:
+        parts.append(f'{days}d')
+    if hours:
+        parts.append(f'{hours}h')
+    if minutes or not parts:
+        parts.append(f'{minutes}m')
+    return ' '.join(parts)
+
+
 def build_packing_workflow_timeline(records, states, normalize_state):
     """Return timeline stages and complete activity history.
 
@@ -92,6 +109,7 @@ def build_packing_workflow_timeline(records, states, normalize_state):
             'assigned_to': event.to_user,
             'description': event.wf_description or '',
             'elapsed_since_previous': format_elapsed(action_duration),
+            'elapsed_since_previous_en': format_elapsed_en(action_duration),
         })
         if created_at is not None:
             previous_event_date = created_at
@@ -104,6 +122,7 @@ def build_packing_workflow_timeline(records, states, normalize_state):
             'index': index,
             'entered_at': entries.get(name),
             'duration_to_next': format_elapsed(elapsed),
+            'duration_to_next_en': format_elapsed_en(elapsed),
         })
 
     return {'stages': stage_data, 'history': list(reversed(history))}
