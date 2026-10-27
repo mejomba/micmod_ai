@@ -2020,6 +2020,8 @@
     const container = document.getElementById('formset-container');
     const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
     const submitButton = document.getElementById('submit-packing');
+    const durationButton = document.getElementById('packing-toggle-durations');
+    const durationScroll = document.getElementById('packing-workflow-scroll');
     const emptyState = document.getElementById('packing-empty-state');
     const selectedCount = document.getElementById('packing-selected-count');
     const packingLayout = document.querySelector('.packing-layout');
@@ -2036,6 +2038,59 @@
 
     function tr(key, fallback = '') {
         return packingTranslations[key] || fallback || key;
+    }
+
+    const packingTimelineUi = {
+        fa: {
+            packing_workflow_description: 'توضیحات جریان کاری',
+            packing_workflow_description_hint: 'توضیحات هنگام ثبت عملیات بعد، قبل یا تغییر مسئول ذخیره می‌شود.',
+            packing_show_all_durations: 'نمایش فاصله زمانی همه مراحل',
+            packing_hide_all_durations: 'مخفی کردن فاصله زمانی مراحل',
+            packing_workflow_history: 'تاریخچه گردش کار',
+            packing_history_time: 'زمان',
+            packing_history_action: 'عملیات',
+            packing_history_from: 'از مرحله',
+            packing_history_to: 'به مرحله',
+            packing_history_by: 'انجام‌دهنده',
+            packing_history_assignee: 'مسئول',
+            packing_history_elapsed: 'از رویداد قبل',
+            packing_history_description: 'توضیحات',
+            packing_history_empty: 'رویدادی ثبت نشده است.',
+            packing_entered_at: 'زمان ورود',
+            packing_not_entered: 'هنوز وارد این مرحله نشده است',
+            packing_duration_to_next: 'مدت تا مرحله بعد',
+            packing_duration_pending: 'زمان انتقال به مرحله بعد هنوز ثبت نشده است'
+        },
+        en: {
+            packing_workflow_description: 'Workflow notes',
+            packing_workflow_description_hint: 'Notes are saved when moving forward/back or changing the assignee.',
+            packing_show_all_durations: 'Show all stage durations',
+            packing_hide_all_durations: 'Hide stage durations',
+            packing_workflow_history: 'Workflow history',
+            packing_history_time: 'Date and time',
+            packing_history_action: 'Action',
+            packing_history_from: 'From stage',
+            packing_history_to: 'To stage',
+            packing_history_by: 'Performed by',
+            packing_history_assignee: 'Assigned to',
+            packing_history_elapsed: 'Since previous event',
+            packing_history_description: 'Notes',
+            packing_history_empty: 'No workflow events recorded.',
+            packing_entered_at: 'Entered at',
+            packing_not_entered: 'Not reached yet',
+            packing_duration_to_next: 'Time to next stage',
+            packing_duration_pending: 'The next-stage transition has not been recorded'
+        }
+    };
+    const packingActionEnglish = {
+        '1': 'Draft', '2': 'Returned to previous stage',
+        '3': 'Moved to next stage', '4': 'Changed assignee',
+        '5': 'Packing created'
+    };
+
+    function timelineTranslation(key) {
+        const lang = currentLanguage().toLowerCase().startsWith('en') ? 'en' : 'fa';
+        return packingTimelineUi[lang][key] || key;
     }
 
     const packingHeaderLabelKeys = {
@@ -2078,9 +2133,53 @@
         root.querySelectorAll('[data-workflow-state]').forEach(function (element) {
             const stage = element.dataset.workflowState;
             element.textContent = displayEnglishStages
-                ? (packingStageEnglish[stage] || stage)
-                : stage;
+                ? (packingStageEnglish[stage] || stage || '—')
+                : (stage || '—');
         });
+
+        root.querySelectorAll('[data-workflow-action]').forEach(function (element) {
+            const code = element.dataset.workflowAction;
+            if (displayEnglishStages && packingActionEnglish[code]) {
+                element.textContent = packingActionEnglish[code];
+            }
+        });
+
+        root.querySelectorAll('[data-key^="packing_workflow_description"], [data-key^="packing_history_"], [data-key="packing_workflow_history"], [data-key="packing_show_all_durations"]').forEach(function (element) {
+            const key = element.dataset.key;
+            if (packingTimelineUi.en[key]) {
+                element.textContent = timelineTranslation(key);
+            }
+        });
+
+        root.querySelectorAll('.pk-workflow-node[data-entry-time]').forEach(function (node) {
+            const when = node.dataset.entryTime;
+            const tooltip = when
+                ? timelineTranslation('packing_entered_at') + ': ' + when
+                : timelineTranslation('packing_not_entered');
+            node.title = tooltip;
+            node.setAttribute('aria-label', tooltip);
+        });
+
+        root.querySelectorAll('.pk-workflow-connector').forEach(function (line) {
+            const duration = displayEnglishStages
+                ? (line.dataset.durationEn || line.dataset.duration)
+                : line.dataset.duration;
+            const tooltip = duration
+                ? timelineTranslation('packing_duration_to_next') + ': ' + duration
+                : timelineTranslation('packing_duration_pending');
+            line.title = tooltip;
+            line.setAttribute('aria-label', tooltip);
+            const value = line.querySelector('.pk-workflow-duration');
+            if (value && duration) value.textContent = duration;
+        });
+
+        if (durationButton) {
+            durationButton.textContent = timelineTranslation(
+                durationButton.getAttribute('aria-pressed') === 'true'
+                    ? 'packing_hide_all_durations'
+                    : 'packing_show_all_durations'
+            );
+        }
 
         if (layoutResizer) {
             layoutResizer.setAttribute(
@@ -2562,11 +2661,25 @@
         updateTotals();
     });
 
+    // Show/hide recorded durations without changing the underlying workflow.
+    durationButton?.addEventListener('click', function () {
+        const show = !durationScroll.classList.contains('show-durations');
+        durationScroll.classList.toggle('show-durations', show);
+        durationButton.setAttribute('aria-pressed', String(show));
+        durationButton.textContent = timelineTranslation(
+            show ? 'packing_hide_all_durations' : 'packing_show_all_durations'
+        );
+    });
+
     document.querySelectorAll('.packing-workflow-action').forEach(function (button) {
         button.addEventListener('click', function () {
             const action = button.dataset.action;
             const formData = new FormData();
             formData.append('workflow_action', action);
+            formData.append(
+                'wf_description',
+                document.getElementById('packing-workflow-description')?.value || ''
+            );
 
             if (action === 'change_user') {
                 const userSelect = document.getElementById('packing-workflow-user');
