@@ -20,7 +20,7 @@ class QuickPackingTranslationTests(SimpleTestCase):
     def test_packing_data_keys_are_present_in_both_locales(self):
         keys = set(re.findall(r'data-key="([a-zA-Z][a-zA-Z0-9_-]*)"', self.template))
         keys.update(re.findall(r'data-(?:placeholder|title|aria)-key="([a-zA-Z][a-zA-Z0-9_-]*)"', self.template))
-        keys.update(re.findall(r"tr\\('([^']+)'", self.template))
+        keys.update(re.findall(r"tr\('([^']+)'", self.template))
         for lang, dictionary in self.locales.items():
             with self.subTest(lang=lang):
                 missing = sorted(key for key in keys if key not in dictionary)
