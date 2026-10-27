@@ -46,6 +46,8 @@ from sepidar.api_call import SepidarApiCall
 from sepidar.models import Dl
 from tools.utils import is_ajax, parse_number
 from workflow.models import WorkFlow, FlowAdminGroup
+from changelog.models import ChangeLog
+from .packing_change_history import build_packing_change_history
 from .packing_workflow_timeline import build_packing_workflow_timeline
 from .form_perm import ORDER_FIELDS_BY_PERMISSION
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
@@ -4127,9 +4129,11 @@ class QuickPackingView(LoginRequiredMixin, View):
                                 status=400,
                             )
 
-                        packing_obj = form.save()
-                        packing_obj.extra_data.request = request
-                        packing_obj.save()
+                        # Set the request before the *first* save so ChangeLog
+                        # records both the correct field diff and the actor.
+                        # Do not issue the old redundant second save.
+                        form.instance.extra_data.request = request
+                        packing_obj = form.save() or form.instance
                         self._update_existing_rows(request, packing_obj)
                         self._save_uploaded_files(request, packing_obj)
 
@@ -4180,9 +4184,10 @@ class QuickPackingView(LoginRequiredMixin, View):
                         status=400,
                     )
 
-                packing_obj = form.save()
-                packing_obj.extra_data.request = request
-                packing_obj.save()
+                # One save with request attribution produces one accurate audit
+                # snapshot (rather than an unattributed save and a second log).
+                form.instance.extra_data.request = request
+                packing_obj = form.save() or form.instance
 
                 self._update_existing_rows(request, packing_obj)
 
@@ -4307,7 +4312,33 @@ class QuickPackingView(LoginRequiredMixin, View):
             Packing.normalize_workflow_state_name,
         )
 
+        # Packing and child rows inherit change_logs from NoUserBaseModel.
+        # Query all item ids, including soft-deleted rows, so their historical
+        # changes remain visible after deletion from the current packing.
+        change_history = []
+        if packing_obj:
+            item_rows = list(
+                PackingItem.objects.full_queryset()
+                .filter(packing_id=packing_obj.pk)
+                .values('id', 'part_number', 'order_id', 'order__order_number')
+            )
+            item_ids = [row['id'] for row in item_rows]
+            header_content_type = ContentType.objects.get_for_model(Packing)
+            item_content_type = ContentType.objects.get_for_model(PackingItem)
+            logs = (
+                ChangeLog.objects.filter(
+                    Q(content_type=header_content_type, object_id=packing_obj.pk)
+                    | Q(content_type=item_content_type, object_id__in=item_ids)
+                )
+                .select_related('content_type', 'editor_user', 'creator_user')
+                .order_by('-created_date', '-pk')
+            )
+            change_history = build_packing_change_history(
+                logs, Packing, PackingItem, item_rows
+            )
+
         context = {
+            'change_history': change_history,
             'workflow_stages': timeline['stages'],
             'workflow_history': timeline['history'],
             'form': self._build_form(packing_obj=packing_obj),
