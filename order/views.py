@@ -3768,8 +3768,8 @@ class QuickPackingView(LoginRequiredMixin, View):
         )
 
     def _create_initial_workflow(self, packing_obj):
-        state = self.flow_config.get('flow_state_list', ['پیش نویس'])[0]
-        group = self._flow_group(0) or 'packing_user'
+        state = self.flow_config.get('flow_state_list', ['پیش‌نویس'])[0]
+        group = self._flow_group(0) or 'packing_user_p'
 
         first_deadline = self.flow_config.get('flow_deadline', [0])[0] or 0
         if isinstance(first_deadline, list):

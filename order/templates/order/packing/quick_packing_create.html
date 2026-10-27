@@ -1280,7 +1280,7 @@
                                     <div class="pk-workflow-head">
                                         <div class="pk-workflow-current">
                                             <span class="pk-workflow-current-label" data-key="packing_workflow_current_state">Current stage</span>
-                                            <span class="pk-workflow-current-name">{{ current_state }}</span>
+                                            <span class="pk-workflow-current-name" data-workflow-state="{{ current_state }}">{{ current_state }}</span>
                                         </div>
 
                                         <div class="pk-workflow-actions">
@@ -1349,7 +1349,7 @@
                                                             {{ forloop.counter }}
                                                         {% endif %}
                                                     </div>
-                                                    <span class="pk-workflow-step-name">{{ workflow_state }}</span>
+                                                    <span class="pk-workflow-step-name" data-workflow-state="{{ workflow_state }}">{{ workflow_state }}</span>
                                                     <span class="pk-workflow-step-status">
                                                         {% if forloop.counter0 < flow_state_index %}
                                                             <span data-key="packing_workflow_completed">Completed</span>
@@ -1869,6 +1869,20 @@
         'id_estimated_arrive_to_wh_date': 'packing_estimated_arrive_central_wh_date'
     };
 
+    // The workflow stores stable Persian stage names; English UI labels are
+    // display-only so translated text never affects the saved workflow state.
+    const packingStageEnglish = {
+        'پیش‌نویس': 'Draft',
+        'تحویل شرکت حمل': 'Handover to Carrier',
+        'حمل': 'In Transit',
+        'قبض انبار': 'Warehouse Receipt',
+        'تحویل اسناد': 'Document Handover',
+        'اظهار': 'Customs Declaration',
+        'ضمانتنامه': 'Guarantee Letter',
+        'ترخیص': 'Customs Clearance',
+        'انبار': 'Warehouse'
+    };
+
     function applyDynamicTranslations(root = document) {
         Object.entries(packingHeaderLabelKeys).forEach(function ([fieldId, key]) {
             const label = root.querySelector('label[for="' + fieldId + '"]');
@@ -1880,6 +1894,14 @@
             if (packingTranslations[key] !== undefined) {
                 element.textContent = packingTranslations[key];
             }
+        });
+
+        const displayEnglishStages = currentLanguage().toLowerCase().startsWith('en');
+        root.querySelectorAll('[data-workflow-state]').forEach(function (element) {
+            const stage = element.dataset.workflowState;
+            element.textContent = displayEnglishStages
+                ? (packingStageEnglish[stage] || stage)
+                : stage;
         });
 
         if (layoutResizer) {

@@ -1045,8 +1045,27 @@ class Packing(BaseModeWF):
     currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, null=True, blank=True,
                                  related_name='packings')
 
+    @staticmethod
+    def normalize_workflow_state_name(state_name):
+        """Recognize stage labels saved before the nine-stage Packing workflow."""
+        old_names = {
+            'پیش نویس': 'پیش‌نویس',
+            'پیشنویس': 'پیش‌نویس',
+            'DEP': 'تحویل شرکت حمل',
+            'arrive': 'حمل',
+            '10%': 'قبض انبار',
+            'اظهار گمرکی': 'اظهار',
+            'ترخیص گمرک': 'ترخیص',
+        }
+        return old_names.get(state_name, state_name)
+
     def workflow_state_index(self):
-        """Return the effective workflow state index using the same status rules as FlowBaseView."""
+        """Return the active stage from the actual workflow destination.
+
+        current_state_name is the destination of next/back actions. Using the
+        source state plus/minus one would misplace old Packing workflows when
+        the new Guarantee stage is inserted between Declaration and Clearance.
+        """
         flow_config = self.get_flow_config(
             settings.BASE_DIR / '_keenthemes/view_config.json',
             'PackingView',
@@ -1066,17 +1085,19 @@ class Packing(BaseModeWF):
         if not flow:
             return 0
 
-        try:
-            base_index = states.index(flow.state)
-        except (ValueError, TypeError):
-            return 0
+        destination = self.normalize_workflow_state_name(flow.current_state_name)
+        if destination in states:
+            return states.index(destination)
 
+        # Compatibility with older records without current_state_name.
+        source = self.normalize_workflow_state_name(flow.state)
+        if source not in states:
+            return 0
+        base_index = states.index(source)
         if flow.wf_status == 2:
             return max(base_index - 1, 0)
         if flow.wf_status == 3:
             return min(base_index + 1, len(states) - 1)
-        if flow.wf_status == 4:
-            return base_index
         if flow.wf_status == 5:
             return 0
         return base_index
@@ -1094,8 +1115,8 @@ class Packing(BaseModeWF):
         groups = list(flow_config.get('flow_users_groups') or [])
 
         try:
-            index = states.index(state_name)
-        except ValueError:
+            index = states.index(cls.normalize_workflow_state_name(state_name))
+        except (ValueError, TypeError):
             return None
 
         if index >= len(groups):
@@ -1139,7 +1160,9 @@ class Packing(BaseModeWF):
         )
 
         for flow in flows:
-            effective_state = flow.current_state_name or flow.state
+            effective_state = self.normalize_workflow_state_name(
+                flow.current_state_name or flow.state
+            )
             effective_group = self.workflow_group_for_state(effective_state)
             if (
                 effective_group == group_name
