@@ -76,6 +76,20 @@ class PackingWorkflowStagesTests(SimpleTestCase):
             queryset.return_value.order_by.return_value.last.return_value = old_transition
             self.assertEqual(packing.workflow_state_index(), 7)
 
+    def test_old_transition_without_destination_still_skips_guarantee(self):
+        packing = Packing(pk=123)
+        transition = SimpleNamespace(
+            state='اظهار گمرکی',
+            current_state_name=None,
+            wf_status=3,
+        )
+        with (
+            patch('workflow.models.WorkFlow.objects.filter') as queryset,
+            patch('django.contrib.contenttypes.models.ContentType.objects.get_for_model'),
+        ):
+            queryset.return_value.order_by.return_value.last.return_value = transition
+            self.assertEqual(packing.workflow_state_index(), 7)
+
     def test_new_guarantee_destination_is_stage_six(self):
         packing = Packing(pk=123)
         transition = SimpleNamespace(

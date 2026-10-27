@@ -1090,6 +1090,14 @@ class Packing(BaseModeWF):
             return states.index(destination)
 
         # Compatibility with older records without current_state_name.
+        # The old eight-stage process jumped straight from declaration to
+        # clearance; those historical transitions must skip the newly inserted
+        # guarantee step even if current_state_name was never populated.
+        if not flow.current_state_name and flow.state == 'اظهار گمرکی' and flow.wf_status == 3:
+            return states.index('ترخیص')
+        if not flow.current_state_name and flow.state == 'ترخیص گمرک' and flow.wf_status == 2:
+            return states.index('اظهار')
+
         source = self.normalize_workflow_state_name(flow.state)
         if source not in states:
             return 0

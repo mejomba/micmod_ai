@@ -12,6 +12,17 @@ OLD_STAGE_NAMES = {
     'ترخیص گمرک': 'ترخیص',
 }
 
+LEGACY_STAGES = [
+    'پیش نویس',
+    'DEP',
+    'arrive',
+    '10%',
+    'تحویل اسناد',
+    'اظهار گمرکی',
+    'ترخیص گمرک',
+    'انبار',
+]
+
 GROUP_BY_STAGE = {
     'پیش‌نویس': 'packing_user_p',
     'تحویل شرکت حمل': 'packing_user_dep',
@@ -49,6 +60,18 @@ def upgrade_packing_workflows(apps, schema_editor):
         current_stage = OLD_STAGE_NAMES.get(
             flow.current_state_name, flow.current_state_name
         )
+        if not current_stage and flow.state in LEGACY_STAGES:
+            source_index = LEGACY_STAGES.index(flow.state)
+            if flow.wf_status == 3:
+                target_index = min(source_index + 1, len(LEGACY_STAGES) - 1)
+            elif flow.wf_status == 2:
+                target_index = max(source_index - 1, 0)
+            else:
+                target_index = source_index
+            current_stage_name = LEGACY_STAGES[target_index]
+            current_stage = OLD_STAGE_NAMES.get(
+                current_stage_name, current_stage_name
+            )
         if flow.state != source_stage:
             flow.state = source_stage
             changed.append('state')
