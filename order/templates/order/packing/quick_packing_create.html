@@ -2332,19 +2332,30 @@
                         <div class="pk-card-body">
                             {% if packing_object %}
                                 <div class="pk-workflow-panel">
-                                    <div class="pk-workflow-head">
-                                        <div class="pk-workflow-current">
-                                            <span class="pk-workflow-current-label" data-key="packing_workflow_current_state">Current stage</span>
-                                            <span class="pk-workflow-current-name" data-workflow-state="{{ current_state }}">{{ current_state }}</span>
-                                        </div>
-
-
-                                    </div>
-
                                     <div class="pk-workflow-control-strip">
                                         <div class="pk-workflow-current-assignee">
-                                            <span class="pk-mini-label" data-key="packing_workflow_assigned_user">Assigned user</span>
-                                            <strong>{% if workflow_current_user %}{{ workflow_current_user }}{% else %}—{% endif %}</strong>
+                                            <span class="pk-mini-label" data-key="packing_workflow_assigned_user">کاربر مسئول</span>
+                                            <div class="pk-workflow-assignee-person">
+                                                <span class="pk-workflow-assignee-avatar" aria-hidden="true">
+                                                    {% if workflow_current_user and workflow_current_user.profile.avatar %}
+                                                        <img src="{{ workflow_current_user.profile.avatar.url }}" alt="" loading="lazy">
+                                                    {% elif workflow_current_user %}
+                                                        {{ workflow_current_user.profile.first_name|default:workflow_current_user.username|slice:":1" }}
+                                                    {% else %}
+                                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                                                             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                            <circle cx="12" cy="8" r="4"></circle>
+                                                            <path d="M4 21a8 8 0 0 1 16 0"></path>
+                                                        </svg>
+                                                    {% endif %}
+                                                </span>
+                                                <div class="pk-workflow-assignee-meta">
+                                                    <strong>{% if workflow_current_user %}{{ workflow_current_user }}{% else %}<span data-key="packing_no_assignee">تعیین نشده</span>{% endif %}</strong>
+                                                    {% if workflow_current_user %}
+                                                        <small>@{{ workflow_current_user.username }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
                                         </div>
 
                                         {% if wf_access %}
@@ -2959,8 +2970,8 @@
                                                 <button type="button" class="btn btn-sm btn-light-warning packing-workflow-action" data-action="back">
                                                     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
                                                          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                        <path d="m9 14-5-5 5-5"></path>
-                                                        <path d="M4 9h10a6 6 0 0 1 0 12h-1"></path>
+                                                        <path d="m15 14 5-5-5-5"></path>
+                                                        <path d="M20 9H10a6 6 0 0 0 0 12h1"></path>
                                                     </svg>
                                                     <span data-key="back">Back</span>
                                                 </button>
@@ -2970,8 +2981,8 @@
                                                     <span data-key="next">Next</span>
                                                     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
                                                          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                        <path d="m15 14 5-5-5-5"></path>
-                                                        <path d="M20 9H10a6 6 0 0 0 0 12h1"></path>
+                                                        <path d="m9 14-5-5 5-5"></path>
+                                                        <path d="M4 9h10a6 6 0 0 1 0 12h-1"></path>
                                                     </svg>
                                                 </button>
                                             {% endif %}
