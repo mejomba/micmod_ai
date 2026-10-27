@@ -80,6 +80,13 @@ function toJalaali(a,i,d){return"[object Date]"===Object.prototype.toString.call
         wrappers.forEach(({ input, display }) => {
             const jalali = toPersian(input.value);
             display.value = formatJalali(jalali);
+            if (input.value && !jalali) {
+                display.placeholder = isEnglish()
+                    ? 'Incorrect previous date — select a new date'
+                    : 'تاریخ قبلی نامعتبر است؛ تاریخ جدید انتخاب کنید';
+            } else {
+                display.placeholder = labels().empty;
+            }
         });
     }
     function placePopup() {
@@ -171,8 +178,8 @@ function toJalaali(a,i,d){return"[object Date]"===Object.prototype.toString.call
         });
         addButton(foot, word.today, word.today, () => {
             const date = new Date();
-            chooseDate(...[toJalaali(date.getFullYear(),date.getMonth()+1,date.getDate())]
-                .flatMap(j=>[j.jy,j.jm,j.jd]));
+            const today = toJalaali(date.getFullYear(), date.getMonth()+1, date.getDate());
+            chooseDate(today.jy, today.jm, today.jd);
         });
         popup.appendChild(foot);
         popup.hidden = false;
