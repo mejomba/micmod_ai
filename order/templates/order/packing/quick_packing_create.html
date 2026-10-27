@@ -1051,8 +1051,8 @@
         display: flex;
         flex-direction: column;
         gap: 4px;
-        flex: 0 1 130px;
-        min-width: 90px;
+        flex: 0 1 200px;
+        min-width: 170px;
         padding-bottom: 6px;
     }
 
@@ -1061,6 +1061,20 @@
         font-weight: 700;
         overflow-wrap: anywhere;
     }
+
+
+    .pk-workflow-assignee-person { display:flex; align-items:center; gap:9px; min-width:0; }
+    .pk-workflow-assignee-avatar {
+        width:40px; height:40px; flex:0 0 40px;
+        display:inline-flex; align-items:center; justify-content:center; overflow:hidden;
+        border-radius:50%; background:#e7f0fc; color:#2b70b8;
+        border:2px solid white; box-shadow:0 0 0 1px #dbe6f5;
+        font-size:.96rem; font-weight:800;
+    }
+    .pk-workflow-assignee-avatar img { width:100%; height:100%; object-fit:cover; }
+    .pk-workflow-assignee-meta { display:flex; flex-direction:column; min-width:0; gap:2px; }
+    .pk-workflow-assignee-meta strong { font-size:.84rem; color:#263349; overflow-wrap:anywhere; }
+    .pk-workflow-assignee-meta small { font-size:.7rem; color:#8895a8; direction:ltr; text-align:start; }
 
     .pk-workflow-control-strip .pk-workflow-description {
         flex: 1 1 240px;
@@ -1143,36 +1157,6 @@
         border-radius: 12px;
         background: #fbfcfe;
         padding: 12px 14px;
-    }
-
-    .pk-workflow-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 12px;
-    }
-
-    .pk-workflow-current {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-width: 0;
-    }
-
-    .pk-workflow-current-label {
-        color: var(--pk-muted);
-        font-size: .74rem;
-        white-space: nowrap;
-    }
-
-    .pk-workflow-current-name {
-        color: #181c32;
-        font-weight: 700;
-        font-size: .88rem;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
     }
 
     .pk-workflow-actions {
@@ -1368,38 +1352,73 @@
     }
 
     .pk-workflow-history {
-        margin-top: 12px;
-        border-top: 1px solid var(--pk-border);
-        padding-top: 10px;
+        margin-top:14px; border:1px solid #e3eaf3; border-radius:11px;
+        background:#fff; overflow:hidden;
     }
-
-    .pk-workflow-history > summary {
-        cursor: pointer;
-        color: #3699ff;
-        font-size: .82rem;
-        font-weight: 700;
+    .pk-workflow-history-summary {
+        list-style:none; display:flex; align-items:center; justify-content:space-between;
+        flex-wrap:wrap; gap:8px; cursor:pointer; padding:12px 14px;
+        background:#f6f9ff; color:#2b669e;
     }
-
-    .pk-workflow-history-table {
-        margin-top: 10px;
-        font-size: .78rem;
-        min-width: 750px;
+    .pk-workflow-history-summary::-webkit-details-marker { display:none; }
+    .pk-workflow-history-title { display:inline-flex; align-items:center; gap:7px; font-size:.84rem; font-weight:800; }
+    .pk-workflow-history-count { border-radius:20px; background:#e1edff; color:#2d6bb6; padding:2px 7px; min-width:22px; text-align:center; font-size:.7rem; }
+    .pk-workflow-history-hint { font-size:.74rem; color:#74839a; }
+    .pk-workflow-history-controls { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:10px 14px 3px; }
+    .pk-workflow-history-controls .pk-workflow-history-toolbar { padding-top:0; }
+    .pk-workflow-history-filters { display:flex; flex-wrap:wrap; gap:5px; }
+    .pk-workflow-history-filters button {
+        border:1px solid #dfe7f3; border-radius:18px; background:white; color:#627189;
+        cursor:pointer; font-size:.74rem; font-weight:650; padding:5px 11px;
     }
-
-    .pk-workflow-history-table th {
-        white-space: nowrap;
-        color: #5e6278;
+    .pk-workflow-history-filters button:hover { background:#f0f6ff; color:#2563eb; }
+    .pk-workflow-history-filters button.is-selected { background:#407fd0; border-color:#407fd0; color:white; }
+    .pk-workflow-event-list { display:flex; flex-direction:column; padding:13px 14px 15px; }
+    .pk-workflow-event { position:relative; display:grid; grid-template-columns:22px minmax(0,1fr); gap:9px; }
+    .pk-workflow-event:not(:last-child)::before {
+        content:''; position:absolute; top:20px; bottom:0; inset-inline-start:10px; border-inline-start:2px solid #e1e8f3;
     }
-
-    .pk-workflow-history-table td {
-        vertical-align: top;
+    .pk-workflow-event-dot {
+        position:relative; z-index:1; width:12px; height:12px; margin:9px 4px 0;
+        background:white; border:3px solid #5396f5; border-radius:50%;
     }
-
-    .pk-workflow-history-table .pk-history-description {
-        max-width: 260px;
-        min-width: 160px;
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
+    .pk-workflow-event-dot.is-assignee { border-color:#0d9488; }
+    .pk-workflow-event-dot.is-back { border-color:#d99a2b; }
+    .pk-workflow-event-dot.is-create { border-color:#299d68; }
+    .pk-workflow-event-card {
+        min-width:0; border:1px solid #e5ebf3; border-radius:10px; background:#fff;
+        padding:12px 13px; margin-bottom:11px; box-shadow:0 2px 6px rgba(15,23,42,.025);
+    }
+    .pk-workflow-event-top { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .pk-workflow-event-action {
+        display:inline-flex; align-items:center; border-radius:7px; padding:4px 8px;
+        color:#296ec2; background:#eaf3ff; font-size:.76rem; font-weight:700;
+    }
+    .pk-workflow-event-action.is-assignee { color:#137d77; background:#e8f9f6; }
+    .pk-workflow-event-action.is-back { color:#99631d; background:#fff4e1; }
+    .pk-workflow-event-action.is-create { color:#168151; background:#eaf9ef; }
+    .pk-workflow-event-time { margin-inline-start:auto; direction:ltr; unicode-bidi:isolate; font-size:.76rem; color:#748198; white-space:nowrap; }
+    .pk-workflow-event-transition { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; font-size:.8rem; color:#606e82; }
+    .pk-workflow-event-transition svg { flex:0 0 auto; color:#8cabc9; }
+    .pk-workflow-event-stage { display:inline-block; padding:5px 8px; border-radius:6px; background:#f3f6fa; color:#58677b; font-weight:650; }
+    .pk-workflow-event-stage.is-target { color:#1d669b; background:#eaf5ff; }
+    .pk-workflow-event-meta { display:flex; flex-wrap:wrap; gap:8px 16px; margin-top:11px; font-size:.74rem; color:#7a8699; }
+    .pk-workflow-event-meta strong { color:#485469; font-weight:650; }
+    .pk-workflow-event-elapsed { color:#54779b; }
+    .pk-workflow-event-note { margin-top:11px; padding-top:8px; border-top:1px dashed #dfe7f1; }
+    .pk-workflow-event-note summary { cursor:pointer; font-size:.76rem; color:#356ea6; font-weight:750; }
+    .pk-workflow-event-note div {
+        margin-top:8px; padding:9px 11px; border-radius:7px; font-size:.79rem;
+        background:#f8faff; color:#4b5563; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere;
+    }
+    .pk-workflow-history-empty { margin:8px 14px 14px; padding:22px 12px; border-radius:9px; background:#f8fafc; text-align:center; color:#7e8aa0; font-size:.79rem; }
+    .pk-workflow-event[hidden], .pk-workflow-filter-empty[hidden] { display:none!important; }
+    @media (max-width:680px) {
+        .pk-workflow-history-controls { align-items:flex-start; flex-direction:column; }
+        .pk-workflow-event-list { padding:9px; }
+        .pk-workflow-event-card { padding:10px; }
+        .pk-workflow-event-time { margin-inline-start:0; }
+        .pk-workflow-history-hint { display:none; }
     }
 
     .pk-header-history-tools {
@@ -2224,11 +2243,6 @@
         .pk-file-groups,
         .pk-row-readonly-grid {
             grid-template-columns: 1fr;
-        }
-
-        .pk-workflow-head {
-            align-items: flex-start;
-            flex-direction: column;
         }
 
         .pk-workflow-actions {
