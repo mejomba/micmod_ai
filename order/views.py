@@ -20,7 +20,7 @@ from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q, Value, Ca
     OuterRef, CharField
 from django.db.models.functions import Coalesce, NullIf
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed, HttpResponseForbidden
+from django.http import HttpResponse, Http404, JsonResponse, HttpResponseNotAllowed, HttpResponseForbidden
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.utils import timezone
@@ -4262,8 +4262,58 @@ class QuickPackingView(LoginRequiredMixin, View):
             status=200,
         )
 
+    def _render_change_history(self, request, packing_obj):
+        """Fetch ONLY the selected model/object audit trail on demand.
+
+        Do not send all Packing and PackingItem logs to the browser and hide
+        unrelated records with CSS/JavaScript.
+        """
+        scope = request.GET.get('audit_scope')
+        row_details = []
+
+        if scope == 'header':
+            target_model = Packing
+            object_id = packing_obj.pk
+        elif scope == 'item':
+            item_id = request.GET.get('audit_item_id')
+            if not item_id or not str(item_id).isdigit():
+                raise Http404('Invalid PackingItem id.')
+            # The row must belong to this Packing, including soft-deleted rows.
+            row_details = list(
+                PackingItem.objects.full_queryset()
+                .filter(pk=int(item_id), packing_id=packing_obj.pk)
+                .values('id', 'part_number', 'order_id', 'order__order_number')
+            )
+            if not row_details:
+                raise Http404('PackingItem not found in this Packing.')
+            target_model = PackingItem
+            object_id = int(item_id)
+        else:
+            raise Http404('Invalid change history scope.')
+
+        logs = (
+            ChangeLog.objects.filter(
+                content_type=ContentType.objects.get_for_model(target_model),
+                object_id=object_id,
+            )
+            .select_related('content_type', 'editor_user', 'creator_user')
+            .order_by('-created_date', '-pk')
+        )
+        history = build_packing_change_history(
+            logs, Packing, PackingItem, row_details,
+        )
+        return render(
+            request,
+            'order/packing/partial/quick_packing_change_history.html',
+            {'change_history': history},
+        )
+
     def get(self, request, pk=None, *args, **kwargs):
         packing_obj = self.get_object(pk) if pk else None
+        if request.GET.get('audit_scope') is not None:
+            if not packing_obj:
+                raise Http404('Packing not found.')
+            return self._render_change_history(request, packing_obj)
 
         if packing_obj:
             state_index = packing_obj.workflow_state_index()
@@ -4312,46 +4362,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             Packing.normalize_workflow_state_name,
         )
 
-        # Packing and child rows inherit change_logs from NoUserBaseModel.
-        # Query all item ids, including soft-deleted rows, so their historical
-        # changes remain visible after deletion from the current packing.
-        change_history = []
-        if packing_obj:
-            item_rows = list(
-                PackingItem.objects.full_queryset()
-                .filter(packing_id=packing_obj.pk)
-                .values('id', 'part_number', 'order_id', 'order__order_number')
-            )
-            item_ids = [row['id'] for row in item_rows]
-            header_content_type = ContentType.objects.get_for_model(Packing)
-            item_content_type = ContentType.objects.get_for_model(PackingItem)
-            logs = (
-                ChangeLog.objects.filter(
-                    Q(content_type=header_content_type, object_id=packing_obj.pk)
-                    | Q(content_type=item_content_type, object_id__in=item_ids)
-                )
-                .select_related('content_type', 'editor_user', 'creator_user')
-                .order_by('-created_date', '-pk')
-            )
-            change_history = build_packing_change_history(
-                logs, Packing, PackingItem, item_rows
-            )
-
-        # Badge counts belong to each already-rendered row. Deleted rows remain
-        # available in the audit records but are not added back to the form.
-        row_change_counts = {}
-        for event in change_history:
-            if event['scope'] == 'item':
-                row_id = event['item_id']
-                row_change_counts[row_id] = row_change_counts.get(row_id, 0) + 1
-        for item in packing_items:
-            item.quick_change_count = row_change_counts.get(item.pk, 0)
-
         context = {
-            'header_change_count': sum(
-                1 for event in change_history if event['scope'] == 'packing'
-            ),
-            'change_history': change_history,
             'workflow_stages': timeline['stages'],
             'workflow_history': timeline['history'],
             'form': self._build_form(packing_obj=packing_obj),
