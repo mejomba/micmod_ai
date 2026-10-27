@@ -948,28 +948,37 @@
         .pk-save-toast, .pk-save-toast-progress { animation: none; }
     }
 
-    /* Compact, responsive command bar shared by all Packing actions. */
+    /* Persistent footer: available throughout document scrolling. */
     .pk-command-bar {
+        position: fixed;
+        inset-inline: 0;
+        bottom: 0;
+        width: 100%;
+        z-index: 1035;
         display: flex;
-        flex-wrap: wrap;
         align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 10px 12px;
-        margin-bottom: 14px;
-        border: 1px solid #dfe7f2;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #f6f9ff 0%, #fff 100%);
-        box-shadow: 0 2px 9px rgba(24, 28, 50, .035);
+        justify-content: center;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 11px max(16px, calc((100vw - 1360px) / 2))
+                 calc(11px + env(safe-area-inset-bottom, 0px));
+        border-top: 1px solid #dfe7f2;
+        background: rgba(255, 255, 255, .98);
+        box-shadow: 0 -5px 22px rgba(24, 28, 50, .13);
+        backdrop-filter: blur(10px);
     }
 
-    .pk-command-bar-main,
-    .pk-command-bar-assignee,
-    .pk-command-assignee-controls {
+    /* Prevent the fixed footer obscuring form fields or the final Save button. */
+    .packing-page {
+        padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .pk-command-bar-main {
         display: flex;
         align-items: center;
+        justify-content: center;
         flex-wrap: wrap;
-        gap: 7px;
+        gap: 9px;
         min-width: 0;
     }
 
@@ -977,19 +986,32 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 5px;
-        min-height: 34px;
-        padding: 6px 11px;
-        border-radius: 8px;
-        font-size: .79rem;
+        gap: 6px;
+        min-height: 36px;
+        padding: 7px 13px;
+        border-radius: 9px;
+        font-size: .84rem;
         font-weight: 700;
         white-space: nowrap;
     }
 
-    .pk-command-bar .btn svg { flex: 0 0 auto; }
+    /* Explicit sizing/color keeps the arrows visible without icon-font assets. */
+    .pk-command-bar .btn svg {
+        display: block !important;
+        width: 17px;
+        height: 17px;
+        min-width: 17px;
+        flex: 0 0 17px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: none;
+    }
 
     .pk-command-bar .pk-command-save {
-        box-shadow: 0 3px 8px rgba(54, 153, 255, .17);
+        box-shadow: 0 3px 9px rgba(54, 153, 255, .17);
     }
 
     .pk-command-bar .pk-header-history-tools {
@@ -998,58 +1020,121 @@
     }
 
     .pk-command-bar .pk-header-history-button {
-        width: 34px;
-        height: 34px;
-        min-width: 34px;
-        padding: 6px;
-        flex: 0 0 34px;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        padding: 7px;
+        flex: 0 0 36px;
     }
 
-    .pk-command-bar-assignee {
-        border-inline-start: 1px solid #e4eaf2;
-        padding-inline-start: 12px;
-        flex: 1 1 230px;
-        justify-content: flex-end;
+    .pk-command-bar .pk-workflow-actions {
+        display: inline-flex;
+        width: auto;
+        flex: 0 1 auto;
+        gap: 9px;
     }
 
-    .pk-command-assignee-controls {
+    /* Compact Workflow details: assignee, notes, reassignment and durations. */
+    .pk-workflow-control-strip {
+        display: flex;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 11px 12px;
+        margin-bottom: 12px;
+        border: 1px solid #e5ebf3;
+        border-radius: 10px;
+        background: #fff;
+    }
+
+    .pk-workflow-current-assignee {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 0 1 130px;
+        min-width: 90px;
+        padding-bottom: 6px;
+    }
+
+    .pk-workflow-current-assignee strong {
+        font-size: .81rem;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+    .pk-workflow-control-strip .pk-workflow-description {
+        flex: 1 1 240px;
+        min-width: 175px;
+        max-width: none;
+    }
+
+    .pk-workflow-user-control {
+        display: flex;
+        align-items: flex-end;
+        flex: 1 1 215px;
+        flex-wrap: nowrap;
+        gap: 7px;
+        min-width: 0;
+    }
+
+    .pk-workflow-user-control .pk-command-assignee-field {
+        flex: 1 1 145px;
+        min-width: 120px;
+    }
+
+    .pk-workflow-user-control .pk-mini-label {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .pk-workflow-user-control .form-select {
+        min-height: 36px;
         width: 100%;
-        justify-content: flex-end;
+        font-size: .81rem;
     }
 
-    .pk-command-assignee-field {
-        flex: 1 1 140px;
-        min-width: 130px;
-        max-width: 230px;
+    .pk-workflow-user-control .btn,
+    .pk-workflow-control-strip .pk-workflow-more .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        flex: 0 0 auto;
+        min-height: 36px;
+        white-space: nowrap;
+        font-size: .79rem;
     }
 
-    .pk-command-assignee-field .pk-mini-label {
-        margin-bottom: 3px;
+    .pk-workflow-user-control .btn svg {
+        display: block;
+        width: 16px;
+        height: 16px;
+        flex: 0 0 16px;
     }
 
-    .pk-command-assignee-field .form-select {
-        width: 100%;
-        min-height: 34px;
-        font-size: .8rem;
+    .pk-workflow-control-strip .pk-workflow-more {
+        margin: 0;
+        align-self: flex-end;
     }
 
-    @media (max-width: 1050px) {
-        .pk-command-bar-assignee {
-            border-inline-start: 0;
-            border-top: 1px solid #e4eaf2;
-            padding-inline-start: 0;
-            padding-top: 10px;
-            flex-basis: 100%;
-            justify-content: flex-start;
+    @media (max-width: 700px) {
+        .pk-command-bar { padding: 8px 10px calc(9px + env(safe-area-inset-bottom, 0px)); }
+        .pk-command-bar-main { width: 100%; gap: 6px; }
+        .pk-command-bar .btn {
+            min-height: 34px;
+            padding: 5px 9px;
+            font-size: .76rem;
         }
-        .pk-command-assignee-controls { justify-content: flex-start; }
-    }
-
-    @media (max-width: 550px) {
-        .pk-command-bar { padding: 9px; }
-        .pk-command-bar-main { width: 100%; }
-        .pk-command-bar-main .pk-command-save { flex: 1 1 auto; }
-        .pk-command-assignee-field { max-width: none; }
+        .pk-command-bar .pk-header-history-button { width: 34px; height: 34px; min-width: 34px; }
+        .pk-command-bar .pk-workflow-actions { width: auto; gap: 6px; }
+        .pk-command-bar .pk-workflow-actions .btn { flex: 0 0 auto; }
+        .packing-page { padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+        .pk-workflow-control-strip { gap: 10px; }
+        .pk-workflow-control-strip .pk-workflow-description {
+            flex-basis: 100%;
+            min-width: 0;
+        }
+        .pk-workflow-user-control { flex-basis: 100%; }
     }
 
     .pk-workflow-panel {
@@ -1413,12 +1498,6 @@
 
     .packing-layout-workflow-rows .pk-row-title {
         padding-inline-end: 75px;
-    }
-
-    .pk-row-cancel-edit,
-    .pk-row-cancel-edit:hover,
-    .pk-row-cancel-edit:focus {
-        color: #f1416c !important;
     }
 
     .pk-change-history-modal .modal-header {
