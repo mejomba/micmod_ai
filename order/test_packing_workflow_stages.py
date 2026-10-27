@@ -19,6 +19,7 @@ EXPECTED_STAGES = [
     'ضمانتنامه',
     'ترخیص',
     'انبار',
+    'اتمام کار',
 ]
 
 EXPECTED_GROUPS = [
@@ -30,6 +31,7 @@ EXPECTED_GROUPS = [
     'trade_user_ezhar',
     'trade_user_zemanat',
     'trade_user_tarkhis',
+    'wh_user',
     'wh_user',
 ]
 
@@ -46,6 +48,28 @@ class PackingWorkflowStagesTests(SimpleTestCase):
     def test_stage_names_and_groups_match(self):
         self.assertEqual(self.config['flow_state_list'], EXPECTED_STAGES)
         self.assertEqual(self.config['flow_users_groups'], EXPECTED_GROUPS)
+
+    def test_terminal_stage_is_reversible(self):
+        states = self.config['flow_state_list']
+        groups = self.config['flow_users_groups']
+        self.assertEqual(len(states), 10)
+        self.assertEqual(states[-1], 'اتمام کار')
+        self.assertEqual(groups[-1], 'wh_user')
+
+        packing = Packing(pk=123)
+        final_transition = SimpleNamespace(
+            state='انبار',
+            current_state_name='اتمام کار',
+            wf_status=3,
+        )
+        with (
+            patch('workflow.models.WorkFlow.objects.filter') as queryset,
+            patch('django.contrib.contenttypes.models.ContentType.objects.get_for_model'),
+        ):
+            queryset.return_value.order_by.return_value.last.return_value = final_transition
+            state_index = packing.workflow_state_index()
+        self.assertEqual(state_index, len(states) - 1)
+        self.assertGreater(state_index, 0)  # Back to Warehouse stays available.
 
     def test_old_stage_names_resolve_to_new(self):
         self.assertEqual(Packing.normalize_workflow_state_name('DEP'), 'تحویل شرکت حمل')
