@@ -2722,7 +2722,7 @@
                                                         <div class="pk-row-title" title="{{ packing_item.order.order_number|default:packing_item.order_id }}"><span class="pk-row-number" aria-label="Row number">{{ forloop.counter }}</span>{{ packing_item.order.order_number|default:packing_item.order_id }}</div>
                                                         <div class="pk-row-part">
                                                             <span class="me-2" title="{{ packing_item.order.final_item.sku|default:'-' }}">SKU: <b>{{ packing_item.order.final_item.sku|default:"-" }}</b></span>
-                                                            <span title="{{ packing_item.part_number|default:'-' }}">{% if state_index > 0 %}<span class="pk-row-part-label" data-key="part_number">Part Number</span>: {% endif %}{{ packing_item.part_number|default:"-" }}</span>
+                                                            <span title="{{ packing_item.part_number|default:'-' }}">{% if state_index > 0 %}<span class="pk-row-part-label" data-key="packing_part_number_label">Part Number</span>: {% endif %}{{ packing_item.part_number|default:"-" }}</span>
                                                         </div>
                                                     </div>
                                                     {% if can_add_items %}
@@ -2897,7 +2897,7 @@
                                                         </div>
 
                                                         <div class="pk-stat">
-                                                            <span class="pk-mini-label" data-key="sku">SKU</span>
+                                                            <span class="pk-mini-label" data-key="packing_sku_label">SKU</span>
                                                             <strong>{{ packing_item.order.final_item.sku|default:"-" }}</strong>
                                                         </div>
 
@@ -3151,7 +3151,7 @@
     <span data-key="packing_workflow_current">Current</span>
     <span data-key="packing_workflow_upcoming">Upcoming</span>
     <span data-key="packing_gio_quantity">GIO Qty</span>
-    <span data-key="sku">SKU</span>
+    <span data-key="packing_sku_label">SKU</span>
 </div>
 
 <script>
@@ -3414,8 +3414,8 @@
             back: 'عودت',
             next: 'تکمیل',
             close: 'بستن',
-            sku: 'کد کالا',
-            part_number: 'شماره پارت',
+            packing_sku_label: 'کد کالا',
+            packing_part_number_label: 'شماره پارت',
             packing_existing_item: 'ردیف ثبت‌شده',
             packing_no_assignee: 'تعیین نشده',
             packing_cancel_row_edit: 'انصراف از ویرایش',
@@ -3427,8 +3427,8 @@
             back: 'Back',
             next: 'Complete',
             close: 'Close',
-            sku: 'SKU',
-            part_number: 'Part number',
+            packing_sku_label: 'SKU',
+            packing_part_number_label: 'Part Number',
             packing_existing_item: 'Existing item',
             packing_no_assignee: 'Unassigned',
             packing_cancel_row_edit: 'Cancel editing',
@@ -3945,7 +3945,7 @@
                     <div class="min-w-0">
                         <div class="pk-row-title"><span class="pk-row-number" aria-label="Row number">${index}</span>${data.orderNumber || ('Order #' + data.orderId)}</div>
                         <div class="pk-row-part">
-                            <span class="me-2"><span data-key="sku">${tr('sku', 'SKU')}</span>: <b>${data.sku || '-'}</b></span>
+                            <span class="me-2"><span data-key="packing_sku_label">${tr('packing_sku_label', 'SKU')}</span>: <b>${data.sku || '-'}</b></span>
                             <span>${data.partNumber || '-'}</span>
                         </div>
 

@@ -407,5 +407,7 @@
     "packing_header_description_label": "Packing Description",
     "packing_toast_success_title": "Saved successfully",
     "packing_toast_error_title": "Unable to save",
-    "packing_dismiss_notification": "Dismiss notification"
+    "packing_dismiss_notification": "Dismiss notification",
+    "packing_sku_label": "SKU",
+    "packing_part_number_label": "Part Number"
 }

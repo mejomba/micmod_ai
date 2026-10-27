@@ -1012,5 +1012,7 @@
     "packing_header_description_label": "توضیحات پکینگ",
     "packing_toast_success_title": "با موفقیت انجام شد",
     "packing_toast_error_title": "خطا در ثبت اطلاعات",
-    "packing_dismiss_notification": "بستن اعلان"
+    "packing_dismiss_notification": "بستن اعلان",
+    "packing_sku_label": "کد کالا",
+    "packing_part_number_label": "شماره پارت"
 }
