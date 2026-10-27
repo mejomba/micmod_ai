@@ -3612,7 +3612,12 @@
     function showAuditModal() {
         if (!packingAuditModal) return;
         if (window.bootstrap && typeof window.bootstrap.Modal === 'function') {
-            window.bootstrap.Modal.getOrCreateInstance(packingAuditModal).show();
+            const Modal = window.bootstrap.Modal;
+            const instance = typeof Modal.getOrCreateInstance === 'function'
+                ? Modal.getOrCreateInstance(packingAuditModal)
+                : (typeof Modal.getInstance === 'function' && Modal.getInstance(packingAuditModal)) ||
+                  new Modal(packingAuditModal);
+            instance.show();
         } else if (window.jQuery && typeof jQuery.fn.modal === 'function') {
             jQuery(packingAuditModal).modal('show');
         }
@@ -3626,7 +3631,8 @@
 
         // Cancel the previous request if a different record was selected.
         if (auditAbortController) auditAbortController.abort();
-        auditAbortController = new AbortController();
+        const controller = new AbortController();
+        auditAbortController = controller;
 
         const label = scope === 'packing'
             ? timelineTranslation('packing_audit_header_name')
@@ -3660,14 +3666,19 @@
                 method: 'GET',
                 credentials: 'same-origin',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                signal: auditAbortController.signal,
+                signal: controller.signal,
                 cache: 'no-store'
             });
             if (!response.ok) throw new Error('HTTP ' + response.status);
             const html = await response.text();
-            if (auditAbortController.signal.aborted) return;
+            if (controller.signal.aborted) return;
             auditContent.innerHTML = html;
             applyDynamicTranslations(auditContent);
+            const count = auditContent.querySelectorAll('.pk-audit-event').length;
+            if (subtitle && count) {
+                subtitle.textContent = label + ' · ' + count + ' ' +
+                    (currentLanguage().toLowerCase().startsWith('fa') ? 'رویداد' : 'events');
+            }
         } catch (error) {
             if (error.name === 'AbortError') return;
             auditContent.textContent = '';
