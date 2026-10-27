@@ -2377,7 +2377,7 @@
                                                 <label for="packing-workflow-description" data-key="packing_workflow_description">توضیحات جریان کاری</label>
                                                 <textarea id="packing-workflow-description" name="wf_description"
                                                           maxlength="255" rows="1" class="form-control"
-                                                          placeholder="توضیحات عملیات این مرحله"></textarea>
+                                                          placeholder="توضیحات عملیات این مرحله" data-placeholder-key="packing_workflow_description_placeholder"></textarea>
                                             </div>
                                         {% endif %}
 
@@ -2550,7 +2550,7 @@
                                         <label for="packing-workflow-description-create" data-key="packing_workflow_description">توضیحات جریان کاری</label>
                                         <textarea id="packing-workflow-description-create" name="wf_description"
                                                   maxlength="255" rows="2" class="form-control"
-                                                  placeholder="توضیحات ایجاد پکینگ"></textarea>
+                                                  placeholder="توضیحات ایجاد پکینگ" data-placeholder-key="packing_workflow_create_placeholder"></textarea>
                                     </div>
                                 {% endif %}
                                 <div class="packing-meta-grid">
@@ -2946,8 +2946,8 @@
                                                         </div>
                                                     </div>
                                                     <div class="pk-row-editor-actions">
-                                                        <button type="button" class="btn btn-sm btn-light-danger pk-row-cancel-edit">Cancel editing</button>
-                                                        <small class="text-muted">Changes are saved with Save Packing.</small>
+                                                        <button type="button" class="btn btn-sm btn-light-danger pk-row-cancel-edit" data-key="packing_cancel_row_edit">انصراف از ویرایش</button>
+                                                        <small class="text-muted" data-key="packing_row_save_hint">تغییرات با ثبت پکینگ ذخیره می‌شوند.</small>
                                                     </div>
                                                 </div>
                                             {% endif %}
@@ -3558,6 +3558,10 @@
             if (packingTranslations[key] !== undefined) {
                 element.textContent = packingTranslations[key];
             }
+        });
+        root.querySelectorAll('[data-placeholder-key]').forEach(function (element) {
+            const text = tr(element.dataset.placeholderKey);
+            if (text) element.setAttribute('placeholder', text);
         });
 
         const displayEnglishStages = currentLanguage().toLowerCase().startsWith('en');
@@ -4205,6 +4209,28 @@
     }
     historyCalendar?.addEventListener('change', changePackingCalendar);
     auditCalendar?.addEventListener('change', changePackingCalendar);
+
+    // Filters only presentation; historical events remain intact and ordered.
+    const workflowHistory = document.querySelector('.pk-workflow-history');
+    workflowHistory?.querySelectorAll('[data-pk-history-filter]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const selected = button.dataset.pkHistoryFilter;
+            let visible = 0;
+            const events = workflowHistory.querySelectorAll('.pk-workflow-event');
+            events.forEach(function (event) {
+                const show = selected === 'all' || event.dataset.pkHistoryKind === selected;
+                event.hidden = !show;
+                if (show) visible += 1;
+            });
+            workflowHistory.querySelectorAll('[data-pk-history-filter]').forEach(function (candidate) {
+                const active = candidate === button;
+                candidate.classList.toggle('is-selected', active);
+                candidate.setAttribute('aria-pressed', String(active));
+            });
+            const empty = workflowHistory.querySelector('.pk-workflow-filter-empty');
+            if (empty) empty.hidden = visible !== 0 || events.length === 0;
+        });
+    });
 
     // Show/hide recorded durations without changing the underlying workflow.
     durationButton?.addEventListener('click', function () {
