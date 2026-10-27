@@ -272,6 +272,11 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
 
         self._add_file_fields()
 
+        # CustomBaseModelForm turns DateInput fields into JalaliDateField.
+        # Changing only its *widget* to a Gregorian HTML input caused ISO
+        # values such as 2026-10-25 to be parsed as the Jalali year 2026 and
+        # persisted as Gregorian 2648. Replace the FIELD and widget here,
+        # without altering the shared/base form used by other views.
         for name in (
             "bl_date", "departure_date", "arrival_date", "sales_manager_check_date",
             "delivery_to_salehi_date", "cl_90_date", "cl_10_date", "cl_100_date",
@@ -279,8 +284,22 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
             "estimated_arrive_to_wh_date", "reserve_bar_date",
         ):
             if name in self.fields:
-                self.fields[name].widget = forms.DateInput(
-                    attrs={"type": "date", "class": "form-control"}
+                old_field = self.fields[name]
+                self.fields[name] = forms.DateField(
+                    label=old_field.label,
+                    required=old_field.required,
+                    help_text=old_field.help_text,
+                    disabled=old_field.disabled,
+                    initial=old_field.initial,
+                    input_formats=["%Y-%m-%d"],
+                    widget=forms.DateInput(
+                        format="%Y-%m-%d",
+                        attrs={
+                            "type": "date",
+                            "class": "form-control",
+                            "data-packing-gregorian-date": "1",
+                        },
+                    ),
                 )
 
         if "description" in self.fields:
