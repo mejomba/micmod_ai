@@ -1076,17 +1076,79 @@
         overflow-wrap: anywhere;
     }
 
-    .pk-change-history {
-        margin-top: 12px;
-        border-top: 1px solid var(--pk-border);
-        padding-top: 11px;
+    .pk-header-history-tools {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 8px;
     }
 
-    .pk-change-history > summary {
-        font-size: .82rem;
-        font-weight: 700;
-        color: #3699ff;
-        cursor: pointer;
+    .pk-header-history-tools .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: .76rem;
+        padding: 5px 9px;
+    }
+
+    .pk-header-change-count {
+        display: inline-block;
+        min-width: 19px;
+        border-radius: 9px;
+        padding: 1px 5px;
+        background: #e2efff;
+        font-size: .68rem;
+        text-align: center;
+    }
+
+    .pk-row-history-button {
+        min-width: 30px;
+        min-height: 30px;
+        padding: 4px 6px;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        flex: 0 0 auto;
+    }
+
+    .pk-row-history-button svg { display: block; width: 17px; height: 17px; }
+
+    .packing-layout-workflow-rows .pk-row-top .pk-row-history-button {
+        position: absolute;
+        inset-block-start: 0;
+        inset-inline-end: 50px;
+    }
+
+    .packing-layout-workflow-rows .pk-row-title {
+        padding-inline-end: 82px;
+    }
+
+    .pk-change-history-modal .modal-header {
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .pk-audit-modal-subtitle {
+        font-size: .76rem;
+        color: #7e8299;
+        margin-top: 4px;
+        overflow-wrap: anywhere;
+    }
+
+    .pk-audit-modal-toolbar {
+        padding: 0 0 10px;
+    }
+
+    .pk-change-history-modal .pk-change-history-table {
+        margin-top: 0;
+    }
+
+    .pk-change-history-modal .pk-audit-record[hidden],
+    .pk-audit-empty[hidden] {
+        display: none !important;
+    }
+
+    .pk-change-history-modal .pk-audit-details[open] > summary {
+        margin-bottom: 6px;
     }
 
     .pk-change-history-table {
@@ -1123,8 +1185,6 @@
         background: #fff1f2;
         border-color: #f4cbd0;
     }
-
-    .pk-audit-target { font-weight: 650; }
 
     .pk-audit-details > summary {
         cursor: pointer;
@@ -1834,77 +1894,28 @@
                                         </div>
                                     </details>
 
-                                    <details class="pk-change-history">
-                                        <summary><span data-key="packing_change_history">تاریخچه تغییرات سند و ردیف‌ها</span> ({{ change_history|length }})</summary>
-                                        <div class="pk-workflow-history-toolbar">
-                                            <label for="packing-audit-calendar" data-key="packing_history_calendar">نمایش تاریخ</label>
-                                            <select id="packing-audit-calendar" class="form-select form-select-sm" aria-label="Change history calendar">
-                                                <option value="gregorian" data-key="packing_history_gregorian">میلادی</option>
-                                                <option value="jalali" data-key="packing_history_jalali">شمسی</option>
-                                            </select>
-                                        </div>
-                                        {% if change_history %}
-                                            <div class="table-responsive">
-                                                <table class="table table-sm table-hover pk-change-history-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th data-key="packing_audit_time">تاریخ</th>
-                                                            <th data-key="packing_audit_actor">کاربر</th>
-                                                            <th data-key="packing_audit_target">بخش تغییر‌یافته</th>
-                                                            <th data-key="packing_audit_action">عملیات</th>
-                                                            <th data-key="packing_audit_details">جزئیات تغییر</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% for entry in change_history %}
-                                                            <tr>
-                                                                <td class="text-nowrap" data-workflow-datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at|date:'Y/m/d H:i:s' }}</td>
-                                                                <td>{{ entry.actor|default:"—" }}</td>
-                                                                <td>
-                                                                    <span class="pk-audit-badge" data-audit-scope="{{ entry.scope }}"></span>
-                                                                    <span class="pk-audit-target">{{ entry.target }}</span>
-                                                                </td>
-                                                                <td>
-                                                                    <span class="pk-audit-badge is-{{ entry.action }}" data-audit-action="{{ entry.action }}"></span>
-                                                                </td>
-                                                                <td>
-                                                                    <details class="pk-audit-details">
-                                                                        <summary><span data-key="packing_audit_show_fields">مشاهده فیلدها</span> ({{ entry.changes|length }})</summary>
-                                                                        <table class="pk-audit-fields">
-                                                                            <thead>
-                                                                                <tr>
-                                                                                    <th data-key="packing_audit_field">فیلد</th>
-                                                                                    {% if entry.action != 'create' %}<th data-key="packing_audit_previous">مقدار قبلی</th>{% endif %}
-                                                                                    <th data-key="packing_audit_current">مقدار جدید</th>
-                                                                                </tr>
-                                                                            </thead>
-                                                                            <tbody>
-                                                                                {% for field in entry.changes %}
-                                                                                    <tr>
-                                                                                        <th title="{{ field.key }}">{{ field.label }}</th>
-                                                                                        {% if entry.action != 'create' %}<td class="pk-audit-old">{{ field.old }}</td>{% endif %}
-                                                                                        <td class="pk-audit-new">{{ field.new }}</td>
-                                                                                    </tr>
-                                                                                {% empty %}
-                                                                                    <tr><td colspan="3" data-key="packing_audit_no_fields">تغییر فیلدی ثبت نشده است.</td></tr>
-                                                                                {% endfor %}
-                                                                            </tbody>
-                                                                        </table>
-                                                                    </details>
-                                                                </td>
-                                                            </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        {% else %}
-                                            <p class="pk-audit-empty" data-key="packing_audit_empty">هنوز تغییری برای این سند ثبت نشده است.</p>
-                                        {% endif %}
-                                    </details>
                                 </div>
                             {% endif %}
 
                             <div id="packing-header">
+                                {% if packing_object %}
+                                    <div class="pk-header-history-tools">
+                                        <button type="button" class="btn btn-sm btn-light-primary pk-change-history-trigger"
+                                                data-bs-toggle="modal" data-bs-target="#pk-change-history-modal"
+                                                data-change-target="packing"
+                                                data-change-label="سربرگ پکینگ"
+                                                aria-label="تاریخچه تغییرات سربرگ پکینگ">
+                                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"></path>
+                                                <path d="M3 3v5h5"></path>
+                                                <path d="M12 7v5l3 2"></path>
+                                            </svg>
+                                            <span data-key="packing_audit_header_button">تاریخچه تغییرات سربرگ</span>
+                                            <span class="pk-header-change-count">{{ header_change_count }}</span>
+                                        </button>
+                                    </div>
+                                {% endif %}
                                 {% if not packing_object %}
                                     <div class="pk-workflow-description pk-workflow-description-create">
                                         <label for="packing-workflow-description-create" data-key="packing_workflow_description">توضیحات جریان کاری</label>
@@ -2087,6 +2098,19 @@
                                                     </div>
                                                     {% if can_add_items %}
                                                         <div class="pk-existing-actions">
+                                                            <button type="button" class="btn btn-sm btn-light-info pk-row-history-button pk-change-history-trigger"
+                                                                data-bs-toggle="modal" data-bs-target="#pk-change-history-modal"
+                                                                data-change-target="item" data-change-item-id="{{ packing_item.pk }}"
+                                                                data-change-label="{{ packing_item.order.order_number|default:packing_item.pk }}"
+                                                                title="تاریخچه تغییرات ردیف ({{ packing_item.quick_change_count }})"
+                                                                aria-label="تاریخچه تغییرات ردیف">
+                                                            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
+                                                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                                <path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"></path>
+                                                                <path d="M3 3v5h5"></path>
+                                                                <path d="M12 7v5l3 2"></path>
+                                                            </svg>
+                                                        </button>
                                                             <span class="badge badge-light-secondary" data-key="packing_existing_item">Existing Item</span>
                                                             <button
                                                                 type="button"
@@ -2096,6 +2120,19 @@
                                                             >×</button>
                                                         </div>
                                                     {% elif can_edit_items %}
+                                                        <button type="button" class="btn btn-sm btn-light-info pk-row-history-button pk-change-history-trigger"
+                                                                data-bs-toggle="modal" data-bs-target="#pk-change-history-modal"
+                                                                data-change-target="item" data-change-item-id="{{ packing_item.pk }}"
+                                                                data-change-label="{{ packing_item.order.order_number|default:packing_item.pk }}"
+                                                                title="تاریخچه تغییرات ردیف ({{ packing_item.quick_change_count }})"
+                                                                aria-label="تاریخچه تغییرات ردیف">
+                                                            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
+                                                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                                <path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"></path>
+                                                                <path d="M3 3v5h5"></path>
+                                                                <path d="M12 7v5l3 2"></path>
+                                                            </svg>
+                                                        </button>
                                                         <button type="button" class="btn btn-sm btn-light-primary pk-row-edit-button" aria-label="ویرایش ردیف" aria-expanded="false" title="ویرایش ردیف">
                                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                                                                 <path d="M12 20h9"></path>
@@ -2103,6 +2140,19 @@
                                                             </svg>
                                                         </button>
                                                     {% else %}
+                                                        <button type="button" class="btn btn-sm btn-light-info pk-row-history-button pk-change-history-trigger"
+                                                                data-bs-toggle="modal" data-bs-target="#pk-change-history-modal"
+                                                                data-change-target="item" data-change-item-id="{{ packing_item.pk }}"
+                                                                data-change-label="{{ packing_item.order.order_number|default:packing_item.pk }}"
+                                                                title="تاریخچه تغییرات ردیف ({{ packing_item.quick_change_count }})"
+                                                                aria-label="تاریخچه تغییرات ردیف">
+                                                            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
+                                                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                                <path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"></path>
+                                                                <path d="M3 3v5h5"></path>
+                                                                <path d="M12 7v5l3 2"></path>
+                                                            </svg>
+                                                        </button>
                                                         <span class="badge badge-light-secondary" data-key="packing_existing_item">Existing Item</span>
                                                     {% endif %}
                                                 </div>
@@ -2311,6 +2361,88 @@
         </div>
     </div>
 </div>
+{% if packing_object %}
+<div class="modal fade pk-change-history-modal" id="pk-change-history-modal" tabindex="-1"
+     aria-labelledby="pk-change-history-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="min-w-0">
+                    <h5 class="modal-title" id="pk-change-history-modal-title" data-key="packing_change_history">
+                        تاریخچه تغییرات
+                    </h5>
+                    <div class="pk-audit-modal-subtitle" id="pk-audit-modal-subtitle"></div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="pk-workflow-history-toolbar pk-audit-modal-toolbar">
+                    <label for="packing-audit-calendar" data-key="packing_history_calendar">نمایش تاریخ</label>
+                    <select id="packing-audit-calendar" class="form-select form-select-sm" aria-label="Change history calendar">
+                        <option value="gregorian" data-key="packing_history_gregorian">میلادی</option>
+                        <option value="jalali" data-key="packing_history_jalali">شمسی</option>
+                    </select>
+                </div>
+                <div class="table-responsive" id="pk-audit-modal-table">
+                    <table class="table table-sm table-hover pk-change-history-table">
+                        <thead>
+                            <tr>
+                                <th data-key="packing_audit_time">تاریخ</th>
+                                <th data-key="packing_audit_actor">کاربر</th>
+                                <th data-key="packing_audit_action">عملیات</th>
+                                <th data-key="packing_audit_details">جزئیات تغییر</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in change_history %}
+                                <tr class="pk-audit-record"
+                                    data-audit-record-scope="{{ entry.scope }}"
+                                    data-audit-record-item="{{ entry.item_id|default_if_none:'' }}">
+                                    <td class="text-nowrap" data-workflow-datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at|date:'Y/m/d H:i:s' }}</td>
+                                    <td>{{ entry.actor|default:"—" }}</td>
+                                    <td><span class="pk-audit-badge is-{{ entry.action }}" data-audit-action="{{ entry.action }}"></span></td>
+                                    <td>
+                                        <details class="pk-audit-details">
+                                            <summary><span data-key="packing_audit_show_fields">مشاهده فیلدها</span> ({{ entry.changes|length }})</summary>
+                                            <table class="pk-audit-fields">
+                                                <thead>
+                                                    <tr>
+                                                        <th data-key="packing_audit_field">فیلد</th>
+                                                        {% if entry.action != 'create' %}<th data-key="packing_audit_previous">مقدار قبلی</th>{% endif %}
+                                                        <th data-key="packing_audit_current">مقدار جدید</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for field in entry.changes %}
+                                                        <tr>
+                                                            <th title="{{ field.key }}">{{ field.label }}</th>
+                                                            {% if entry.action != 'create' %}<td class="pk-audit-old">{{ field.old }}</td>{% endif %}
+                                                            <td class="pk-audit-new">{{ field.new }}</td>
+                                                        </tr>
+                                                    {% empty %}
+                                                        <tr><td colspan="3" data-key="packing_audit_no_fields">تغییر فیلدی ثبت نشده است.</td></tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </details>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pk-audit-empty" id="pk-audit-modal-empty" hidden data-key="packing_audit_empty">
+                    هنوز تغییری برای این بخش ثبت نشده است.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal" data-key="close">بستن</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock content %}
 
 {% block extra_js %}
