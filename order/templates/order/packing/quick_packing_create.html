@@ -1467,6 +1467,7 @@
                                                     {% if not forloop.last %}
                                                         <span class="pk-workflow-connector" tabindex="0"
                                                               data-duration="{{ stage.duration_to_next|default:'' }}"
+                                                              data-duration-en="{{ stage.duration_to_next_en|default:'' }}"
                                                               title="{% if stage.duration_to_next %}مدت تا مرحله بعد: {{ stage.duration_to_next }}{% else %}زمان انتقال به مرحله بعد هنوز ثبت نشده است{% endif %}"
                                                               aria-label="{% if stage.duration_to_next %}مدت تا مرحله بعد: {{ stage.duration_to_next }}{% else %}زمان انتقال به مرحله بعد هنوز ثبت نشده است{% endif %}">
                                                             {% if stage.duration_to_next %}
@@ -1523,7 +1524,8 @@
                                                             <td><span data-workflow-state="{{ entry.target|default:'' }}">{{ entry.target|default:"—" }}</span></td>
                                                             <td>{{ entry.actor|default:"—" }}</td>
                                                             <td>{{ entry.assigned_to|default:"—" }}</td>
-                                                            <td class="text-nowrap">{{ entry.elapsed_since_previous|default:"—" }}</td>
+                                                            <td class="text-nowrap" data-event-duration="{{ entry.elapsed_since_previous|default:'—' }}"
+                                                                data-event-duration-en="{{ entry.elapsed_since_previous_en|default:'—' }}">{{ entry.elapsed_since_previous|default:"—" }}</td>
                                                             <td class="pk-history-description">{{ entry.description|default:"—" }}</td>
                                                         </tr>
                                                     {% empty %}
@@ -2149,6 +2151,12 @@
             if (packingTimelineUi.en[key]) {
                 element.textContent = timelineTranslation(key);
             }
+        });
+
+        root.querySelectorAll('[data-event-duration]').forEach(function (cell) {
+            cell.textContent = displayEnglishStages
+                ? cell.dataset.eventDurationEn
+                : cell.dataset.eventDuration;
         });
 
         root.querySelectorAll('.pk-workflow-node[data-entry-time]').forEach(function (node) {
