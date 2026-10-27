@@ -2103,6 +2103,7 @@
                                                             <button type="button" class="btn btn-sm btn-light-info pk-row-history-button pk-change-history-trigger"
                                                                 data-bs-toggle="modal" data-bs-target="#pk-change-history-modal"
                                                                 data-change-target="item" data-change-item-id="{{ packing_item.pk }}"
+                                                                data-change-count="{{ packing_item.quick_change_count }}"
                                                                 data-change-label="{{ packing_item.order.order_number|default:packing_item.pk }}"
                                                                 title="تاریخچه تغییرات ردیف ({{ packing_item.quick_change_count }})"
                                                                 aria-label="تاریخچه تغییرات ردیف">
@@ -2125,6 +2126,7 @@
                                                         <button type="button" class="btn btn-sm btn-light-info pk-row-history-button pk-change-history-trigger"
                                                                 data-bs-toggle="modal" data-bs-target="#pk-change-history-modal"
                                                                 data-change-target="item" data-change-item-id="{{ packing_item.pk }}"
+                                                                data-change-count="{{ packing_item.quick_change_count }}"
                                                                 data-change-label="{{ packing_item.order.order_number|default:packing_item.pk }}"
                                                                 title="تاریخچه تغییرات ردیف ({{ packing_item.quick_change_count }})"
                                                                 aria-label="تاریخچه تغییرات ردیف">
@@ -2145,6 +2147,7 @@
                                                         <button type="button" class="btn btn-sm btn-light-info pk-row-history-button pk-change-history-trigger"
                                                                 data-bs-toggle="modal" data-bs-target="#pk-change-history-modal"
                                                                 data-change-target="item" data-change-item-id="{{ packing_item.pk }}"
+                                                                data-change-count="{{ packing_item.quick_change_count }}"
                                                                 data-change-label="{{ packing_item.order.order_number|default:packing_item.pk }}"
                                                                 title="تاریخچه تغییرات ردیف ({{ packing_item.quick_change_count }})"
                                                                 aria-label="تاریخچه تغییرات ردیف">
@@ -2679,7 +2682,8 @@
             packing_audit_header_button: 'تاریخچه تغییرات سربرگ',
             packing_audit_modal_title: 'تاریخچه تغییرات',
             packing_audit_header_name: 'سربرگ پکینگ',
-            packing_audit_row_name: 'سفارش'
+            packing_audit_row_name: 'سفارش',
+            packing_audit_row_button: 'تاریخچه تغییرات ردیف'
         },
         en: {
             packing_workflow_description: 'Workflow notes',
@@ -2718,7 +2722,8 @@
             packing_audit_header_button: 'Header change history',
             packing_audit_modal_title: 'Change history',
             packing_audit_header_name: 'Packing header',
-            packing_audit_row_name: 'Order'
+            packing_audit_row_name: 'Order',
+            packing_audit_row_button: 'Row change history'
         }
     };
     const packingActionEnglish = {
@@ -2875,6 +2880,13 @@
             if (packingTimelineUi.en[key]) {
                 element.textContent = timelineTranslation(key);
             }
+        });
+
+        root.querySelectorAll('.pk-row-history-button').forEach(function (button) {
+            const label = timelineTranslation('packing_audit_row_button');
+            const count = button.dataset.changeCount || '0';
+            button.setAttribute('aria-label', label);
+            button.setAttribute('title', label + ' (' + count + ')');
         });
 
         const auditLanguage = displayEnglishStages ? 'en' : 'fa';
