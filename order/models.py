@@ -1271,8 +1271,8 @@ class PackingItem(BaseModeWF):
     part_number = models.CharField(_('part_number'), max_length=255, null=True, blank=True)
     quantity = models.FloatField(_('quantity'), null=True, blank=True)
     ruined_quantity = models.FloatField(_('ruined_quantity'), null=True, blank=True)
+    arrived_quantity = models.FloatField(_('arrived_quantity'), null=True, blank=True)
     # arrive_date = models.DateField(_('arrive_date'), null=True, blank=True) Todo: check this
-    # arrived_quantity = models.FloatField(null=True, blank=True)
     price = models.FloatField(_('price'), null=True, blank=True)
     packing = models.ForeignKey(Packing, on_delete=models.DO_NOTHING, related_name='packing_item_rel')
     carton_number = models.CharField(_('carton_number'), max_length=100, null=True, blank=True)

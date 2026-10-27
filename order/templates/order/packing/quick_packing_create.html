@@ -2553,9 +2553,11 @@
                                                   placeholder="توضیحات ایجاد پکینگ" data-placeholder-key="packing_workflow_create_placeholder"></textarea>
                                     </div>
                                 {% endif %}
-                                <div class="packing-meta-grid">
-                                    {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.bl_date form.transportation_company form.origin form.destination form.estimated_shipping_start_date form.estimated_arrive_to_wh_date form.description label='on-border' %}
-                                </div>
+                                {% if not is_warehouse_stage %}
+                                    <div class="packing-meta-grid">
+                                        {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.bl_date form.transportation_company form.origin form.destination form.estimated_shipping_start_date form.estimated_arrive_to_wh_date form.description label='on-border' %}
+                                    </div>
+                                {% endif %}
 
                                 <button
                                     type="button"
@@ -2702,8 +2704,10 @@
                                             data-item-id="{{ packing_item.pk }}"
                                             data-quantity="{{ packing_item.quantity|default_if_none:0 }}"
                                             data-total-weight="{{ packing_item.net_weight_kg|default_if_none:0 }}"
+                                            {% if not is_warehouse_stage %}
                                             data-unit-price="{{ packing_item.price|default_if_none:0 }}"
                                             data-currency="{{ packing_item.order.currency.title_en|default_if_none:'' }}"
+                                            {% endif %}
                                             data-unit-weight="{{ packing_item.order.final_weight|default_if_none:0 }}"
                                         >
                                             {% if can_add_items %}
@@ -2870,6 +2874,16 @@
                                                             <strong>{{ packing_item.gross_weight_kg|default_if_none:"-"|floatformat:"-4g" }}</strong>
                                                         </div>
 
+                                                        {% if is_warehouse_stage %}
+                                                            <div class="pk-stat">
+                                                                <span class="pk-mini-label" data-key="packing_arrived_quantity">Total Received Quantity</span>
+                                                                <strong>{{ packing_item.arrived_quantity|default_if_none:"—"|floatformat:"-4g" }}</strong>
+                                                            </div>
+                                                            <div class="pk-stat">
+                                                                <span class="pk-mini-label" data-key="packing_ruined_quantity">Damaged Quantity</span>
+                                                                <strong>{{ packing_item.ruined_quantity|default_if_none:"—"|floatformat:"-4g" }}</strong>
+                                                            </div>
+                                                        {% else %}
                                                         <div class="pk-stat">
                                                             <span class="pk-mini-label" data-key="packing_unit_price">Unit Price</span>
                                                             <strong>
@@ -2885,6 +2899,8 @@
                                                                 {{ packing_item.order.currency.title_en|default_if_none:'' }}
                                                             </strong>
                                                         </div>
+
+                                                        {% endif %}
 
                                                         <div class="pk-stat">
                                                             <span class="pk-mini-label" data-key="packing_carton_number">Carton Number</span>
@@ -2914,6 +2930,25 @@
                                                 <div class="pk-row-editor" hidden>
                                                     <input type="hidden" name="existing-{{ packing_item.pk }}-id" value="{{ packing_item.pk }}" disabled>
                                                     <div class="pk-row-editor-fields">
+                                                        {% if is_warehouse_stage %}
+                                                            <div>
+                                                                <label class="pk-mini-label" data-key="packing_arrived_quantity">Total Received Quantity</label>
+                                                                <input type="number" step="any" min="0"
+                                                                       max="{{ packing_item.quantity|default_if_none:0 }}"
+                                                                       class="form-control"
+                                                                       name="existing-{{ packing_item.pk }}-arrived_quantity"
+                                                                       value="{{ packing_item.arrived_quantity|default_if_none:packing_item.quantity|default_if_none:0 }}"
+                                                                       required disabled>
+                                                            </div>
+                                                            <div>
+                                                                <label class="pk-mini-label" data-key="packing_ruined_quantity">Damaged Quantity</label>
+                                                                <input type="number" step="any" min="0"
+                                                                       class="form-control"
+                                                                       name="existing-{{ packing_item.pk }}-ruined_quantity"
+                                                                       value="{{ packing_item.ruined_quantity|default_if_none:0 }}"
+                                                                       required disabled>
+                                                            </div>
+                                                        {% else %}
                                                         <div>
                                                             <label class="pk-mini-label" data-key="packing_quantity_this">Packing Quantity</label>
                                                             <input type="number" step="any" min="0.000001"
@@ -2944,6 +2979,7 @@
                                                             <label class="pk-mini-label" data-key="packing_description">Description</label>
                                                             <textarea class="form-control" rows="2" name="existing-{{ packing_item.pk }}-description" disabled>{{ packing_item.description|default_if_none:'' }}</textarea>
                                                         </div>
+                                                        {% endif %}
                                                     </div>
                                                     <div class="pk-row-editor-actions">
                                                         <button type="button" class="btn btn-sm btn-light-danger pk-row-cancel-edit" data-key="packing_cancel_row_edit">انصراف از ویرایش</button>
@@ -2972,10 +3008,12 @@
                                         <span data-key="packing_total_weight">Total Weight</span>
                                         <strong id="packing-total-weight">0</strong>
                                     </div>
+                                    {% if not is_warehouse_stage %}
                                     <div class="pk-summary-item">
                                         <span data-key="packing_total_value">Total Value</span>
                                         <strong id="packing-total-value">0</strong>
                                     </div>
+                                    {% endif %}
                                 </div>
 
                                 {% if wf_access %}
@@ -3960,7 +3998,8 @@
 
         document.getElementById('packing-total-quantity').textContent = fmt(quantity);
         document.getElementById('packing-total-weight').textContent = fmt(weight);
-        document.getElementById('packing-total-value').textContent = fmtMoney(value);
+        const totalValueElement = document.getElementById('packing-total-value');
+        if (totalValueElement) totalValueElement.textContent = fmtMoney(value);
 
         syncEmptyState();
     }
@@ -4154,7 +4193,8 @@
                 row.classList.add('is-editing');
                 button.setAttribute('aria-expanded', 'true');
                 button.disabled = true;
-                editor.querySelector('.packing-existing-quantity')?.focus();
+                (editor.querySelector('[name$="-arrived_quantity"]') ||
+                 editor.querySelector('.packing-existing-quantity'))?.focus();
                 updateTotals();
             });
         });
@@ -4362,8 +4402,19 @@
         );
     });
 
+    let packingRequestPending = false;
+    function setPackingRequestPending(pending) {
+        packingRequestPending = pending;
+        document.querySelectorAll('#submit-packing, #packing-top-save, .packing-workflow-action')
+            .forEach(button => {
+                button.disabled = pending;
+                button.setAttribute('aria-busy', String(pending));
+            });
+    }
+
     document.querySelectorAll('.packing-workflow-action').forEach(function (button) {
         button.addEventListener('click', function () {
+            if (packingRequestPending) return;
             const action = button.dataset.action;
             const formData = new FormData();
             formData.append('workflow_action', action);
@@ -4390,6 +4441,7 @@
                 if (input.name && !input.disabled) formData.append(input.name, input.value);
             });
 
+            setPackingRequestPending(true);
             $.ajax({
                 url: submitUrl,
                 method: 'POST',
@@ -4406,6 +4458,7 @@
                     window.location.href = response.res.url;
                 },
                 error: function (response) {
+                    setPackingRequestPending(false);
                     showPackingFeedback('error', packingAjaxError(response));
                 }
             });
@@ -4427,10 +4480,11 @@
     // Both Save buttons call the same validation and AJAX handler.
     // The primary button at the bottom remains fully functional.
     topSaveButton?.addEventListener('click', function () {
-        if (submitButton && !submitButton.disabled) submitButton.click();
+        if (!packingRequestPending && submitButton && !submitButton.disabled) submitButton.click();
     });
 
     submitButton && submitButton.addEventListener('click', function () {
+        if (packingRequestPending) return;
         const rows = container.querySelectorAll('.packing-selected-row');
 
         if (!rows.length && !{{ packing_object|yesno:"true,false" }}) {
@@ -4467,8 +4521,24 @@
             }
         });
 
+        document.querySelectorAll('.pk-row-editor:not([hidden])').forEach(editor => {
+            const received = editor.querySelector('[name$="-arrived_quantity"]');
+            const damaged = editor.querySelector('[name$="-ruined_quantity"]');
+            if (!received || !damaged) return;
+            const planned = Number(received.max);
+            const arrived = Number(received.value);
+            const ruined = Number(damaged.value);
+            const validCounts = received.value.trim() !== '' && damaged.value.trim() !== ''
+                && Number.isFinite(arrived) && Number.isFinite(ruined)
+                && arrived >= 0 && arrived <= planned && ruined >= 0 && ruined <= arrived;
+            received.classList.toggle('border-danger', !validCounts);
+            damaged.classList.toggle('border-danger', !validCounts);
+            if (!validCounts) valid = false;
+        });
+
         if (!valid) {
-            showPackingFeedback('error', tr('packing_quantity_invalid_error', 'One row quantity is outside the available packing capacity.'));
+            showPackingFeedback('error', tr('packing_warehouse_quantity_invalid_error',
+                'Please check Packing quantities, received quantity and damaged quantity.'));
             return;
         }
 
@@ -4495,6 +4565,7 @@
 
         formData.append('form-TOTAL_FORMS', totalFormsInput.value);
 
+        setPackingRequestPending(true);
         updatePackingSaveButtons(true);
 
         if (packingFeedback) {
@@ -4519,8 +4590,8 @@
             },
 
             error: function (response) {
+                setPackingRequestPending(false);
                 updatePackingSaveButtons(false);
-
                 showPackingFeedback('error', packingAjaxError(response));
             }
         });

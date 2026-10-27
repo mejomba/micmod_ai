@@ -96,6 +96,64 @@ class QuickPackingWorkflowRowEditTests(SimpleTestCase):
         self.item.save.assert_called_once_with()
         self.order.validate_for_packing.assert_not_called()
 
+    def test_warehouse_only_updates_received_and_ruined_quantities(self):
+        self.packing.workflow_state_index.return_value = 8
+        self.row['arrived_quantity'] = 4
+        self.row['ruined_quantity'] = 1
+        self.item.arrived_quantity = None
+        self.item.ruined_quantity = None
+        self.edit()
+        self.assertEqual(self.item.arrived_quantity, 4)
+        self.assertEqual(self.item.ruined_quantity, 1)
+        self.assertEqual(self.item.quantity, 5)
+        self.assertEqual(self.item.price, 20)
+        self.assertEqual(self.item.carton_number, 'Carton A')
+        self.order.validate_for_packing.assert_not_called()
+        self.item.save.assert_called_once_with()
+
+    def test_warehouse_rejects_damaged_above_received(self):
+        self.packing.workflow_state_index.return_value = 8
+        self.row.update(arrived_quantity=3, ruined_quantity=4)
+        with self.assertRaisesMessage(ValueError, 'Received/damaged'):
+            self.edit()
+        self.item.save.assert_not_called()
+
+    def test_warehouse_rejects_received_above_packing_quantity(self):
+        self.packing.workflow_state_index.return_value = 8
+        self.row.update(arrived_quantity=6, ruined_quantity=0)
+        with self.assertRaisesMessage(ValueError, 'Received/damaged'):
+            self.edit()
+        self.item.save.assert_not_called()
+
+    def test_warehouse_rejects_row_deletion(self):
+        self.packing.workflow_state_index.return_value = 8
+        self.row['delete'] = True
+        with self.assertRaises(PermissionDenied):
+            self.edit()
+
+    def test_warehouse_payload_does_not_need_other_row_fields(self):
+        self.packing.workflow_state_index.return_value = 8
+        self.row = {'id': 123, 'delete': False, 'arrived_quantity': 5, 'ruined_quantity': 0}
+        self.item.arrived_quantity = None
+        self.item.ruined_quantity = None
+        self.edit()
+        self.item.save.assert_called_once_with()
+
+    def test_warehouse_parser_ignores_tampered_quantity_and_price(self):
+        post = {
+            'existing-123-id': '123',
+            'existing-123-arrived_quantity': '5',
+            'existing-123-ruined_quantity': '1',
+            'existing-123-quantity': '9999',
+            'existing-123-price': '0',
+        }
+        parsed = self.view._parse_existing_rows(
+            SimpleNamespace(POST=post), warehouse_stage=True,
+        )
+        self.assertEqual(parsed, [{
+            'id': 123, 'delete': False, 'arrived_quantity': 5.0, 'ruined_quantity': 1.0,
+        }])
+
     def test_unmodified_row_does_not_create_history(self):
         self.row['carton_number'] = self.item.carton_number
         self.row['description'] = self.item.description

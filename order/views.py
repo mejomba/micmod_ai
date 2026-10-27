@@ -1,4 +1,5 @@
 from datetime import timedelta, datetime
+from math import isfinite
 
 from files.models import File
 from tools.utils import to_jalali_date
@@ -3703,6 +3704,13 @@ class QuickPackingView(LoginRequiredMixin, View):
             group = group[0] if group else None
         return group
 
+    def _is_warehouse_stage(self, packing_obj):
+        if not packing_obj:
+            return False
+        states = self.flow_config.get('flow_state_list') or []
+        # The terminal "Completed" stage is also handled by the warehouse group.
+        return 'انبار' in states and packing_obj.workflow_state_index() >= states.index('انبار')
+
     def _workflow_constraint(self, packing_obj=None):
         state_index = packing_obj.workflow_state_index() if packing_obj else 0
         wf_access = (
@@ -3971,7 +3979,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             })
         return rows
 
-    def _parse_existing_rows(self, request):
+    def _parse_existing_rows(self, request, warehouse_stage=False):
         rows = []
         prefix = 'existing-'
         item_ids = []
@@ -3988,6 +3996,31 @@ class QuickPackingView(LoginRequiredMixin, View):
                 str(request.POST.get(f'existing-{item_id}-delete', '')).lower()
                 in ('1', 'true', 'yes', 'on')
             )
+
+            if warehouse_stage:
+                if delete_requested:
+                    rows.append({'id': item_id, 'delete': True})
+                    continue
+                arrived = self._to_float(
+                    request.POST.get(f'existing-{item_id}-arrived_quantity'),
+                    default=None,
+                )
+                ruined = self._to_float(
+                    request.POST.get(f'existing-{item_id}-ruined_quantity'),
+                    default=None,
+                )
+                if (
+                    arrived is None or ruined is None
+                    or not isfinite(arrived) or not isfinite(ruined)
+                ):
+                    raise ValueError(f'Invalid warehouse quantities for PackingItem {item_id}.')
+                rows.append({
+                    'id': item_id,
+                    'delete': False,
+                    'arrived_quantity': arrived,
+                    'ruined_quantity': ruined,
+                })
+                continue
 
             quantity = self._to_float(
                 request.POST.get(f'existing-{item_id}-quantity'),
@@ -4012,7 +4045,8 @@ class QuickPackingView(LoginRequiredMixin, View):
         return rows
 
     def _update_existing_rows(self, request, packing_obj):
-        rows = self._parse_existing_rows(request)
+        warehouse_stage = self._is_warehouse_stage(packing_obj)
+        rows = self._parse_existing_rows(request, warehouse_stage=warehouse_stage)
         if not rows:
             return
 
@@ -4043,6 +4077,28 @@ class QuickPackingView(LoginRequiredMixin, View):
 
             if row.get('delete'):
                 packing_item.is_deleted = True
+                packing_item.editor_user = request.user
+                packing_item.extra_data.request = request
+                packing_item.save()
+                continue
+
+            if warehouse_stage:
+                # Warehouse users can update ONLY received and damaged counts.
+                # Never reprice, change ordered quantity, or rewrite packaging metadata.
+                arrived = row['arrived_quantity']
+                ruined = row['ruined_quantity']
+                if (
+                    arrived < 0 or arrived > float(packing_item.quantity or 0)
+                    or ruined < 0 or ruined > arrived
+                ):
+                    raise ValueError('Received/damaged quantities are outside the Packing quantity.')
+                if (
+                    packing_item.arrived_quantity == arrived
+                    and packing_item.ruined_quantity == ruined
+                ):
+                    continue
+                packing_item.arrived_quantity = arrived
+                packing_item.ruined_quantity = ruined
                 packing_item.editor_user = request.user
                 packing_item.extra_data.request = request
                 packing_item.save()
@@ -4376,6 +4432,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             'wf_access': wf_access,
             'can_add_items': can_add_items,
             'can_edit_items': can_edit_items,
+            'is_warehouse_stage': self._is_warehouse_stage(packing_obj),
             'can_next': bool(wf_access and packing_obj and state_index < len(states) - 1),
             'can_back': bool(wf_access and packing_obj and state_index > 0),
             'can_change_user': bool(packing_obj and self._can_change_user(packing_obj)),

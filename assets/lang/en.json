@@ -419,5 +419,8 @@
     "packing_workflow_stage_6": "Guarantee Letter",
     "packing_workflow_stage_7": "Customs Clearance",
     "packing_workflow_stage_8": "Warehouse",
-    "packing_workflow_stage_9": "Completed"
+    "packing_workflow_stage_9": "Completed",
+    "packing_arrived_quantity": "Total Received Quantity",
+    "packing_ruined_quantity": "Damaged Quantity",
+    "packing_warehouse_quantity_invalid_error": "Received quantity must be between zero and the Packing quantity, and damaged quantity cannot exceed received quantity."
 }

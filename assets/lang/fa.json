@@ -1024,5 +1024,8 @@
     "packing_workflow_stage_6": "ضمانتنامه",
     "packing_workflow_stage_7": "ترخیص",
     "packing_workflow_stage_8": "انبار",
-    "packing_workflow_stage_9": "اتمام کار"
+    "packing_workflow_stage_9": "اتمام کار",
+    "packing_arrived_quantity": "تعداد کل دریافتی",
+    "packing_ruined_quantity": "تعداد معیوب",
+    "packing_warehouse_quantity_invalid_error": "تعداد دریافتی و معیوب را بررسی کنید؛ تعداد معیوب نباید بیشتر از دریافتی و تعداد دریافتی نباید بیشتر از تعداد پکینگ باشد."
 }
