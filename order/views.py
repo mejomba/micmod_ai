@@ -4337,7 +4337,20 @@ class QuickPackingView(LoginRequiredMixin, View):
                 logs, Packing, PackingItem, item_rows
             )
 
+        # Badge counts belong to each already-rendered row. Deleted rows remain
+        # available in the audit records but are not added back to the form.
+        row_change_counts = {}
+        for event in change_history:
+            if event['scope'] == 'item':
+                row_id = event['item_id']
+                row_change_counts[row_id] = row_change_counts.get(row_id, 0) + 1
+        for item in packing_items:
+            item.quick_change_count = row_change_counts.get(item.pk, 0)
+
         context = {
+            'header_change_count': sum(
+                1 for event in change_history if event['scope'] == 'packing'
+            ),
             'change_history': change_history,
             'workflow_stages': timeline['stages'],
             'workflow_history': timeline['history'],
