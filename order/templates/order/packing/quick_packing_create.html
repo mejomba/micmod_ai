@@ -1836,6 +1836,13 @@
 
                                     <details class="pk-change-history">
                                         <summary><span data-key="packing_change_history">تاریخچه تغییرات سند و ردیف‌ها</span> ({{ change_history|length }})</summary>
+                                        <div class="pk-workflow-history-toolbar">
+                                            <label for="packing-audit-calendar" data-key="packing_history_calendar">نمایش تاریخ</label>
+                                            <select id="packing-audit-calendar" class="form-select form-select-sm" aria-label="Change history calendar">
+                                                <option value="gregorian" data-key="packing_history_gregorian">میلادی</option>
+                                                <option value="jalali" data-key="packing_history_jalali">شمسی</option>
+                                            </select>
+                                        </div>
                                         {% if change_history %}
                                             <div class="table-responsive">
                                                 <table class="table table-sm table-hover pk-change-history-table">
@@ -2384,10 +2391,12 @@
     const durationButton = document.getElementById('packing-toggle-durations');
     const durationScroll = document.getElementById('packing-workflow-scroll');
     const historyCalendar = document.getElementById('packing-history-calendar');
+    const auditCalendar = document.getElementById('packing-audit-calendar');
     const historyCalendarKey = 'packingWorkflowHistoryCalendar';
     const savedCalendar = localStorage.getItem(historyCalendarKey);
-    if (historyCalendar && (savedCalendar === 'jalali' || savedCalendar === 'gregorian')) {
-        historyCalendar.value = savedCalendar;
+    if (savedCalendar === 'jalali' || savedCalendar === 'gregorian') {
+        if (historyCalendar) historyCalendar.value = savedCalendar;
+        if (auditCalendar) auditCalendar.value = savedCalendar;
     }
     const emptyState = document.getElementById('packing-empty-state');
     const selectedCount = document.getElementById('packing-selected-count');
@@ -3232,11 +3241,16 @@
     });
 
     // Calendar is a display preference: it never changes stored timestamps.
-    historyCalendar?.addEventListener('change', function () {
-        if (historyCalendar.value !== 'jalali' && historyCalendar.value !== 'gregorian') return;
-        localStorage.setItem(historyCalendarKey, historyCalendar.value);
+    function changePackingCalendar(event) {
+        const value = event.target.value;
+        if (value !== 'jalali' && value !== 'gregorian') return;
+        if (historyCalendar) historyCalendar.value = value;
+        if (auditCalendar) auditCalendar.value = value;
+        localStorage.setItem(historyCalendarKey, value);
         updateWorkflowDateDisplays(document);
-    });
+    }
+    historyCalendar?.addEventListener('change', changePackingCalendar);
+    auditCalendar?.addEventListener('change', changePackingCalendar);
 
     // Show/hide recorded durations without changing the underlying workflow.
     durationButton?.addEventListener('click', function () {
