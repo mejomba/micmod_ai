@@ -1082,12 +1082,18 @@
         margin-bottom: 8px;
     }
 
-    .pk-header-history-tools .btn {
+    /* Icon-only header history button with the same tooltip as row actions. */
+    .pk-header-history-tools .pk-header-history-button {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        font-size: .76rem;
-        padding: 5px 9px;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        min-height: 30px;
+        padding: 5px;
+        border-radius: 8px;
+        color: #3699ff;
     }
 
     /* Both row actions occupy ONE small flex group; no absolute overlap. */
@@ -1114,11 +1120,31 @@
         line-height: 1;
     }
 
-    .pk-row-tools svg,
-    .pk-existing-actions .pk-row-history-button svg {
-        display: block;
-        width: 15px;
-        height: 15px;
+    /* Keep inline SVG icons visible regardless of Metronic's generic btn/svg styles. */
+    .pk-row-tools .pk-action-svg,
+    .pk-existing-actions .pk-action-svg,
+    .pk-header-history-tools .pk-action-svg {
+        display: block !important;
+        width: 16px !important;
+        height: 16px !important;
+        min-width: 16px;
+        min-height: 16px;
+        flex: 0 0 16px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: none;
+    }
+
+    .pk-row-tools .pk-row-edit-button {
+        color: #3699ff;
+    }
+
+    .pk-row-tools .pk-row-history-button,
+    .pk-existing-actions .pk-row-history-button {
+        color: #0d9488;
     }
 
     .packing-layout-workflow-rows .pk-row-top .pk-row-tools {
@@ -1139,10 +1165,9 @@
         padding: 3px;
     }
 
-    .packing-layout-workflow-rows .pk-row-tools .pk-row-edit-button svg,
-    .packing-layout-workflow-rows .pk-row-tools .pk-row-history-button svg {
-        width: 15px;
-        height: 15px;
+    .packing-layout-workflow-rows .pk-row-tools .pk-action-svg {
+        width: 16px !important;
+        height: 16px !important;
     }
 
     .packing-layout-workflow-rows .pk-row-title {
@@ -1152,7 +1177,7 @@
     .pk-row-cancel-edit,
     .pk-row-cancel-edit:hover,
     .pk-row-cancel-edit:focus {
-        color: #dc3545 !important;
+        color: #f1416c !important;
     }
 
     .pk-change-history-modal .modal-header {
@@ -2155,19 +2180,19 @@
                             <div id="packing-header">
                                 {% if packing_object %}
                                     <div class="pk-header-history-tools">
-                                        <button type="button" class="btn btn-sm btn-light-primary pk-change-history-trigger"
+                                        <button type="button" class="btn btn-sm btn-light-primary pk-header-history-button pk-change-history-trigger"
                                                 aria-haspopup="dialog" aria-controls="pk-change-history-modal"
                                                 data-change-target="packing"
                                                 data-change-label="سربرگ پکینگ"
                                                 data-tooltip-key="packing_audit_header_button"
-                                                aria-label="تاریخچه تغییرات سربرگ پکینگ">
-                                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
-                                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                aria-label="تاریخچه تغییرات" title="تاریخچه تغییرات">
+                                            <svg class="pk-action-svg" viewBox="0 0 24 24" width="16" height="16"
+                                                 fill="none" stroke="currentColor" stroke-width="2"
+                                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                                                 <path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"></path>
                                                 <path d="M3 3v5h5"></path>
                                                 <path d="M12 7v5l3 2"></path>
                                             </svg>
-                                            <span data-key="packing_audit_header_button">تاریخچه تغییرات سربرگ</span>
                                         </button>
                                     </div>
                                 {% endif %}
@@ -2360,7 +2385,7 @@
                                                                 data-change-label="{{ packing_item.order.order_number|default:packing_item.pk }}"
                                                                 title="تاریخچه تغییرات ردیف"
                                                                 aria-label="تاریخچه تغییرات ردیف">
-                                                            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
+                                                            <svg class="pk-action-svg" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
                                                                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                                                 <path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"></path>
                                                                 <path d="M3 3v5h5"></path>
@@ -2384,7 +2409,7 @@
                                                                 data-change-label="{{ packing_item.order.order_number|default:packing_item.pk }}"
                                                                 title="تاریخچه تغییرات ردیف"
                                                                 aria-label="تاریخچه تغییرات ردیف">
-                                                            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
+                                                            <svg class="pk-action-svg" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
                                                                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                                                 <path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"></path>
                                                                 <path d="M3 3v5h5"></path>
@@ -2392,7 +2417,7 @@
                                                             </svg>
                                                         </button>
                                                             <button type="button" class="btn btn-sm btn-light-primary pk-row-edit-button" data-tooltip-key="packing_edit_row" aria-label="ویرایش ردیف" aria-expanded="false" title="ویرایش ردیف">
-                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                                            <svg class="pk-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                                                                 <path d="M12 20h9"></path>
                                                                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L9 17l-4 1 1-4Z"></path>
                                                             </svg>
@@ -2407,7 +2432,7 @@
                                                                 data-change-label="{{ packing_item.order.order_number|default:packing_item.pk }}"
                                                                 title="تاریخچه تغییرات ردیف"
                                                                 aria-label="تاریخچه تغییرات ردیف">
-                                                            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
+                                                            <svg class="pk-action-svg" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
                                                                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                                                 <path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"></path>
                                                                 <path d="M3 3v5h5"></path>
@@ -2577,7 +2602,7 @@
                                                         </div>
                                                     </div>
                                                     <div class="pk-row-editor-actions">
-                                                        <button type="button" class="btn btn-sm btn-light pk-row-cancel-edit text-danger">Cancel editing</button>
+                                                        <button type="button" class="btn btn-sm btn-light-danger pk-row-cancel-edit">Cancel editing</button>
                                                         <small class="text-muted">Changes are saved with Save Packing.</small>
                                                     </div>
                                                 </div>
@@ -2891,7 +2916,7 @@
             packing_audit_current: 'مقدار جدید',
             packing_audit_no_fields: 'تغییر فیلدی ثبت نشده است.',
             packing_audit_empty: 'هنوز تغییری برای این بخش ثبت نشده است.',
-            packing_audit_header_button: 'تاریخچه تغییرات سربرگ',
+            packing_audit_header_button: 'تاریخچه تغییرات',
             packing_audit_modal_title: 'تاریخچه تغییرات',
             packing_audit_header_name: 'سربرگ پکینگ',
             packing_audit_row_name: 'سفارش',
@@ -2934,7 +2959,7 @@
             packing_audit_current: 'New value',
             packing_audit_no_fields: 'No field changes recorded.',
             packing_audit_empty: 'No changes have been recorded for this section.',
-            packing_audit_header_button: 'Header change history',
+            packing_audit_header_button: 'Change history',
             packing_audit_modal_title: 'Change history',
             packing_audit_header_name: 'Packing header',
             packing_audit_row_name: 'Order',
