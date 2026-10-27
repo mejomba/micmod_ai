@@ -2351,7 +2351,7 @@
                                                                 data-change-target="item" data-change-item-id="{{ packing_item.pk }}"
                                                                 data-tooltip-key="packing_audit_row_button"
                                                                 data-change-label="{{ packing_item.order.order_number|default:packing_item.pk }}"
-                                                                title="تاریخچه تغییرات ردیف ({{ packing_item.quick_change_count }})"
+                                                                title="تاریخچه تغییرات ردیف"
                                                                 aria-label="تاریخچه تغییرات ردیف">
                                                             <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
                                                                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -2375,7 +2375,7 @@
                                                                 data-change-target="item" data-change-item-id="{{ packing_item.pk }}"
                                                                 data-tooltip-key="packing_audit_row_button"
                                                                 data-change-label="{{ packing_item.order.order_number|default:packing_item.pk }}"
-                                                                title="تاریخچه تغییرات ردیف ({{ packing_item.quick_change_count }})"
+                                                                title="تاریخچه تغییرات ردیف"
                                                                 aria-label="تاریخچه تغییرات ردیف">
                                                             <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
                                                                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -2398,7 +2398,7 @@
                                                                 data-change-target="item" data-change-item-id="{{ packing_item.pk }}"
                                                                 data-tooltip-key="packing_audit_row_button"
                                                                 data-change-label="{{ packing_item.order.order_number|default:packing_item.pk }}"
-                                                                title="تاریخچه تغییرات ردیف ({{ packing_item.quick_change_count }})"
+                                                                title="تاریخچه تغییرات ردیف"
                                                                 aria-label="تاریخچه تغییرات ردیف">
                                                             <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
                                                                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -2888,7 +2888,10 @@
             packing_audit_modal_title: 'تاریخچه تغییرات',
             packing_audit_header_name: 'سربرگ پکینگ',
             packing_audit_row_name: 'سفارش',
-            packing_audit_row_button: 'تاریخچه تغییرات ردیف'
+            packing_audit_row_button: 'تاریخچه تغییرات ردیف',
+            packing_edit_row: 'ویرایش این ردیف',
+            packing_audit_loading: 'در حال دریافت تاریخچه...',
+            packing_audit_load_failed: 'دریافت تاریخچه امکان‌پذیر نبود. لطفاً دوباره تلاش کنید.'
         },
         en: {
             packing_workflow_description: 'Workflow notes',
@@ -2928,7 +2931,10 @@
             packing_audit_modal_title: 'Change history',
             packing_audit_header_name: 'Packing header',
             packing_audit_row_name: 'Order',
-            packing_audit_row_button: 'Row change history'
+            packing_audit_row_button: 'Row change history',
+            packing_edit_row: 'Edit this row',
+            packing_audit_loading: 'Loading change history...',
+            packing_audit_load_failed: 'Could not load change history. Please try again.'
         }
     };
     const packingActionEnglish = {
@@ -3087,11 +3093,8 @@
             }
         });
 
-        root.querySelectorAll('.pk-row-history-button').forEach(function (button) {
-            const label = timelineTranslation('packing_audit_row_button');
-            const count = button.dataset.changeCount || '0';
-            button.setAttribute('aria-label', label);
-            button.setAttribute('title', label + ' (' + count + ')');
+        root.querySelectorAll('[data-tooltip-key]').forEach(function (button) {
+            setPackingWorkflowTooltip(button, timelineTranslation(button.dataset.tooltipKey));
         });
 
         const auditLanguage = displayEnglishStages ? 'en' : 'fa';
@@ -3600,53 +3603,91 @@
     });
 
     // Calendar is a display preference: it never changes stored timestamps.
-    // One Bootstrap modal for the header and all existing Packing rows.
-    // Switch the visible records by their exact persisted PackingItem id.
+    // Never preload every model's logs. The endpoint returns one exact
+    // (content_type, object_id) pair; the modal contains no unrelated records.
     const packingAuditModal = document.getElementById('pk-change-history-modal');
+    const auditContent = document.getElementById('pk-audit-modal-content');
+    let auditAbortController = null;
 
-    function openPackingAuditFor(trigger) {
-        if (!packingAuditModal || !trigger) return;
+    function showAuditModal() {
+        if (!packingAuditModal) return;
+        if (window.bootstrap && typeof window.bootstrap.Modal === 'function') {
+            window.bootstrap.Modal.getOrCreateInstance(packingAuditModal).show();
+        } else if (window.jQuery && typeof jQuery.fn.modal === 'function') {
+            jQuery(packingAuditModal).modal('show');
+        }
+    }
+
+    async function openPackingAuditFor(trigger) {
+        if (!packingAuditModal || !trigger || !auditContent) return;
         const scope = trigger.dataset.changeTarget;
         const itemId = trigger.dataset.changeItemId || '';
-        const rows = packingAuditModal.querySelectorAll('.pk-audit-record');
-        let matches = 0;
+        if (scope !== 'packing' && (scope !== 'item' || !/^\\d+$/.test(itemId))) return;
 
-        rows.forEach(function (row) {
-            const visible = scope === 'packing'
-                ? row.dataset.auditRecordScope === 'packing'
-                : scope === 'item' &&
-                  row.dataset.auditRecordScope === 'item' &&
-                  row.dataset.auditRecordItem === itemId;
-            row.hidden = !visible;
-            if (visible) matches += 1;
-            const details = row.querySelector('.pk-audit-details');
-            if (details) details.open = false;
-        });
+        // Cancel the previous request if a different record was selected.
+        if (auditAbortController) auditAbortController.abort();
+        auditAbortController = new AbortController();
 
         const label = scope === 'packing'
             ? timelineTranslation('packing_audit_header_name')
             : timelineTranslation('packing_audit_row_name') + ': ' + (trigger.dataset.changeLabel || itemId);
-        packingAuditModal.querySelector('#pk-change-history-modal-title').textContent =
-            timelineTranslation('packing_audit_modal_title');
-        packingAuditModal.querySelector('#pk-audit-modal-subtitle').textContent =
-            label + ' · ' + matches;
+        const title = packingAuditModal.querySelector('#pk-change-history-modal-title');
+        const subtitle = packingAuditModal.querySelector('#pk-audit-modal-subtitle');
+        if (title) title.textContent = timelineTranslation('packing_audit_modal_title');
+        if (subtitle) subtitle.textContent = label;
 
-        const table = packingAuditModal.querySelector('#pk-audit-modal-table');
-        const empty = packingAuditModal.querySelector('#pk-audit-modal-empty');
-        if (table) table.hidden = matches === 0;
-        if (empty) empty.hidden = matches !== 0;
+        auditContent.innerHTML = '';
+        const loading = document.createElement('div');
+        loading.className = 'pk-audit-loading';
+        loading.setAttribute('role', 'status');
+        const spinner = document.createElement('span');
+        spinner.className = 'spinner-border spinner-border-sm';
+        spinner.setAttribute('aria-hidden', 'true');
+        const loadingText = document.createElement('span');
+        loadingText.textContent = timelineTranslation('packing_audit_loading');
+        loading.append(spinner, loadingText);
+        auditContent.appendChild(loading);
+
+        trigger._packingTooltip?.hide();
+        showAuditModal();
+
+        const url = new URL(submitUrl, window.location.href);
+        url.searchParams.set('audit_scope', scope === 'packing' ? 'header' : 'item');
+        if (scope === 'item') url.searchParams.set('audit_item_id', itemId);
+
+        try {
+            const response = await fetch(url.toString(), {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                signal: auditAbortController.signal,
+                cache: 'no-store'
+            });
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const html = await response.text();
+            if (auditAbortController.signal.aborted) return;
+            auditContent.innerHTML = html;
+            applyDynamicTranslations(auditContent);
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            auditContent.textContent = '';
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-light-danger text-danger';
+            alert.setAttribute('role', 'alert');
+            alert.textContent = timelineTranslation('packing_audit_load_failed');
+            auditContent.appendChild(alert);
+        }
     }
 
     document.querySelectorAll('.pk-change-history-trigger').forEach(function (button) {
         button.addEventListener('click', function () {
             openPackingAuditFor(button);
-            // Compatibility with the older Bootstrap jQuery modal bundle, if
-            // Bootstrap 5's data-bs-toggle is not supported by this layout.
-            if (!(window.bootstrap && window.bootstrap.Modal) &&
-                window.jQuery && typeof jQuery.fn.modal === 'function') {
-                jQuery(packingAuditModal).modal('show');
-            }
         });
+    });
+
+    // Suppress stale content if the user dismisses the modal while loading.
+    packingAuditModal?.addEventListener('hide.bs.modal', function () {
+        if (auditAbortController) auditAbortController.abort();
     });
 
     function changePackingCalendar(event) {
