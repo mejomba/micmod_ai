@@ -667,6 +667,16 @@
                 "read": []
               }
             ]
+          },
+          {
+            "state": "اتمام کار",
+            "group": "wh_user",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
+              "read": ["__all__"]
+            },
+            "formset_constraint": [{"hide": [], "read": []}]
           }
         ]
       },
