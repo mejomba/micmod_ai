@@ -774,20 +774,126 @@
         text-align: center;
     }
 
-    .pk-workflow-step:not(:last-child)::after {
-        content: '';
+    /* A real line element gives the connector a reliable hover/focus target. */
+    .pk-workflow-connector {
         position: absolute;
-        top: 14px;
+        top: 7px;
         inset-inline-start: calc(50% + 18px);
         width: calc(100% - 36px);
-        height: 2px;
-        background: #dfe4ec;
+        height: 16px;
         z-index: 0;
+        cursor: help;
     }
 
-    .pk-workflow-step.is-completed:not(:last-child)::after {
+    .pk-workflow-connector::before {
+        content: '';
+        position: absolute;
+        top: 7px;
+        inset-inline: 0;
+        height: 2px;
+        background: #dfe4ec;
+        border-radius: 4px;
+    }
+
+    .pk-workflow-step.is-completed .pk-workflow-connector::before {
         background: #50cd89;
     }
+
+    .pk-workflow-connector:hover::before,
+    .pk-workflow-connector:focus-visible::before {
+        height: 4px;
+        top: 6px;
+        background: #3699ff;
+    }
+
+    .pk-workflow-scroll.show-durations {
+        padding-top: 28px;
+    }
+
+    .pk-workflow-duration {
+        display: none;
+        position: absolute;
+        top: -18px;
+        inset-inline-start: 50%;
+        transform: translateX(-50%);
+        font-size: .65rem;
+        font-weight: 700;
+        border: 1px solid #dbeafe;
+        border-radius: 7px;
+        padding: 1px 5px;
+        color: #2563eb;
+        background: #eff6ff;
+        direction: ltr;
+        white-space: nowrap;
+        pointer-events: none;
+    }
+
+    .pk-workflow-scroll.show-durations .pk-workflow-duration {
+        display: inline-block;
+    }
+
+    .pk-workflow-more {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin: 10px 0 0;
+    }
+
+    .pk-workflow-description {
+        margin: 8px 0 12px;
+    }
+
+    .pk-workflow-description label {
+        font-size: .82rem;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .pk-workflow-description textarea {
+        width: 100%;
+        min-height: 62px;
+        max-height: 140px;
+        resize: vertical;
+        font-size: .84rem;
+    }
+
+    .pk-workflow-history {
+        margin-top: 12px;
+        border-top: 1px solid var(--pk-border);
+        padding-top: 10px;
+    }
+
+    .pk-workflow-history > summary {
+        cursor: pointer;
+        color: #3699ff;
+        font-size: .82rem;
+        font-weight: 700;
+    }
+
+    .pk-workflow-history-table {
+        margin-top: 10px;
+        font-size: .78rem;
+        min-width: 750px;
+    }
+
+    .pk-workflow-history-table th {
+        white-space: nowrap;
+        color: #5e6278;
+    }
+
+    .pk-workflow-history-table td {
+        vertical-align: top;
+    }
+
+    .pk-workflow-history-table .pk-history-description {
+        max-width: 260px;
+        min-width: 160px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+
 
     .pk-workflow-node {
         position: relative;
@@ -1338,18 +1444,47 @@
                                         {% endif %}
                                     </div>
 
-                                    <div class="pk-workflow-scroll">
-                                        <div class="pk-workflow-steps" aria-label="Packing workflow">
-                                            {% for workflow_state in flow_state_list %}
+                                    {% if wf_access %}
+                                        <div class="pk-workflow-description">
+                                            <label for="packing-workflow-description" data-key="packing_workflow_description">توضیحات جریان کاری</label>
+                                            <textarea id="packing-workflow-description" name="wf_description"
+                                                      maxlength="255" rows="2" class="form-control"
+                                                      placeholder="توضیحات مربوط به عملیات این مرحله"></textarea>
+                                            <small class="text-muted" data-key="packing_workflow_description_hint">توضیحات هنگام ثبت عملیات بعد، قبل یا تغییر مسئول ذخیره می‌شود.</small>
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="pk-workflow-more">
+                                        <button type="button" id="packing-toggle-durations" class="btn btn-sm btn-light-primary"
+                                                aria-pressed="false" aria-controls="packing-workflow-steps"
+                                                data-key="packing_show_all_durations">نمایش فاصله زمانی همه مراحل</button>
+                                    </div>
+
+                                    <div class="pk-workflow-scroll" id="packing-workflow-scroll">
+                                        <div class="pk-workflow-steps" id="packing-workflow-steps" aria-label="Packing workflow">
+                                            {% for stage in workflow_stages %}
                                                 <div class="pk-workflow-step{% if forloop.counter0 < flow_state_index %} is-completed{% elif forloop.counter0 == flow_state_index %} is-current{% endif %}">
-                                                    <div class="pk-workflow-node">
+                                                    {% if not forloop.last %}
+                                                        <span class="pk-workflow-connector" tabindex="0"
+                                                              data-duration="{{ stage.duration_to_next|default:'' }}"
+                                                              title="{% if stage.duration_to_next %}مدت تا مرحله بعد: {{ stage.duration_to_next }}{% else %}زمان انتقال به مرحله بعد هنوز ثبت نشده است{% endif %}"
+                                                              aria-label="{% if stage.duration_to_next %}مدت تا مرحله بعد: {{ stage.duration_to_next }}{% else %}زمان انتقال به مرحله بعد هنوز ثبت نشده است{% endif %}">
+                                                            {% if stage.duration_to_next %}
+                                                                <span class="pk-workflow-duration">{{ stage.duration_to_next }}</span>
+                                                            {% endif %}
+                                                        </span>
+                                                    {% endif %}
+                                                    <div class="pk-workflow-node" tabindex="0"
+                                                         data-entry-time="{{ stage.entered_at|date:'Y/m/d H:i' }}"
+                                                         title="{% if stage.entered_at %}زمان ورود: {{ stage.entered_at|date:'Y/m/d H:i' }}{% else %}هنوز وارد این مرحله نشده است{% endif %}"
+                                                         aria-label="{% if stage.entered_at %}زمان ورود: {{ stage.entered_at|date:'Y/m/d H:i' }}{% else %}هنوز وارد این مرحله نشده است{% endif %}">
                                                         {% if forloop.counter0 < flow_state_index %}
                                                             <i class="ti ti-check" aria-hidden="true"></i>
                                                         {% else %}
                                                             {{ forloop.counter }}
                                                         {% endif %}
                                                     </div>
-                                                    <span class="pk-workflow-step-name" data-workflow-state="{{ workflow_state }}">{{ workflow_state }}</span>
+                                                    <span class="pk-workflow-step-name" data-workflow-state="{{ stage.name }}">{{ stage.name }}</span>
                                                     <span class="pk-workflow-step-status">
                                                         {% if forloop.counter0 < flow_state_index %}
                                                             <span data-key="packing_workflow_completed">Completed</span>
@@ -1363,10 +1498,53 @@
                                             {% endfor %}
                                         </div>
                                     </div>
+                                    <details class="pk-workflow-history">
+                                        <summary><span data-key="packing_workflow_history">تاریخچه گردش کار</span> ({{ workflow_history|length }})</summary>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-striped pk-workflow-history-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th data-key="packing_history_time">زمان</th>
+                                                        <th data-key="packing_history_action">عملیات</th>
+                                                        <th data-key="packing_history_from">از مرحله</th>
+                                                        <th data-key="packing_history_to">به مرحله</th>
+                                                        <th data-key="packing_history_by">انجام‌دهنده</th>
+                                                        <th data-key="packing_history_assignee">مسئول</th>
+                                                        <th data-key="packing_history_elapsed">از رویداد قبل</th>
+                                                        <th data-key="packing_history_description">توضیحات</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for entry in workflow_history %}
+                                                        <tr>
+                                                            <td class="text-nowrap">{{ entry.created_at|date:"Y/m/d H:i:s" }}</td>
+                                                            <td data-workflow-action="{{ entry.status }}">{{ entry.action }}</td>
+                                                            <td><span data-workflow-state="{{ entry.source|default:'' }}">{{ entry.source|default:"—" }}</span></td>
+                                                            <td><span data-workflow-state="{{ entry.target|default:'' }}">{{ entry.target|default:"—" }}</span></td>
+                                                            <td>{{ entry.actor|default:"—" }}</td>
+                                                            <td>{{ entry.assigned_to|default:"—" }}</td>
+                                                            <td class="text-nowrap">{{ entry.elapsed_since_previous|default:"—" }}</td>
+                                                            <td class="pk-history-description">{{ entry.description|default:"—" }}</td>
+                                                        </tr>
+                                                    {% empty %}
+                                                        <tr><td colspan="8" data-key="packing_history_empty">رویدادی ثبت نشده است.</td></tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </details>
                                 </div>
                             {% endif %}
 
                             <div id="packing-header">
+                                {% if not packing_object %}
+                                    <div class="pk-workflow-description">
+                                        <label for="packing-workflow-description-create" data-key="packing_workflow_description">توضیحات جریان کاری</label>
+                                        <textarea id="packing-workflow-description-create" name="wf_description"
+                                                  maxlength="255" rows="2" class="form-control"
+                                                  placeholder="توضیحات ایجاد پکینگ"></textarea>
+                                    </div>
+                                {% endif %}
                                 <div class="packing-meta-grid">
                                     {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.bl_date form.transportation_company form.origin form.destination form.estimated_shipping_start_date form.estimated_arrive_to_wh_date form.description label='on-border' %}
                                 </div>
