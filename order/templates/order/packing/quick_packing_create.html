@@ -1076,6 +1076,99 @@
         overflow-wrap: anywhere;
     }
 
+    .pk-change-history {
+        margin-top: 12px;
+        border-top: 1px solid var(--pk-border);
+        padding-top: 11px;
+    }
+
+    .pk-change-history > summary {
+        font-size: .82rem;
+        font-weight: 700;
+        color: #3699ff;
+        cursor: pointer;
+    }
+
+    .pk-change-history-table {
+        font-size: .78rem;
+        min-width: 680px;
+        margin: 10px 0 0;
+    }
+
+    .pk-change-history-table td,
+    .pk-change-history-table th {
+        padding: 8px 10px;
+        vertical-align: middle;
+    }
+
+    .pk-audit-badge {
+        display: inline-block;
+        border: 1px solid #d6e7fb;
+        border-radius: 6px;
+        padding: 2px 8px;
+        background: #f1f7ff;
+        color: #2463ab;
+        font-size: .72rem;
+        white-space: nowrap;
+    }
+
+    .pk-audit-badge.is-create {
+        color: #138048;
+        background: #e9fbf0;
+        border-color: #c6ead5;
+    }
+
+    .pk-audit-badge.is-delete {
+        color: #c33542;
+        background: #fff1f2;
+        border-color: #f4cbd0;
+    }
+
+    .pk-audit-target { font-weight: 650; }
+
+    .pk-audit-details > summary {
+        cursor: pointer;
+        font-size: .78rem;
+        color: #2563eb;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .pk-audit-details[open] > summary { margin-bottom: 7px; }
+
+    .pk-audit-fields {
+        min-width: 340px;
+        width: 100%;
+        font-size: .77rem;
+        border-collapse: collapse;
+    }
+
+    .pk-audit-fields th, .pk-audit-fields td {
+        padding: 6px 8px;
+        border-bottom: 1px solid #e8ecf2;
+        text-align: start;
+        vertical-align: top;
+        max-width: 300px;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+    }
+
+    .pk-audit-fields td.pk-audit-new {
+        color: #137a4d;
+        background: #f2faf5;
+    }
+
+    .pk-audit-fields td.pk-audit-old {
+        color: #b33c44;
+        background: #fff7f7;
+    }
+
+    .pk-audit-empty {
+        margin: 10px 0 0;
+        font-size: .78rem;
+        color: var(--pk-muted);
+    }
+
 
 
     .pk-workflow-node {
@@ -1740,6 +1833,67 @@
                                             </table>
                                         </div>
                                     </details>
+
+                                    <details class="pk-change-history">
+                                        <summary><span data-key="packing_change_history">تاریخچه تغییرات سند و ردیف‌ها</span> ({{ change_history|length }})</summary>
+                                        {% if change_history %}
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-hover pk-change-history-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th data-key="packing_audit_time">تاریخ</th>
+                                                            <th data-key="packing_audit_actor">کاربر</th>
+                                                            <th data-key="packing_audit_target">بخش تغییر‌یافته</th>
+                                                            <th data-key="packing_audit_action">عملیات</th>
+                                                            <th data-key="packing_audit_details">جزئیات تغییر</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for entry in change_history %}
+                                                            <tr>
+                                                                <td class="text-nowrap" data-workflow-datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at|date:'Y/m/d H:i:s' }}</td>
+                                                                <td>{{ entry.actor|default:"—" }}</td>
+                                                                <td>
+                                                                    <span class="pk-audit-badge" data-audit-scope="{{ entry.scope }}"></span>
+                                                                    <span class="pk-audit-target">{{ entry.target }}</span>
+                                                                </td>
+                                                                <td>
+                                                                    <span class="pk-audit-badge is-{{ entry.action }}" data-audit-action="{{ entry.action }}"></span>
+                                                                </td>
+                                                                <td>
+                                                                    <details class="pk-audit-details">
+                                                                        <summary><span data-key="packing_audit_show_fields">مشاهده فیلدها</span> ({{ entry.changes|length }})</summary>
+                                                                        <table class="pk-audit-fields">
+                                                                            <thead>
+                                                                                <tr>
+                                                                                    <th data-key="packing_audit_field">فیلد</th>
+                                                                                    {% if entry.action != 'create' %}<th data-key="packing_audit_previous">مقدار قبلی</th>{% endif %}
+                                                                                    <th data-key="packing_audit_current">مقدار جدید</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody>
+                                                                                {% for field in entry.changes %}
+                                                                                    <tr>
+                                                                                        <th title="{{ field.key }}">{{ field.label }}</th>
+                                                                                        {% if entry.action != 'create' %}<td class="pk-audit-old">{{ field.old }}</td>{% endif %}
+                                                                                        <td class="pk-audit-new">{{ field.new }}</td>
+                                                                                    </tr>
+                                                                                {% empty %}
+                                                                                    <tr><td colspan="3" data-key="packing_audit_no_fields">تغییر فیلدی ثبت نشده است.</td></tr>
+                                                                                {% endfor %}
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </details>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <p class="pk-audit-empty" data-key="packing_audit_empty">هنوز تغییری برای این سند ثبت نشده است.</p>
+                                        {% endif %}
+                                    </details>
                                 </div>
                             {% endif %}
 
@@ -2366,7 +2520,19 @@
             packing_duration_pending: 'زمان انتقال به مرحله بعد هنوز ثبت نشده است',
             packing_history_calendar: 'نمایش تاریخ',
             packing_history_gregorian: 'میلادی',
-            packing_history_jalali: 'شمسی'
+            packing_history_jalali: 'شمسی',
+            packing_change_history: 'تاریخچه تغییرات سند و ردیف‌ها',
+            packing_audit_time: 'تاریخ',
+            packing_audit_actor: 'کاربر',
+            packing_audit_target: 'بخش تغییر‌یافته',
+            packing_audit_action: 'عملیات',
+            packing_audit_details: 'جزئیات تغییر',
+            packing_audit_show_fields: 'مشاهده فیلدها',
+            packing_audit_field: 'فیلد',
+            packing_audit_previous: 'مقدار قبلی',
+            packing_audit_current: 'مقدار جدید',
+            packing_audit_no_fields: 'تغییر فیلدی ثبت نشده است.',
+            packing_audit_empty: 'هنوز تغییری برای این سند ثبت نشده است.'
         },
         en: {
             packing_workflow_description: 'Workflow notes',
@@ -2389,13 +2555,36 @@
             packing_duration_pending: 'The next-stage transition has not been recorded',
             packing_history_calendar: 'Calendar',
             packing_history_gregorian: 'Gregorian',
-            packing_history_jalali: 'Jalali (Persian)'
+            packing_history_jalali: 'Jalali (Persian)',
+            packing_change_history: 'Document and line change history',
+            packing_audit_time: 'Date and time',
+            packing_audit_actor: 'User',
+            packing_audit_target: 'Changed record',
+            packing_audit_action: 'Action',
+            packing_audit_details: 'Changes',
+            packing_audit_show_fields: 'View changed fields',
+            packing_audit_field: 'Field',
+            packing_audit_previous: 'Previous value',
+            packing_audit_current: 'New value',
+            packing_audit_no_fields: 'No field changes recorded.',
+            packing_audit_empty: 'No changes have been recorded for this document.'
         }
     };
     const packingActionEnglish = {
         '1': 'Draft', '2': 'Returned to previous stage',
         '3': 'Moved to next stage', '4': 'Changed assignee',
         '5': 'Packing created'
+    };
+
+    const packingAuditWords = {
+        fa: {
+            create: 'ایجاد', update: 'ویرایش', delete: 'حذف',
+            packing: 'سربرگ', item: 'ردیف'
+        },
+        en: {
+            create: 'Created', update: 'Updated', delete: 'Deleted',
+            packing: 'Header', item: 'Item'
+        }
     };
 
     function timelineTranslation(key) {
@@ -2530,11 +2719,19 @@
             }
         });
 
-        root.querySelectorAll('[data-key^="packing_workflow_description"], [data-key^="packing_history_"], [data-key="packing_workflow_history"], [data-key="packing_show_all_durations"]').forEach(function (element) {
+        root.querySelectorAll('[data-key^="packing_workflow_description"], [data-key^="packing_history_"], [data-key^="packing_audit_"], [data-key="packing_change_history"], [data-key="packing_workflow_history"], [data-key="packing_show_all_durations"]').forEach(function (element) {
             const key = element.dataset.key;
             if (packingTimelineUi.en[key]) {
                 element.textContent = timelineTranslation(key);
             }
+        });
+
+        const auditLanguage = displayEnglishStages ? 'en' : 'fa';
+        root.querySelectorAll('[data-audit-action]').forEach(function (node) {
+            node.textContent = packingAuditWords[auditLanguage][node.dataset.auditAction] || node.dataset.auditAction;
+        });
+        root.querySelectorAll('[data-audit-scope]').forEach(function (node) {
+            node.textContent = packingAuditWords[auditLanguage][node.dataset.auditScope] || node.dataset.auditScope;
         });
 
         root.querySelectorAll('[data-event-duration]').forEach(function (cell) {
