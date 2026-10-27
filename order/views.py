@@ -3768,6 +3768,12 @@ class QuickPackingView(LoginRequiredMixin, View):
                 if name in read and name not in hidden
             ]
 
+        if self._is_warehouse_stage(packing_obj):
+            # All header metadata is immutable in warehouse stages, including
+            # fields omitted from the six-item display. Keep file permissions.
+            allowed_fields = [name for name in allowed_fields if name.startswith('file_')]
+            only_show = [name for name in only_show if name.startswith('file_')]
+
         return self.form_class(
             data=data,
             files=files,

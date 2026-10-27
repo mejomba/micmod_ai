@@ -413,6 +413,36 @@
         border-color: var(--pk-border);
     }
 
+    .pk-warehouse-meta-grid {
+        gap: 10px 12px;
+    }
+
+    .pk-warehouse-meta-field {
+        border: 1px solid var(--pk-border);
+        border-radius: 9px;
+        padding: 9px 12px;
+        background: #f8fafc;
+        min-width: 0;
+    }
+
+    .pk-warehouse-meta-field .pk-mini-label {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .pk-warehouse-meta-value {
+        min-height: 21px;
+        font-size: .9rem;
+        font-weight: 600;
+        color: #3f4254;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .pk-warehouse-meta-description {
+        grid-column: 1 / -1;
+    }
+
     .pk-attachments-toggle {
         width: 100%;
         border: 1px dashed #cfd6e4;
@@ -2553,7 +2583,35 @@
                                                   placeholder="توضیحات ایجاد پکینگ" data-placeholder-key="packing_workflow_create_placeholder"></textarea>
                                     </div>
                                 {% endif %}
-                                {% if not is_warehouse_stage %}
+                                {% if is_warehouse_stage %}
+                                    {# Warehouse values are display-only; no form controls. #}
+                                    <div class="packing-meta-grid pk-warehouse-meta-grid" aria-label="Packing header (read only)">
+                                        <div class="pk-warehouse-meta-field">
+                                            <span class="pk-mini-label" data-key="packing_number_label">شماره پکینگ</span>
+                                            <div class="pk-warehouse-meta-value">{{ packing_object.packing_number|default:"—" }}</div>
+                                        </div>
+                                        <div class="pk-warehouse-meta-field">
+                                            <span class="pk-mini-label" data-key="packing_shipment_type_label">نوع حمل</span>
+                                            <div class="pk-warehouse-meta-value"><span data-packing-shipment-type="{{ packing_object.shipment_type|default_if_none:'' }}">{{ packing_object.get_shipment_type_display|default:"—" }}</span></div>
+                                        </div>
+                                        <div class="pk-warehouse-meta-field">
+                                            <span class="pk-mini-label" data-key="packing_bl_number_label">شماره بارنامه</span>
+                                            <div class="pk-warehouse-meta-value">{{ packing_object.bl_number|default:"—" }}</div>
+                                        </div>
+                                        <div class="pk-warehouse-meta-field">
+                                            <span class="pk-mini-label" data-key="packing_bl_date">تاریخ بارنامه</span>
+                                            <div class="pk-warehouse-meta-value"><time data-packing-readonly-date="{{ packing_object.bl_date|date:'Y-m-d' }}">{{ packing_object.bl_date|date:"Y/m/d"|default:"—" }}</time></div>
+                                        </div>
+                                        <div class="pk-warehouse-meta-field">
+                                            <span class="pk-mini-label" data-key="packing_transportation_company">شرکت حمل‌کننده</span>
+                                            <div class="pk-warehouse-meta-value">{{ packing_object.transportation_company|default:"—" }}</div>
+                                        </div>
+                                        <div class="pk-warehouse-meta-field pk-warehouse-meta-description">
+                                            <span class="pk-mini-label" data-key="packing_header_description_label">توضیحات</span>
+                                            <div class="pk-warehouse-meta-value">{{ packing_object.description|default:"—" }}</div>
+                                        </div>
+                                    </div>
+                                {% else %}
                                     <div class="packing-meta-grid">
                                         {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.bl_date form.transportation_company form.origin form.destination form.estimated_shipping_start_date form.estimated_arrive_to_wh_date form.description label='on-border' %}
                                     </div>
@@ -3206,10 +3264,14 @@
     const historyCalendar = document.getElementById('packing-history-calendar');
     const auditCalendar = document.getElementById('packing-audit-calendar');
     const historyCalendarKey = 'packingWorkflowHistoryCalendar';
+    const isWarehouseStage = {{ is_warehouse_stage|yesno:"true,false" }};
+    // Every visit to warehouse stages starts in Jalali, even if an earlier
+    // workflow stage saved Gregorian; users can still switch manually.
     const savedCalendar = localStorage.getItem(historyCalendarKey);
-    if (savedCalendar === 'jalali' || savedCalendar === 'gregorian') {
-        if (historyCalendar) historyCalendar.value = savedCalendar;
-        if (auditCalendar) auditCalendar.value = savedCalendar;
+    const initialCalendar = isWarehouseStage ? 'jalali' : savedCalendar;
+    if (initialCalendar === 'jalali' || initialCalendar === 'gregorian') {
+        if (historyCalendar) historyCalendar.value = initialCalendar;
+        if (auditCalendar) auditCalendar.value = initialCalendar;
     }
     const emptyState = document.getElementById('packing-empty-state');
     const selectedCount = document.getElementById('packing-selected-count');
@@ -3551,6 +3613,36 @@
 
     let packingTranslationLanguage = '';
 
+    function updatePackingReadonlyHeaderDates(root = document) {
+        // For calendar-only dates use noon UTC, so no local timezone shifts.
+        const jalali = historyCalendar?.value === 'jalali';
+        root.querySelectorAll('[data-packing-readonly-date]').forEach(function (node) {
+            const iso = node.dataset.packingReadonlyDate;
+            if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(iso || '')) {
+                node.textContent = '—';
+                return;
+            }
+            if (!jalali) {
+                node.textContent = iso.replace(/-/g, '/');
+                return;
+            }
+            const date = new Date(iso + 'T12:00:00Z');
+            if (Number.isNaN(date.getTime())) return;
+            try {
+                const formatter = new Intl.DateTimeFormat('fa-IR-u-ca-persian-nu-latn', {
+                    timeZone: 'UTC', year: 'numeric', month: '2-digit', day: '2-digit'
+                });
+                const parts = {};
+                formatter.formatToParts(date).forEach(part => {
+                    if (part.type !== 'literal') parts[part.type] = part.value;
+                });
+                node.textContent = [parts.year, parts.month, parts.day].join('/');
+            } catch (_) {
+                node.textContent = iso.replace(/-/g, '/');
+            }
+        });
+    }
+
     function formatWorkflowDate(isoDate) {
         if (!isoDate) return '';
         const date = new Date(isoDate);
@@ -3657,6 +3749,11 @@
                 element.textContent = packingTranslations[key];
             }
         });
+        // Localize the read-only shipment choice along with other labels.
+        root.querySelectorAll('[data-packing-shipment-type]').forEach(function (node) {
+            const code = node.dataset.packingShipmentType;
+            node.textContent = code ? (packingTranslations[code] || code) : '—';
+        });
         root.querySelectorAll('[data-placeholder-key]').forEach(function (element) {
             const text = tr(element.dataset.placeholderKey);
             if (text) element.setAttribute('placeholder', text);
@@ -3703,6 +3800,7 @@
         });
 
         updateWorkflowDateDisplays(root);
+        updatePackingReadonlyHeaderDates(root);
 
         if (durationButton) {
             durationButton.textContent = timelineTranslation(
@@ -4366,6 +4464,7 @@
         if (auditCalendar) auditCalendar.value = value;
         localStorage.setItem(historyCalendarKey, value);
         updateWorkflowDateDisplays(document);
+        updatePackingReadonlyHeaderDates(document);
     }
     historyCalendar?.addEventListener('change', changePackingCalendar);
     auditCalendar?.addEventListener('change', changePackingCalendar);
