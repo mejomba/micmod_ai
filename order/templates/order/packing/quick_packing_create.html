@@ -3978,6 +3978,9 @@
         const formData = new FormData();
 
         document.querySelectorAll('#packing-header input, #packing-header select, #packing-header textarea').forEach(input => {
+            // The optional Jalali picker is display-only; only the underlying
+            // named ISO Gregorian input is sent to Django's DateField.
+            if (!input.name || input.disabled) return;
             if (input.type === 'file') {
                 Array.from(input.files || []).forEach(file => formData.append(input.name, file));
             } else {
