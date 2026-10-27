@@ -2441,47 +2441,90 @@
                                         </div>
                                     </div>
                                     <details class="pk-workflow-history">
-                                        <summary><span data-key="packing_workflow_history">تاریخچه گردش کار</span> ({{ workflow_history|length }})</summary>
-                                        <div class="pk-workflow-history-toolbar">
-                                            <label for="packing-history-calendar" data-key="packing_history_calendar">نمایش تاریخ</label>
-                                            <select id="packing-history-calendar" class="form-select form-select-sm" aria-label="Calendar type">
-                                                <option value="gregorian" data-key="packing_history_gregorian">میلادی</option>
-                                                <option value="jalali" data-key="packing_history_jalali">شمسی</option>
-                                            </select>
+                                        <summary class="pk-workflow-history-summary">
+                                            <span class="pk-workflow-history-title">
+                                                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
+                                                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l3 2"></path>
+                                                </svg>
+                                                <span data-key="packing_workflow_history">تاریخچه گردش کار</span>
+                                                <span class="pk-workflow-history-count">{{ workflow_history|length }}</span>
+                                            </span>
+                                            <span class="pk-workflow-history-hint" data-key="packing_history_open_hint">مشاهده رویدادها و تغییرات مراحل</span>
+                                        </summary>
+                                        <div class="pk-workflow-history-controls">
+                                            <div class="pk-workflow-history-filters" role="group" aria-label="Workflow history filters">
+                                                <button type="button" class="is-selected" data-pk-history-filter="all"
+                                                        aria-pressed="true" data-key="packing_history_filter_all">همه رویدادها</button>
+                                                <button type="button" data-pk-history-filter="transition"
+                                                        aria-pressed="false" data-key="packing_history_filter_transitions">تغییر مراحل</button>
+                                                <button type="button" data-pk-history-filter="assignee"
+                                                        aria-pressed="false" data-key="packing_history_filter_assignee">تغییر مسئول</button>
+                                            </div>
+                                            <div class="pk-workflow-history-toolbar">
+                                                <label for="packing-history-calendar" data-key="packing_history_calendar">نمایش تاریخ</label>
+                                                <select id="packing-history-calendar" class="form-select form-select-sm" aria-label="Calendar type">
+                                                    <option value="gregorian" data-key="packing_history_gregorian">میلادی</option>
+                                                    <option value="jalali" data-key="packing_history_jalali">شمسی</option>
+                                                </select>
+                                            </div>
                                         </div>
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-striped pk-workflow-history-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th data-key="packing_history_time">زمان</th>
-                                                        <th data-key="packing_history_action">عملیات</th>
-                                                        <th data-key="packing_history_from">از مرحله</th>
-                                                        <th data-key="packing_history_to">به مرحله</th>
-                                                        <th data-key="packing_history_by">انجام‌دهنده</th>
-                                                        <th data-key="packing_history_assignee">مسئول</th>
-                                                        <th data-key="packing_history_elapsed">از رویداد قبل</th>
-                                                        <th data-key="packing_history_description">توضیحات</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {% for entry in workflow_history %}
-                                                        <tr>
-                                                            <td class="text-nowrap" data-workflow-datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at|date:"Y/m/d H:i:s" }}</td>
-                                                            <td data-workflow-action="{{ entry.status }}">{{ entry.action }}</td>
-                                                            <td><span data-workflow-state="{{ entry.source|default:'' }}">{{ entry.source|default:"—" }}</span></td>
-                                                            <td><span data-workflow-state="{{ entry.target|default:'' }}">{{ entry.target|default:"—" }}</span></td>
-                                                            <td>{{ entry.actor|default:"—" }}</td>
-                                                            <td>{{ entry.assigned_to|default:"—" }}</td>
-                                                            <td class="text-nowrap" data-event-duration="{{ entry.elapsed_since_previous|default:'—' }}"
-                                                                data-event-duration-en="{{ entry.elapsed_since_previous_en|default:'—' }}">{{ entry.elapsed_since_previous|default:"—" }}</td>
-                                                            <td class="pk-history-description">{{ entry.description|default:"—" }}</td>
-                                                        </tr>
-                                                    {% empty %}
-                                                        <tr><td colspan="8" data-key="packing_history_empty">رویدادی ثبت نشده است.</td></tr>
-                                                    {% endfor %}
-                                                </tbody>
-                                            </table>
+                                        <div class="pk-workflow-event-list">
+                                            {% for entry in workflow_history %}
+                                                <article class="pk-workflow-event"
+                                                         data-pk-history-kind="{% if entry.status == 4 %}assignee{% else %}transition{% endif %}">
+                                                    <span class="pk-workflow-event-dot{% if entry.status == 4 %} is-assignee{% elif entry.status == 2 %} is-back{% elif entry.status == 5 %} is-create{% endif %}" aria-hidden="true"></span>
+                                                    <div class="pk-workflow-event-card">
+                                                        <div class="pk-workflow-event-top">
+                                                            <span class="pk-workflow-event-action{% if entry.status == 4 %} is-assignee{% elif entry.status == 2 %} is-back{% elif entry.status == 5 %} is-create{% endif %}"
+                                                                  data-workflow-action="{{ entry.status }}">{{ entry.action }}</span>
+                                                            <time class="pk-workflow-event-time"
+                                                                  data-workflow-datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at|date:'Y/m/d H:i:s' }}</time>
+                                                        </div>
+                                                        {% if entry.status == 4 %}
+                                                            <div class="pk-workflow-event-transition">
+                                                                <span data-key="packing_history_new_assignee">مسئول جدید</span>
+                                                                <strong>{{ entry.assigned_to|default:"—" }}</strong>
+                                                            </div>
+                                                        {% else %}
+                                                            <div class="pk-workflow-event-transition">
+                                                                <span class="pk-workflow-event-stage" data-workflow-state="{{ entry.source|default:'' }}">{{ entry.source|default:"—" }}</span>
+                                                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                                                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                                    <path d="m9 18 6-6-6-6"></path>
+                                                                </svg>
+                                                                <span class="pk-workflow-event-stage is-target" data-workflow-state="{{ entry.target|default:'' }}">{{ entry.target|default:"—" }}</span>
+                                                            </div>
+                                                        {% endif %}
+                                                        <div class="pk-workflow-event-meta">
+                                                            <span><span data-key="packing_history_by">انجام‌دهنده</span>: <strong>{{ entry.actor|default:"—" }}</strong></span>
+                                                            {% if entry.status != 4 and entry.assigned_to %}
+                                                                <span><span data-key="packing_history_assignee">مسئول</span>: <strong>{{ entry.assigned_to }}</strong></span>
+                                                            {% endif %}
+                                                            {% if entry.elapsed_since_previous %}
+                                                                <span class="pk-workflow-event-elapsed">
+                                                                    <span data-key="packing_history_elapsed">از رویداد قبل</span>:
+                                                                    <strong data-event-duration="{{ entry.elapsed_since_previous }}"
+                                                                            data-event-duration-en="{{ entry.elapsed_since_previous_en }}">{{ entry.elapsed_since_previous }}</strong>
+                                                                </span>
+                                                            {% endif %}
+                                                        </div>
+                                                        {% if entry.description %}
+                                                            <details class="pk-workflow-event-note"{% if forloop.first %} open{% endif %}>
+                                                                <summary data-key="packing_history_description">توضیحات</summary>
+                                                                <div>{{ entry.description }}</div>
+                                                            </details>
+                                                        {% endif %}
+                                                    </div>
+                                                </article>
+                                            {% empty %}
+                                                <div class="pk-workflow-history-empty">
+                                                    <span data-key="packing_history_empty">رویدادی ثبت نشده است.</span>
+                                                </div>
+                                            {% endfor %}
                                         </div>
+                                        <div class="pk-workflow-history-empty pk-workflow-filter-empty" hidden
+                                             data-key="packing_history_filter_empty">رویدادی در این دسته وجود ندارد.</div>
                                     </details>
 
                                 </div>
