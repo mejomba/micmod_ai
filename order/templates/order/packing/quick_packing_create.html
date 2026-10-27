@@ -3184,12 +3184,19 @@
     let packingTranslations = {};
 
     function currentLanguage() {
-        // Honor the selected page language; use the HTML language when no
-        // selection is stored, and normalize codes such as "fa-IR".
+        // Preserve all supported site locales for their existing JSON file.
+        // Normalize e.g. fa-IR -> fa without altering other page behavior.
         let choice = '';
         try { choice = localStorage.getItem('Dason-language') || ''; } catch (_) {}
         const raw = String(choice || document.documentElement.lang || 'en').toLowerCase();
-        return raw.startsWith('fa') ? 'fa' : 'en';
+        const locale = raw.split(/[-_]/)[0];
+        return ['fa', 'en', 'gr', 'it', 'ru', 'sp'].includes(locale) ? locale : 'en';
+    }
+
+    function workflowUiLanguage() {
+        // Workflow-specific labels are maintained in fa/en; other locales
+        // keep their translated shared JSON keys and use English otherwise.
+        return currentLanguage() === 'fa' ? 'fa' : 'en';
     }
 
     function tr(key, fallback = '') {
@@ -3444,7 +3451,7 @@
     };
 
     function timelineTranslation(key) {
-        const lang = currentLanguage();
+        const lang = workflowUiLanguage();
         return packingTimelineUi[lang][key] || key;
     }
 
@@ -3534,7 +3541,7 @@
             setPackingWorkflowTooltip(node, message);
         });
         root.querySelectorAll('.pk-workflow-connector').forEach(function (line) {
-            const displayEnglish = currentLanguage().toLowerCase().startsWith('en');
+            const displayEnglish = workflowUiLanguage() === 'en';
             const duration = displayEnglish
                 ? (line.dataset.durationEn || line.dataset.duration)
                 : line.dataset.duration;
@@ -3564,7 +3571,7 @@
             if (text) element.setAttribute('placeholder', text);
         });
 
-        const displayEnglishStages = currentLanguage().toLowerCase().startsWith('en');
+        const displayEnglishStages = workflowUiLanguage() === 'en';
         root.querySelectorAll('[data-workflow-state]').forEach(function (element) {
             const stage = element.dataset.workflowState;
             element.textContent = displayEnglishStages
@@ -3574,7 +3581,7 @@
 
         root.querySelectorAll('[data-workflow-action]').forEach(function (element) {
             const code = element.dataset.workflowAction;
-            const label = packingActionWords[currentLanguage()][code];
+            const label = packingActionWords[workflowUiLanguage()][code];
             if (label) element.textContent = label;
         });
 
@@ -3627,9 +3634,10 @@
 
     async function loadPackingTranslations() {
         const lang = currentLanguage();
+        const fallbackLang = workflowUiLanguage();
         const localDefaults = {
-            ...packingPageLabels[lang],
-            ...packingTimelineUi[lang]
+            ...packingPageLabels[fallbackLang],
+            ...packingTimelineUi[fallbackLang]
         };
         let loaded = {};
         try {
@@ -3641,7 +3649,9 @@
 
         // Workflow and page-specific wording must never fall back to Persian
         // merely because a key is absent from en.json (or vice versa).
-        packingTranslations = { ...loaded, ...localDefaults };
+        packingTranslations = ['fa', 'en'].includes(lang)
+            ? { ...loaded, ...localDefaults }
+            : { ...localDefaults, ...loaded };
         applyDynamicTranslations(document);
     }
 
