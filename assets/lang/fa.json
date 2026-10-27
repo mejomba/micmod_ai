@@ -1014,5 +1014,15 @@
     "packing_toast_error_title": "خطا در ثبت اطلاعات",
     "packing_dismiss_notification": "بستن اعلان",
     "packing_sku_label": "کد کالا",
-    "packing_part_number_label": "شماره پارت"
+    "packing_part_number_label": "شماره پارت",
+    "packing_workflow_stage_0": "پیش‌نویس",
+    "packing_workflow_stage_1": "تحویل شرکت حمل",
+    "packing_workflow_stage_2": "حمل",
+    "packing_workflow_stage_3": "قبض انبار",
+    "packing_workflow_stage_4": "تحویل اسناد",
+    "packing_workflow_stage_5": "اظهار",
+    "packing_workflow_stage_6": "ضمانتنامه",
+    "packing_workflow_stage_7": "ترخیص",
+    "packing_workflow_stage_8": "انبار",
+    "packing_workflow_stage_9": "اتمام کار"
 }

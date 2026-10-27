@@ -409,5 +409,15 @@
     "packing_toast_error_title": "Unable to save",
     "packing_dismiss_notification": "Dismiss notification",
     "packing_sku_label": "SKU",
-    "packing_part_number_label": "Part Number"
+    "packing_part_number_label": "Part Number",
+    "packing_workflow_stage_0": "Draft",
+    "packing_workflow_stage_1": "Handover to Carrier",
+    "packing_workflow_stage_2": "In Transit",
+    "packing_workflow_stage_3": "Warehouse Receipt",
+    "packing_workflow_stage_4": "Document Handover",
+    "packing_workflow_stage_5": "Customs Declaration",
+    "packing_workflow_stage_6": "Guarantee Letter",
+    "packing_workflow_stage_7": "Customs Clearance",
+    "packing_workflow_stage_8": "Warehouse",
+    "packing_workflow_stage_9": "Completed"
 }

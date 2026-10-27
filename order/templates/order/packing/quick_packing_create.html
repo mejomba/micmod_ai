@@ -2438,7 +2438,7 @@
                                                             {{ forloop.counter }}
                                                         {% endif %}
                                                     </div>
-                                                    <span class="pk-workflow-step-name" data-workflow-state="{{ stage.name }}">{{ stage.name }}</span>
+                                                    <span class="pk-workflow-step-name" data-workflow-state="{{ stage.name }}" data-key="packing_workflow_stage_{{ forloop.counter0 }}">{{ stage.name }}</span>
                                                     <span class="pk-workflow-step-status">
                                                         {% if forloop.counter0 < flow_state_index %}
                                                             <span data-key="packing_workflow_completed">Completed</span>
@@ -3483,6 +3483,36 @@
         'اتمام کار': 'Completed'
     };
 
+    // Stage codes are stable (0–9). Keep their human-readable labels in
+    // fa.json/en.json, so the shared language switcher can translate them too.
+    const packingStageNames = [
+        'پیش‌نویس',
+        'تحویل شرکت حمل',
+        'حمل',
+        'قبض انبار',
+        'تحویل اسناد',
+        'اظهار',
+        'ضمانتنامه',
+        'ترخیص',
+        'انبار',
+        'اتمام کار'
+    ];
+    const packingStageKeys = Object.fromEntries(
+        packingStageNames.map((name, index) => [name, 'packing_workflow_stage_' + index])
+    );
+    // The source/target text of existing workflow history may contain old names.
+    Object.assign(packingStageKeys, {
+        'پیش نویس': 'packing_workflow_stage_0',
+        'پیشنویس': 'packing_workflow_stage_0',
+        'DEP': 'packing_workflow_stage_1',
+        'arrive': 'packing_workflow_stage_2',
+        '10%': 'packing_workflow_stage_3',
+        'اظهار گمرکی': 'packing_workflow_stage_5',
+        'ترخیص گمرک': 'packing_workflow_stage_7'
+    });
+
+    let packingTranslationLanguage = '';
+
     function formatWorkflowDate(isoDate) {
         if (!isoDate) return '';
         const date = new Date(isoDate);
@@ -3558,6 +3588,25 @@
         });
     }
 
+    function applyWorkflowStageLabels(root = document, language = workflowUiLanguage(), useCatalog = true) {
+        const english = language !== 'fa';
+        root.querySelectorAll('[data-workflow-state]').forEach(function (element) {
+            const rawName = (element.dataset.workflowState || '').trim();
+            const key = packingStageKeys[rawName];
+            if (key) element.dataset.key = key;
+            // Immediately use the selected language on click, even before the
+            // translation request resolves. Never show a previous locale's label.
+            const translated = useCatalog && packingTranslationLanguage === (english ? 'en' : 'fa')
+                && key ? packingTranslations[key] : null;
+            const stageIndex = key ? Number(key.substring('packing_workflow_stage_'.length)) : -1;
+            const persianName = packingStageNames[stageIndex] || rawName;
+            const fallback = english
+                ? (packingStageEnglish[persianName] || rawName || '—')
+                : (persianName || '—');
+            element.textContent = translated || fallback;
+        });
+    }
+
     function applyDynamicTranslations(root = document) {
         Object.entries(packingHeaderLabelKeys).forEach(function ([fieldId, key]) {
             const label = root.querySelector('label[for="' + fieldId + '"]');
@@ -3582,12 +3631,7 @@
         });
 
         const displayEnglishStages = workflowUiLanguage() === 'en';
-        root.querySelectorAll('[data-workflow-state]').forEach(function (element) {
-            const stage = element.dataset.workflowState;
-            element.textContent = displayEnglishStages
-                ? (packingStageEnglish[stage] || stage || '—')
-                : (stage || '—');
-        });
+        applyWorkflowStageLabels(root);
 
         root.querySelectorAll('[data-workflow-action]').forEach(function (element) {
             const code = element.dataset.workflowAction;
@@ -3663,6 +3707,7 @@
         }
         if (requestId !== packingTranslationRequestId || lang !== currentLanguage()) return;
         packingTranslations = { ...localDefaults, ...loaded };
+        packingTranslationLanguage = fallbackLang;
         applyDynamicTranslations(document);
         updatePackingTableLanguage();
         if (submitButton?.disabled) updatePackingSaveButtons(true);
@@ -3671,6 +3716,18 @@
     document.addEventListener('dason:language-changed', function (event) {
         const detail = event.detail || {};
         void loadPackingTranslations(detail.translations, detail.language);
+    });
+
+    // Handle the language selector directly as well: cached versions of the
+    // shared app.js might not dispatch dason:language-changed. This listener
+    // runs after app.js's element click handler has updated Dason-language.
+    document.addEventListener('click', function (event) {
+        const choice = event.target.closest('.language[data-lang]');
+        if (!choice) return;
+        const lang = String(choice.dataset.lang || '').toLowerCase().split(/[-_]/)[0];
+        if (!['fa', 'en', 'gr', 'it', 'ru', 'sp'].includes(lang)) return;
+        applyWorkflowStageLabels(document, lang, false);
+        void loadPackingTranslations(null, lang);
     });
 
     function updatePackingTableLanguage() {
