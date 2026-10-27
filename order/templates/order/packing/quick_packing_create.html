@@ -2143,14 +2143,36 @@
                         </div>
 
                         <div class="pk-card-body">
-                            {% if packing_object %}
-                                <div class="pk-workflow-panel">
-                                    <div class="pk-workflow-head">
-                                        <div class="pk-workflow-current">
-                                            <span class="pk-workflow-current-label" data-key="packing_workflow_current_state">Current stage</span>
-                                            <span class="pk-workflow-current-name" data-workflow-state="{{ current_state }}">{{ current_state }}</span>
-                                        </div>
-
+                            <div class="pk-command-bar" role="group" aria-label="Packing operations">
+                                <div class="pk-command-bar-main">
+                                {% if wf_access %}
+                                    <button type="button" id="packing-top-save" class="btn btn-primary pk-command-save">
+                                        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
+                                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path>
+                                            <path d="M17 21v-8H7v8M7 3v5h8"></path>
+                                        </svg>
+                                        <span data-key="packing_submit">Save Packing</span>
+                                    </button>
+                                {% endif %}
+                                {% if packing_object %}
+                                    <div class="pk-header-history-tools">
+                                        <button type="button" class="btn btn-sm btn-light-primary pk-header-history-button pk-change-history-trigger"
+                                                aria-haspopup="dialog" aria-controls="pk-change-history-modal"
+                                                data-change-target="packing"
+                                                data-change-label="سربرگ پکینگ"
+                                                data-tooltip-key="packing_audit_header_button"
+                                                aria-label="تاریخچه تغییرات" title="تاریخچه تغییرات">
+                                            <svg class="pk-action-svg" viewBox="0 0 24 24" width="16" height="16"
+                                                 fill="none" stroke="currentColor" stroke-width="2"
+                                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                                <path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"></path>
+                                                <path d="M3 3v5h5"></path>
+                                                <path d="M12 7v5l3 2"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                {% endif %}
                                         <div class="pk-workflow-actions">
                                             {% if can_back %}
                                                 <button type="button" class="btn btn-sm btn-light-warning packing-workflow-action" data-action="back">
@@ -2165,6 +2187,46 @@
                                                 </button>
                                             {% endif %}
                                         </div>
+                                </div>
+                                {% if can_change_user %}
+                                    <div class="pk-command-bar-assignee">
+<div class="pk-command-assignee-controls">
+                                                <div class="pk-command-assignee-field">
+                                                    <label class="pk-mini-label" for="packing-workflow-user" data-key="packing_change_user">Change user</label>
+                                                    <select id="packing-workflow-user" class="form-select form-select-sm">
+                                                        {% for workflow_user in workflow_group_users %}
+                                                            <option
+                                                                value="{{ workflow_user.pk }}"
+                                                                {% if workflow_current_user and workflow_user.pk == workflow_current_user.pk %}selected{% endif %}
+                                                            >
+                                                                {{ workflow_user }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-light-info packing-workflow-action"
+                                                    data-action="change_user"
+                                                >
+                                                    <i class="ti ti-user-edit me-1" aria-hidden="true"></i>
+                                                    <span data-key="packing_apply_change_user">Apply</span>
+                                                </button>
+                                            </div>
+
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            {% if packing_object %}
+                                <div class="pk-workflow-panel">
+                                    <div class="pk-workflow-head">
+                                        <div class="pk-workflow-current">
+                                            <span class="pk-workflow-current-label" data-key="packing_workflow_current_state">Current stage</span>
+                                            <span class="pk-workflow-current-name" data-workflow-state="{{ current_state }}">{{ current_state }}</span>
+                                        </div>
+
+
                                     </div>
 
                                     <div class="d-flex flex-wrap align-items-end gap-3 mb-3">
@@ -2188,31 +2250,7 @@
                                             </div>
                                         {% endif %}
 
-                                        {% if can_change_user %}
-                                            <div class="d-flex flex-wrap align-items-end gap-2 ms-auto">
-                                                <div style="min-width:220px">
-                                                    <label class="pk-mini-label" for="packing-workflow-user" data-key="packing_change_user">Change user</label>
-                                                    <select id="packing-workflow-user" class="form-select form-select-sm">
-                                                        {% for workflow_user in workflow_group_users %}
-                                                            <option
-                                                                value="{{ workflow_user.pk }}"
-                                                                {% if workflow_current_user and workflow_user.pk == workflow_current_user.pk %}selected{% endif %}
-                                                            >
-                                                                {{ workflow_user }}
-                                                            </option>
-                                                        {% endfor %}
-                                                    </select>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-sm btn-light-info packing-workflow-action"
-                                                    data-action="change_user"
-                                                >
-                                                    <i class="ti ti-user-edit me-1" aria-hidden="true"></i>
-                                                    <span data-key="packing_apply_change_user">Apply</span>
-                                                </button>
-                                            </div>
-                                        {% endif %}
+
                                     </div>
 
                                     <div class="pk-workflow-more">
@@ -2311,24 +2349,6 @@
                             {% endif %}
 
                             <div id="packing-header">
-                                {% if packing_object %}
-                                    <div class="pk-header-history-tools">
-                                        <button type="button" class="btn btn-sm btn-light-primary pk-header-history-button pk-change-history-trigger"
-                                                aria-haspopup="dialog" aria-controls="pk-change-history-modal"
-                                                data-change-target="packing"
-                                                data-change-label="سربرگ پکینگ"
-                                                data-tooltip-key="packing_audit_header_button"
-                                                aria-label="تاریخچه تغییرات" title="تاریخچه تغییرات">
-                                            <svg class="pk-action-svg" viewBox="0 0 24 24" width="16" height="16"
-                                                 fill="none" stroke="currentColor" stroke-width="2"
-                                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-                                                <path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"></path>
-                                                <path d="M3 3v5h5"></path>
-                                                <path d="M12 7v5l3 2"></path>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                {% endif %}
                                 {% if not packing_object %}
                                     <div class="pk-workflow-description pk-workflow-description-create">
                                         <label for="packing-workflow-description-create" data-key="packing_workflow_description">توضیحات جریان کاری</label>
