@@ -3019,6 +3019,7 @@
     const container = document.getElementById('formset-container');
     const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
     const submitButton = document.getElementById('submit-packing');
+    const topSaveButton = document.getElementById('packing-top-save');
     const durationButton = document.getElementById('packing-toggle-durations');
     const durationScroll = document.getElementById('packing-workflow-scroll');
     const historyCalendar = document.getElementById('packing-history-calendar');
@@ -4061,6 +4062,24 @@
         });
     });
 
+    function updatePackingSaveButtons(isSaving) {
+        [submitButton, topSaveButton].forEach(function (button) {
+            if (!button) return;
+            button.disabled = isSaving;
+            const label = button.querySelector('[data-key="packing_submit"]') || button;
+            label.textContent = tr(
+                isSaving ? 'packing_submitting' : 'packing_submit',
+                isSaving ? 'Saving...' : 'Save Packing'
+            );
+        });
+    }
+
+    // Both Save buttons call the same validation and AJAX handler.
+    // The primary button at the bottom remains fully functional.
+    topSaveButton?.addEventListener('click', function () {
+        if (submitButton && !submitButton.disabled) submitButton.click();
+    });
+
     submitButton && submitButton.addEventListener('click', function () {
         const rows = container.querySelectorAll('.packing-selected-row');
 
@@ -4126,8 +4145,7 @@
 
         formData.append('form-TOTAL_FORMS', totalFormsInput.value);
 
-        submitButton.disabled = true;
-        submitButton.textContent = tr('packing_submitting', 'Saving...');
+        updatePackingSaveButtons(true);
 
         if (packingFeedback) {
             packingFeedback.textContent = '';
@@ -4151,8 +4169,7 @@
             },
 
             error: function (response) {
-                submitButton.disabled = false;
-                submitButton.textContent = tr('packing_submit', 'Save Packing');
+                updatePackingSaveButtons(false);
 
                 showPackingFeedback('error', packingAjaxError(response));
             }
