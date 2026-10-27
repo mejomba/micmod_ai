@@ -4002,7 +4002,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                     rows.append({'id': item_id, 'delete': True})
                     continue
                 arrived = self._to_float(
-                    request.POST.get(f'existing-{item_id}-arrived_quantity'),
+                    request.POST.get(f'existing-{item_id}-wh_receipt_quantity'),
                     default=None,
                 )
                 ruined = self._to_float(
@@ -4017,7 +4017,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                 rows.append({
                     'id': item_id,
                     'delete': False,
-                    'arrived_quantity': arrived,
+                    'wh_receipt_quantity': arrived,
                     'ruined_quantity': ruined,
                 })
                 continue
@@ -4085,7 +4085,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             if warehouse_stage:
                 # Warehouse users can update ONLY received and damaged counts.
                 # Never reprice, change ordered quantity, or rewrite packaging metadata.
-                arrived = row['arrived_quantity']
+                arrived = row['wh_receipt_quantity']
                 ruined = row['ruined_quantity']
                 if (
                     arrived < 0 or arrived > float(packing_item.quantity or 0)
@@ -4093,11 +4093,11 @@ class QuickPackingView(LoginRequiredMixin, View):
                 ):
                     raise ValueError('Received/damaged quantities are outside the Packing quantity.')
                 if (
-                    packing_item.arrived_quantity == arrived
+                    packing_item.wh_receipt_quantity == arrived
                     and packing_item.ruined_quantity == ruined
                 ):
                     continue
-                packing_item.arrived_quantity = arrived
+                packing_item.wh_receipt_quantity = arrived
                 packing_item.ruined_quantity = ruined
                 packing_item.editor_user = request.user
                 packing_item.extra_data.request = request

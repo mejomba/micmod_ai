@@ -21,10 +21,10 @@ class QuickPackingWarehouseUiTests(SimpleTestCase):
     def test_warehouse_editor_has_only_received_and_ruined_fields(self):
         markup = self.html.split('<div class="pk-row-editor-fields">', 1)[1]
         warehouse = markup.split('{% else %}', 1)[0]
-        self.assertIn('name="existing-{{ packing_item.pk }}-arrived_quantity"', warehouse)
+        self.assertIn('name="existing-{{ packing_item.pk }}-wh_receipt_quantity"', warehouse)
         self.assertIn('name="existing-{{ packing_item.pk }}-ruined_quantity"', warehouse)
         self.assertNotIn('name="existing-{{ packing_item.pk }}-quantity"', warehouse)
-        self.assertIn('packing_item.arrived_quantity|default_if_none:packing_item.quantity', warehouse)
+        self.assertIn('packing_item.wh_receipt_quantity|default_if_none:packing_item.quantity', warehouse)
 
     def test_double_click_protection_covers_save_and_workflow(self):
         self.assertIn('let packingRequestPending = false;', self.html)

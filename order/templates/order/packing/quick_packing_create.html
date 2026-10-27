@@ -2877,7 +2877,7 @@
                                                         {% if is_warehouse_stage %}
                                                             <div class="pk-stat">
                                                                 <span class="pk-mini-label" data-key="packing_arrived_quantity">Total Received Quantity</span>
-                                                                <strong>{{ packing_item.arrived_quantity|default_if_none:"—"|floatformat:"-4g" }}</strong>
+                                                                <strong>{{ packing_item.wh_receipt_quantity|default_if_none:"—"|floatformat:"-4g" }}</strong>
                                                             </div>
                                                             <div class="pk-stat">
                                                                 <span class="pk-mini-label" data-key="packing_ruined_quantity">Damaged Quantity</span>
@@ -2936,8 +2936,8 @@
                                                                 <input type="number" step="any" min="0"
                                                                        max="{{ packing_item.quantity|default_if_none:0 }}"
                                                                        class="form-control"
-                                                                       name="existing-{{ packing_item.pk }}-arrived_quantity"
-                                                                       value="{{ packing_item.arrived_quantity|default_if_none:packing_item.quantity|default_if_none:0 }}"
+                                                                       name="existing-{{ packing_item.pk }}-wh_receipt_quantity"
+                                                                       value="{{ packing_item.wh_receipt_quantity|default_if_none:packing_item.quantity|default_if_none:0 }}"
                                                                        required disabled>
                                                             </div>
                                                             <div>
@@ -4193,7 +4193,7 @@
                 row.classList.add('is-editing');
                 button.setAttribute('aria-expanded', 'true');
                 button.disabled = true;
-                (editor.querySelector('[name$="-arrived_quantity"]') ||
+                (editor.querySelector('[name$="-wh_receipt_quantity"]') ||
                  editor.querySelector('.packing-existing-quantity'))?.focus();
                 updateTotals();
             });
@@ -4523,7 +4523,7 @@
 
         let warehouseInvalid = false;
         document.querySelectorAll('.pk-row-editor:not([hidden])').forEach(editor => {
-            const received = editor.querySelector('[name$="-arrived_quantity"]');
+            const received = editor.querySelector('[name$="-wh_receipt_quantity"]');
             const damaged = editor.querySelector('[name$="-ruined_quantity"]');
             if (!received || !damaged) return;
             const planned = Number(received.max);
