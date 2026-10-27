@@ -44,7 +44,8 @@ class QuickPackingGregorianDateTests(SimpleTestCase):
                 self.assertIs(type(field), forms.DateField)
                 self.assertNotIsInstance(field, JalaliDateField)
                 self.assertEqual(field.input_formats, ['%Y-%m-%d'])
-                self.assertEqual(field.widget.attrs['type'], 'date')
+                # Django Input.__init__ moves attrs['type'] to input_type.
+                self.assertEqual(field.widget.input_type, 'date')
 
     def test_gregorian_date_is_not_interpreted_as_jalali_year(self):
         field = self.get_form().fields['bl_date']
@@ -53,6 +54,7 @@ class QuickPackingGregorianDateTests(SimpleTestCase):
     def test_iso_widget_displays_correct_existing_gregorian_date(self):
         field = self.get_form().fields['estimated_shipping_start_date']
         html = field.widget.render('estimated_shipping_start_date', date(2026, 10, 25))
+        self.assertIn('type="date"', html)
         self.assertIn('value="2026-10-25"', html)
         self.assertIn('data-packing-gregorian-date="1"', html)
 
