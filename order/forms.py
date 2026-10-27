@@ -256,6 +256,15 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
         model = Packing
         fields = "__all__"
 
+    @staticmethod
+    def _validate_gregorian_year(value):
+        """Reject implausible years, especially 26xx produced by old Jalali parsing."""
+        if value is not None and not 1900 <= value.year <= 2100:
+            raise ValidationError(
+                'تاریخ میلادی باید بین سال‌های 1900 و 2100 باشد. لطفاً تاریخ را بررسی کنید.',
+                code='invalid_gregorian_year',
+            )
+
     def __init__(self, *args, allowed_fields=None, allowed_hidden=None, only_show=None, **kwargs):
         constraint = {}
         initial = kwargs.get("initial") or {}
@@ -292,6 +301,7 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
                     disabled=old_field.disabled,
                     initial=old_field.initial,
                     input_formats=["%Y-%m-%d"],
+                    validators=[self._validate_gregorian_year],
                     widget=forms.DateInput(
                         format="%Y-%m-%d",
                         attrs={
