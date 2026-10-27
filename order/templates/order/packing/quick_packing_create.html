@@ -2149,7 +2149,7 @@
                                 {% if packing_object %}
                                     <div class="pk-header-history-tools">
                                         <button type="button" class="btn btn-sm btn-light-primary pk-change-history-trigger"
-                                                data-bs-toggle="modal" data-bs-target="#pk-change-history-modal"
+                                                aria-haspopup="dialog" aria-controls="pk-change-history-modal"
                                                 data-change-target="packing"
                                                 data-change-label="سربرگ پکینگ"
                                                 data-tooltip-key="packing_audit_header_button"
@@ -2347,7 +2347,7 @@
                                                     {% if can_add_items %}
                                                         <div class="pk-existing-actions">
                                                             <button type="button" class="btn btn-sm btn-light-info pk-row-history-button pk-change-history-trigger"
-                                                                data-bs-toggle="modal" data-bs-target="#pk-change-history-modal"
+                                                                aria-haspopup="dialog" aria-controls="pk-change-history-modal"
                                                                 data-change-target="item" data-change-item-id="{{ packing_item.pk }}"
                                                                 data-tooltip-key="packing_audit_row_button"
                                                                 data-change-label="{{ packing_item.order.order_number|default:packing_item.pk }}"
@@ -2371,7 +2371,7 @@
                                                     {% elif can_edit_items %}
                                                         <div class="pk-row-tools">
                                                             <button type="button" class="btn btn-sm btn-light-info pk-row-history-button pk-change-history-trigger"
-                                                                data-bs-toggle="modal" data-bs-target="#pk-change-history-modal"
+                                                                aria-haspopup="dialog" aria-controls="pk-change-history-modal"
                                                                 data-change-target="item" data-change-item-id="{{ packing_item.pk }}"
                                                                 data-tooltip-key="packing_audit_row_button"
                                                                 data-change-label="{{ packing_item.order.order_number|default:packing_item.pk }}"
@@ -2384,7 +2384,7 @@
                                                                 <path d="M12 7v5l3 2"></path>
                                                             </svg>
                                                         </button>
-                                                                                                                    <button type="button" class="btn btn-sm btn-light-primary pk-row-edit-button" data-tooltip-key="packing_edit_row" aria-label="ویرایش ردیف" aria-expanded="false" title="ویرایش ردیف">
+                                                            <button type="button" class="btn btn-sm btn-light-primary pk-row-edit-button" data-tooltip-key="packing_edit_row" aria-label="ویرایش ردیف" aria-expanded="false" title="ویرایش ردیف">
                                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                                                                 <path d="M12 20h9"></path>
                                                                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L9 17l-4 1 1-4Z"></path>
@@ -2394,7 +2394,7 @@
                                                     {% else %}
                                                         <div class="pk-row-tools">
                                                             <button type="button" class="btn btn-sm btn-light-info pk-row-history-button pk-change-history-trigger"
-                                                                data-bs-toggle="modal" data-bs-target="#pk-change-history-modal"
+                                                                aria-haspopup="dialog" aria-controls="pk-change-history-modal"
                                                                 data-change-target="item" data-change-item-id="{{ packing_item.pk }}"
                                                                 data-tooltip-key="packing_audit_row_button"
                                                                 data-change-label="{{ packing_item.order.order_number|default:packing_item.pk }}"
@@ -3622,7 +3622,7 @@
         if (!packingAuditModal || !trigger || !auditContent) return;
         const scope = trigger.dataset.changeTarget;
         const itemId = trigger.dataset.changeItemId || '';
-        if (scope !== 'packing' && (scope !== 'item' || !/^\\d+$/.test(itemId))) return;
+        if (scope !== 'packing' && (scope !== 'item' || !/^[0-9]+$/.test(itemId))) return;
 
         // Cancel the previous request if a different record was selected.
         if (auditAbortController) auditAbortController.abort();
