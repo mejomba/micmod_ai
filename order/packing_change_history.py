@@ -87,6 +87,7 @@ def build_packing_change_history(logs, packing_model, item_model, item_rows):
             'created_at': log.created_date,
             'actor': log.editor_user or log.creator_user,
             'scope': 'item' if is_item else 'packing',
+            'item_id': log.object_id if is_item else None,
             'target': item_names.get(log.object_id, f'ردیف {log.object_id}') if is_item else 'سربرگ پکینگ',
             'action': action,
             'changes': changes,
