@@ -2114,6 +2114,12 @@
     const submitButton = document.getElementById('submit-packing');
     const durationButton = document.getElementById('packing-toggle-durations');
     const durationScroll = document.getElementById('packing-workflow-scroll');
+    const historyCalendar = document.getElementById('packing-history-calendar');
+    const historyCalendarKey = 'packingWorkflowHistoryCalendar';
+    const savedCalendar = localStorage.getItem(historyCalendarKey);
+    if (historyCalendar && (savedCalendar === 'jalali' || savedCalendar === 'gregorian')) {
+        historyCalendar.value = savedCalendar;
+    }
     const emptyState = document.getElementById('packing-empty-state');
     const selectedCount = document.getElementById('packing-selected-count');
     const packingLayout = document.querySelector('.packing-layout');
@@ -2151,7 +2157,10 @@
             packing_entered_at: 'زمان ورود',
             packing_not_entered: 'هنوز وارد این مرحله نشده است',
             packing_duration_to_next: 'مدت تا مرحله بعد',
-            packing_duration_pending: 'زمان انتقال به مرحله بعد هنوز ثبت نشده است'
+            packing_duration_pending: 'زمان انتقال به مرحله بعد هنوز ثبت نشده است',
+            packing_history_calendar: 'نمایش تاریخ',
+            packing_history_gregorian: 'میلادی',
+            packing_history_jalali: 'شمسی'
         },
         en: {
             packing_workflow_description: 'Workflow notes',
@@ -2171,7 +2180,10 @@
             packing_entered_at: 'Entered at',
             packing_not_entered: 'Not reached yet',
             packing_duration_to_next: 'Time to next stage',
-            packing_duration_pending: 'The next-stage transition has not been recorded'
+            packing_duration_pending: 'The next-stage transition has not been recorded',
+            packing_history_calendar: 'Calendar',
+            packing_history_gregorian: 'Gregorian',
+            packing_history_jalali: 'Jalali (Persian)'
         }
     };
     const packingActionEnglish = {
@@ -2205,8 +2217,84 @@
         'اظهار': 'Customs Declaration',
         'ضمانتنامه': 'Guarantee Letter',
         'ترخیص': 'Customs Clearance',
-        'انبار': 'Warehouse'
+        'انبار': 'Warehouse',
+        'اتمام کار': 'Completed'
     };
+
+    function formatWorkflowDate(isoDate) {
+        if (!isoDate) return '';
+        const date = new Date(isoDate);
+        if (Number.isNaN(date.getTime())) return '';
+        const isJalali = historyCalendar?.value === 'jalali';
+        const locale = isJalali ? 'fa-IR-u-ca-persian-nu-latn' : 'en-GB-u-ca-gregory-nu-latn';
+        try {
+            const formatter = new Intl.DateTimeFormat(locale, {
+                timeZone: 'Asia/Tehran',
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                hourCycle: 'h23'
+            });
+            const parts = {};
+            formatter.formatToParts(date).forEach(part => {
+                if (part.type !== 'literal') parts[part.type] = part.value;
+            });
+            return [parts.year, parts.month, parts.day].join('/') + ' ' +
+                [parts.hour, parts.minute, parts.second].join(':');
+        } catch (_) {
+            return isoDate;
+        }
+    }
+
+    function setPackingWorkflowTooltip(element, message) {
+        // Bootstrap attaches the overlay to body, preventing clipping by the
+        // horizontally scrollable workflow. Native title remains a fallback.
+        element._packingTooltip?.dispose();
+        element._packingTooltip = null;
+        element.setAttribute('title', message);
+        element.setAttribute('aria-label', message);
+        if (window.bootstrap && typeof window.bootstrap.Tooltip === 'function') {
+            try {
+                element.removeAttribute('title');
+                element._packingTooltip = new window.bootstrap.Tooltip(element, {
+                    container: 'body',
+                    placement: 'top',
+                    trigger: 'hover focus',
+                    customClass: 'pk-workflow-tooltip',
+                    title: message
+                });
+            } catch (_) {
+                element.setAttribute('title', message);
+            }
+        }
+    }
+
+    function updateWorkflowDateDisplays(root = document) {
+        root.querySelectorAll('[data-workflow-datetime]').forEach(function (cell) {
+            const display = formatWorkflowDate(cell.dataset.workflowDatetime);
+            if (display) cell.textContent = display;
+        });
+        root.querySelectorAll('.pk-workflow-node[data-entry-time]').forEach(function (node) {
+            const when = node.dataset.entryTimeIso
+                ? formatWorkflowDate(node.dataset.entryTimeIso)
+                : node.dataset.entryTime;
+            const message = when
+                ? timelineTranslation('packing_entered_at') + ': ' + when
+                : timelineTranslation('packing_not_entered');
+            setPackingWorkflowTooltip(node, message);
+        });
+        root.querySelectorAll('.pk-workflow-connector').forEach(function (line) {
+            const displayEnglish = currentLanguage().toLowerCase().startsWith('en');
+            const duration = displayEnglish
+                ? (line.dataset.durationEn || line.dataset.duration)
+                : line.dataset.duration;
+            const message = duration
+                ? timelineTranslation('packing_duration_to_next') + ': ' + duration
+                : timelineTranslation('packing_duration_pending');
+            setPackingWorkflowTooltip(line, message);
+            const value = line.querySelector('.pk-workflow-duration');
+            if (value && duration) value.textContent = duration;
+        });
+    }
 
     function applyDynamicTranslations(root = document) {
         Object.entries(packingHeaderLabelKeys).forEach(function ([fieldId, key]) {
@@ -2249,27 +2337,7 @@
                 : cell.dataset.eventDuration;
         });
 
-        root.querySelectorAll('.pk-workflow-node[data-entry-time]').forEach(function (node) {
-            const when = node.dataset.entryTime;
-            const tooltip = when
-                ? timelineTranslation('packing_entered_at') + ': ' + when
-                : timelineTranslation('packing_not_entered');
-            node.title = tooltip;
-            node.setAttribute('aria-label', tooltip);
-        });
-
-        root.querySelectorAll('.pk-workflow-connector').forEach(function (line) {
-            const duration = displayEnglishStages
-                ? (line.dataset.durationEn || line.dataset.duration)
-                : line.dataset.duration;
-            const tooltip = duration
-                ? timelineTranslation('packing_duration_to_next') + ': ' + duration
-                : timelineTranslation('packing_duration_pending');
-            line.title = tooltip;
-            line.setAttribute('aria-label', tooltip);
-            const value = line.querySelector('.pk-workflow-duration');
-            if (value && duration) value.textContent = duration;
-        });
+        updateWorkflowDateDisplays(root);
 
         if (durationButton) {
             durationButton.textContent = timelineTranslation(
@@ -2757,6 +2825,13 @@
 
         syncEmptyState();
         updateTotals();
+    });
+
+    // Calendar is a display preference: it never changes stored timestamps.
+    historyCalendar?.addEventListener('change', function () {
+        if (historyCalendar.value !== 'jalali' && historyCalendar.value !== 'gregorian') return;
+        localStorage.setItem(historyCalendarKey, historyCalendar.value);
+        updateWorkflowDateDisplays(document);
     });
 
     // Show/hide recorded durations without changing the underlying workflow.
