@@ -43,13 +43,17 @@
     .pk-date-input-wrap [hidden] { display: none !important; }
     .pk-jalali-date-display {
         cursor: pointer;
-        padding-inline-end: 30px;
-        text-align: start;
+        /* The displayed date is LTR/left-aligned; the icon must be on the right. */
         direction: ltr;
+        text-align: left;
+        padding-left: 10px;
+        padding-right: 35px;
     }
     .pk-jalali-calendar-open {
         position: absolute;
-        inset-inline-end: 6px;
+        /* Physical right: opposite the date text in both RTL/LTR layouts. */
+        right: 7px;
+        left: auto;
         top: 50%;
         transform: translateY(-50%);
         border: 0;
@@ -942,6 +946,110 @@
     }
     @media (prefers-reduced-motion: reduce) {
         .pk-save-toast, .pk-save-toast-progress { animation: none; }
+    }
+
+    /* Compact, responsive command bar shared by all Packing actions. */
+    .pk-command-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 12px;
+        margin-bottom: 14px;
+        border: 1px solid #dfe7f2;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #f6f9ff 0%, #fff 100%);
+        box-shadow: 0 2px 9px rgba(24, 28, 50, .035);
+    }
+
+    .pk-command-bar-main,
+    .pk-command-bar-assignee,
+    .pk-command-assignee-controls {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 7px;
+        min-width: 0;
+    }
+
+    .pk-command-bar .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        min-height: 34px;
+        padding: 6px 11px;
+        border-radius: 8px;
+        font-size: .79rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .pk-command-bar .btn svg { flex: 0 0 auto; }
+
+    .pk-command-bar .pk-command-save {
+        box-shadow: 0 3px 8px rgba(54, 153, 255, .17);
+    }
+
+    .pk-command-bar .pk-header-history-tools {
+        margin: 0;
+        align-items: center;
+    }
+
+    .pk-command-bar .pk-header-history-button {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        padding: 6px;
+        flex: 0 0 34px;
+    }
+
+    .pk-command-bar-assignee {
+        border-inline-start: 1px solid #e4eaf2;
+        padding-inline-start: 12px;
+        flex: 1 1 230px;
+        justify-content: flex-end;
+    }
+
+    .pk-command-assignee-controls {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .pk-command-assignee-field {
+        flex: 1 1 140px;
+        min-width: 130px;
+        max-width: 230px;
+    }
+
+    .pk-command-assignee-field .pk-mini-label {
+        margin-bottom: 3px;
+    }
+
+    .pk-command-assignee-field .form-select {
+        width: 100%;
+        min-height: 34px;
+        font-size: .8rem;
+    }
+
+    @media (max-width: 1050px) {
+        .pk-command-bar-assignee {
+            border-inline-start: 0;
+            border-top: 1px solid #e4eaf2;
+            padding-inline-start: 0;
+            padding-top: 10px;
+            flex-basis: 100%;
+            justify-content: flex-start;
+        }
+        .pk-command-assignee-controls { justify-content: flex-start; }
+    }
+
+    @media (max-width: 550px) {
+        .pk-command-bar { padding: 9px; }
+        .pk-command-bar-main { width: 100%; }
+        .pk-command-bar-main .pk-command-save { flex: 1 1 auto; }
+        .pk-command-assignee-field { max-width: none; }
     }
 
     .pk-workflow-panel {
