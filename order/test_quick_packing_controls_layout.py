@@ -51,11 +51,45 @@ class QuickPackingControlLayoutTests(SimpleTestCase):
         footer = footer.split('<div class="modal fade pk-change-history-modal"', 1)[0]
         self.assertNotIn('ti-arrow-back-up', footer)
         self.assertNotIn('ti-arrow-forward-up', footer)
-        self.assertIn('<path d="m9 14-5-5 5-5">', footer)
-        self.assertIn('<path d="m15 14 5-5-5-5">', footer)
+        back = footer.split('data-action="back"', 1)[1].split('data-action="next"', 1)[0]
+        next_action = footer.split('data-action="next"', 1)[1]
+        # UX request: back and complete use opposite SVG arrow paths.
+        self.assertIn('<path d="m15 14 5-5-5-5">', back)
+        self.assertIn('<path d="m9 14-5-5 5-5">', next_action)
 
     def test_cancel_edit_uses_bootstrap_light_danger_hover(self):
         html = self.markup
         self.assertIn('class="btn btn-sm btn-light-danger pk-row-cancel-edit"', html)
         self.assertNotIn('.pk-row-cancel-edit:hover', html)
         self.assertNotIn('.pk-row-cancel-edit:focus', html)
+
+    def test_workflow_assignee_has_avatar_photo_and_initials_fallback(self):
+        html = self.markup
+        self.assertNotIn('class="pk-workflow-head"', html)
+        self.assertIn('class="pk-workflow-assignee-person"', html)
+        self.assertIn('class="pk-workflow-assignee-avatar"', html)
+        self.assertIn('workflow_current_user.profile.avatar.url', html)
+        self.assertIn('workflow_current_user.username|slice:":1"', html)
+        self.assertIn('data-key="packing_no_assignee"', html)
+
+    def test_workflow_history_is_readable_timeline_not_wide_table(self):
+        html = self.markup
+        self.assertIn('class="pk-workflow-event-list"', html)
+        self.assertIn('class="pk-workflow-event-card"', html)
+        self.assertIn('data-workflow-action="{{ entry.status }}"', html)
+        self.assertIn('data-event-duration-en="{{ entry.elapsed_since_previous_en }}"', html)
+        self.assertNotIn('class="table table-sm table-striped pk-workflow-history-table"', html)
+        for name in ('all', 'transition', 'assignee'):
+            self.assertIn('data-pk-history-filter="' + name + '"', html)
+        self.assertIn('id="packing-history-calendar"', html)
+
+    def test_page_labels_and_action_history_translate_in_both_languages(self):
+        html = self.markup
+        self.assertIn('const packingActionWords = {', html)
+        self.assertIn("'2': 'عودت به مرحله قبل'", html)
+        self.assertIn("'2': 'Returned to previous stage'", html)
+        self.assertIn('packingTranslations = { ...loaded, ...localDefaults };', html)
+        self.assertIn('packingActionWords[currentLanguage()][code]', html)
+        self.assertIn('packing_history_filter_all: \'همه رویدادها\'', html)
+        self.assertIn('packing_history_filter_all: \'All events\'', html)
+        self.assertIn('data-key="packing_cancel_row_edit"', html)
