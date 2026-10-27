@@ -5,7 +5,7 @@ from unittest.mock import patch
 from django.conf import settings
 from django.test import SimpleTestCase
 
-from core.models import Base
+from core.views import Base
 from order.models import Packing
 
 
