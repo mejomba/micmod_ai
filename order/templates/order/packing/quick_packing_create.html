@@ -2279,7 +2279,7 @@
                 <div id="packing-toast-message" class="pk-save-toast-message"></div>
             </div>
             <button type="button" class="pk-save-toast-close" id="packing-toast-close"
-                    aria-label="Dismiss notification" title="Dismiss">×</button>
+                    aria-label="Dismiss notification" title="Dismiss" data-title-key="packing_dismiss_notification" data-aria-key="packing_dismiss_notification">×</button>
         </div>
         <div class="pk-save-toast-progress" aria-hidden="true"></div>
     </div>
@@ -3228,8 +3228,8 @@
         packingToast.style.setProperty('--pk-toast-lifetime', lifetime + 'ms');
         const persian = currentLanguage().toLowerCase().startsWith('fa');
         document.getElementById('packing-toast-title').textContent = success
-            ? (persian ? 'با موفقیت انجام شد' : 'Saved successfully')
-            : (persian ? 'خطا در ثبت اطلاعات' : 'Unable to save');
+            ? tr('packing_toast_success_title', persian ? 'با موفقیت انجام شد' : 'Saved successfully')
+            : tr('packing_toast_error_title', persian ? 'خطا در ثبت اطلاعات' : 'Unable to save');
         document.getElementById('packing-toast-message').textContent = display;
         document.getElementById('packing-toast-icon').textContent = success ? '✓' : '!';
         const bar = packingToast.querySelector('.pk-save-toast-progress');
@@ -3407,9 +3407,8 @@
         }
     };
 
-    // The shared English language file intentionally does not have all the
-    // Quick Packing/Workflow keys. Keep page-specific fallbacks here, without
-    // changing translation behavior in any other ERP screen.
+    // Keep page-specific fallbacks for offline use and for site locales that
+    // do not have their own Quick Packing translations.
     const packingPageLabels = {
         fa: {
             back: 'عودت',
@@ -3456,6 +3455,11 @@
     }
 
     const packingHeaderLabelKeys = {
+        'id_packing_number': 'packing_number_label',
+        'id_currency': 'packing_currency_label',
+        'id_shipment_type': 'packing_shipment_type_label',
+        'id_bl_number': 'packing_bl_number_label',
+        'id_description': 'packing_header_description_label',
         'id_bl_date': 'packing_bl_date',
         'id_transportation_company': 'packing_transportation_company',
         'id_origin': 'packing_origin',
@@ -3570,6 +3574,12 @@
             const text = tr(element.dataset.placeholderKey);
             if (text) element.setAttribute('placeholder', text);
         });
+        root.querySelectorAll('[data-title-key]').forEach(function (element) {
+            element.setAttribute('title', tr(element.dataset.titleKey));
+        });
+        root.querySelectorAll('[data-aria-key]').forEach(function (element) {
+            element.setAttribute('aria-label', tr(element.dataset.ariaKey));
+        });
 
         const displayEnglishStages = workflowUiLanguage() === 'en';
         root.querySelectorAll('[data-workflow-state]').forEach(function (element) {
@@ -3632,27 +3642,69 @@
         }
     }
 
-    async function loadPackingTranslations() {
-        const lang = currentLanguage();
-        const fallbackLang = workflowUiLanguage();
+    let packingTranslationRequestId = 0;
+    async function loadPackingTranslations(existingTranslations = null, requestedLanguage = null) {
+        const requestId = ++packingTranslationRequestId;
+        const lang = requestedLanguage || currentLanguage();
+        const fallbackLang = lang === 'fa' ? 'fa' : 'en';
         const localDefaults = {
             ...packingPageLabels[fallbackLang],
             ...packingTimelineUi[fallbackLang]
         };
-        let loaded = {};
-        try {
-            const response = await fetch('/static/lang/' + lang + '.json', {
-                cache: 'force-cache'
-            });
-            if (response.ok) loaded = await response.json();
-        } catch (_) { /* local labels remain usable offline */ }
-
-        // Workflow and page-specific wording must never fall back to Persian
-        // merely because a key is absent from en.json (or vice versa).
-        packingTranslations = ['fa', 'en'].includes(lang)
-            ? { ...loaded, ...localDefaults }
-            : { ...localDefaults, ...loaded };
+        let loaded = existingTranslations && typeof existingTranslations === 'object'
+            ? existingTranslations : {};
+        if (!existingTranslations) {
+            try {
+                const response = await fetch('/static/lang/' + lang + '.json', {
+                    cache: 'no-cache'
+                });
+                if (response.ok) loaded = await response.json();
+            } catch (_) { /* local labels remain usable offline */ }
+        }
+        if (requestId !== packingTranslationRequestId || lang !== currentLanguage()) return;
+        packingTranslations = { ...localDefaults, ...loaded };
         applyDynamicTranslations(document);
+        updatePackingTableLanguage();
+        if (submitButton?.disabled) updatePackingSaveButtons(true);
+    }
+
+    document.addEventListener('dason:language-changed', function (event) {
+        const detail = event.detail || {};
+        void loadPackingTranslations(detail.translations, detail.language);
+    });
+
+    function updatePackingTableLanguage() {
+        const table = document.getElementById('quick-packing-list');
+        if (!table || !$.fn.dataTable || !$.fn.dataTable.isDataTable(table)) return;
+        const api = $(table).DataTable();
+        const language = api.settings()[0].oLanguage;
+        language.sInfo = tr('packing_info_records');
+        language.sInfoEmpty = tr('packing_info_empty');
+        language.sZeroRecords = tr('packing_zero_records');
+        language.sEmptyTable = tr('packing_info_empty');
+        language.sLengthMenu = tr('packing_length_menu');
+        language.oPaginate.sPrevious = tr('packing_previous_page');
+        language.oPaginate.sNext = tr('packing_next_page');
+        api.draw(false);
+        const wrapper = document.getElementById('quick-packing-list_wrapper');
+        if (!wrapper) return;
+        const search = wrapper.querySelector('input[type="search"]');
+        if (search) search.placeholder = tr('packing_search_orders');
+        const lengthLabel = wrapper.querySelector('.dataTables_length label');
+        const selector = lengthLabel?.querySelector('select');
+        if (selector) {
+            const parts = tr('packing_length_menu').split('_MENU_');
+            if (selector.previousSibling?.nodeType === 3) {
+                selector.previousSibling.textContent = parts[0];
+            } else {
+                selector.before(document.createTextNode(parts[0]));
+            }
+            if (selector.nextSibling?.nodeType === 3) {
+                selector.nextSibling.textContent = parts.slice(1).join('_MENU_');
+            } else {
+                selector.after(document.createTextNode(parts.slice(1).join('_MENU_')));
+            }
+        }
     }
 
     function clampSplitPercent(value) {
@@ -3893,23 +3945,23 @@
                     <div class="min-w-0">
                         <div class="pk-row-title"><span class="pk-row-number" aria-label="Row number">${index}</span>${data.orderNumber || ('Order #' + data.orderId)}</div>
                         <div class="pk-row-part">
-                            <span class="me-2">SKU: <b>${data.sku || '-'}</b></span>
+                            <span class="me-2"><span data-key="sku">${tr('sku', 'SKU')}</span>: <b>${data.sku || '-'}</b></span>
                             <span>${data.partNumber || '-'}</span>
                         </div>
 
                         <div class="pk-row-tags">
-                            <span class="pk-tag pk-tag-gio">${tr('packing_gio_quantity', 'GIO Qty')}: ${fmt(data.quantityInGio)}</span>
-                            <span class="pk-tag pk-tag-available">${tr('packing_available', 'Available for Packing')}: ${fmt(data.available)}</span>
-                            <span class="pk-tag pk-tag-remaining">${tr('packing_order_remaining', 'Remaining in Order')}: ${fmt(data.remainingInOrder)}</span>
+                            <span class="pk-tag pk-tag-gio"><span data-key="packing_gio_quantity">${tr('packing_gio_quantity', 'GIO Qty')}</span>: ${fmt(data.quantityInGio)}</span>
+                            <span class="pk-tag pk-tag-available"><span data-key="packing_available">${tr('packing_available', 'Available for Packing')}</span>: ${fmt(data.available)}</span>
+                            <span class="pk-tag pk-tag-remaining"><span data-key="packing_order_remaining">${tr('packing_order_remaining', 'Remaining in Order')}</span>: ${fmt(data.remainingInOrder)}</span>
                         </div>
                     </div>
 
-                    <button type="button" class="pk-remove remove-packing-row" title="${tr('packing_remove_row', 'Remove row')}">×</button>
+                    <button type="button" class="pk-remove remove-packing-row" data-title-key="packing_remove_row" aria-label="${tr('packing_remove_row', 'Remove row')}" data-aria-key="packing_remove_row" title="${tr('packing_remove_row', 'Remove row')}">×</button>
                 </div>
 
                 <div class="pk-row-quantity">
                     <div class="pk-quantity-box">
-                        <label>${tr('packing_quantity_this', 'Packing Quantity')}</label>
+                        <label><span data-key="packing_quantity_this">${tr('packing_quantity_this', 'Packing Quantity')}</span></label>
                         <input
                             type="number"
                             step="any"
@@ -3920,50 +3972,50 @@
                             value="${data.available}"
                             required
                         >
-                        <small class="text-muted d-block mt-1">${tr('packing_max', 'Max')} ${fmt(data.available)}</small>
+                        <small class="text-muted d-block mt-1"><span data-key="packing_max">${tr('packing_max', 'Max')}</span> ${fmt(data.available)}</small>
                     </div>
 
                     <div class="pk-stat">
-                        <span class="pk-mini-label">${tr('packing_row_total_weight', 'Row Total Weight')}</span>
+                        <span class="pk-mini-label"><span data-key="packing_row_total_weight">${tr('packing_row_total_weight', 'Row Total Weight')}</span></span>
                         <strong><span class="row-total-weight">0</span></strong>
-                        <small class="text-muted">${tr('packing_unit_weight', 'Unit Weight')}: ${fmt(data.unitWeight)}</small>
+                        <small class="text-muted"><span data-key="packing_unit_weight">${tr('packing_unit_weight', 'Unit Weight')}</span>: ${fmt(data.unitWeight)}</small>
                     </div>
 
                     <div class="pk-stat">
-                        <span class="pk-mini-label">${tr('packing_row_total_value', 'Row Total Value')}</span>
+                        <span class="pk-mini-label"><span data-key="packing_row_total_value">${tr('packing_row_total_value', 'Row Total Value')}</span></span>
                         <strong>
                             <span class="row-total-value">0</span>
                             <span class="text-muted ms-1">${data.currency}</span>
                         </strong>
-                        <small class="text-muted">${tr('packing_unit_price', 'Unit Price')}: ${fmtMoney(data.finalPrice)} ${data.currency}</small>
+                        <small class="text-muted"><span data-key="packing_unit_price">${tr('packing_unit_price', 'Unit Price')}</span>: ${fmtMoney(data.finalPrice)} ${data.currency}</small>
                     </div>
                 </div>
             </div>
 
             <details class="pk-row-details">
                 <summary>
-                    ${tr('packing_row_more_info', 'Additional Row Information')}
-                    <span class="text-muted ms-2">${tr('packing_previous', 'Previous Packing')}: ${fmt(packedBefore)}</span>
+                    <span data-key="packing_row_more_info">${tr('packing_row_more_info', 'Additional Row Information')}</span>
+                    <span class="text-muted ms-2"><span data-key="packing_previous">${tr('packing_previous', 'Previous Packing')}</span>: ${fmt(packedBefore)}</span>
                 </summary>
 
                 <div class="pk-row-details-body">
                     <div>
-                        <label class="pk-mini-label">${tr('packing_carton_number', 'Carton Number')}</label>
+                        <label class="pk-mini-label"><span data-key="packing_carton_number">${tr('packing_carton_number', 'Carton Number')}</span></label>
                         <input class="form-control" name="form-${index}-carton_number">
                     </div>
 
                     <div>
-                        <label class="pk-mini-label">${tr('packing_gross_weight', 'Gross Weight')}</label>
+                        <label class="pk-mini-label"><span data-key="packing_gross_weight">${tr('packing_gross_weight', 'Gross Weight')}</span></label>
                         <input type="number" step="any" class="form-control" name="form-${index}-gross_weight_kg">
                     </div>
 
                     <div>
-                        <label class="pk-mini-label">${tr('packing_size', 'Size')}</label>
+                        <label class="pk-mini-label"><span data-key="packing_size">${tr('packing_size', 'Size')}</span></label>
                         <input class="form-control" name="form-${index}-size">
                     </div>
 
                     <div class="pk-desc">
-                        <label class="pk-mini-label">${tr('packing_description', 'Description')}</label>
+                        <label class="pk-mini-label"><span data-key="packing_description">${tr('packing_description', 'Description')}</span></label>
                         <textarea class="form-control" rows="2" name="form-${index}-description"></textarea>
                     </div>
                 </div>
@@ -3971,6 +4023,7 @@
         `;
 
         container.appendChild(row);
+        applyDynamicTranslations(row);
 
         row.querySelector('.packing-quantity').addEventListener('input', function () {
             const current = toNumber(this.value);
