@@ -1442,8 +1442,9 @@
         height: 17px;
     }
 
+    /* Reserve space for the two 30px history/edit icons on one line. */
     .packing-layout-workflow-rows .pk-row-title {
-        padding-inline-end: 38px;
+        padding-inline-end: 82px;
     }
 
     .packing-layout-workflow-rows .pk-row-editor {
@@ -2673,7 +2674,11 @@
             packing_audit_previous: 'مقدار قبلی',
             packing_audit_current: 'مقدار جدید',
             packing_audit_no_fields: 'تغییر فیلدی ثبت نشده است.',
-            packing_audit_empty: 'هنوز تغییری برای این سند ثبت نشده است.'
+            packing_audit_empty: 'هنوز تغییری برای این بخش ثبت نشده است.',
+            packing_audit_header_button: 'تاریخچه تغییرات سربرگ',
+            packing_audit_modal_title: 'تاریخچه تغییرات',
+            packing_audit_header_name: 'سربرگ پکینگ',
+            packing_audit_row_name: 'سفارش'
         },
         en: {
             packing_workflow_description: 'Workflow notes',
@@ -2708,7 +2713,11 @@
             packing_audit_previous: 'Previous value',
             packing_audit_current: 'New value',
             packing_audit_no_fields: 'No field changes recorded.',
-            packing_audit_empty: 'No changes have been recorded for this document.'
+            packing_audit_empty: 'No changes have been recorded for this section.',
+            packing_audit_header_button: 'Header change history',
+            packing_audit_modal_title: 'Change history',
+            packing_audit_header_name: 'Packing header',
+            packing_audit_row_name: 'Order'
         }
     };
     const packingActionEnglish = {
@@ -3373,6 +3382,55 @@
     });
 
     // Calendar is a display preference: it never changes stored timestamps.
+    // One Bootstrap modal for the header and all existing Packing rows.
+    // Switch the visible records by their exact persisted PackingItem id.
+    const packingAuditModal = document.getElementById('pk-change-history-modal');
+
+    function openPackingAuditFor(trigger) {
+        if (!packingAuditModal || !trigger) return;
+        const scope = trigger.dataset.changeTarget;
+        const itemId = trigger.dataset.changeItemId || '';
+        const rows = packingAuditModal.querySelectorAll('.pk-audit-record');
+        let matches = 0;
+
+        rows.forEach(function (row) {
+            const visible = scope === 'packing'
+                ? row.dataset.auditRecordScope === 'packing'
+                : scope === 'item' &&
+                  row.dataset.auditRecordScope === 'item' &&
+                  row.dataset.auditRecordItem === itemId;
+            row.hidden = !visible;
+            if (visible) matches += 1;
+            const details = row.querySelector('.pk-audit-details');
+            if (details) details.open = false;
+        });
+
+        const label = scope === 'packing'
+            ? timelineTranslation('packing_audit_header_name')
+            : timelineTranslation('packing_audit_row_name') + ': ' + (trigger.dataset.changeLabel || itemId);
+        packingAuditModal.querySelector('#pk-change-history-modal-title').textContent =
+            timelineTranslation('packing_audit_modal_title');
+        packingAuditModal.querySelector('#pk-audit-modal-subtitle').textContent =
+            label + ' · ' + matches;
+
+        const table = packingAuditModal.querySelector('#pk-audit-modal-table');
+        const empty = packingAuditModal.querySelector('#pk-audit-modal-empty');
+        if (table) table.hidden = matches === 0;
+        if (empty) empty.hidden = matches !== 0;
+    }
+
+    document.querySelectorAll('.pk-change-history-trigger').forEach(function (button) {
+        button.addEventListener('click', function () {
+            openPackingAuditFor(button);
+            // Compatibility with the older Bootstrap jQuery modal bundle, if
+            // Bootstrap 5's data-bs-toggle is not supported by this layout.
+            if (!(window.bootstrap && window.bootstrap.Modal) &&
+                window.jQuery && typeof jQuery.fn.modal === 'function') {
+                jQuery(packingAuditModal).modal('show');
+            }
+        });
+    });
+
     function changePackingCalendar(event) {
         const value = event.target.value;
         if (value !== 'jalali' && value !== 'gregorian') return;
