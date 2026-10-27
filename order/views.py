@@ -46,6 +46,7 @@ from sepidar.api_call import SepidarApiCall
 from sepidar.models import Dl
 from tools.utils import is_ajax, parse_number
 from workflow.models import WorkFlow, FlowAdminGroup
+from .packing_workflow_timeline import build_packing_workflow_timeline
 from .form_perm import ORDER_FIELDS_BY_PERMISSION
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
     OrderPaymentItemForm, OrderPaymentItemFormSet, BazarBuyFactorForm, \
@@ -3767,6 +3768,12 @@ class QuickPackingView(LoginRequiredMixin, View):
             only_show=only_show,
         )
 
+    def _workflow_description(self):
+        description = (self.request.POST.get('wf_description') or '').strip()
+        if len(description) > 255:
+            raise ValueError('توضیحات جریان کاری نباید بیشتر از ۲۵۵ کاراکتر باشد.')
+        return description
+
     def _create_initial_workflow(self, packing_obj):
         state = self.flow_config.get('flow_state_list', ['پیش‌نویس'])[0]
         group = self._flow_group(0) or 'packing_user_p'
@@ -3795,6 +3802,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             content_type=ContentType.objects.get_for_model(Packing),
             object_id=packing_obj.pk,
             current_state_name=state,
+            wf_description=self._workflow_description(),
             creator_user=self.request.user,
             editor_user=self.request.user,
         )
@@ -3863,7 +3871,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             content_type=ContentType.objects.get_for_model(Packing),
             object_id=packing_obj.pk,
             current_state_name=current_state,
-            wf_description=self.request.POST.get('wf_description'),
+            wf_description=self._workflow_description(),
             creator_user=self.request.user,
             editor_user=self.request.user,
         )
@@ -3917,7 +3925,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             content_type=ContentType.objects.get_for_model(Packing),
             object_id=packing_obj.pk,
             current_state_name=target_state,
-            wf_description=self.request.POST.get('wf_description'),
+            wf_description=self._workflow_description(),
             creator_user=self.request.user,
             editor_user=self.request.user,
         )
@@ -4283,7 +4291,25 @@ class QuickPackingView(LoginRequiredMixin, View):
                         )
                     )
 
+        workflow_records = []
+        if packing_obj:
+            workflow_records = list(
+                WorkFlow.objects.filter(
+                    object_id=packing_obj.pk,
+                    content_type=ContentType.objects.get_for_model(Packing),
+                )
+                .select_related('from_user', 'to_user', 'creator_user')
+                .order_by('created_date', 'id')
+            )
+        timeline = build_packing_workflow_timeline(
+            workflow_records,
+            states,
+            Packing.normalize_workflow_state_name,
+        )
+
         context = {
+            'workflow_stages': timeline['stages'],
+            'workflow_history': timeline['history'],
             'form': self._build_form(packing_obj=packing_obj),
             'formset': PackingItemFormSet(),
             'packings': packing_items,
@@ -4312,10 +4338,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                 ).distinct().order_by('id')
                 if packing_obj else get_user_model().objects.none()
             ),
-            'flow': (
-                packing_obj.workflows.order_by('-id')
-                if packing_obj else []
-            ),
+            'flow': list(reversed(workflow_records)),
         }
         return render(request, self.template_name, context)
 
