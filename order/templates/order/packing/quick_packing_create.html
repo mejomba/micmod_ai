@@ -705,8 +705,110 @@
     }
 
     #ajax-response {
-        font-size: .78rem;
-        margin-top: 8px;
+        font-size: .82rem;
+        line-height: 1.6;
+        margin-top: 9px;
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+    }
+    #ajax-response:empty { display: none; }
+    #ajax-response.pk-feedback-success,
+    #ajax-response.pk-feedback-error {
+        padding: 9px 12px;
+        border: 1px solid;
+        border-radius: 9px;
+        font-weight: 600;
+    }
+    #ajax-response.pk-feedback-success {
+        background: #eefaf3;
+        color: #11643d;
+        border-color: #bcebd2;
+    }
+    #ajax-response.pk-feedback-error {
+        background: #fff3f3;
+        color: #ad3039;
+        border-color: #f6c8ce;
+    }
+    .pk-save-toast {
+        position: fixed;
+        inset-block-start: 80px;
+        inset-inline-end: 22px;
+        width: min(410px, calc(100vw - 32px));
+        z-index: 2000;
+        padding: 13px 14px 11px;
+        border: 1px solid #d9e7de;
+        border-radius: 13px;
+        background: #fff;
+        box-shadow: 0 12px 36px rgba(15,23,42,.2);
+        color: #263238;
+        overflow: hidden;
+        animation: pk-toast-in .2s ease-out;
+    }
+    .pk-save-toast[hidden] { display: none !important; }
+    .pk-save-toast.is-error { border-color: #f2ccd0; }
+    .pk-save-toast-content { display: flex; gap: 11px; align-items: flex-start; }
+    .pk-save-toast-icon {
+        flex: 0 0 28px;
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        background: #e4f8ed;
+        color: #16874d;
+        font-size: .95rem;
+        font-weight: 800;
+    }
+    .pk-save-toast.is-error .pk-save-toast-icon {
+        color: #bd3947;
+        background: #ffebed;
+    }
+    .pk-save-toast-body { flex: 1; min-width: 0; }
+    .pk-save-toast-title { font-size: .87rem; font-weight: 800; margin: 0 0 3px; }
+    .pk-save-toast-message {
+        font-size: .81rem;
+        line-height: 1.6;
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+        color: #5e6278;
+    }
+    .pk-save-toast-close {
+        border: 0;
+        background: transparent;
+        padding: 0;
+        width: 24px;
+        height: 24px;
+        color: #7e8299;
+        font-size: 1.35rem;
+        line-height: 1;
+        cursor: pointer;
+    }
+    .pk-save-toast-close:hover { color: #181c32; }
+    .pk-save-toast-progress {
+        position: absolute;
+        inset-block-end: 0;
+        inset-inline-start: 0;
+        height: 3px;
+        width: 100%;
+        background: #25a563;
+        transform-origin: left;
+        animation: pk-toast-progress var(--pk-toast-lifetime, 6000ms) linear forwards;
+    }
+    .pk-save-toast.is-error .pk-save-toast-progress { background: #dc5260; }
+    @keyframes pk-toast-in {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pk-toast-progress {
+        from { transform: scaleX(1); }
+        to { transform: scaleX(0); }
+    }
+    @media (max-width: 600px) {
+        .pk-save-toast { inset-block-start: 14px; inset-inline-end: 16px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .pk-save-toast, .pk-save-toast-progress { animation: none; }
     }
 
     .pk-workflow-panel {
@@ -1401,6 +1503,19 @@
 
 {% block content %}
 <div class="main-content" id="main-content">
+    <div id="packing-save-toast" class="pk-save-toast" role="status" aria-live="polite"
+         aria-atomic="true" hidden>
+        <div class="pk-save-toast-content">
+            <span id="packing-toast-icon" class="pk-save-toast-icon" aria-hidden="true">✓</span>
+            <div class="pk-save-toast-body">
+                <div id="packing-toast-title" class="pk-save-toast-title"></div>
+                <div id="packing-toast-message" class="pk-save-toast-message"></div>
+            </div>
+            <button type="button" class="pk-save-toast-close" id="packing-toast-close"
+                    aria-label="Dismiss notification" title="Dismiss">×</button>
+        </div>
+        <div class="pk-save-toast-progress" aria-hidden="true"></div>
+    </div>
     <div class="packing-page">
         <div class="packing-shell">
 
@@ -2026,7 +2141,7 @@
                                         <span data-key="packing_submit">Save Packing</span>
                                     </button>
                                 {% endif %}
-                                <div id="ajax-response"></div>
+                                <div id="ajax-response" role="status" aria-live="polite" aria-atomic="true"></div>
                             </div>
                         </div>
                     </div>
@@ -2136,6 +2251,97 @@
 
     function tr(key, fallback = '') {
         return packingTranslations[key] || fallback || key;
+    }
+
+    const packingToast = document.getElementById('packing-save-toast');
+    const packingFeedback = document.getElementById('ajax-response');
+    const packingFlashKey = 'quickPackingSaveFlash';
+    let packingToastTimer = null;
+
+    function showPackingFeedback(kind, message) {
+        const success = kind === 'success';
+        const display = String(message || '').trim();
+        if (!display) return;
+        if (packingFeedback) {
+            packingFeedback.textContent = display;
+            packingFeedback.classList.remove('text-danger', 'text-success',
+                'pk-feedback-success', 'pk-feedback-error');
+            packingFeedback.classList.add(success ? 'pk-feedback-success' : 'pk-feedback-error');
+        }
+        if (!packingToast) return;
+        clearTimeout(packingToastTimer);
+        const lifetime = success ? 6000 : 9000;
+        packingToast.hidden = false;
+        packingToast.classList.toggle('is-error', !success);
+        packingToast.setAttribute('role', success ? 'status' : 'alert');
+        packingToast.setAttribute('aria-live', success ? 'polite' : 'assertive');
+        packingToast.style.setProperty('--pk-toast-lifetime', lifetime + 'ms');
+        const persian = currentLanguage().toLowerCase().startsWith('fa');
+        document.getElementById('packing-toast-title').textContent = success
+            ? (persian ? 'با موفقیت انجام شد' : 'Saved successfully')
+            : (persian ? 'خطا در ثبت اطلاعات' : 'Unable to save');
+        document.getElementById('packing-toast-message').textContent = display;
+        document.getElementById('packing-toast-icon').textContent = success ? '✓' : '!';
+        const bar = packingToast.querySelector('.pk-save-toast-progress');
+        if (bar) {
+            bar.style.animation = 'none';
+            void bar.offsetWidth;
+            bar.style.animation = '';
+        }
+        packingToastTimer = setTimeout(() => { packingToast.hidden = true; }, lifetime);
+    }
+
+    document.getElementById('packing-toast-close')?.addEventListener('click', function () {
+        clearTimeout(packingToastTimer);
+        if (packingToast) packingToast.hidden = true;
+    });
+
+    function packingAjaxError(xhr) {
+        const fallback = tr('packing_save_error', 'Error saving packing.');
+        const error = xhr?.responseJSON?.res?.ERROR ??
+            xhr?.responseJSON?.error ?? xhr?.responseJSON?.detail;
+        if (typeof error === 'string' && error.trim()) return error;
+        if (error && typeof error === 'object') {
+            const messages = [];
+            Object.entries(error).forEach(([field, values]) => {
+                (Array.isArray(values) ? values : [values]).forEach(item => {
+                    const value = typeof item === 'string' ? item :
+                        (item?.message || item?.detail || '');
+                    if (value) messages.push((field === '__all__' ? '' : field + ': ') + value);
+                });
+            });
+            if (messages.length) return messages.slice(0, 5).join('\n');
+        }
+        if (xhr?.status === 0) return tr('packing_network_error', 'Cannot connect to the server. Try again.');
+        return fallback;
+    }
+
+    // The redirect after saving must not hide the success notification.
+    function keepPackingSuccess(message, targetUrl) {
+        try {
+            const target = new URL(targetUrl, location.href);
+            if (target.origin !== location.origin) return;
+            sessionStorage.setItem(packingFlashKey, JSON.stringify({
+                message, pathname: target.pathname, timestamp: Date.now()
+            }));
+        } catch (_) { /* notification storage must not block the save */ }
+    }
+
+    function restorePackingSuccess() {
+        try {
+            const stored = sessionStorage.getItem(packingFlashKey);
+            if (!stored) return;
+            const item = JSON.parse(stored);
+            if (Date.now() - item.timestamp > 30000) {
+                sessionStorage.removeItem(packingFlashKey);
+                return;
+            }
+            if (item.pathname !== location.pathname) return;
+            sessionStorage.removeItem(packingFlashKey);
+            showPackingFeedback('success', item.message);
+        } catch (_) {
+            try { sessionStorage.removeItem(packingFlashKey); } catch (_) {}
+        }
     }
 
     const packingTimelineUi = {
@@ -2713,6 +2919,7 @@
 
     $(document).ready(async function () {
         await loadPackingTranslations();
+        restorePackingSuccess();
 
         if (canAddItems && document.getElementById('quick-packing-list')) {
         AjaxDatatableViewUtils.initialize_table(
@@ -2857,10 +3064,7 @@
             if (action === 'change_user') {
                 const userSelect = document.getElementById('packing-workflow-user');
                 if (!userSelect || !userSelect.value) {
-                    $('#ajax-response')
-                        .removeClass('text-success')
-                        .addClass('text-danger')
-                        .text(tr('packing_change_user_required', 'Select a user.'));
+                    showPackingFeedback('error', tr('packing_change_user_required', 'Select a user.'));
                     return;
                 }
                 formData.append('workflow_user_id', userSelect.value);
@@ -2883,14 +3087,15 @@
                 processData: false,
                 contentType: false,
                 success: function (response) {
+                    const message = action === 'change_user'
+                        ? tr('packing_change_user_success', 'Workflow assignee updated successfully.')
+                        : tr('packing_workflow_success', 'Packing workflow updated successfully.');
+                    showPackingFeedback('success', message);
+                    keepPackingSuccess(message, response.res.url);
                     window.location.href = response.res.url;
                 },
                 error: function (response) {
-                    const message = response.responseJSON?.res?.ERROR || tr('packing_save_error', 'Error saving packing.');
-                    $('#ajax-response')
-                        .removeClass('text-success')
-                        .addClass('text-danger')
-                        .text(message);
+                    showPackingFeedback('error', packingAjaxError(response));
                 }
             });
         });
@@ -2900,10 +3105,7 @@
         const rows = container.querySelectorAll('.packing-selected-row');
 
         if (!rows.length && !{{ packing_object|yesno:"true,false" }}) {
-            $('#ajax-response')
-                .removeClass('text-success')
-                .addClass('text-danger')
-                .text(tr('packing_select_one_error', 'Select at least one order for packing.'));
+            showPackingFeedback('error', tr('packing_select_one_error', 'Select at least one order for packing.'));
             return;
         }
 
@@ -2937,10 +3139,7 @@
         });
 
         if (!valid) {
-            $('#ajax-response')
-                .removeClass('text-success')
-                .addClass('text-danger')
-                .text(tr('packing_quantity_invalid_error', 'One row quantity is outside the available packing capacity.'));
+            showPackingFeedback('error', tr('packing_quantity_invalid_error', 'One row quantity is outside the available packing capacity.'));
             return;
         }
 
@@ -2967,9 +3166,11 @@
         submitButton.disabled = true;
         submitButton.textContent = tr('packing_submitting', 'Saving...');
 
-        $('#ajax-response')
-            .removeClass('text-danger text-success')
-            .text('');
+        if (packingFeedback) {
+            packingFeedback.textContent = '';
+            packingFeedback.classList.remove('text-danger', 'text-success',
+                'pk-feedback-success', 'pk-feedback-error');
+        }
 
         $.ajax({
             url: submitUrl,
@@ -2980,11 +3181,9 @@
             contentType: false,
 
             success: function (response) {
-                $('#ajax-response')
-                    .removeClass('text-danger')
-                    .addClass('text-success')
-                    .text(tr('packing_success', 'Packing saved successfully.'));
-
+                const message = tr('packing_success', 'Packing saved successfully.');
+                showPackingFeedback('success', message);
+                keepPackingSuccess(message, response.res.url);
                 window.location.href = response.res.url;
             },
 
@@ -2992,12 +3191,7 @@
                 submitButton.disabled = false;
                 submitButton.textContent = tr('packing_submit', 'Save Packing');
 
-                const message = response.responseJSON?.res?.ERROR || tr('packing_save_error', 'Error saving packing.');
-
-                $('#ajax-response')
-                    .removeClass('text-success')
-                    .addClass('text-danger')
-                    .text(message);
+                showPackingFeedback('error', packingAjaxError(response));
             }
         });
     });
