@@ -4521,6 +4521,7 @@
             }
         });
 
+        let warehouseInvalid = false;
         document.querySelectorAll('.pk-row-editor:not([hidden])').forEach(editor => {
             const received = editor.querySelector('[name$="-arrived_quantity"]');
             const damaged = editor.querySelector('[name$="-ruined_quantity"]');
@@ -4533,12 +4534,18 @@
                 && arrived >= 0 && arrived <= planned && ruined >= 0 && ruined <= arrived;
             received.classList.toggle('border-danger', !validCounts);
             damaged.classList.toggle('border-danger', !validCounts);
-            if (!validCounts) valid = false;
+            if (!validCounts) {
+                valid = false;
+                warehouseInvalid = true;
+            }
         });
 
         if (!valid) {
-            showPackingFeedback('error', tr('packing_warehouse_quantity_invalid_error',
-                'Please check Packing quantities, received quantity and damaged quantity.'));
+            showPackingFeedback('error', warehouseInvalid
+                ? tr('packing_warehouse_quantity_invalid_error',
+                    'Please check received and damaged quantities.')
+                : tr('packing_quantity_invalid_error',
+                    'One row quantity is outside the available packing capacity.'));
             return;
         }
 
