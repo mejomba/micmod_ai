@@ -13,6 +13,139 @@
 <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
 
 <style>
+
+    /* Quick Packing's Gregorian/Jalali switch never changes the ISO field name. */
+    .pk-date-calendar-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        margin: 5px 0 10px;
+    }
+    .pk-date-calendar-toolbar label {
+        margin: 0;
+        color: #5e6278;
+        font-size: .8rem;
+        font-weight: 600;
+    }
+    .pk-date-calendar-toolbar select {
+        width: auto;
+        min-width: 115px;
+    }
+    .pk-date-input-wrap {
+        position: relative;
+        display: flex;
+        width: 100%;
+        align-items: center;
+        gap: 5px;
+    }
+    .pk-date-input-wrap .form-control { min-width: 0; width: 100%; }
+    .pk-date-input-wrap [hidden] { display: none !important; }
+    .pk-jalali-date-display {
+        cursor: pointer;
+        padding-inline-end: 30px;
+        text-align: start;
+        direction: ltr;
+    }
+    .pk-jalali-calendar-open {
+        position: absolute;
+        inset-inline-end: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        border: 0;
+        background: transparent;
+        color: #3699ff;
+        font-size: 19px;
+        line-height: 1;
+        cursor: pointer;
+    }
+    .pk-persian-date-popup {
+        position: fixed;
+        width: 315px;
+        max-width: calc(100vw - 16px);
+        z-index: 2100;
+        direction: rtl;
+        border: 1px solid #dce5f0;
+        border-radius: 11px;
+        background: #fff;
+        padding: 12px;
+        box-shadow: 0 14px 30px rgba(15,23,42,.22);
+        color: #303a4a;
+    }
+    .pk-persian-date-popup[hidden] { display: none !important; }
+    .pk-persian-calendar-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 2px;
+        margin-bottom: 10px;
+    }
+    .pk-persian-calendar-head strong {
+        font-size: .86rem;
+        white-space: nowrap;
+    }
+    .pk-persian-calendar-head button {
+        border: 0;
+        background: #f2f6fb;
+        color: #4b607a;
+        width: 28px;
+        height: 28px;
+        border-radius: 7px;
+        font-size: 17px;
+        cursor: pointer;
+    }
+    .pk-persian-calendar-head button:hover {
+        background: #e4f0ff;
+        color: #237bd2;
+    }
+    .pk-persian-calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 3px;
+        text-align: center;
+    }
+    .pk-persian-calendar-weekday {
+        font-size: .72rem;
+        color: #7e8299;
+        font-weight: 650;
+        padding: 5px 0;
+    }
+    .pk-persian-calendar-day {
+        border: 0;
+        background: transparent;
+        border-radius: 7px;
+        height: 32px;
+        font-size: .79rem;
+        cursor: pointer;
+    }
+    .pk-persian-calendar-day:hover { background: #e7f2ff; color: #237bd2; }
+    .pk-persian-calendar-day.is-today { box-shadow: inset 0 0 0 1px #3699ff; }
+    .pk-persian-calendar-day.is-selected {
+        background: #3699ff;
+        color: white;
+        font-weight: 800;
+    }
+    .pk-persian-calendar-foot {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+        border-top: 1px solid #edf0f5;
+        padding-top: 9px;
+    }
+    .pk-persian-calendar-foot button {
+        border: 0;
+        border-radius: 7px;
+        padding: 5px 11px;
+        color: #3682c4;
+        background: #eef6ff;
+        font-size: .76rem;
+        cursor: pointer;
+    }
+    .pk-persian-calendar-foot button:first-child {
+        background: #fff0f1;
+        color: #d34758;
+    }
+
     :root {
         --pk-border: #e7eaf0;
         --pk-muted: #7e8299;
@@ -2684,6 +2817,7 @@
 
 {% block extra_js %}
 <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
+<script src="{% static 'js/local/quick_packing_date_calendar.js' %}"></script>
 
 <div id="packing-i18n-bank" class="d-none" aria-hidden="true">
     <span data-key="packing_available">Available for Packing</span>
