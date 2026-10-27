@@ -3184,7 +3184,12 @@
     let packingTranslations = {};
 
     function currentLanguage() {
-        return localStorage.getItem('Dason-language') || 'en';
+        // Honor the selected page language; use the HTML language when no
+        // selection is stored, and normalize codes such as "fa-IR".
+        let choice = '';
+        try { choice = localStorage.getItem('Dason-language') || ''; } catch (_) {}
+        const raw = String(choice || document.documentElement.lang || 'en').toLowerCase();
+        return raw.startsWith('fa') ? 'fa' : 'en';
     }
 
     function tr(key, fallback = '') {
@@ -3298,6 +3303,12 @@
             packing_history_elapsed: 'از رویداد قبل',
             packing_history_description: 'توضیحات',
             packing_history_empty: 'رویدادی ثبت نشده است.',
+            packing_history_open_hint: 'مشاهده رویدادها و تغییرات مراحل',
+            packing_history_filter_all: 'همه رویدادها',
+            packing_history_filter_transitions: 'تغییر مراحل',
+            packing_history_filter_assignee: 'تغییر مسئول',
+            packing_history_filter_empty: 'رویدادی در این دسته وجود ندارد.',
+            packing_history_new_assignee: 'مسئول جدید',
             packing_entered_at: 'زمان ورود',
             packing_not_entered: 'هنوز وارد این مرحله نشده است',
             packing_duration_to_next: 'مدت تا مرحله بعد',
@@ -3305,7 +3316,7 @@
             packing_history_calendar: 'نمایش تاریخ',
             packing_history_gregorian: 'میلادی',
             packing_history_jalali: 'شمسی',
-            packing_change_history: 'تاریخچه تغییرات سند و ردیف‌ها',
+            packing_change_history: 'تاریخچه تغییرات',
             packing_audit_time: 'تاریخ',
             packing_audit_actor: 'کاربر',
             packing_audit_target: 'بخش تغییر‌یافته',
@@ -3341,6 +3352,12 @@
             packing_history_elapsed: 'Since previous event',
             packing_history_description: 'Notes',
             packing_history_empty: 'No workflow events recorded.',
+            packing_history_open_hint: 'View activity and stage changes',
+            packing_history_filter_all: 'All events',
+            packing_history_filter_transitions: 'Stage changes',
+            packing_history_filter_assignee: 'Assignee changes',
+            packing_history_filter_empty: 'No events in this category.',
+            packing_history_new_assignee: 'New assignee',
             packing_entered_at: 'Entered at',
             packing_not_entered: 'Not reached yet',
             packing_duration_to_next: 'Time to next stage',
@@ -3348,7 +3365,7 @@
             packing_history_calendar: 'Calendar',
             packing_history_gregorian: 'Gregorian',
             packing_history_jalali: 'Jalali (Persian)',
-            packing_change_history: 'Document and line change history',
+            packing_change_history: 'Change history',
             packing_audit_time: 'Date and time',
             packing_audit_actor: 'User',
             packing_audit_target: 'Changed record',
@@ -3370,10 +3387,49 @@
             packing_audit_load_failed: 'Could not load change history. Please try again.'
         }
     };
-    const packingActionEnglish = {
-        '1': 'Draft', '2': 'Returned to previous stage',
-        '3': 'Moved to next stage', '4': 'Changed assignee',
-        '5': 'Packing created'
+    const packingActionWords = {
+        fa: {
+            '1': 'پیش‌نویس', '2': 'عودت به مرحله قبل',
+            '3': 'ارسال به مرحله بعد', '4': 'تغییر مسئول',
+            '5': 'ایجاد پکینگ'
+        },
+        en: {
+            '1': 'Draft', '2': 'Returned to previous stage',
+            '3': 'Advanced to next stage', '4': 'Changed assignee',
+            '5': 'Packing created'
+        }
+    };
+
+    // The shared English language file intentionally does not have all the
+    // Quick Packing/Workflow keys. Keep page-specific fallbacks here, without
+    // changing translation behavior in any other ERP screen.
+    const packingPageLabels = {
+        fa: {
+            back: 'عودت',
+            next: 'تکمیل',
+            close: 'بستن',
+            sku: 'کد کالا',
+            part_number: 'شماره پارت',
+            packing_existing_item: 'ردیف ثبت‌شده',
+            packing_no_assignee: 'تعیین نشده',
+            packing_cancel_row_edit: 'انصراف از ویرایش',
+            packing_row_save_hint: 'تغییرات با ثبت پکینگ ذخیره می‌شوند.',
+            packing_workflow_description_placeholder: 'توضیحات عملیات این مرحله',
+            packing_workflow_create_placeholder: 'توضیحات ایجاد پکینگ'
+        },
+        en: {
+            back: 'Back',
+            next: 'Complete',
+            close: 'Close',
+            sku: 'SKU',
+            part_number: 'Part number',
+            packing_existing_item: 'Existing item',
+            packing_no_assignee: 'Unassigned',
+            packing_cancel_row_edit: 'Cancel editing',
+            packing_row_save_hint: 'Changes are saved with Save Packing.',
+            packing_workflow_description_placeholder: 'Notes for this workflow action',
+            packing_workflow_create_placeholder: 'Notes when creating Packing'
+        }
     };
 
     const packingAuditWords = {
@@ -3388,7 +3444,7 @@
     };
 
     function timelineTranslation(key) {
-        const lang = currentLanguage().toLowerCase().startsWith('en') ? 'en' : 'fa';
+        const lang = currentLanguage();
         return packingTimelineUi[lang][key] || key;
     }
 
@@ -3514,9 +3570,8 @@
 
         root.querySelectorAll('[data-workflow-action]').forEach(function (element) {
             const code = element.dataset.workflowAction;
-            if (displayEnglishStages && packingActionEnglish[code]) {
-                element.textContent = packingActionEnglish[code];
-            }
+            const label = packingActionWords[currentLanguage()][code];
+            if (label) element.textContent = label;
         });
 
         root.querySelectorAll('[data-key^="packing_workflow_description"], [data-key^="packing_history_"], [data-key^="packing_audit_"], [data-key="packing_change_history"], [data-key="packing_workflow_history"], [data-key="packing_show_all_durations"]').forEach(function (element) {
@@ -3567,16 +3622,22 @@
     }
 
     async function loadPackingTranslations() {
+        const lang = currentLanguage();
+        const localDefaults = {
+            ...packingPageLabels[lang],
+            ...packingTimelineUi[lang]
+        };
+        let loaded = {};
         try {
-            const response = await fetch('/static/lang/' + currentLanguage() + '.json', {
+            const response = await fetch('/static/lang/' + lang + '.json', {
                 cache: 'force-cache'
             });
-            if (response.ok) {
-                packingTranslations = await response.json();
-            }
-        } catch (error) {
-            packingTranslations = {};
-        }
+            if (response.ok) loaded = await response.json();
+        } catch (_) { /* local labels remain usable offline */ }
+
+        // Workflow and page-specific wording must never fall back to Persian
+        // merely because a key is absent from en.json (or vice versa).
+        packingTranslations = { ...loaded, ...localDefaults };
         applyDynamicTranslations(document);
     }
 
