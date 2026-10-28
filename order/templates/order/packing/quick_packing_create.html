@@ -4726,7 +4726,22 @@ ${canViewPrices ? `
         }
         bulkWarehouseDestination?.addEventListener('change', function () {
             selects.forEach(select => {
-                if (!select.disabled) select.value = this.value;
+                // Bulk selection also covers a row whose editor was canceled.
+                const editor = select.closest('.pk-row-editor');
+                if (editor?.hidden) {
+                    editor.hidden = false;
+                    editor.querySelectorAll('input, textarea, select').forEach(input => {
+                        input.disabled = false;
+                    });
+                    const row = editor.closest('.packing-existing-row');
+                    row?.classList.add('is-editing');
+                    const editButton = row?.querySelector('.pk-row-edit-button');
+                    if (editButton) {
+                        editButton.disabled = true;
+                        editButton.setAttribute('aria-expanded', 'true');
+                    }
+                }
+                select.value = this.value;
             });
             refreshCentralReceiptState();
         });
