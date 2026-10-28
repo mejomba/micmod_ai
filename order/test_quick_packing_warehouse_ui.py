@@ -17,6 +17,15 @@ class QuickPackingWarehouseUiTests(SimpleTestCase):
         self.assertIn('<div class="packing-meta-grid pk-warehouse-meta-grid"', self.html)
         warehouse_header = self.html.split('class="packing-meta-grid pk-warehouse-meta-grid"', 1)[1]
         warehouse_header = warehouse_header.split('{% else %}', 1)[0]
+
+        # These five optional fields belong to the read-only viewer's
+        # non-warehouse header; the warehouse itself has exactly six.
+        viewer_condition = '{% if is_read_only_view and not is_warehouse_stage %}'
+        self.assertIn(viewer_condition, warehouse_header)
+        before_viewer, rest = warehouse_header.split(viewer_condition, 1)
+        viewer_only, after_viewer = rest.split('{% endif %}', 1)
+        warehouse_only = before_viewer + after_viewer
+
         fields = [
             'packing_number_label', 'packing_shipment_type_label',
             'packing_bl_number_label', 'packing_bl_date',
@@ -24,8 +33,20 @@ class QuickPackingWarehouseUiTests(SimpleTestCase):
         ]
         for key in fields:
             with self.subTest(key=key):
-                self.assertIn('data-key="' + key + '"', warehouse_header)
-        self.assertEqual(warehouse_header.count('class="pk-warehouse-meta-field'), 6)
+                self.assertIn('data-key="' + key + '"', warehouse_only)
+
+        self.assertEqual(warehouse_only.count('class="pk-warehouse-meta-field'), 6)
+        self.assertEqual(viewer_only.count('class="pk-warehouse-meta-field'), 5)
+        viewer_keys = (
+            'currency', 'packing_origin', 'packing_destination',
+            'packing_estimated_start_shipping_date',
+            'packing_estimated_arrive_central_wh_date',
+        )
+        for key in viewer_keys:
+            with self.subTest(viewer_key=key):
+                self.assertIn('data-key="' + key + '"', viewer_only)
+                self.assertNotIn('data-key="' + key + '"', warehouse_only)
+
         self.assertNotIn('<input', warehouse_header)
         self.assertNotIn('<textarea', warehouse_header)
         self.assertNotIn('<select', warehouse_header)
@@ -122,7 +143,14 @@ class QuickPackingWarehouseUiTests(SimpleTestCase):
         self.assertEqual(kwargs['only_show'], [])
 
     def test_superuser_header_and_receipt_fields_are_rendered(self):
-        self.assertIn('{% if is_warehouse_stage and not is_superuser %}', self.html)
+        self.assertIn(
+            '{% if is_read_only_view or is_warehouse_stage and not is_superuser %}',
+            self.html,
+        )
+        self.assertIn(
+            '{% else %}\n                                    <div class="packing-meta-grid">',
+            self.html,
+        )
         self.assertIn('{% if is_superuser %}', self.html)
         self.assertIn('form form.departure_date form.arrival_date', self.html)
         self.assertIn('name="existing-{{ packing_item.pk }}-wh_receipt_quantity"', self.html)
