@@ -1317,6 +1317,8 @@ class PackingItem(BaseModeWF):
     part_number = models.CharField(_('part_number'), max_length=255, null=True, blank=True)
     quantity = models.FloatField(_('quantity'), null=True, blank=True)
     ruined_quantity = models.FloatField(_('ruined_quantity'), null=True, blank=True)
+    # Per-row destination: Sepidar warehouse code. A Packing can be split.
+    wh_destination = models.CharField('انبار مقصد', max_length=16, null=True, blank=True)
     # arrive_date = models.DateField(_('arrive_date'), null=True, blank=True) Todo: check this
     price = models.FloatField(_('price'), null=True, blank=True)
     packing = models.ForeignKey(Packing, on_delete=models.DO_NOTHING, related_name='packing_item_rel')

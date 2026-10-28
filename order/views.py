@@ -3727,6 +3727,39 @@ class QuickPackingView(LoginRequiredMixin, View):
         # The terminal "Completed" stage is also handled by the warehouse group.
         return 'انبار' in states and packing_obj.workflow_state_index() >= states.index('انبار')
 
+    @staticmethod
+    def _warehouse_choices():
+        codes = dict(Order.sepidar_wh_map)
+        central = settings.SEPIDAR_CONST_DATA.get('central_wh_id')
+        if central is not None:
+            codes.setdefault(int(central), 'انبار مرکزی')
+        return [(str(code), label) for code, label in sorted(codes.items())]
+
+    @classmethod
+    def _parse_wh_destination(cls, value):
+        code = str(value if value is not None else '').strip()
+        if not code:
+            return None
+        if code not in {key for key, _ in cls._warehouse_choices()}:
+            raise ValueError('انبار مقصد انتخاب‌شده معتبر نیست.')
+        return code
+
+    def _save_warehouse_destination(self, request, packing_obj):
+        if (not self._is_warehouse_stage(packing_obj)
+                or 'warehouse_destination' not in request.POST):
+            return
+        if not packing_obj.user_has_workflow_access(request.user):
+            raise PermissionDenied('Packing workflow access denied.')
+        destination = self._parse_wh_destination(
+            request.POST.get('warehouse_destination'),
+        )
+        if str(packing_obj.wh_destination or '') == str(destination or ''):
+            return
+        packing_obj.wh_destination = destination
+        packing_obj.editor_user = request.user
+        packing_obj.extra_data.request = request
+        packing_obj.save()
+
     def _workflow_constraint(self, packing_obj=None):
         state_index = packing_obj.workflow_state_index() if packing_obj else 0
         wf_access = (
@@ -4032,6 +4065,9 @@ class QuickPackingView(LoginRequiredMixin, View):
                 'description': request.POST.get(f'form-{row_index}-description'),
             }
             if getattr(getattr(request, 'user', None), 'is_superuser', False) is True:
+                dest_key = f'form-{row_index}-wh_destination'
+                if dest_key in request.POST:
+                    row['wh_destination'] = self._parse_wh_destination(request.POST.get(dest_key))
                 row.update(self._receipt_payload(request.POST, f'form-{row_index}'))
                 if row.get('wh_receipt_quantity') is not None or row.get('ruined_quantity') is not None:
                     self._validate_receipt_quantities(
@@ -4046,7 +4082,8 @@ class QuickPackingView(LoginRequiredMixin, View):
         if received is None and ruined is None:
             return
         if (
-            received is None or not isfinite(float(received))
+            received is None or ruined is None
+            or not isfinite(float(received))
             or received < 0 or received > float(quantity or 0)
             or (ruined is not None and (
                 not isfinite(float(ruined)) or ruined < 0 or ruined > received
@@ -4077,9 +4114,15 @@ class QuickPackingView(LoginRequiredMixin, View):
                     rows.append({'id': item_id, 'delete': True})
                     continue
                 receipts = self._receipt_payload(
-                    request.POST, f'existing-{item_id}', required=True,
+                    request.POST, f'existing-{item_id}', required=False,
                 )
-                rows.append({'id': item_id, 'delete': False, **receipts})
+                row = {'id': item_id, 'delete': False, **receipts}
+                dest_key = f'existing-{item_id}-wh_destination'
+                if dest_key in request.POST or 'warehouse_destination' in request.POST:
+                    row['wh_destination'] = self._parse_wh_destination(
+                        request.POST.get(dest_key, request.POST.get('warehouse_destination')),
+                    )
+                rows.append(row)
                 continue
 
             quantity = self._to_float(
@@ -4102,6 +4145,9 @@ class QuickPackingView(LoginRequiredMixin, View):
                 'description': request.POST.get(f'existing-{item_id}-description'),
             }
             if superuser and not delete_requested:
+                dest_key = f'existing-{item_id}-wh_destination'
+                if dest_key in request.POST:
+                    row['wh_destination'] = self._parse_wh_destination(request.POST.get(dest_key))
                 row.update(self._receipt_payload(request.POST, f'existing-{item_id}'))
             rows.append(row)
 
@@ -4150,24 +4196,29 @@ class QuickPackingView(LoginRequiredMixin, View):
 
             if warehouse_only:
                 # Group's warehouse users edit ONLY their own received/damaged fields.
-                arrived = row['wh_receipt_quantity']
-                ruined = row['ruined_quantity']
+                arrived = row.get('wh_receipt_quantity', packing_item.wh_receipt_quantity)
+                ruined = row.get('ruined_quantity', packing_item.ruined_quantity)
                 self._validate_receipt_quantities(arrived, ruined, packing_item.quantity)
+                dest = row.get('wh_destination', packing_item.wh_destination)
                 if (
                     packing_item.wh_receipt_quantity == arrived
                     and packing_item.ruined_quantity == ruined
+                    and str(packing_item.wh_destination or '') == str(dest or '')
                 ):
                     continue
                 packing_item.wh_receipt_quantity = arrived
                 packing_item.ruined_quantity = ruined
+                packing_item.wh_destination = dest
                 packing_item.editor_user = request.user
                 packing_item.extra_data.request = request
                 packing_item.save()
                 continue
 
-            # Superuser can edit the union of regular and warehouse row fields.
-            # Omitted receipt inputs leave existing values untouched.
+            # Superuser may edit row fields from every workflow stage.
             receipt_updates = {}
+            if superuser and 'wh_destination' in row:
+                if str(packing_item.wh_destination or '') != str(row['wh_destination'] or ''):
+                    receipt_updates['wh_destination'] = row['wh_destination']
             if superuser and (
                 'wh_receipt_quantity' in row or 'ruined_quantity' in row
             ):
@@ -4273,6 +4324,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                         # Do not issue the old redundant second save.
                         form.instance.extra_data.request = request
                         packing_obj = form.save() or form.instance
+                        self._save_warehouse_destination(request, packing_obj)
                         self._update_existing_rows(request, packing_obj)
                         self._save_uploaded_files(request, packing_obj, form=form)
 
@@ -4327,6 +4379,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                 # snapshot (rather than an unattributed save and a second log).
                 form.instance.extra_data.request = request
                 packing_obj = form.save() or form.instance
+                self._save_warehouse_destination(request, packing_obj)
 
                 self._update_existing_rows(request, packing_obj)
 
@@ -4371,6 +4424,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                             description=row['description'],
                             wh_receipt_quantity=row.get('wh_receipt_quantity'),
                             ruined_quantity=row.get('ruined_quantity'),
+                            wh_destination=row.get('wh_destination'),
                             creator_user=request.user,
                             editor_user=request.user,
                         )
@@ -4529,6 +4583,8 @@ class QuickPackingView(LoginRequiredMixin, View):
             'can_edit_items': can_edit_items,
             'is_superuser': getattr(request.user, 'is_superuser', False) is True,
             'is_warehouse_stage': self._is_warehouse_stage(packing_obj),
+            'warehouse_options': self._warehouse_choices(),
+            'central_wh_id': str(settings.SEPIDAR_CONST_DATA.get('central_wh_id') or ''),
             'can_next': bool(wf_access and packing_obj and state_index < len(states) - 1),
             'can_back': bool(wf_access and packing_obj and state_index > 0),
             'can_change_user': bool(packing_obj and self._can_change_user(packing_obj)),
