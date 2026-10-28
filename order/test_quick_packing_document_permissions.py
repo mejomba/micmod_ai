@@ -45,10 +45,11 @@ class QuickPackingDocumentAccessTests(SimpleTestCase):
         packing = Packing()
         user = Mock(is_authenticated=True, is_superuser=False)
         user.groups.filter.return_value.exists.return_value = True
-        with patch.object(packing, 'user_has_workflow_access', return_value=False):
+        with patch.object(packing, 'user_has_workflow_access', return_value=False) as edit:
             self.assertTrue(packing.user_can_view_workflow(user))
+            self.assertFalse(packing.user_has_workflow_access(user))
+            edit.assert_called()
         user.groups.filter.assert_called_with(name='packing_viewer')
-        self.assertFalse(packing.user_has_workflow_access(user))
 
     def test_random_logged_in_user_has_no_document_read_access(self):
         packing = Packing()
@@ -104,6 +105,34 @@ class QuickPackingDocumentAccessTests(SimpleTestCase):
             response = view.dispatch(request, pk=42)
         self.assertEqual(response.status_code, 302)
         self.assertIn('/quick_packing/42/', response['Location'])
+
+    def test_assigned_user_outside_current_group_cannot_edit(self):
+        from workflow.models import WorkFlow, FlowAdminGroup
+        from django.contrib.contenttypes.models import ContentType
+
+        packing = Packing()
+        user = Mock(id=25, is_authenticated=True, is_superuser=False)
+        user.groups.filter.return_value.exists.return_value = False
+        flow = Mock(to_user_id=25)
+        with (
+            patch.object(packing, 'workflow_state_index', return_value=2),
+            patch.object(Packing, 'get_flow_config', return_value={
+                'flow_users_groups': ['packing_user_p', 'packing_user_dep', 'packing_user_ship'],
+            }),
+            patch.object(FlowAdminGroup, 'is_admin_of_group', return_value=False),
+            patch.object(ContentType.objects, 'get_for_model', return_value=Mock()),
+            patch.object(WorkFlow.objects, 'filter') as query,
+        ):
+            query.return_value.order_by.return_value.last.return_value = flow
+            self.assertFalse(packing.user_has_workflow_access(user))
+            user.groups.filter.return_value.exists.return_value = True
+            self.assertTrue(packing.user_has_workflow_access(user))
+
+    def test_viewer_post_is_denied_even_with_forged_form_data(self):
+        self.request.POST = {'bl_number': 'FORGED', 'workflow_action': 'next'}
+        self.packing.user_has_workflow_access.return_value = False
+        with self.assertRaises(PermissionDenied):
+            self.view.post(self.request, pk=42)
 
     def test_readonly_template_uses_model_values_not_missing_form_fields(self):
         html = (
