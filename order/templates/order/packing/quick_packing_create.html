@@ -2792,7 +2792,7 @@
                                             data-item-id="{{ packing_item.pk }}"
                                             data-quantity="{{ packing_item.quantity|default_if_none:0 }}"
                                             data-total-weight="{{ packing_item.net_weight_kg|default_if_none:0 }}"
-                                            {% if not is_warehouse_stage or is_superuser %}
+                                            {% if can_view_prices %}
                                             data-unit-price="{{ packing_item.price|default_if_none:0 }}"
                                             data-currency="{{ packing_item.order.currency.title_en|default_if_none:'' }}"
                                             {% endif %}
@@ -2910,6 +2910,7 @@
                                                             <strong class="existing-row-total-weight">{{ packing_item.net_weight_kg|floatformat:"-4g" }}</strong>
                                                         </div>
 
+                                                        {% if can_view_prices %}
                                                         <div class="pk-stat">
                                                             <span class="pk-mini-label" data-key="packing_row_total_value">Row Total Value</span>
                                                             <strong>
@@ -2922,6 +2923,7 @@
                                                                 {{ packing_item.order.currency.title_en|default_if_none:'' }}
                                                             </small>
                                                         </div>
+                                                        {% endif %}
                                                     </div>
 
                                                     <details class="pk-row-details">
@@ -2988,7 +2990,7 @@
                                                                 <strong>{{ packing_item.ruined_quantity|default_if_none:"—"|floatformat:"-4g" }}</strong>
                                                             </div>
                                                         {% endif %}
-                                                        {% if not is_warehouse_stage or is_superuser %}
+                                                        {% if can_view_prices %}
                                                         <div class="pk-stat">
                                                             <span class="pk-mini-label" data-key="packing_unit_price">Unit Price</span>
                                                             <strong>
@@ -3114,7 +3116,7 @@
                                         <span data-key="packing_total_weight">Total Weight</span>
                                         <strong id="packing-total-weight">0</strong>
                                     </div>
-                                    {% if not is_warehouse_stage or is_superuser %}
+                                    {% if can_view_prices %}
                                     <div class="pk-summary-item">
                                         <span data-key="packing_total_value">Total Value</span>
                                         <strong id="packing-total-value">0</strong>
@@ -3304,6 +3306,7 @@
     const submitUrl = "{% if packing_object %}{% url 'order:quick_packing' packing_object.pk %}{% else %}{% url 'order:quick_packing' %}{% endif %}";
     const canAddItems = {{ can_add_items|yesno:"true,false" }};
     const isSuperuser = {{ is_superuser|yesno:"true,false" }};
+    const canViewPrices = {{ can_view_prices|yesno:"true,false" }};
     const container = document.getElementById('formset-container');
     const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
     const submitButton = document.getElementById('submit-packing');
@@ -4140,7 +4143,8 @@
             value += totalValue;
 
             row.querySelector('.row-total-weight').textContent = fmt(totalWeight);
-            row.querySelector('.row-total-value').textContent = fmtMoney(totalValue);
+            const valueTarget = row.querySelector('.row-total-value');
+            if (valueTarget) valueTarget.textContent = fmtMoney(totalValue);
         });
 
         document.getElementById('packing-total-quantity').textContent = fmt(quantity);
@@ -4177,8 +4181,10 @@
         row.className = 'packing-selected-row';
         row.dataset.orderId = data.orderId;
         row.dataset.unitWeight = data.unitWeight;
-        row.dataset.finalPrice = data.finalPrice;
-        row.dataset.currency = data.currency;
+        if (canViewPrices) {
+            row.dataset.finalPrice = data.finalPrice;
+            row.dataset.currency = data.currency;
+        }
 
         row.innerHTML = `
             <input type="hidden" name="form-${index}-order" value="${data.orderId}">
@@ -4224,6 +4230,7 @@
                         <small class="text-muted"><span data-key="packing_unit_weight">${tr('packing_unit_weight', 'Unit Weight')}</span>: ${fmt(data.unitWeight)}</small>
                     </div>
 
+${canViewPrices ? `
                     <div class="pk-stat">
                         <span class="pk-mini-label"><span data-key="packing_row_total_value">${tr('packing_row_total_value', 'Row Total Value')}</span></span>
                         <strong>
@@ -4232,6 +4239,7 @@
                         </strong>
                         <small class="text-muted"><span data-key="packing_unit_price">${tr('packing_unit_price', 'Unit Price')}</span>: ${fmtMoney(data.finalPrice)} ${data.currency}</small>
                     </div>
+                    ` : ''}
                 </div>
             </div>
 
@@ -4680,7 +4688,9 @@
         });
 
         rows.forEach(row => {
-            const quantityInput = row.querySelector('input[name$="-quantity"]');
+            const quantityInput = row.querySelector('input[name$="-quantity"]:not(:disabled)');
+            // Warehouse rows have receipt fields but no Packing quantity input.
+            if (!quantityInput) return;
             const q = toNumber(quantityInput.value);
             const maxQ = toNumber(quantityInput.max);
 

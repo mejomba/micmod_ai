@@ -1187,6 +1187,10 @@ class Packing(BaseModeWF):
             return False
         if user.is_superuser:
             return True
+        # Financial-viewer membership always implies read-only, even when
+        # combined with an operational Packing group.
+        if user.groups.filter(name=cls.FINANCE_VIEW_ONLY_GROUP).exists():
+            return False
 
         from workflow.models import FlowAdminGroup
 
@@ -1215,6 +1219,8 @@ class Packing(BaseModeWF):
             return False
         if user.is_superuser:
             return True
+        if user.groups.filter(name=self.FINANCE_VIEW_ONLY_GROUP).exists():
+            return False
 
         from workflow.models import WorkFlow, FlowAdminGroup
         from django.contrib.contenttypes.models import ContentType
@@ -1254,6 +1260,23 @@ class Packing(BaseModeWF):
         return state_index == 0 and user.groups.filter(name=current_group).exists()
 
     VIEW_ONLY_GROUP = 'packing_viewer'
+    FINANCE_VIEW_ONLY_GROUP = 'packing_finance_viewer'
+
+    @classmethod
+    def user_can_view_prices(cls, user):
+        """Never send prices to ordinary Packing users, including operators."""
+        return bool(
+            user and getattr(user, 'is_authenticated', False)
+            and (user.is_superuser or user.groups.filter(
+                name=cls.FINANCE_VIEW_ONLY_GROUP,
+            ).exists())
+        )
+
+    def user_has_finance_view_only_access(self, user):
+        return bool(
+            user and getattr(user, 'is_authenticated', False)
+            and user.groups.filter(name=self.FINANCE_VIEW_ONLY_GROUP).exists()
+        )
 
     def user_has_view_only_access(self, user):
         """Dedicated read-only group, independently of workflow assignment."""
@@ -1267,6 +1290,7 @@ class Packing(BaseModeWF):
         return (
             self.user_has_workflow_access(user)
             or self.user_has_view_only_access(user)
+            or self.user_has_finance_view_only_access(user)
         )
 
     def __str__(self):

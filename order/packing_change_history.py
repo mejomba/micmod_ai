@@ -4,7 +4,20 @@ The inherited NoUserBaseModel.save() already persists `diff_json.fields`
 as [new_value, old_value]. Keep the audit trail in ChangeLog rather than
 creating a parallel history table.
 """
+import re
+
 from django.utils.text import capfirst
+
+
+_FINANCIAL_FIELD_NAME = re.compile(
+    r'price|amount|cost|fee|rate|discount|tax|duty|payment|paid|value|totalprice',
+    re.IGNORECASE,
+)
+
+
+def is_financial_packing_field(name):
+    return bool(_FINANCIAL_FIELD_NAME.search(str(name)))
+
 
 
 def _value(value):
@@ -24,7 +37,9 @@ def _field_labels(model):
     return labels
 
 
-def build_packing_change_history(logs, packing_model, item_model, item_rows):
+def build_packing_change_history(
+    logs, packing_model, item_model, item_rows, include_financial=True,
+):
     """Render old/new audit snapshots with user, timestamp, and row identity.
 
     `item_rows` contains even soft-deleted PackingItem records; otherwise the
@@ -55,6 +70,8 @@ def build_packing_change_history(logs, packing_model, item_model, item_rows):
         for key, values in raw_fields.items():
             if key in ('editor_user_id', 'creator_user_id'):
                 # User attribution is already in the event header.
+                continue
+            if not include_financial and is_financial_packing_field(key):
                 continue
             if isinstance(values, (list, tuple)):
                 new_value = values[0] if values else None

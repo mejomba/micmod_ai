@@ -125,7 +125,9 @@ class QuickPackingDocumentAccessTests(SimpleTestCase):
         ):
             query.return_value.order_by.return_value.last.return_value = flow
             self.assertFalse(packing.user_has_workflow_access(user))
-            user.groups.filter.return_value.exists.return_value = True
+            user.groups.filter.side_effect = lambda **kwargs: SimpleNamespace(
+                exists=lambda: kwargs.get('name') == 'packing_user_ship',
+            )
             self.assertTrue(packing.user_has_workflow_access(user))
 
     def test_viewer_post_is_denied_even_with_forged_form_data(self):
@@ -157,4 +159,44 @@ class QuickPackingDocumentAccessTests(SimpleTestCase):
         self.assertIn("VIEW_ONLY_GROUP = 'packing_viewer'", migration)
         self.assertIn("get_or_create(", migration)
         self.assertIn("'0129_packing_workflow_nine_stages'", migration)
+
+    def test_finance_viewer_can_view_pricing_but_not_edit(self):
+        packing = Packing()
+        user = Mock(is_authenticated=True, is_superuser=False)
+        user.groups.filter.side_effect = lambda **kwargs: SimpleNamespace(
+            exists=lambda: kwargs.get('name') == 'packing_finance_viewer',
+        )
+        self.assertTrue(packing.user_can_view_workflow(user))
+        self.assertFalse(packing.user_has_workflow_access(user))
+        self.assertFalse(Packing.user_can_create_workflow(user))
+        self.assertTrue(Packing.user_can_view_prices(user))
+
+    def test_ordinary_users_cannot_see_packing_prices(self):
+        for name in ('packing_user_p', 'packing_viewer', 'wh_user'):
+            with self.subTest(name=name):
+                user = Mock(is_authenticated=True, is_superuser=False)
+                user.groups.filter.side_effect = lambda **kwargs: SimpleNamespace(
+                    exists=lambda: kwargs.get('name') == name,
+                )
+                self.assertFalse(Packing.user_can_view_prices(user))
+
+    def test_finance_group_overrides_editing_membership(self):
+        packing = Packing()
+        user = Mock(is_authenticated=True, is_superuser=False)
+        user.groups.filter.return_value.exists.return_value = True
+        self.assertFalse(packing.user_has_workflow_access(user))
+        self.assertFalse(Packing.user_can_create_workflow(user))
+
+    def test_superuser_keeps_price_access(self):
+        user = Mock(is_authenticated=True, is_superuser=True)
+        self.assertTrue(Packing.user_can_view_prices(user))
+        self.assertTrue(Packing.user_can_create_workflow(user))
+
+    def test_finance_viewer_migration_created(self):
+        file = (
+            Path(settings.BASE_DIR)
+            / 'order/migrations/0131_packing_finance_viewer_group.py'
+        ).read_text(encoding='utf-8')
+        self.assertIn("FINANCE_VIEW_ONLY_GROUP = 'packing_finance_viewer'", file)
+        self.assertIn("'0130_packing_viewer_group'", file)
 

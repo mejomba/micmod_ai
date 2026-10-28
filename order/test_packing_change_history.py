@@ -85,3 +85,31 @@ class PackingChangeHistoryTests(SimpleTestCase):
     def test_model_base_includes_automatic_change_log(self):
         self.assertTrue(hasattr(Packing, 'change_logs'))
         self.assertTrue(hasattr(PackingItem, 'change_logs'))
+    def test_non_finance_history_strips_price_and_total_amount(self):
+        history = build_packing_change_history(
+            [audit_log(2, {
+                'price': [120.5, 100.5],
+                'total_amount': [602.5, 502.5],
+                'quantity': [5, 4],
+            }, item=True)],
+            Packing, PackingItem, [],
+            include_financial=False,
+        )
+        self.assertEqual([x['key'] for x in history[0]['changes']], ['quantity'])
+        self.assertNotIn('120.5', str(history))
+        self.assertNotIn('602.5', str(history))
+
+    def test_finance_history_preserves_prices(self):
+        history = build_packing_change_history(
+            [audit_log(2, {'price': [120.5, 100.5]}, item=True)],
+            Packing, PackingItem, [],
+            include_financial=True,
+        )
+        self.assertEqual(history[0]['changes'][0]['new'], '120.5')
+
+    def test_price_only_update_invisible_to_ordinary_user(self):
+        history = build_packing_change_history(
+            [audit_log(2, {'price': [8, 7]}, item=True)],
+            Packing, PackingItem, [], include_financial=False,
+        )
+        self.assertEqual(history, [])

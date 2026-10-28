@@ -4442,6 +4442,9 @@ class QuickPackingView(LoginRequiredMixin, View):
         )
         history = build_packing_change_history(
             logs, Packing, PackingItem, row_details,
+            include_financial=Packing.user_can_view_prices(
+                getattr(request, 'user', None),
+            ),
         )
         return render(
             request,
@@ -4521,6 +4524,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             'current_state': states[state_index] if states else None,
             'wf_access': wf_access,
             'is_read_only_view': bool(packing_obj and not wf_access),
+            'can_view_prices': Packing.user_can_view_prices(request.user),
             'can_add_items': can_add_items,
             'can_edit_items': can_edit_items,
             'is_superuser': getattr(request.user, 'is_superuser', False) is True,
@@ -4553,6 +4557,13 @@ class QuickPackingView(LoginRequiredMixin, View):
 
 
 class QuickPackingDataTableListView(AjaxDatatableView):
+    def dispatch(self, request, *args, **kwargs):
+        # A direct AJAX request must not expose the order source list to
+        # anyone who cannot create a Packing in the first workflow stage.
+        if not Packing.user_can_create_workflow(request.user):
+            raise PermissionDenied('Packing order list access denied.')
+        return super().dispatch(request, *args, **kwargs)
+
     model = Order
     title = 'order_list'
     initial_order = [['created_date', 'des']]
@@ -4825,7 +4836,11 @@ class QuickPackingDataTableListView(AjaxDatatableView):
         row['available_for_packing'] = obj.available_for_packing or 0
         row['remaining_quantity_in_order'] = obj.remaining_quantity_in_order or 0
         row['unit_weight'] = obj.effective_unit_weight or 0
-        row['final_price'] = obj.effective_unit_price or 0
+        # Hiding a DataTables column does not hide its HTTP response data.
+        row['final_price'] = (
+            (obj.effective_unit_price or 0)
+            if Packing.user_can_view_prices(self.request.user) else ''
+        )
         row['currency_title'] = obj.effective_currency_title or ''
         row['show_order_str'] = mark_safe(
             '<div class="d-flex gap-3">'
