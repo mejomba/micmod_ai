@@ -40,7 +40,7 @@ class QuickPackingWarehouseUiTests(SimpleTestCase):
 
     def test_warehouse_editor_has_only_received_and_ruined_fields(self):
         markup = self.html.split('<div class="pk-row-editor-fields">', 1)[1]
-        warehouse = markup.split('{% endif %}', 1)[0]
+        warehouse = markup.split('{% if not is_warehouse_stage or is_superuser %}', 1)[0]
         self.assertIn('name="existing-{{ packing_item.pk }}-wh_receipt_quantity"', warehouse)
         self.assertIn('name="existing-{{ packing_item.pk }}-ruined_quantity"', warehouse)
         self.assertNotIn('name="existing-{{ packing_item.pk }}-quantity"', warehouse)
