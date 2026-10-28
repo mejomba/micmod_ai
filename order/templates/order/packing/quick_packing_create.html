@@ -2583,8 +2583,8 @@
                                                   placeholder="توضیحات ایجاد پکینگ" data-placeholder-key="packing_workflow_create_placeholder"></textarea>
                                     </div>
                                 {% endif %}
-                                {% if is_warehouse_stage and not is_superuser %}
-                                    {# Warehouse non-superusers: display-only. #}
+                                {% if is_read_only_view or is_warehouse_stage and not is_superuser %}
+                                    {# Warehouse operators and read-only viewers use real Packing values. #}
                                     <div class="packing-meta-grid pk-warehouse-meta-grid" aria-label="Packing header (read only)">
                                         <div class="pk-warehouse-meta-field">
                                             <span class="pk-mini-label" data-key="packing_number_label">شماره پکینگ</span>
@@ -2606,6 +2606,28 @@
                                             <span class="pk-mini-label" data-key="packing_transportation_company">شرکت حمل‌کننده</span>
                                             <div class="pk-warehouse-meta-value">{{ packing_object.transportation_company|default:"—" }}</div>
                                         </div>
+                                        {% if is_read_only_view and not is_warehouse_stage %}
+                                            <div class="pk-warehouse-meta-field">
+                                                <span class="pk-mini-label" data-key="currency">Currency</span>
+                                                <div class="pk-warehouse-meta-value">{{ packing_object.currency|default:"—" }}</div>
+                                            </div>
+                                            <div class="pk-warehouse-meta-field">
+                                                <span class="pk-mini-label" data-key="packing_origin">مبدا</span>
+                                                <div class="pk-warehouse-meta-value">{{ packing_object.origin|default:"—" }}</div>
+                                            </div>
+                                            <div class="pk-warehouse-meta-field">
+                                                <span class="pk-mini-label" data-key="packing_destination">مقصد</span>
+                                                <div class="pk-warehouse-meta-value">{{ packing_object.destination|default:"—" }}</div>
+                                            </div>
+                                            <div class="pk-warehouse-meta-field">
+                                                <span class="pk-mini-label" data-key="packing_estimated_start_shipping_date">تاریخ پیش‌بینی شروع حمل</span>
+                                                <div class="pk-warehouse-meta-value"><time data-packing-readonly-date="{{ packing_object.estimated_shipping_start_date|date:'Y-m-d' }}">{{ packing_object.estimated_shipping_start_date|date:"Y/m/d"|default:"—" }}</time></div>
+                                            </div>
+                                            <div class="pk-warehouse-meta-field">
+                                                <span class="pk-mini-label" data-key="packing_estimated_arrive_central_wh_date">تاریخ پیش‌بینی رسیدن به انبار</span>
+                                                <div class="pk-warehouse-meta-value"><time data-packing-readonly-date="{{ packing_object.estimated_arrive_to_wh_date|date:'Y-m-d' }}">{{ packing_object.estimated_arrive_to_wh_date|date:"Y/m/d"|default:"—" }}</time></div>
+                                            </div>
+                                        {% endif %}
                                         <div class="pk-warehouse-meta-field pk-warehouse-meta-description">
                                             <span class="pk-mini-label" data-key="packing_header_description_label">توضیحات</span>
                                             <div class="pk-warehouse-meta-value">{{ packing_object.description|default:"—" }}</div>

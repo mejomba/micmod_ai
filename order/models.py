@@ -1243,9 +1243,31 @@ class Packing(BaseModeWF):
         ).order_by('id').last()
 
         if last_flow:
-            return last_flow.to_user_id == user.id
+            # Being assigned to a workflow record is not sufficient without
+            # belonging to that stage's group. Group supervisors were handled
+            # by FlowAdminGroup above.
+            return (
+                last_flow.to_user_id == user.id
+                and user.groups.filter(name=current_group).exists()
+            )
 
         return state_index == 0 and user.groups.filter(name=current_group).exists()
+
+    VIEW_ONLY_GROUP = 'packing_viewer'
+
+    def user_has_view_only_access(self, user):
+        """Dedicated read-only group, independently of workflow assignment."""
+        return bool(
+            user and getattr(user, 'is_authenticated', False)
+            and user.groups.filter(name=self.VIEW_ONLY_GROUP).exists()
+        )
+
+    def user_can_view_workflow(self, user):
+        """Only the current workflow editors and explicit viewers see documents."""
+        return (
+            self.user_has_workflow_access(user)
+            or self.user_has_view_only_access(user)
+        )
 
     def __str__(self):
         return f'{self.bl_number} -- {self.created_date}'

@@ -1536,6 +1536,22 @@ class PackingView(LoginRequiredMixin, BaseView):
     def get_success_url(self):
         return reverse_lazy('order:packing.update', kwargs={'pk': self.object.pk})
 
+    def dispatch(self, request, *args, **kwargs):
+        if not getattr(request.user, 'is_authenticated', False):
+            return super().dispatch(request, *args, **kwargs)
+        pk = kwargs.get('pk')
+        if pk:
+            packing_obj = get_object_or_404(Packing, pk=pk)
+            if not packing_obj.user_can_view_workflow(request.user):
+                raise PermissionDenied('Packing document view access denied.')
+            if not packing_obj.user_has_workflow_access(request.user):
+                if request.method in ('GET', 'HEAD'):
+                    return redirect('order:quick_packing', pk=packing_obj.pk)
+                raise PermissionDenied('Packing workflow access denied.')
+        elif not Packing.user_can_create_workflow(request.user):
+            raise PermissionDenied('Packing workflow access denied.')
+        return super().dispatch(request, *args, **kwargs)
+
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
 
@@ -3777,6 +3793,11 @@ class QuickPackingView(LoginRequiredMixin, View):
                 + [f'file_{idx}' for idx in range(1, PackingSafeForm.file_groups_2 + 1)]
             ))
             only_show = []
+        elif not constraint.get('wf_access'):
+            # Viewer group: no editable form fields, but show all existing
+            # documents in read-only mode regardless of current workflow step.
+            allowed_fields = []
+            only_show = [f'file_{idx}' for idx in range(1, 12)]
         elif self._is_warehouse_stage(packing_obj):
             # Non-superusers: warehouse header is display-only; files continue
             # to honor this step's exact form_constraint permissions.
@@ -4430,6 +4451,11 @@ class QuickPackingView(LoginRequiredMixin, View):
 
     def get(self, request, pk=None, *args, **kwargs):
         packing_obj = self.get_object(pk) if pk else None
+        if packing_obj and not packing_obj.user_can_view_workflow(request.user):
+            # Apply before AJAX change-history too; never leak document data
+            # to users outside the current workflow stage and viewer group.
+            raise PermissionDenied('Packing document view access denied.')
+
         if request.GET.get('audit_scope') is not None:
             if not packing_obj:
                 raise Http404('Packing not found.')
@@ -4494,6 +4520,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             'flow_state_list': states,
             'current_state': states[state_index] if states else None,
             'wf_access': wf_access,
+            'is_read_only_view': bool(packing_obj and not wf_access),
             'can_add_items': can_add_items,
             'can_edit_items': can_edit_items,
             'is_superuser': getattr(request.user, 'is_superuser', False) is True,
