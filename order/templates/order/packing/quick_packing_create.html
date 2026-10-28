@@ -442,6 +442,27 @@
     .pk-warehouse-meta-description {
         grid-column: 1 / -1;
     }
+    .pk-warehouse-destination-bulk {
+        border: 1px solid var(--pk-border);
+        padding: 12px;
+        border-radius: 10px;
+        background: #f8fafc;
+    }
+    .pk-warehouse-destination-bulk select {
+        width: 100%;
+        max-width: 440px;
+    }
+    .pk-central-receipt {
+        margin: 12px 0;
+        padding: 12px 14px;
+        border: 1px solid #dce7f6;
+        border-radius: 10px;
+        background: #f7faff;
+    }
+    .pk-central-receipt [hidden] { display: none !important; }
+    .pk-central-receipt p { font-size: .81rem; line-height: 1.8; }
+    .pk-row-warehouse-destination select { min-width: 0; }
+    .pk-row-editor-fields .form-select { width: 100%; }
 
     .pk-attachments-toggle {
         width: 100%;
@@ -2647,6 +2668,25 @@
                                     {% endif %}
                                 {% endif %}
 
+                                {% if is_warehouse_stage %}
+                                    <div class="pk-warehouse-destination-bulk mt-3">
+                                        <label class="pk-mini-label" for="pk-warehouse-bulk-destination"
+                                               data-key="packing_wh_destination_header">انبار مقصد (اعمال برای همه ردیف‌ها)</label>
+                                        {% if wf_access %}
+                                            <select id="pk-warehouse-bulk-destination" name="warehouse_destination"
+                                                    class="form-select form-select-sm">
+                                                <option value="" data-key="packing_wh_destination_choose">انتخاب انبار مقصد</option>
+                                                {% for code, label in warehouse_options %}
+                                                    <option value="{{ code }}" {% if packing_object.wh_destination == code %}selected{% endif %}>{{ label }} ({{ code }})</option>
+                                                {% endfor %}
+                                            </select>
+                                            <small class="text-muted" data-key="packing_wh_destination_bulk_hint">انتخاب انبار در سربرگ، مقصد همه ردیف‌ها را تنظیم می‌کند؛ سپس هر ردیف قابل تغییر است.</small>
+                                        {% else %}
+                                            <div class="pk-warehouse-meta-value">{{ packing_object.wh_destination|default:"—" }}</div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+
                                 <button
                                     type="button"
                                     class="pk-attachments-toggle"
@@ -2960,6 +3000,17 @@
                                                                            value="{{ packing_item.ruined_quantity|default_if_none:'' }}"
                                                                            class="form-control">
                                                                 </div>
+                                                                {% if not is_warehouse_stage %}
+                                                                    <div>
+                                                                        <label class="pk-mini-label" data-key="packing_wh_destination_row">انبار مقصد ردیف</label>
+                                                                        <select class="form-select" name="existing-{{ packing_item.pk }}-wh_destination">
+                                                                            <option value="" data-key="packing_wh_destination_choose">انتخاب انبار مقصد</option>
+                                                                            {% for code, label in warehouse_options %}
+                                                                                <option value="{{ code }}" {% if packing_item.wh_destination == code %}selected{% endif %}>{{ label }} ({{ code }})</option>
+                                                                            {% endfor %}
+                                                                        </select>
+                                                                    </div>
+                                                                {% endif %}
                                                             {% endif %}
                                                         </div>
                                                     </details>
@@ -2988,6 +3039,12 @@
                                                             <div class="pk-stat">
                                                                 <span class="pk-mini-label" data-key="packing_ruined_quantity">Damaged Quantity</span>
                                                                 <strong>{{ packing_item.ruined_quantity|default_if_none:"—"|floatformat:"-4g" }}</strong>
+                                                            </div>
+                                                        {% endif %}
+                                                        {% if packing_item.wh_destination %}
+                                                            <div class="pk-stat">
+                                                                <span class="pk-mini-label" data-key="packing_wh_destination_row">انبار مقصد ردیف</span>
+                                                                <strong>{% for code, label in warehouse_options %}{% if packing_item.wh_destination == code %}{{ label }}{% endif %}{% endfor %}</strong>
                                                             </div>
                                                         {% endif %}
                                                         {% if can_view_prices %}
@@ -3044,16 +3101,30 @@
                                                                        max="{{ packing_item.quantity|default_if_none:0 }}"
                                                                        class="form-control"
                                                                        name="existing-{{ packing_item.pk }}-wh_receipt_quantity"
-                                                                       value="{% if is_warehouse_stage %}{{ packing_item.wh_receipt_quantity|default_if_none:packing_item.quantity|default_if_none:0 }}{% else %}{{ packing_item.wh_receipt_quantity|default_if_none:'' }}{% endif %}"
-                                                                       {% if is_warehouse_stage %}required{% endif %} disabled>
+                                                                       value="{{ packing_item.wh_receipt_quantity|default_if_none:'' }}"
+                                                                       disabled>
+                                                                <small class="text-muted" data-key="packing_received_quantity_help">تمام کالاهای دریافت‌شده شامل سالم و معیوب.</small>
                                                             </div>
                                                             <div>
                                                                 <label class="pk-mini-label" data-key="packing_ruined_quantity">Damaged Quantity</label>
                                                                 <input type="number" step="any" min="0"
                                                                        class="form-control"
                                                                        name="existing-{{ packing_item.pk }}-ruined_quantity"
-                                                                       value="{% if is_warehouse_stage %}{{ packing_item.ruined_quantity|default_if_none:0 }}{% else %}{{ packing_item.ruined_quantity|default_if_none:'' }}{% endif %}"
-                                                                       {% if is_warehouse_stage %}required{% endif %} disabled>
+                                                                       value="{{ packing_item.ruined_quantity|default_if_none:'' }}"
+                                                                       disabled>
+                                                                <small class="text-muted" data-key="packing_damaged_quantity_help">کالاهای خراب یا آسیب‌دیده از مجموع دریافتی.</small>
+                                                            </div>
+                                                        {% endif %}
+                                                        {% if is_warehouse_stage or is_superuser %}
+                                                            <div class="pk-row-warehouse-destination">
+                                                                <label class="pk-mini-label" data-key="packing_wh_destination_row">انبار مقصد ردیف</label>
+                                                                <select class="form-select form-select-sm pk-item-warehouse-destination"
+                                                                        name="existing-{{ packing_item.pk }}-wh_destination" disabled>
+                                                                    <option value="" data-key="packing_wh_destination_choose">انتخاب انبار مقصد</option>
+                                                                    {% for code, label in warehouse_options %}
+                                                                        <option value="{{ code }}" {% if packing_item.wh_destination == code %}selected{% endif %}>{{ label }} ({{ code }})</option>
+                                                                    {% endfor %}
+                                                                </select>
                                                             </div>
                                                         {% endif %}
                                                         {% if not is_warehouse_stage or is_superuser %}
@@ -3124,6 +3195,19 @@
                                     {% endif %}
                                 </div>
 
+                                {% if is_warehouse_stage and wf_access %}
+                                    <div class="pk-central-receipt" data-central-wh-id="{{ central_wh_id }}">
+                                        <strong data-key="packing_receipt_explanation_title">راهنمای رسید انبار</strong>
+                                        <p class="mb-1" data-key="packing_received_quantity_help">تعداد کل دریافتی شامل همه کالاهای سالم و معیوب دریافت‌شده در هر ردیف است.</p>
+                                        <p class="mb-1" data-key="packing_damaged_quantity_help">تعداد معیوب، کالاهایی هستند که به هر دلیل خراب یا آسیب‌دیده‌اند و بخشی از تعداد کل دریافتی محسوب می‌شوند.</p>
+                                        <div id="pk-central-receipt-guidance" class="alert alert-light-info mt-2 mb-2"
+                                             role="status" data-key="packing_central_receipt_guidance">
+                                            پس از تکمیل تعداد دریافتی، تعداد معیوب و انبار مقصدِ همه ردیف‌ها، امکان آماده‌سازی رسید در انبار مرکزی فراهم می‌شود.
+                                        </div>
+                                        <button type="button" id="pk-central-receipt-button" class="btn btn-sm btn-light-primary"
+                                                hidden data-key="packing_central_receipt_button">رسید در انبار مرکزی</button>
+                                    </div>
+                                {% endif %}
                                 {% if wf_access %}
                                     <button type="button" id="submit-packing" class="btn btn-primary pk-submit">
                                         <span data-key="packing_submit">Save Packing</span>
@@ -3246,6 +3330,14 @@
     <span data-key="packing_unit_weight">Unit Weight</span>
     <span data-key="packing_row_total_value">Row Total Value</span>
     <span data-key="packing_unit_price">Unit Price</span>
+    <span data-key="packing_wh_destination_header">Destination warehouse (apply to all)</span>
+    <span data-key="packing_wh_destination_row">Destination warehouse</span>
+    <span data-key="packing_wh_destination_choose">Select destination warehouse</span>
+    <span data-key="packing_wh_destination_bulk_hint">Header selection fills all item destinations.</span>
+    <span data-key="packing_received_quantity_help">Received includes good and damaged items.</span>
+    <span data-key="packing_damaged_quantity_help">Damaged items are included in the received quantity.</span>
+    <span data-key="packing_central_receipt_guidance">Complete quantities and destinations to prepare central receipt.</span>
+    <span data-key="packing_central_receipt_button">Central Warehouse Receipt</span>
     <span data-key="packing_row_more_info">Additional Row Information</span>
     <span data-key="packing_previous">Previous Packing</span>
     <span data-key="packing_carton_number">Carton Number</span>
@@ -3317,6 +3409,8 @@
     const auditCalendar = document.getElementById('packing-audit-calendar');
     const historyCalendarKey = 'packingWorkflowHistoryCalendar';
     const isWarehouseStage = {{ is_warehouse_stage|yesno:"true,false" }};
+    const centralWarehouseId = "{{ central_wh_id }}";
+    const bulkWarehouseDestination = document.getElementById('pk-warehouse-bulk-destination');
     // Every visit to warehouse stages starts in Jalali, even if an earlier
     // workflow stage saved Gregorian; users can still switch manually.
     const savedCalendar = localStorage.getItem(historyCalendarKey);
@@ -4377,6 +4471,8 @@ ${canViewPrices ? `
             updateTotals();
         }
 
+        initWarehouseReceiptControls();
+
         document.querySelectorAll('.pk-row-cancel-edit').forEach(function (button) {
             button.addEventListener('click', function () {
                 const row = button.closest('.packing-existing-row');
@@ -4581,6 +4677,65 @@ ${canViewPrices ? `
         );
     });
 
+    function warehouseRowsReady() {
+        const rows = Array.from(document.querySelectorAll('#existing-packing-items .packing-existing-row'));
+        if (!isWarehouseStage || !rows.length) return false;
+        return rows.every(row => {
+            const editor = row.querySelector('.pk-row-editor');
+            const received = editor?.querySelector('[name$="-wh_receipt_quantity"]');
+            const damaged = editor?.querySelector('[name$="-ruined_quantity"]');
+            const destination = editor?.querySelector('[name$="-wh_destination"]');
+            if (!received || !damaged || !destination) return false;
+            const arrived = received.value.trim() === '' ? NaN : Number(received.value);
+            const ruined = damaged.value.trim() === '' ? NaN : Number(damaged.value);
+            const planned = Number(row.dataset.quantity);
+            return destination.value !== ''
+                && Number.isFinite(arrived) && arrived >= 0 && arrived <= planned
+                && Number.isFinite(ruined) && ruined >= 0 && ruined <= arrived;
+        });
+    }
+
+    function refreshCentralReceiptState() {
+        const button = document.getElementById('pk-central-receipt-button');
+        const guidance = document.getElementById('pk-central-receipt-guidance');
+        if (!button || !guidance) return;
+        const ready = warehouseRowsReady();
+        button.hidden = !ready;
+        guidance.hidden = ready;
+    }
+
+    function initWarehouseReceiptControls() {
+        if (!isWarehouseStage) return;
+        const selects = Array.from(document.querySelectorAll('.pk-item-warehouse-destination'));
+        bulkWarehouseDestination?.addEventListener('change', function () {
+            selects.forEach(select => {
+                if (!select.disabled) select.value = this.value;
+            });
+            refreshCentralReceiptState();
+        });
+        selects.forEach(select => {
+            select.addEventListener('change', function () {
+                if (bulkWarehouseDestination) {
+                    const values = selects.filter(x => !x.disabled).map(x => x.value);
+                    const equal = values.length > 0 && values.every(v => v === values[0]);
+                    bulkWarehouseDestination.value = equal ? values[0] : '';
+                }
+                refreshCentralReceiptState();
+            });
+        });
+        document.querySelectorAll('.pk-row-editor [name$="-wh_receipt_quantity"], .pk-row-editor [name$="-ruined_quantity"]').forEach(input => {
+            input.addEventListener('input', refreshCentralReceiptState);
+        });
+        document.getElementById('pk-central-receipt-button')?.addEventListener('click', function () {
+            if (!warehouseRowsReady()) return refreshCentralReceiptState();
+            // Sepidar API is intentionally NOT called in this phase.
+            // No actual receipt is created by this button.
+            showPackingFeedback('error', tr('packing_central_receipt_not_connected',
+                'اطلاعات کامل است؛ ارتباط با سپیدار در مرحله بعد پیاده‌سازی می‌شود. فعلاً هیچ رسیدی ثبت نشده است.'));
+        });
+        refreshCentralReceiptState();
+    }
+
     let packingRequestPending = false;
     function setPackingRequestPending(pending) {
         packingRequestPending = pending;
@@ -4713,8 +4868,9 @@ ${canViewPrices ? `
             const ruinedInput = damaged.value.trim();
             const arrived = arrivedInput === '' ? null : Number(arrivedInput);
             const ruined = ruinedInput === '' ? null : Number(ruinedInput);
-            const required = isWarehouseStage;
+            const required = false; // Allow partial warehouse drafts to be saved.
             const validCounts = (!required || (arrived !== null && ruined !== null))
+                && ((arrived === null) === (ruined === null))
                 && (arrived === null || (Number.isFinite(arrived) && arrived >= 0 && arrived <= planned))
                 && (ruined === null || (Number.isFinite(ruined) && ruined >= 0 && arrived !== null && ruined <= arrived));
             received.classList.toggle('border-danger', !validCounts);
