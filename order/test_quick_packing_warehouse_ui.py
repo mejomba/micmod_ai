@@ -40,11 +40,21 @@ class QuickPackingWarehouseUiTests(SimpleTestCase):
 
     def test_warehouse_editor_has_only_received_and_ruined_fields(self):
         markup = self.html.split('<div class="pk-row-editor-fields">', 1)[1]
-        warehouse = markup.split('{% else %}', 1)[0]
+        warehouse = markup.split('{% endif %}', 1)[0]
         self.assertIn('name="existing-{{ packing_item.pk }}-wh_receipt_quantity"', warehouse)
         self.assertIn('name="existing-{{ packing_item.pk }}-ruined_quantity"', warehouse)
         self.assertNotIn('name="existing-{{ packing_item.pk }}-quantity"', warehouse)
         self.assertIn('packing_item.wh_receipt_quantity|default_if_none:packing_item.quantity', warehouse)
+
+    def test_warehouse_opens_all_editors_by_default(self):
+        self.assertIn('if (isWarehouseStage) {', self.html)
+        self.assertIn("document.querySelectorAll('.pk-row-edit-button').forEach", self.html)
+        self.assertIn("editor.hidden = false;", self.html)
+        self.assertIn("field.disabled = false;", self.html)
+
+    def test_warehouse_non_superuser_still_has_two_receipt_fields(self):
+        self.assertIn('{% if is_warehouse_stage or is_superuser %}', self.html)
+        self.assertIn('{% if not is_warehouse_stage or is_superuser %}', self.html)
 
     def test_double_click_protection_covers_save_and_workflow(self):
         self.assertIn('let packingRequestPending = false;', self.html)
@@ -58,7 +68,7 @@ class QuickPackingWarehouseUiTests(SimpleTestCase):
         from order.views import QuickPackingView
 
         view = QuickPackingView()
-        view.request = SimpleNamespace(user=Mock())
+        view.request = SimpleNamespace(user=Mock(is_superuser=False))
         view._workflow_constraint = Mock(return_value={
             'form_state': 8,
             'wf_access': True,
@@ -88,4 +98,32 @@ class QuickPackingWarehouseUiTests(SimpleTestCase):
                 self.assertNotIn(name, passed['allowed_fields'])
                 self.assertNotIn(name, passed['only_show'])
         self.assertIn('file_1', passed['allowed_fields'])
+
+    def test_superuser_has_union_of_all_safe_header_fields(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock, patch
+        from order.views import QuickPackingView
+        from order.forms import PackingSafeForm
+
+        view = QuickPackingView()
+        view.request = SimpleNamespace(user=Mock(is_superuser=True))
+        view._workflow_constraint = Mock(return_value={
+            'form_state': 8, 'wf_access': True,
+            'form_constraint': [{'read': ['__all__']} for _ in range(10)],
+        })
+        view._is_warehouse_stage = Mock(return_value=True)
+        with patch.object(view, 'form_class') as form_class:
+            view._build_form(packing_obj=Mock())
+        kwargs = form_class.call_args.kwargs
+        expected = set(PackingSafeForm.field_layout) | {
+            'file_' + str(i) for i in range(1, 12)
+        }
+        self.assertEqual(set(kwargs['allowed_fields']), expected)
+        self.assertEqual(kwargs['only_show'], [])
+
+    def test_superuser_header_and_receipt_fields_are_rendered(self):
+        self.assertIn('{% if is_warehouse_stage and not is_superuser %}', self.html)
+        self.assertIn('{% if is_superuser %}', self.html)
+        self.assertIn('form form.departure_date form.arrival_date', self.html)
+        self.assertIn('name="existing-{{ packing_item.pk }}-wh_receipt_quantity"', self.html)
 

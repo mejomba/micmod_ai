@@ -231,8 +231,11 @@ function toJalaali(a,i,d){return"[object Date]"===Object.prototype.toString.call
         });
         sync();
     };
-    let savedMode = 'gregorian';
-    try { savedMode = localStorage.getItem(storeKey) || 'gregorian'; } catch (_) {}
+    const isWarehouseStage = header.dataset.packingWarehouseStage === 'true';
+    let savedMode = isWarehouseStage ? 'jalali' : 'gregorian';
+    if (!isWarehouseStage) {
+        try { savedMode = localStorage.getItem(storeKey) || 'gregorian'; } catch (_) {}
+    }
     select.value = savedMode === 'jalali' ? 'jalali' : 'gregorian';
     select.addEventListener('change', () => {
         try { localStorage.setItem(storeKey, select.value); } catch (_) {}

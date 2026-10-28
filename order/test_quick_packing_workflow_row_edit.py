@@ -11,7 +11,7 @@ from order.views import QuickPackingView
 class QuickPackingWorkflowRowEditTests(SimpleTestCase):
     def setUp(self):
         self.view = QuickPackingView()
-        self.request = SimpleNamespace(user=Mock())
+        self.request = SimpleNamespace(user=Mock(is_superuser=False))
         self.packing = Mock()
         self.packing.workflow_state_index.return_value = 2
         self.packing.user_has_workflow_access.return_value = True
@@ -153,6 +153,60 @@ class QuickPackingWorkflowRowEditTests(SimpleTestCase):
         self.assertEqual(parsed, [{
             'id': 123, 'delete': False, 'wh_receipt_quantity': 5.0, 'ruined_quantity': 1.0,
         }])
+
+    def test_superuser_can_edit_normal_and_warehouse_fields_in_warehouse_stage(self):
+        self.request.user.is_superuser = True
+        self.packing.workflow_state_index.return_value = 8
+        self.row.update(wh_receipt_quantity=4, ruined_quantity=1)
+        self.item.wh_receipt_quantity = None
+        self.item.ruined_quantity = None
+        self.edit()
+        self.assertEqual(self.item.wh_receipt_quantity, 4)
+        self.assertEqual(self.item.ruined_quantity, 1)
+        self.assertEqual(self.item.carton_number, 'Carton B')
+        self.assertEqual(self.item.quantity, 5)
+        self.assertEqual(self.item.price, 20)
+        self.item.save.assert_called_once_with()
+
+    def test_superuser_can_edit_receipt_fields_outside_warehouse(self):
+        self.request.user.is_superuser = True
+        self.row.update(wh_receipt_quantity=5, ruined_quantity=1)
+        self.item.wh_receipt_quantity = None
+        self.item.ruined_quantity = None
+        self.edit()
+        self.assertEqual(self.item.wh_receipt_quantity, 5)
+        self.assertEqual(self.item.ruined_quantity, 1)
+
+    def test_superuser_only_receipt_change_is_saved(self):
+        self.request.user.is_superuser = True
+        self.item.carton_number = self.row['carton_number']
+        self.item.size = self.row['size']
+        self.item.description = self.row['description']
+        self.row.update(wh_receipt_quantity=5, ruined_quantity=0)
+        self.item.wh_receipt_quantity = None
+        self.item.ruined_quantity = None
+        self.edit()
+        self.item.save.assert_called_once_with()
+
+    def test_superuser_receipt_parser_accepts_normal_and_warehouse_fields(self):
+        post = {
+            'existing-123-id': '123',
+            'existing-123-quantity': '5',
+            'existing-123-wh_receipt_quantity': '4',
+            'existing-123-ruined_quantity': '1',
+        }
+        parsed = self.view._parse_existing_rows(
+            SimpleNamespace(POST=post), superuser=True,
+        )
+        self.assertEqual(parsed[0]['quantity'], 5)
+        self.assertEqual(parsed[0]['wh_receipt_quantity'], 4)
+        self.assertEqual(parsed[0]['ruined_quantity'], 1)
+
+    def test_superuser_cannot_exceed_packing_quantity_on_receipt(self):
+        self.request.user.is_superuser = True
+        self.row.update(wh_receipt_quantity=6, ruined_quantity=0)
+        with self.assertRaisesMessage(ValueError, 'Received/damaged quantities'):
+            self.edit()
 
     def test_unmodified_row_does_not_create_history(self):
         self.row['carton_number'] = self.item.carton_number

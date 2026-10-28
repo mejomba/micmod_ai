@@ -2574,7 +2574,7 @@
                                 </div>
                             {% endif %}
 
-                            <div id="packing-header">
+                            <div id="packing-header" data-packing-warehouse-stage="{{ is_warehouse_stage|yesno:'true,false' }}">
                                 {% if not packing_object %}
                                     <div class="pk-workflow-description pk-workflow-description-create">
                                         <label for="packing-workflow-description-create" data-key="packing_workflow_description">توضیحات جریان کاری</label>
@@ -2583,8 +2583,8 @@
                                                   placeholder="توضیحات ایجاد پکینگ" data-placeholder-key="packing_workflow_create_placeholder"></textarea>
                                     </div>
                                 {% endif %}
-                                {% if is_warehouse_stage %}
-                                    {# Warehouse values are display-only; no form controls. #}
+                                {% if is_warehouse_stage and not is_superuser %}
+                                    {# Warehouse non-superusers: display-only. #}
                                     <div class="packing-meta-grid pk-warehouse-meta-grid" aria-label="Packing header (read only)">
                                         <div class="pk-warehouse-meta-field">
                                             <span class="pk-mini-label" data-key="packing_number_label">شماره پکینگ</span>
@@ -2615,6 +2615,14 @@
                                     <div class="packing-meta-grid">
                                         {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.bl_date form.transportation_company form.origin form.destination form.estimated_shipping_start_date form.estimated_arrive_to_wh_date form.description label='on-border' %}
                                     </div>
+                                    {% if is_superuser %}
+                                        <details class="pk-superuser-extra-fields">
+                                            <summary data-key="packing_row_more_info">Additional Packing Fields</summary>
+                                            <div class="packing-meta-grid mt-3">
+                                                {% render_field_by_order form form.departure_date form.arrival_date form.sales_manager_needed form.sales_manager_check_date form.delivery_to_salehi_date form.cl_90_date form.cl_10_date form.cl_100_date form.arrive_to_wh_date form.reserve_bar_date form.sum_qty form.sum_arrived_qty form.wh_destination form.sales_10_darsad label='on-border' %}
+                                            </div>
+                                        </details>
+                                    {% endif %}
                                 {% endif %}
 
                                 <button
@@ -2762,7 +2770,7 @@
                                             data-item-id="{{ packing_item.pk }}"
                                             data-quantity="{{ packing_item.quantity|default_if_none:0 }}"
                                             data-total-weight="{{ packing_item.net_weight_kg|default_if_none:0 }}"
-                                            {% if not is_warehouse_stage %}
+                                            {% if not is_warehouse_stage or is_superuser %}
                                             data-unit-price="{{ packing_item.price|default_if_none:0 }}"
                                             data-currency="{{ packing_item.order.currency.title_en|default_if_none:'' }}"
                                             {% endif %}
@@ -2913,6 +2921,22 @@
                                                                 <label class="pk-mini-label" data-key="packing_description">Description</label>
                                                                 <textarea class="form-control" rows="2" name="existing-{{ packing_item.pk }}-description">{{ packing_item.description|default_if_none:'' }}</textarea>
                                                             </div>
+                                                            {% if is_superuser %}
+                                                                <div>
+                                                                    <label class="pk-mini-label" data-key="packing_arrived_quantity">Received Quantity</label>
+                                                                    <input type="number" step="any" min="0"
+                                                                           name="existing-{{ packing_item.pk }}-wh_receipt_quantity"
+                                                                           value="{{ packing_item.wh_receipt_quantity|default_if_none:'' }}"
+                                                                           class="form-control">
+                                                                </div>
+                                                                <div>
+                                                                    <label class="pk-mini-label" data-key="packing_ruined_quantity">Damaged Quantity</label>
+                                                                    <input type="number" step="any" min="0"
+                                                                           name="existing-{{ packing_item.pk }}-ruined_quantity"
+                                                                           value="{{ packing_item.ruined_quantity|default_if_none:'' }}"
+                                                                           class="form-control">
+                                                                </div>
+                                                            {% endif %}
                                                         </div>
                                                     </details>
                                                 {% else %}
@@ -2941,7 +2965,8 @@
                                                                 <span class="pk-mini-label" data-key="packing_ruined_quantity">Damaged Quantity</span>
                                                                 <strong>{{ packing_item.ruined_quantity|default_if_none:"—"|floatformat:"-4g" }}</strong>
                                                             </div>
-                                                        {% else %}
+                                                        {% endif %}
+                                                        {% if not is_warehouse_stage or is_superuser %}
                                                         <div class="pk-stat">
                                                             <span class="pk-mini-label" data-key="packing_unit_price">Unit Price</span>
                                                             <strong>
@@ -2988,25 +3013,26 @@
                                                 <div class="pk-row-editor" hidden>
                                                     <input type="hidden" name="existing-{{ packing_item.pk }}-id" value="{{ packing_item.pk }}" disabled>
                                                     <div class="pk-row-editor-fields">
-                                                        {% if is_warehouse_stage %}
+                                                        {% if is_warehouse_stage or is_superuser %}
                                                             <div>
                                                                 <label class="pk-mini-label" data-key="packing_arrived_quantity">Total Received Quantity</label>
                                                                 <input type="number" step="any" min="0"
                                                                        max="{{ packing_item.quantity|default_if_none:0 }}"
                                                                        class="form-control"
                                                                        name="existing-{{ packing_item.pk }}-wh_receipt_quantity"
-                                                                       value="{{ packing_item.wh_receipt_quantity|default_if_none:packing_item.quantity|default_if_none:0 }}"
-                                                                       required disabled>
+                                                                       value="{% if is_warehouse_stage %}{{ packing_item.wh_receipt_quantity|default_if_none:packing_item.quantity|default_if_none:0 }}{% else %}{{ packing_item.wh_receipt_quantity|default_if_none:'' }}{% endif %}"
+                                                                       {% if is_warehouse_stage %}required{% endif %} disabled>
                                                             </div>
                                                             <div>
                                                                 <label class="pk-mini-label" data-key="packing_ruined_quantity">Damaged Quantity</label>
                                                                 <input type="number" step="any" min="0"
                                                                        class="form-control"
                                                                        name="existing-{{ packing_item.pk }}-ruined_quantity"
-                                                                       value="{{ packing_item.ruined_quantity|default_if_none:0 }}"
-                                                                       required disabled>
+                                                                       value="{% if is_warehouse_stage %}{{ packing_item.ruined_quantity|default_if_none:0 }}{% else %}{{ packing_item.ruined_quantity|default_if_none:'' }}{% endif %}"
+                                                                       {% if is_warehouse_stage %}required{% endif %} disabled>
                                                             </div>
-                                                        {% else %}
+                                                        {% endif %}
+                                                        {% if not is_warehouse_stage or is_superuser %}
                                                         <div>
                                                             <label class="pk-mini-label" data-key="packing_quantity_this">Packing Quantity</label>
                                                             <input type="number" step="any" min="0.000001"
@@ -3066,7 +3092,7 @@
                                         <span data-key="packing_total_weight">Total Weight</span>
                                         <strong id="packing-total-weight">0</strong>
                                     </div>
-                                    {% if not is_warehouse_stage %}
+                                    {% if not is_warehouse_stage or is_superuser %}
                                     <div class="pk-summary-item">
                                         <span data-key="packing_total_value">Total Value</span>
                                         <strong id="packing-total-value">0</strong>
@@ -3255,6 +3281,7 @@
     const listUrl = "{% url 'order:quick_packing.datatable' %}";
     const submitUrl = "{% if packing_object %}{% url 'order:quick_packing' packing_object.pk %}{% else %}{% url 'order:quick_packing' %}{% endif %}";
     const canAddItems = {{ can_add_items|yesno:"true,false" }};
+    const isSuperuser = {{ is_superuser|yesno:"true,false" }};
     const container = document.getElementById('formset-container');
     const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
     const submitButton = document.getElementById('submit-packing');
@@ -4212,6 +4239,15 @@
                         <label class="pk-mini-label"><span data-key="packing_description">${tr('packing_description', 'Description')}</span></label>
                         <textarea class="form-control" rows="2" name="form-${index}-description"></textarea>
                     </div>
+                    ${isSuperuser ? `
+                        <div>
+                            <label class="pk-mini-label" data-key="packing_arrived_quantity">${tr('packing_arrived_quantity', 'Received Quantity')}</label>
+                            <input type="number" min="0" step="any" class="form-control" name="form-${index}-wh_receipt_quantity">
+                        </div>
+                        <div>
+                            <label class="pk-mini-label" data-key="packing_ruined_quantity">${tr('packing_ruined_quantity', 'Damaged Quantity')}</label>
+                            <input type="number" min="0" step="any" class="form-control" name="form-${index}-ruined_quantity">
+                        </div>` : ''}
                 </div>
             </details>
         `;
@@ -4296,6 +4332,20 @@
                 updateTotals();
             });
         });
+
+        if (isWarehouseStage) {
+            document.querySelectorAll('.pk-row-edit-button').forEach(function (button) {
+                const row = button.closest('.packing-existing-row');
+                const editor = row?.querySelector('.pk-row-editor');
+                if (!editor) return;
+                editor.hidden = false;
+                editor.querySelectorAll('input, textarea, select').forEach(field => { field.disabled = false; });
+                row.classList.add('is-editing');
+                button.setAttribute('aria-expanded', 'true');
+                button.disabled = true;
+            });
+            updateTotals();
+        }
 
         document.querySelectorAll('.pk-row-cancel-edit').forEach(function (button) {
             button.addEventListener('click', function () {
@@ -4625,12 +4675,16 @@
             const received = editor.querySelector('[name$="-wh_receipt_quantity"]');
             const damaged = editor.querySelector('[name$="-ruined_quantity"]');
             if (!received || !damaged) return;
-            const planned = Number(received.max);
-            const arrived = Number(received.value);
-            const ruined = Number(damaged.value);
-            const validCounts = received.value.trim() !== '' && damaged.value.trim() !== ''
-                && Number.isFinite(arrived) && Number.isFinite(ruined)
-                && arrived >= 0 && arrived <= planned && ruined >= 0 && ruined <= arrived;
+            const quantity = editor.querySelector('.packing-existing-quantity');
+            const planned = Number(quantity ? quantity.value : received.max);
+            const arrivedInput = received.value.trim();
+            const ruinedInput = damaged.value.trim();
+            const arrived = arrivedInput === '' ? null : Number(arrivedInput);
+            const ruined = ruinedInput === '' ? null : Number(ruinedInput);
+            const required = isWarehouseStage;
+            const validCounts = (!required || (arrived !== null && ruined !== null))
+                && (arrived === null || (Number.isFinite(arrived) && arrived >= 0 && arrived <= planned))
+                && (ruined === null || (Number.isFinite(ruined) && ruined >= 0 && arrived !== null && ruined <= arrived));
             received.classList.toggle('border-danger', !validCounts);
             damaged.classList.toggle('border-danger', !validCounts);
             if (!validCounts) {
@@ -4638,6 +4692,23 @@
                 warehouseInvalid = true;
             }
         });
+
+        if (isSuperuser && canAddItems) {
+            document.querySelectorAll('#existing-packing-items .pk-row-details, #formset-container .pk-row-details').forEach(details => {
+                const received = details.querySelector('[name$="-wh_receipt_quantity"]');
+                const damaged = details.querySelector('[name$="-ruined_quantity"]');
+                if (!received || !damaged) return;
+                const row = details.closest('.packing-selected-row');
+                const qty = Number(row.querySelector('input[name$="-quantity"]')?.value);
+                const arrived = received.value.trim() === '' ? null : Number(received.value);
+                const ruined = damaged.value.trim() === '' ? null : Number(damaged.value);
+                const ok = (arrived === null || (Number.isFinite(arrived) && arrived >= 0 && arrived <= qty))
+                    && (ruined === null || (Number.isFinite(ruined) && ruined >= 0 && arrived !== null && ruined <= arrived));
+                received.classList.toggle('border-danger', !ok);
+                damaged.classList.toggle('border-danger', !ok);
+                if (!ok) { valid = false; warehouseInvalid = true; }
+            });
+        }
 
         if (!valid) {
             showPackingFeedback('error', warehouseInvalid

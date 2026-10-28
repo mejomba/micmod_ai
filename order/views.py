@@ -3768,9 +3768,18 @@ class QuickPackingView(LoginRequiredMixin, View):
                 if name in read and name not in hidden
             ]
 
-        if self._is_warehouse_stage(packing_obj):
-            # All header metadata is immutable in warehouse stages, including
-            # fields omitted from the six-item display. Keep file permissions.
+        if getattr(self.request.user, 'is_superuser', False) is True:
+            # The superuser's field set is the UNION of safe Packing fields
+            # available to all workflow groups, independent of current stage.
+            # Never expose audit/user/workflow relation fields from Meta='__all__'.
+            allowed_fields = list(dict.fromkeys(
+                list(PackingSafeForm.field_layout)
+                + [f'file_{idx}' for idx in range(1, PackingSafeForm.file_groups_2 + 1)]
+            ))
+            only_show = []
+        elif self._is_warehouse_stage(packing_obj):
+            # Non-superusers: warehouse header is display-only; files continue
+            # to honor this step's exact form_constraint permissions.
             allowed_fields = [name for name in allowed_fields if name.startswith('file_')]
             only_show = [name for name in only_show if name.startswith('file_')]
 
@@ -3957,6 +3966,24 @@ class QuickPackingView(LoginRequiredMixin, View):
         except (TypeError, ValueError):
             return default
 
+    def _receipt_payload(self, post, prefix, required=False):
+        """Validate receipt fields without confusing them with Packing quantity."""
+        received_key = f'{prefix}-wh_receipt_quantity'
+        damaged_key = f'{prefix}-ruined_quantity'
+        if not required and received_key not in post and damaged_key not in post:
+            return {}
+        parsed = {}
+        for field, key in (
+            ('wh_receipt_quantity', received_key),
+            ('ruined_quantity', damaged_key),
+        ):
+            raw = post.get(key)
+            value = None if raw is None or str(raw).strip() == '' else self._to_float(raw, None)
+            if (required and value is None) or (value is not None and not isfinite(value)):
+                raise ValueError(f'Invalid {field} value.')
+            parsed[field] = value
+        return parsed
+
     def _parse_rows(self, request):
         total_forms = int(request.POST.get('form-TOTAL_FORMS', 1) or 1)
         rows = []
@@ -3971,7 +3998,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             if quantity is None:
                 raise ValueError(f'Invalid quantity in row {row_index}.')
 
-            rows.append({
+            row = {
                 'index': row_index,
                 'order_id': int(order_id),
                 'quantity': quantity,
@@ -3982,10 +4009,31 @@ class QuickPackingView(LoginRequiredMixin, View):
                 ),
                 'size': request.POST.get(f'form-{row_index}-size'),
                 'description': request.POST.get(f'form-{row_index}-description'),
-            })
+            }
+            if getattr(getattr(request, 'user', None), 'is_superuser', False) is True:
+                row.update(self._receipt_payload(request.POST, f'form-{row_index}'))
+                if row.get('wh_receipt_quantity') is not None or row.get('ruined_quantity') is not None:
+                    self._validate_receipt_quantities(
+                        row.get('wh_receipt_quantity'), row.get('ruined_quantity'),
+                        row['quantity'],
+                    )
+            rows.append(row)
         return rows
 
-    def _parse_existing_rows(self, request, warehouse_stage=False):
+    @staticmethod
+    def _validate_receipt_quantities(received, ruined, quantity):
+        if received is None and ruined is None:
+            return
+        if (
+            received is None or not isfinite(float(received))
+            or received < 0 or received > float(quantity or 0)
+            or (ruined is not None and (
+                not isfinite(float(ruined)) or ruined < 0 or ruined > received
+            ))
+        ):
+            raise ValueError('Received/damaged quantities are outside the Packing quantity.')
+
+    def _parse_existing_rows(self, request, warehouse_stage=False, superuser=False):
         rows = []
         prefix = 'existing-'
         item_ids = []
@@ -4007,25 +4055,10 @@ class QuickPackingView(LoginRequiredMixin, View):
                 if delete_requested:
                     rows.append({'id': item_id, 'delete': True})
                     continue
-                arrived = self._to_float(
-                    request.POST.get(f'existing-{item_id}-wh_receipt_quantity'),
-                    default=None,
+                receipts = self._receipt_payload(
+                    request.POST, f'existing-{item_id}', required=True,
                 )
-                ruined = self._to_float(
-                    request.POST.get(f'existing-{item_id}-ruined_quantity'),
-                    default=None,
-                )
-                if (
-                    arrived is None or ruined is None
-                    or not isfinite(arrived) or not isfinite(ruined)
-                ):
-                    raise ValueError(f'Invalid warehouse quantities for PackingItem {item_id}.')
-                rows.append({
-                    'id': item_id,
-                    'delete': False,
-                    'wh_receipt_quantity': arrived,
-                    'ruined_quantity': ruined,
-                })
+                rows.append({'id': item_id, 'delete': False, **receipts})
                 continue
 
             quantity = self._to_float(
@@ -4035,7 +4068,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             if quantity is None and not delete_requested:
                 raise ValueError(f'Invalid quantity for PackingItem {item_id}.')
 
-            rows.append({
+            row = {
                 'id': item_id,
                 'delete': delete_requested,
                 'quantity': quantity,
@@ -4046,13 +4079,19 @@ class QuickPackingView(LoginRequiredMixin, View):
                 ),
                 'size': request.POST.get(f'existing-{item_id}-size'),
                 'description': request.POST.get(f'existing-{item_id}-description'),
-            })
+            }
+            if superuser and not delete_requested:
+                row.update(self._receipt_payload(request.POST, f'existing-{item_id}'))
+            rows.append(row)
 
         return rows
 
     def _update_existing_rows(self, request, packing_obj):
-        warehouse_stage = self._is_warehouse_stage(packing_obj)
-        rows = self._parse_existing_rows(request, warehouse_stage=warehouse_stage)
+        superuser = getattr(request.user, 'is_superuser', False) is True
+        warehouse_only = self._is_warehouse_stage(packing_obj) and not superuser
+        rows = self._parse_existing_rows(
+            request, warehouse_stage=warehouse_only, superuser=superuser,
+        )
         if not rows:
             return
 
@@ -4088,16 +4127,11 @@ class QuickPackingView(LoginRequiredMixin, View):
                 packing_item.save()
                 continue
 
-            if warehouse_stage:
-                # Warehouse users can update ONLY received and damaged counts.
-                # Never reprice, change ordered quantity, or rewrite packaging metadata.
+            if warehouse_only:
+                # Group's warehouse users edit ONLY their own received/damaged fields.
                 arrived = row['wh_receipt_quantity']
                 ruined = row['ruined_quantity']
-                if (
-                    arrived < 0 or arrived > float(packing_item.quantity or 0)
-                    or ruined < 0 or ruined > arrived
-                ):
-                    raise ValueError('Received/damaged quantities are outside the Packing quantity.')
+                self._validate_receipt_quantities(arrived, ruined, packing_item.quantity)
                 if (
                     packing_item.wh_receipt_quantity == arrived
                     and packing_item.ruined_quantity == ruined
@@ -4109,6 +4143,22 @@ class QuickPackingView(LoginRequiredMixin, View):
                 packing_item.extra_data.request = request
                 packing_item.save()
                 continue
+
+            # Superuser can edit the union of regular and warehouse row fields.
+            # Omitted receipt inputs leave existing values untouched.
+            receipt_updates = {}
+            if superuser and (
+                'wh_receipt_quantity' in row or 'ruined_quantity' in row
+            ):
+                arrived = row.get('wh_receipt_quantity', packing_item.wh_receipt_quantity)
+                ruined = row.get('ruined_quantity', packing_item.ruined_quantity)
+                self._validate_receipt_quantities(arrived, ruined, row['quantity'])
+                for attr, new_value in (
+                    ('wh_receipt_quantity', arrived),
+                    ('ruined_quantity', ruined),
+                ):
+                    if getattr(packing_item, attr) != new_value:
+                        receipt_updates[attr] = new_value
 
             order = Order.objects.select_for_update().get(pk=packing_item.order_id)
 
@@ -4124,6 +4174,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                 or (packing_item.carton_number or '') != (row['carton_number'] or '')
                 or (packing_item.size or '') != (row['size'] or '')
                 or (packing_item.description or '') != (row['description'] or '')
+                or bool(receipt_updates)
             ):
                 continue
 
@@ -4151,13 +4202,18 @@ class QuickPackingView(LoginRequiredMixin, View):
             packing_item.carton_number = row['carton_number']
             packing_item.size = row['size']
             packing_item.description = row['description']
+            for attr, value in receipt_updates.items():
+                setattr(packing_item, attr, value)
             packing_item.editor_user = request.user
             packing_item.extra_data.request = request
             packing_item.save()
 
-    def _save_uploaded_files(self, request, packing_obj):
-        if not any(name.startswith('file_') for name in request.FILES):
+    def _save_uploaded_files(self, request, packing_obj, form=None):
+        supplied_files = {name for name in request.FILES if name.startswith('file_')}
+        if not supplied_files:
             return
+        if form is not None and not supplied_files.issubset(set(form.fields)):
+            raise PermissionDenied('File upload is not allowed in this workflow stage.')
 
         packing_obj.save_file(
             request=request,
@@ -4197,7 +4253,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                         form.instance.extra_data.request = request
                         packing_obj = form.save() or form.instance
                         self._update_existing_rows(request, packing_obj)
-                        self._save_uploaded_files(request, packing_obj)
+                        self._save_uploaded_files(request, packing_obj, form=form)
 
                         if workflow_action == 'change_user':
                             self._change_workflow_user(
@@ -4292,13 +4348,15 @@ class QuickPackingView(LoginRequiredMixin, View):
                             size=row['size'],
                             brand=str(item.brand) if item and item.brand else None,
                             description=row['description'],
+                            wh_receipt_quantity=row.get('wh_receipt_quantity'),
+                            ruined_quantity=row.get('ruined_quantity'),
                             creator_user=request.user,
                             editor_user=request.user,
                         )
                         packing_item_obj.extra_data.request = request
                         packing_item_obj.save()
 
-                self._save_uploaded_files(request, packing_obj)
+                self._save_uploaded_files(request, packing_obj, form=form)
 
                 if not pk:
                     self._create_initial_workflow(packing_obj)
@@ -4438,6 +4496,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             'wf_access': wf_access,
             'can_add_items': can_add_items,
             'can_edit_items': can_edit_items,
+            'is_superuser': getattr(request.user, 'is_superuser', False) is True,
             'is_warehouse_stage': self._is_warehouse_stage(packing_obj),
             'can_next': bool(wf_access and packing_obj and state_index < len(states) - 1),
             'can_back': bool(wf_access and packing_obj and state_index > 0),
