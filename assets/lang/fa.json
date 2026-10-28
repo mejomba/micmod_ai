@@ -1027,5 +1027,15 @@
     "packing_workflow_stage_9": "اتمام کار",
     "packing_arrived_quantity": "تعداد کل دریافتی",
     "packing_ruined_quantity": "تعداد معیوب",
-    "packing_warehouse_quantity_invalid_error": "تعداد دریافتی و معیوب را بررسی کنید؛ تعداد معیوب نباید بیشتر از دریافتی و تعداد دریافتی نباید بیشتر از تعداد پکینگ باشد."
+    "packing_warehouse_quantity_invalid_error": "تعداد دریافتی و معیوب را بررسی کنید؛ تعداد معیوب نباید بیشتر از دریافتی و تعداد دریافتی نباید بیشتر از تعداد پکینگ باشد.",
+    "packing_wh_destination_header": "انبار مقصد (اعمال به همه ردیف‌ها)",
+    "packing_wh_destination_row": "انبار مقصد ردیف",
+    "packing_wh_destination_choose": "انتخاب انبار مقصد",
+    "packing_wh_destination_bulk_hint": "انتخاب انبار در سربرگ روی همه ردیف‌ها اعمال می‌شود؛ سپس می‌توانید مقصد هر ردیف را جداگانه تغییر دهید.",
+    "packing_received_quantity_help": "تعداد کل دریافتی شامل همه کالاهای دریافت‌شده ردیف، چه سالم و چه معیوب است.",
+    "packing_damaged_quantity_help": "تعداد معیوب، کالاهایی هستند که به هر دلیل خراب یا آسیب‌دیده‌اند و جزو تعداد کل دریافتی محسوب می‌شوند.",
+    "packing_receipt_explanation_title": "راهنمای رسید انبار",
+    "packing_central_receipt_guidance": "پس از تکمیل تعداد کل دریافتی، تعداد معیوب و انبار مقصد همه ردیف‌ها، امکان آماده‌سازی رسید در انبار مرکزی فراهم می‌شود.",
+    "packing_central_receipt_button": "رسید در انبار مرکزی",
+    "packing_central_receipt_not_connected": "اطلاعات کامل است؛ اتصال سپیدار بعداً پیاده‌سازی می‌شود و اکنون هیچ رسیدی ثبت نشده است."
 }

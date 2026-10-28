@@ -59,13 +59,14 @@ class QuickPackingWarehouseUiTests(SimpleTestCase):
         self.assertIn('updatePackingReadonlyHeaderDates(root);', self.html)
         self.assertIn('updatePackingReadonlyHeaderDates(document);', self.html)
 
-    def test_warehouse_editor_has_only_received_and_ruined_fields(self):
+    def test_warehouse_editor_has_received_damaged_and_destination_fields(self):
         markup = self.html.split('<div class="pk-row-editor-fields">', 1)[1]
         warehouse = markup.split('{% if not is_warehouse_stage or is_superuser %}', 1)[0]
         self.assertIn('name="existing-{{ packing_item.pk }}-wh_receipt_quantity"', warehouse)
         self.assertIn('name="existing-{{ packing_item.pk }}-ruined_quantity"', warehouse)
+        self.assertIn('name="existing-{{ packing_item.pk }}-wh_destination"', warehouse)
         self.assertNotIn('name="existing-{{ packing_item.pk }}-quantity"', warehouse)
-        self.assertIn('packing_item.wh_receipt_quantity|default_if_none:packing_item.quantity', warehouse)
+        self.assertIn("packing_item.wh_receipt_quantity|default_if_none:''", warehouse)
 
     def test_warehouse_opens_all_editors_by_default(self):
         self.assertIn('if (isWarehouseStage) {', self.html)
@@ -73,7 +74,7 @@ class QuickPackingWarehouseUiTests(SimpleTestCase):
         self.assertIn("editor.hidden = false;", self.html)
         self.assertIn("field.disabled = false;", self.html)
 
-    def test_warehouse_non_superuser_still_has_two_receipt_fields(self):
+    def test_warehouse_non_superuser_still_has_receipt_fields(self):
         self.assertIn('{% if is_warehouse_stage or is_superuser %}', self.html)
         self.assertIn('{% if not is_warehouse_stage or is_superuser %}', self.html)
 
@@ -154,4 +155,21 @@ class QuickPackingWarehouseUiTests(SimpleTestCase):
         self.assertIn('{% if is_superuser %}', self.html)
         self.assertIn('form form.departure_date form.arrival_date', self.html)
         self.assertIn('name="existing-{{ packing_item.pk }}-wh_receipt_quantity"', self.html)
+
+    def test_warehouse_destination_bulk_and_per_item_controls_exist(self):
+        self.assertIn('id="pk-warehouse-bulk-destination"', self.html)
+        self.assertIn('name="warehouse_destination"', self.html)
+        self.assertIn('pk-item-warehouse-destination', self.html)
+        self.assertIn('bulkWarehouseDestination?.addEventListener', self.html)
+        self.assertIn('warehouse_options', self.html)
+
+    def test_central_receipt_is_only_shown_after_valid_rows(self):
+        self.assertIn('id="pk-central-receipt-guidance"', self.html)
+        self.assertIn('id="pk-central-receipt-button"', self.html)
+        self.assertIn('function warehouseRowsReady()', self.html)
+        self.assertIn('button.hidden = !ready;', self.html)
+        self.assertIn('guidance.hidden = ready;', self.html)
+        self.assertIn('No actual receipt is created by this button.', self.html)
+        self.assertIn('packing_received_quantity_help', self.html)
+        self.assertIn('packing_damaged_quantity_help', self.html)
 

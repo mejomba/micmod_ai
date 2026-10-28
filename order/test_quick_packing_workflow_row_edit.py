@@ -213,3 +213,64 @@ class QuickPackingWorkflowRowEditTests(SimpleTestCase):
         self.row['description'] = self.item.description
         self.edit()
         self.item.save.assert_not_called()
+
+    def test_warehouse_can_save_destination_without_touching_other_fields(self):
+        self.packing.workflow_state_index.return_value = 8
+        self.row = {
+            'id': 123, 'delete': False,
+            'wh_receipt_quantity': 4, 'ruined_quantity': 1,
+            'wh_destination': '2',
+        }
+        self.item.wh_receipt_quantity = 4
+        self.item.ruined_quantity = 1
+        self.item.wh_destination = None
+        self.edit()
+        self.assertEqual(self.item.wh_destination, '2')
+        self.assertEqual(self.item.quantity, 5)
+        self.assertEqual(self.item.price, 20)
+        self.item.save.assert_called_once_with()
+
+    def test_unknown_warehouse_destination_is_rejected(self):
+        post = {
+            'existing-123-id': '123',
+            'existing-123-wh_receipt_quantity': '4',
+            'existing-123-ruined_quantity': '1',
+            'existing-123-wh_destination': '999999',
+        }
+        with self.assertRaisesMessage(ValueError, 'انبار مقصد'):
+            self.view._parse_existing_rows(
+                SimpleNamespace(POST=post), warehouse_stage=True,
+            )
+
+    def test_warehouse_can_save_destination_before_quantities_are_complete(self):
+        post = {
+            'existing-123-id': '123',
+            'existing-123-wh_receipt_quantity': '',
+            'existing-123-ruined_quantity': '',
+            'existing-123-wh_destination': '2',
+        }
+        result = self.view._parse_existing_rows(
+            SimpleNamespace(POST=post), warehouse_stage=True,
+        )
+        self.assertEqual(result[0]['wh_destination'], '2')
+        self.assertIsNone(result[0]['wh_receipt_quantity'])
+        self.assertIsNone(result[0]['ruined_quantity'])
+
+    def test_received_and_damaged_quantities_must_be_completed_together(self):
+        with self.assertRaisesMessage(ValueError, 'Received/damaged'):
+            self.view._validate_receipt_quantities(3, None, 5)
+
+    def test_bulk_header_destination_can_be_saved_in_warehouse_stage(self):
+        self.packing.workflow_state_index.return_value = 8
+        self.packing.wh_destination = None
+        self.request.POST = {'warehouse_destination': '2'}
+        self.view._save_warehouse_destination(self.request, self.packing)
+        self.assertEqual(self.packing.wh_destination, '2')
+        self.packing.save.assert_called_once_with()
+
+    def test_bulk_header_forgery_ignored_outside_warehouse_stage(self):
+        self.packing.workflow_state_index.return_value = 2
+        self.request.POST = {'warehouse_destination': '2'}
+        self.view._save_warehouse_destination(self.request, self.packing)
+        self.packing.save.assert_not_called()
+

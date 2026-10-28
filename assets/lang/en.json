@@ -422,5 +422,15 @@
     "packing_workflow_stage_9": "Completed",
     "packing_arrived_quantity": "Total Received Quantity",
     "packing_ruined_quantity": "Damaged Quantity",
-    "packing_warehouse_quantity_invalid_error": "Received quantity must be between zero and the Packing quantity, and damaged quantity cannot exceed received quantity."
+    "packing_warehouse_quantity_invalid_error": "Received quantity must be between zero and the Packing quantity, and damaged quantity cannot exceed received quantity.",
+    "packing_wh_destination_header": "Destination warehouse (apply to all rows)",
+    "packing_wh_destination_row": "Destination warehouse",
+    "packing_wh_destination_choose": "Select destination warehouse",
+    "packing_wh_destination_bulk_hint": "Choosing a warehouse here sets every row; you can still change individual rows.",
+    "packing_received_quantity_help": "Total received quantity includes all items received for the row, both good and damaged.",
+    "packing_damaged_quantity_help": "Damaged quantity includes items broken or damaged for any reason, and is part of the total received.",
+    "packing_receipt_explanation_title": "Warehouse receipt guidance",
+    "packing_central_receipt_guidance": "After entering received quantities, damaged quantities, and destinations for all rows, central warehouse receipt preparation becomes available.",
+    "packing_central_receipt_button": "Central Warehouse Receipt",
+    "packing_central_receipt_not_connected": "Information is complete, but Sepidar integration is not implemented yet; no receipt has been created."
 }
