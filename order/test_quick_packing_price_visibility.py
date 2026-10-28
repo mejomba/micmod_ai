@@ -23,7 +23,9 @@ class QuickPackingPriceVisibilityTests(SimpleTestCase):
         )
 
     def test_ajax_hidden_column_does_not_contain_price_for_normal_user(self):
-        self.view.request = SimpleNamespace(user=Mock(is_authenticated=True, is_superuser=False))
+        user = Mock(is_authenticated=True, is_superuser=False)
+        user.groups.filter.return_value.exists.return_value = False
+        self.view.request = SimpleNamespace(user=user)
         row = {}
         self.view.customize_row(row, self.item)
         self.assertEqual(row['final_price'], '')
