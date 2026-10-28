@@ -230,8 +230,8 @@
             {
               "icon": "message-add",
               "title": "create",
-              "path_key": "order/packing/view",
-              "link": "order:packing.view"
+              "path_key": "order/quick_packing",
+              "link": "order:quick_packing"
             },
             {
               "icon": "burger-menu",

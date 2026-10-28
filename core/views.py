@@ -1327,9 +1327,20 @@ def ajax_change_logs(request, *args, **kwargs):
 
 
 def delete_confirm(request, *args, **kwargs):
+    app_label = request.GET.get('app_label')
+    model_name = request.GET.get('model')
+    object_id = request.GET.get('object_id')
+
+    if app_label == 'order' and model_name == 'packingitem':
+        from django.apps import apps
+        model = apps.get_model(app_label, model_name)
+        obj = model.objects.filter(pk=object_id).select_related('packing').first()
+        if not obj or not obj.packing.user_has_workflow_access(request.user):
+            return JsonResponse({"res": "workflow access denied"}, status=403)
+
     template = 'core/partial/confirm_modal.html'
-    context = {"main_message": "آیا از حذف این آیتم اطمینان دارید؟", "model": request.GET.get('model'),
-               'object_id': request.GET.get('object_id'), 'app_label': request.GET.get('app_label')}
+    context = {"main_message": "آیا از حذف این آیتم اطمینان دارید؟", "model": model_name,
+               'object_id': object_id, 'app_label': app_label}
     res = render_to_string(template, context=context, request=request)
     return JsonResponse({"res": res})
 
@@ -1342,6 +1353,12 @@ def delete_ajax(request, *args, **kwargs):
     from django.apps import apps
     model = apps.get_model(app_label, model_name)
     obj = model.objects.filter(pk=object_id).first()
+
+    if app_label == 'order' and model_name == 'packingitem':
+        packing = getattr(obj, 'packing', None) if obj else None
+        if not packing or not packing.user_has_workflow_access(request.user):
+            return JsonResponse({"success": False, "error": "workflow access denied"}, status=403)
+
     if obj:
         obj.extra_data.request = request
         obj.is_deleted = True
