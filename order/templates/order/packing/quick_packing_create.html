@@ -4371,6 +4371,15 @@ ${canViewPrices ? `
                         <div>
                             <label class="pk-mini-label" data-key="packing_ruined_quantity">${tr('packing_ruined_quantity', 'Damaged Quantity')}</label>
                             <input type="number" min="0" step="any" class="form-control" name="form-${index}-ruined_quantity">
+                        </div>
+                        <div>
+                            <label class="pk-mini-label" data-key="packing_wh_destination_row">${tr('packing_wh_destination_row', 'Destination warehouse')}</label>
+                            <select class="form-select" name="form-${index}-wh_destination">
+                                <option value="" data-key="packing_wh_destination_choose">${tr('packing_wh_destination_choose', 'Choose warehouse')}</option>
+                                {% for code, label in warehouse_options %}
+                                    <option value="{{ code }}">{{ label }} ({{ code }})</option>
+                                {% endfor %}
+                            </select>
                         </div>` : ''}
                 </div>
             </details>
@@ -4491,6 +4500,7 @@ ${canViewPrices ? `
                     editButton.setAttribute('aria-expanded', 'false');
                 }
                 updateTotals();
+                refreshCentralReceiptState();
             });
         });
 
@@ -4707,6 +4717,13 @@ ${canViewPrices ? `
     function initWarehouseReceiptControls() {
         if (!isWarehouseStage) return;
         const selects = Array.from(document.querySelectorAll('.pk-item-warehouse-destination'));
+        // Older Packings may already have a bulk destination on their header
+        // but no per-item destination yet. Prefill ONLY missing item values.
+        if (bulkWarehouseDestination?.value) {
+            selects.forEach(select => {
+                if (!select.value && !select.disabled) select.value = bulkWarehouseDestination.value;
+            });
+        }
         bulkWarehouseDestination?.addEventListener('change', function () {
             selects.forEach(select => {
                 if (!select.disabled) select.value = this.value;
