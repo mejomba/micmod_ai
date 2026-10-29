@@ -484,6 +484,12 @@
     #pk-sepidar-transfers .pk-sepidar-group-badge.is-success { background: #dcfce7; color: #166534; }
     #pk-sepidar-transfers .pk-sepidar-group-badge.is-failed { background: #fee2e2; color: #991b1b; }
     #pk-sepidar-transfers .pk-sepidar-group-badge.is-unknown { background: #fef3c7; color: #92400e; }
+    #pk-sepidar-transfers .pk-sepidar-group-badge.is-sending { background: #dbeafe; color: #1d4ed8; }
+    #pk-sepidar-transfers .pk-sepidar-group-badge.is-pending { background: #e3ebf5; color: #415572; }
+    #pk-sepidar-transfers .pk-sepidar-group-badge {
+        display: inline-flex; align-items: center; justify-content: center;
+        white-space: nowrap; font-weight: 650; line-height: 1.5;
+    }
     #pk-sepidar-transfers .pk-sepidar-group .pk-sepidar-group-send {
         font-size: .74rem; padding: 4px 10px; white-space: nowrap;
     }
@@ -506,8 +512,27 @@
     #pk-sepidar-transfers .pk-sepidar-group-table tfoot td {
         font-weight: 700; border-top: 1px solid #e4eaf3; background: #fafbfd;
     }
-    #pk-sepidar-transfers .pk-sepidar-group-table .pk-sepidar-quantity {
-        font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate;
+    #pk-sepidar-transfers .pk-sepidar-group-table th.pk-sepidar-group-quantity,
+    #pk-sepidar-transfers .pk-sepidar-group-table td.pk-sepidar-group-quantity {
+        text-align: center !important;
+        direction: inherit;
+        white-space: nowrap;
+    }
+    #pk-sepidar-transfers .pk-sepidar-quantity-ratio {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        direction: inherit;
+        white-space: nowrap;
+        font-size: .8rem;
+        font-variant-numeric: tabular-nums;
+    }
+    #pk-sepidar-transfers .pk-sepidar-quantity-ratio .pk-sepidar-total {
+        color: #64748b; font-size: .76rem;
+    }
+    #pk-sepidar-transfers .pk-sepidar-quantity-ratio .pk-sepidar-of {
+        color: #8490a3; font-size: .7rem;
     }
     #pk-sepidar-transfers .pk-sepidar-group-error {
         font-size: .72rem; margin: 0; padding: 7px 11px;
@@ -541,6 +566,21 @@
         word-break: normal;
     }
     #pk-sepidar-transfers .pk-sepidar-table th { font-weight: 700; }
+    /* The same alignment on header/body prevents RTL direction rules from
+       placing summary quantities on different physical sides. */
+    #pk-sepidar-transfers .pk-sepidar-table th.pk-sepidar-summary-quantity,
+    #pk-sepidar-transfers .pk-sepidar-table td.pk-sepidar-summary-quantity,
+    #pk-sepidar-transfers .pk-sepidar-table th.pk-sepidar-summary-status,
+    #pk-sepidar-transfers .pk-sepidar-table td.pk-sepidar-summary-status {
+        text-align: center !important;
+        direction: inherit !important;
+    }
+    #pk-sepidar-transfers .pk-sepidar-summary-quantity > span {
+        direction: ltr;
+        unicode-bidi: isolate;
+        display: inline-block;
+        font-variant-numeric: tabular-nums;
+    }
     #pk-sepidar-transfers .pk-sepidar-table .pk-sepidar-empty {
         text-align: center !important;
         color: #7e8299;
@@ -3317,8 +3357,8 @@
                                                 </colgroup>
                                                 <thead><tr>
                                                     <th data-key="packing_sepidar_destination">انبار مقصد</th>
-                                                    <th data-key="packing_sepidar_quantity">تعداد</th>
-                                                    <th data-key="packing_sepidar_status">وضعیت</th>
+                                                    <th class="pk-sepidar-summary-quantity" data-key="packing_sepidar_quantity">تعداد</th>
+                                                    <th class="pk-sepidar-summary-status" data-key="packing_sepidar_status">وضعیت</th>
                                                     <th data-key="packing_sepidar_documents">اسناد</th>
                                                 </tr></thead>
                                                 <tbody id="pk-sepidar-transfer-rows"></tbody>
@@ -3826,7 +3866,9 @@
                 "packing_sepidar_retry": "ارسال مجدد",
                 "packing_sepidar_group_confirm": "سند این گروه به سپیدار ارسال شود؟",
                 "packing_sepidar_group_send_success": "سند این گروه با موفقیت در سپیدار ثبت شد.",
-                "packing_sepidar_damaged_to_42_note": "کالاهای معیوب فقط در گروه انبار کالای معیوب (۴۲) ارسال می‌شوند."
+                "packing_sepidar_damaged_to_42_note": "کالاهای معیوب فقط در گروه انبار کالای معیوب (۴۲) ارسال می‌شوند.",
+                "packing_sepidar_transfer_ratio": "انتقالی از کل دریافتی",
+                "packing_sepidar_of": "از"
         },
         "en": {
                 "packing_sepidar_transfers_title": "Sepidar warehouse transfers",
@@ -3866,7 +3908,9 @@
                 "packing_sepidar_retry": "Retry transfer",
                 "packing_sepidar_group_confirm": "Send this group's transfer document to Sepidar?",
                 "packing_sepidar_group_send_success": "This group's transfer document was registered in Sepidar.",
-                "packing_sepidar_damaged_to_42_note": "Damaged items are sent only in the damaged-goods warehouse (42) group."
+                "packing_sepidar_damaged_to_42_note": "Damaged items are sent only in the damaged-goods warehouse (42) group.",
+                "packing_sepidar_transfer_ratio": "Transferred / received",
+                "packing_sepidar_of": "of"
         }
 };
     const packingPageLabels = {
@@ -4952,6 +4996,30 @@ ${canViewPrices ? `
         return option ? option.textContent.trim() : String(warehouseCode);
     }
 
+    function sepidarFormatNumber(value) {
+        const number = Number(value);
+        if (!Number.isFinite(number)) return String(value ?? '—');
+        const locale = currentLanguage() === 'fa' ? 'fa-IR' : 'en-US';
+        return number.toLocaleString(locale, { maximumFractionDigits: 4 });
+    }
+
+    function formatSepidarTransferRatio(transferQuantity, receivedQuantity) {
+        const container = document.createElement('span');
+        container.className = 'pk-sepidar-quantity-ratio';
+        const transferred = document.createElement('span');
+        transferred.dir = 'ltr';
+        transferred.textContent = sepidarFormatNumber(transferQuantity);
+        const of = document.createElement('span');
+        of.className = 'pk-sepidar-of';
+        of.textContent = tr('packing_sepidar_of');
+        const total = document.createElement('span');
+        total.dir = 'ltr';
+        total.className = 'pk-sepidar-total';
+        total.textContent = sepidarFormatNumber(receivedQuantity);
+        container.append(transferred, of, total);
+        return container;
+    }
+
     function renderSepidarGroups(transfers) {
         const root = document.getElementById('pk-sepidar-group-list');
         if (!root) return;
@@ -4996,7 +5064,7 @@ ${canViewPrices ? `
             const table = document.createElement('table');
             table.className = 'table table-sm pk-sepidar-group-table';
             const colgroup = document.createElement('colgroup');
-            [24, 36, 20, 20].forEach(percent => {
+            [31, 39, 30].forEach(percent => {
                 const col = document.createElement('col');
                 col.style.width = percent + '%';
                 colgroup.appendChild(col);
@@ -5005,10 +5073,11 @@ ${canViewPrices ? `
             const thead = document.createElement('thead');
             const headerRow = document.createElement('tr');
             ['packing_sepidar_sku', 'packing_sepidar_part_number',
-             'packing_sepidar_healthy_qty', 'packing_sepidar_damaged_qty']
-                .forEach(key => {
+             'packing_sepidar_transfer_ratio']
+                .forEach((key, index) => {
                     const th = document.createElement('th');
                     th.scope = 'col';
+                    if (index === 2) th.className = 'pk-sepidar-group-quantity';
                     th.textContent = tr(key);
                     headerRow.appendChild(th);
                 });
@@ -5017,13 +5086,17 @@ ${canViewPrices ? `
             const tbody = document.createElement('tbody');
             (transfer.items || []).forEach(item => {
                 const row = document.createElement('tr');
-                [item.sku, item.part_number, item.healthy_quantity, item.damaged_quantity]
-                    .forEach((value, index) => {
-                        const cell = document.createElement('td');
-                        cell.textContent = value == null || value === '' ? '—' : String(value);
-                        if (index >= 2) cell.className = 'pk-sepidar-quantity';
-                        row.appendChild(cell);
-                    });
+                [item.sku, item.part_number].forEach(value => {
+                    const cell = document.createElement('td');
+                    cell.textContent = value == null || value === '' ? '—' : String(value);
+                    row.appendChild(cell);
+                });
+                const quantityCell = document.createElement('td');
+                quantityCell.className = 'pk-sepidar-group-quantity';
+                quantityCell.appendChild(formatSepidarTransferRatio(
+                    item.transfer_quantity, item.received_quantity,
+                ));
+                row.appendChild(quantityCell);
                 tbody.appendChild(row);
             });
             table.appendChild(tbody);
@@ -5033,14 +5106,12 @@ ${canViewPrices ? `
             sumLabel.colSpan = 2;
             sumLabel.textContent = tr('packing_sepidar_group_total');
             footerRow.appendChild(sumLabel);
-            [transfer.type === 'normal' ? transfer.quantity : '0',
-             transfer.type === 'damaged' ? transfer.quantity : '0']
-                .forEach(value => {
-                    const cell = document.createElement('td');
-                    cell.className = 'pk-sepidar-quantity';
-                    cell.textContent = value;
-                    footerRow.appendChild(cell);
-                });
+            const totalCell = document.createElement('td');
+            totalCell.className = 'pk-sepidar-group-quantity';
+            totalCell.appendChild(formatSepidarTransferRatio(
+                transfer.quantity, transfer.received_quantity,
+            ));
+            footerRow.appendChild(totalCell);
             tfoot.appendChild(footerRow);
             table.appendChild(tfoot);
             tableWrap.appendChild(table);
@@ -5087,18 +5158,27 @@ ${canViewPrices ? `
                 String(transfer.destination_stock_ref);
             const typeKey = transfer.type === 'damaged'
                 ? 'packing_sepidar_type_damaged' : 'packing_sepidar_type_normal';
-            const statusKey = 'packing_sepidar_status_' + transfer.status;
             const documentText = transfer.delivery_number && transfer.receipt_number
                 ? tr('packing_sepidar_delivery_label') + ': ' + transfer.delivery_number
                   + ' / ' + tr('packing_sepidar_receipt_label') + ': ' + transfer.receipt_number
                 : (transfer.error || '—');
-            [tr(typeKey) + ' / ' + destination, transfer.quantity,
-             packingTranslations[statusKey] || transfer.status, documentText]
-                .forEach(value => {
-                    const cell = document.createElement('td');
-                    cell.textContent = value == null || value === '' ? '—' : String(value);
-                    row.appendChild(cell);
-                });
+
+            const destinationCell = document.createElement('td');
+            destinationCell.textContent = tr(typeKey) + ' / ' + destination;
+            const quantityCell = document.createElement('td');
+            quantityCell.className = 'pk-sepidar-summary-quantity';
+            const quantityText = document.createElement('span');
+            quantityText.textContent = sepidarFormatNumber(transfer.quantity);
+            quantityCell.appendChild(quantityText);
+            const statusCell = document.createElement('td');
+            statusCell.className = 'pk-sepidar-summary-status';
+            const badge = document.createElement('span');
+            badge.className = 'pk-sepidar-group-badge is-' + transfer.status;
+            badge.textContent = tr('packing_sepidar_status_' + transfer.status);
+            statusCell.appendChild(badge);
+            const documentCell = document.createElement('td');
+            documentCell.textContent = documentText;
+            row.append(destinationCell, quantityCell, statusCell, documentCell);
             table.appendChild(row);
         });
     }

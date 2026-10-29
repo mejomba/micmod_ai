@@ -206,5 +206,7 @@
     "packing_sepidar_retry": "Повторить отправку",
     "packing_sepidar_group_confirm": "Отправить документ перемещения этой группы в Sepidar?",
     "packing_sepidar_group_send_success": "Документ перемещения этой группы зарегистрирован в Sepidar.",
-    "packing_sepidar_damaged_to_42_note": "Повреждённые товары отправляются только в группу склада брака (42)."
+    "packing_sepidar_damaged_to_42_note": "Повреждённые товары отправляются только в группу склада брака (42).",
+    "packing_sepidar_transfer_ratio": "Перемещено / получено",
+    "packing_sepidar_of": "из"
 }

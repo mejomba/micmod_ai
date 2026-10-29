@@ -65,6 +65,9 @@ def plan_packing_transfers(packing):
             'itemref': int(code),
             'sku': str(getattr(goods, 'sku', None) or code),
             'part_number': str(item.part_number or getattr(goods, 'part_number', None) or ''),
+            # The denominator is this row's total physically received quantity,
+            # including any damaged pieces. It is not the original order quantity.
+            'received_quantity': arrived,
         }
         healthy = arrived - ruined
         if healthy > 0:
@@ -85,17 +88,24 @@ def transfer_snapshot(lines):
                   for x in lines)
 
 
+def _quantity_text(quantity):
+    return format(quantity.normalize(), 'f')
+
+
 def _display_lines(group):
-    """Preview line quantities follow the actual Sepidar document destination."""
-    damaged = group['transfer_type'] == 'damaged'
+    """One transfer quantity and its received total for each Packing row.
+
+    Groups already distinguish healthy and damaged documents, so showing both
+    quantities in every group's table would be misleading.
+    """
     return [
         {
             'packing_item_id': line['packing_item_id'],
             'item_ref': line['itemref'],
             'sku': line['sku'],
             'part_number': line['part_number'],
-            'healthy_quantity': '0' if damaged else str(line['quantity']),
-            'damaged_quantity': str(line['quantity']) if damaged else '0',
+            'transfer_quantity': _quantity_text(line['quantity']),
+            'received_quantity': _quantity_text(line['received_quantity']),
         }
         for line in group['lines']
     ]
@@ -158,7 +168,12 @@ def transfer_preview(packing):
         result.append({
             'type': group['transfer_type'],
             'destination_stock_ref': group['destination_stock_ref'],
-            'quantity': str(sum((line['quantity'] for line in group['lines']), Decimal('0'))),
+            'quantity': _quantity_text(sum(
+                (line['quantity'] for line in group['lines']), Decimal('0'),
+            )),
+            'received_quantity': _quantity_text(sum(
+                (line['received_quantity'] for line in group['lines']), Decimal('0'),
+            )),
             'rows': len(group['lines']),
             'items': _display_lines(group),
             'status': transfer.status if transfer else 'pending',

@@ -1073,5 +1073,7 @@
     "packing_sepidar_retry": "ارسال مجدد",
     "packing_sepidar_group_confirm": "سند این گروه به سپیدار ارسال شود؟",
     "packing_sepidar_group_send_success": "سند این گروه با موفقیت در سپیدار ثبت شد.",
-    "packing_sepidar_damaged_to_42_note": "کالاهای معیوب فقط در گروه انبار کالای معیوب (۴۲) ارسال می‌شوند."
+    "packing_sepidar_damaged_to_42_note": "کالاهای معیوب فقط در گروه انبار کالای معیوب (۴۲) ارسال می‌شوند.",
+    "packing_sepidar_transfer_ratio": "انتقالی از کل دریافتی",
+    "packing_sepidar_of": "از"
 }

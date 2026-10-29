@@ -206,5 +206,7 @@
     "packing_sepidar_retry": "Erneut senden",
     "packing_sepidar_group_confirm": "Umbuchungsbeleg dieser Gruppe an Sepidar senden?",
     "packing_sepidar_group_send_success": "Der Umbuchungsbeleg dieser Gruppe wurde in Sepidar erfasst.",
-    "packing_sepidar_damaged_to_42_note": "Beschädigte Artikel werden ausschließlich in die Schadwarenlager-Gruppe (42) gebucht."
+    "packing_sepidar_damaged_to_42_note": "Beschädigte Artikel werden ausschließlich in die Schadwarenlager-Gruppe (42) gebucht.",
+    "packing_sepidar_transfer_ratio": "Umbuchung / Wareneingang",
+    "packing_sepidar_of": "von"
 }

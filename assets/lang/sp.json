@@ -206,5 +206,7 @@
     "packing_sepidar_retry": "Reintentar envío",
     "packing_sepidar_group_confirm": "¿Enviar el documento de transferencia de este grupo a Sepidar?",
     "packing_sepidar_group_send_success": "El documento de transferencia de este grupo se registró en Sepidar.",
-    "packing_sepidar_damaged_to_42_note": "Los artículos dañados se envían únicamente al grupo del almacén de productos dañados (42)."
+    "packing_sepidar_damaged_to_42_note": "Los artículos dañados se envían únicamente al grupo del almacén de productos dañados (42).",
+    "packing_sepidar_transfer_ratio": "Transferida / recibida",
+    "packing_sepidar_of": "de"
 }

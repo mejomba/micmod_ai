@@ -74,10 +74,21 @@ class PackingSepidarUiTests(SimpleTestCase):
     def test_grouped_item_preview_and_individual_actions(self):
         self.assertIn('id="pk-sepidar-group-list"', self.page)
         self.assertIn('function renderSepidarGroups(transfers)', self.page)
-        self.assertIn('item.healthy_quantity, item.damaged_quantity', self.page)
+        self.assertIn('item.transfer_quantity, item.received_quantity', self.page)
         self.assertIn('packing_sepidar_retry', self.page)
         self.assertIn('dataset.transferType', self.page)
         self.assertIn('dataset.destinationStockRef', self.page)
         self.assertIn('body: JSON.stringify(selection || {})', self.page)
         self.assertIn('canSendToSepidar', self.page)
         self.assertIn('packing_sepidar_summary_title', self.page)
+
+    def test_group_table_has_one_transfer_over_received_quantity_column(self):
+        self.assertIn("'packing_sepidar_transfer_ratio'", self.page)
+        self.assertIn('[31, 39, 30]', self.page)
+        self.assertIn('formatSepidarTransferRatio(', self.page)
+        self.assertNotIn('item.healthy_quantity, item.damaged_quantity', self.page)
+
+    def test_summary_numeric_column_and_status_badges_align(self):
+        self.assertIn('pk-sepidar-summary-quantity', self.page)
+        self.assertIn('pk-sepidar-summary-status', self.page)
+        self.assertIn("badge.className = 'pk-sepidar-group-badge is-'", self.page)

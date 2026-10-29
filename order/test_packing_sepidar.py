@@ -85,17 +85,28 @@ class PackingSepidarPlanTests(SimpleTestCase):
     def test_uncertain_remote_failure_is_not_retry_safe(self):
         self.assertEqual(_parse_result({'errors': 'HTTP 500', 'uncertain': True})[0], 'unknown')
 
-    def test_line_preview_includes_sku_part_number_and_split_quantities(self):
+    def test_line_preview_shows_only_group_transfer_out_of_total_received(self):
         with patch('order.packing_sepidar.Order.sepidar_wh_map', {2: 'central', 42: 'damaged'}):
-            groups = plan_packing_transfers(self.packing(self.row(1, '2', 100, 5)))
+            groups = plan_packing_transfers(self.packing(self.row(1, '2', 4000, 10)))
         normal = next(g for g in groups if g['transfer_type'] == 'normal')
         damaged = next(g for g in groups if g['transfer_type'] == 'damaged')
         self.assertEqual(_display_lines(normal)[0], {
             'packing_item_id': 1, 'item_ref': 101, 'sku': 'SKU-1',
-            'part_number': 'PN-1', 'healthy_quantity': '95', 'damaged_quantity': '0',
+            'part_number': 'PN-1', 'transfer_quantity': '3990', 'received_quantity': '4000',
         })
-        self.assertEqual(_display_lines(damaged)[0]['damaged_quantity'], '5')
-        self.assertEqual(_display_lines(damaged)[0]['healthy_quantity'], '0')
+        self.assertEqual(_display_lines(damaged)[0]['transfer_quantity'], '10')
+        self.assertEqual(_display_lines(damaged)[0]['received_quantity'], '4000')
+        self.assertNotIn('healthy_quantity', _display_lines(normal)[0])
+        self.assertNotIn('damaged_quantity', _display_lines(damaged)[0])
+
+    def test_received_denominator_is_not_original_packing_quantity(self):
+        row = self.row(1, '2', 3600, 10)
+        row.quantity = 4000
+        with patch('order.packing_sepidar.Order.sepidar_wh_map', {2: 'central', 42: 'damaged'}):
+            groups = plan_packing_transfers(self.packing(row))
+        normal = next(g for g in groups if g['transfer_type'] == 'normal')
+        self.assertEqual(_display_lines(normal)[0]['transfer_quantity'], '3590')
+        self.assertEqual(_display_lines(normal)[0]['received_quantity'], '3600')
 
     def test_individual_group_selector(self):
         self.assertIsNone(normalize_transfer_selection())
