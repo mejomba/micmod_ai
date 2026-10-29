@@ -10,7 +10,7 @@ class PackingSepidarUiTests(SimpleTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.page = (Path(settings.BASE_DIR) /
-                    'order/templates/order/packing/quick_packing_create.html').read_text()
+                    'order/templates/order/packing/quick_packing_create.html').read_text(encoding='utf-8')
 
     def test_sender_is_manual_post_only(self):
         self.assertIn("data-send-url=", self.page)
