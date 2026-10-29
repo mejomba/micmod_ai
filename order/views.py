@@ -2606,82 +2606,11 @@ class OrderAndSepidar(View):
         return JsonResponse({'res': html})
 
     def wh_to_wh_execute(self, request, *args, **kwargs):
-        """ from packing in wh state generate
-         1: Inventorydelivery
-         2: Inventoryreceipt
-         to sepidar
-         """
-        packing_id = self.request.GET.get('packing_id')
-        packing = Packing.objects.get(pk=packing_id)
-
-        # res = SepidarApiCall.wh_to_wh(packing, request)
-        res = SepidarApiCall.packing(packing, request)
-
-        try:
-            if res.get('errors'):
-                return JsonResponse({"res": res['errors']}, status=500)
-            else:
-                packing.sepidar_wh_to_wh = res['packing']['sepidar'][0]
-                for packing_item in packing.packing_item_rel.all():
-                    order_ = packing_item.order
-
-                    """
-                    پیدا کردن همه سفارش های میانی که از سفارش فعلی تامین میشوند 
-                    و آپدیت کردن فیلد کد انبار سپیدار که یعنی سفارش تامین کننده در انبار رسید شده
-                     و همه سفارش هایی که از آن تامین میشدند الان در انبار هستند
-                    """
-                    oo_queryset = OrderOrder.objects.filter(order_rel=order_)
-                    if oo_queryset:
-                        oo_queryset.update(sepidar_wh_code=settings.SEPIDAR_CONST_DATA.get('central_wh_id'))
-
-                        for oo in oo_queryset:
-                            """
-                            به ازای هر سفارشی که در جدول میانی از این سفارش تامین میشده
-                             حساب میکنیم تعداد کل تامین شده ها اگر برابر با تعداد مورد نیاز در خود همان سفارش بود
-                              پس آن سفارش در انبار رسید شده و آپدیت میشود
-                            """
-                            o = oo.order_base
-                            sum_supply_order_quantity = OrderOrder.objects.filter(order_base=o, sepidar_wh_code__isnull=False).aggregate(sum_quantity=Sum('quantity'))['sum_quantity'] or 0
-                            if sum_supply_order_quantity == o.quantity:
-                                o.is_wh = True
-                                o.receipt_in_wh = True
-                                o.sepidar_wh_code = settings.SEPIDAR_CONST_DATA.get('central_wh_id')
-                                o.extra_data.request = request
-                                o.save()
-
-                    order_document = getattr(order_, 'sepidar_document', None)
-
-                    """
-                    اگر اصلا داکیومنت برای پکینگ وجود نداشت ایجاد میکنیم
-                    اگر داکیومنت داشت اما پکینگ نداشت فقط کلید پکینگ را اضافه میکنیم
-                    اگر داکیومنت داشت و پکینگ هم داشت رکورد جدید را به لیست اضافه میکنیم یعنی این سفارش در بیش از یک پکینگ بوده و به سپیدار رفته
-                    """
-                    res['packing']['sepidar'][0]['wh_delivery']['quantity'] = packing_item.wh_receipt_quantity
-                    res['packing']['sepidar'][0]['wh_receipt']['quantity'] = packing_item.wh_receipt_quantity
-                    if not order_document:
-                        SepidarOrderDocument.objects.create(order=order_, data=res)
-                    elif order_document and not order_document.data.get('packing'):
-                        order_document.data['packing'] = res['packing']['sepidar']
-                    elif order_document and order_document.data.get('packing'):
-                        order_document.data['packing'].append(res['packing']['sepidar'][0])
-
-                    order_document.save()
-
-                    order_.is_wh = True
-                    order_.receipt_in_wh = True
-                    order_.sepidar_wh_code = settings.SEPIDAR_CONST_DATA.get('central_wh_id')
-                    order_.extra_data.request = self.request
-                    order_.save()
-                    packing.extra_data.request = self.request
-                    packing.save()
-        except Exception as e:
-            return JsonResponse({"res": str(e)}, status=500)
-
-        context = dict()
-        context['packing'] = packing
-        html = render_to_string('order/partial/sepidar/wh_to_wh_sepidar_response.html', context=context)
-
-        return JsonResponse({'res': html})
+        # The old endpoint assumed one central-warehouse document and could
+        # create duplicates. Only the new Quick Packing POST endpoint may send.
+        return JsonResponse({
+            'res': 'Warehouse transfers must be sent from Quick Packing.'
+        }, status=409)
 
 
 class OrderOfFactor(BaseView):
@@ -3985,6 +3914,12 @@ class QuickPackingView(LoginRequiredMixin, View):
             raise ValueError('Invalid workflow action.')
 
         target_state = states[target_index]
+        if current_state == 'انبار' and target_state == 'اتمام کار':
+            from order.packing_sepidar import transfer_preview
+            if not packing_obj.sepidar_wh_to_wh:
+                transfers = transfer_preview(packing_obj)
+                if not all(x['status'] == 'success' for x in transfers):
+                    raise ValueError('All Sepidar warehouse transfers must succeed before completion.')
         target_group = self._flow_group(target_index)
         to_user = self._pick_flow_user(packing_obj, target_group)
 
@@ -4186,6 +4121,13 @@ class QuickPackingView(LoginRequiredMixin, View):
             )
             if not packing_item:
                 raise ValueError('Packing item does not belong to this Packing.')
+
+            if packing_item.sepidar_transfer_lines.filter(
+                transfer__status__in=('success', 'sending', 'unknown'),
+            ).exists():
+                for locked_field in ('quantity', 'wh_receipt_quantity', 'ruined_quantity', 'wh_destination'):
+                    if locked_field in row and row[locked_field] != getattr(packing_item, locked_field):
+                        raise ValueError('A Sepidar transfer exists; quantities and destination are locked.')
 
             if row.get('delete'):
                 packing_item.is_deleted = True
@@ -4583,6 +4525,11 @@ class QuickPackingView(LoginRequiredMixin, View):
             'can_edit_items': can_edit_items,
             'is_superuser': getattr(request.user, 'is_superuser', False) is True,
             'is_warehouse_stage': self._is_warehouse_stage(packing_obj),
+            'can_send_to_sepidar': bool(
+                packing_obj and wf_access
+                and 'انبار' in states
+                and state_index == states.index('انبار')
+            ),
             'warehouse_options': self._warehouse_choices(),
             'central_wh_id': str(settings.SEPIDAR_CONST_DATA.get('central_wh_id') or ''),
             'can_next': bool(wf_access and packing_obj and state_index < len(states) - 1),

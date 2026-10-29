@@ -874,18 +874,19 @@ class SepidarApiCall:
         return list(dict())
 
     @classmethod
-    def packing(cls, packing, request, response_function=None):
+    def packing(cls, packing, request, response_function=None, *, data):
+        """Send exactly one transfer to the existing Sepidar packing endpoint."""
         cls.setup()
         endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('packing')
-
-        data = cls.data.get_wh_to_wh_data(packing)
-        d = {'data': data}
-        res = requests.post(endpoint, json=d, headers=cls.headers)
+        res = requests.post(endpoint, json={'data': data}, headers=cls.headers, timeout=(10, 90))
         if res.ok:
-            clean_res = cls.response_manager.clean_dict(res.json())
-            return clean_res
-        else:
-            return {'errors': res}
+            return cls.response_manager.clean_dict(res.json())
+        # 4xx is a definitive rejection. With 5xx the remote transaction
+        # outcome is uncertain; do not automatically retry.
+        return {
+            'errors': res.text[:2000] or f'HTTP {res.status_code}',
+            'uncertain': res.status_code >= 500,
+        }
 
     @classmethod
     def gio_to_sepidar(cls, obj, request=None, update=False, buy_factor_data=None):

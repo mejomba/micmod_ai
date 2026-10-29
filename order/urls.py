@@ -9,6 +9,7 @@ from .views import PaymentView, PaymentListView, PaymentDataTableListView, Payme
 
 from .views import CustomerRequestOrderViewSet
 from .select2 import order_select2_search
+from .packing_sepidar_views import packing_sepidar_preview, packing_sepidar_send
 
 
 router = DefaultRouter()
@@ -49,6 +50,9 @@ urlpatterns = [
     path('quick_packing/', QuickPackingView.as_view(), name='quick_packing'),
     path('quick_packing/<int:pk>/', QuickPackingView.as_view(), name='quick_packing'),
     path('quick_packing_datatable/', QuickPackingDataTableListView.as_view(), name='quick_packing.datatable'),
+
+    path('quick_packing/<int:pk>/sepidar/preview/', packing_sepidar_preview, name='packing_sepidar_preview'),
+    path('quick_packing/<int:pk>/sepidar/send/', packing_sepidar_send, name='packing_sepidar_send'),
 
     #  packingitem
     path('packingitem/view/', views.packing_list_form.as_view(), name='packingitem.view'),

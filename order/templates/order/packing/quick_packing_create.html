@@ -3195,17 +3195,37 @@
                                     {% endif %}
                                 </div>
 
-                                {% if is_warehouse_stage and wf_access %}
-                                    <div class="pk-central-receipt" data-central-wh-id="{{ central_wh_id }}">
-                                        <strong data-key="packing_receipt_explanation_title">راهنمای رسید انبار</strong>
+                                {% if is_warehouse_stage and packing_object %}
+                                    <div class="pk-central-receipt" id="pk-sepidar-transfers"
+                                         data-preview-url="{% url 'order:packing_sepidar_preview' packing_object.pk %}"
+                                         data-send-url="{% url 'order:packing_sepidar_send' packing_object.pk %}">
+                                        <strong data-key="packing_sepidar_transfers_title">انتقال بین انبار در سپیدار</strong>
                                         <p class="mb-1" data-key="packing_received_quantity_help">تعداد کل دریافتی شامل همه کالاهای سالم و معیوب دریافت‌شده در هر ردیف است.</p>
-                                        <p class="mb-1" data-key="packing_damaged_quantity_help">تعداد معیوب، کالاهایی هستند که به هر دلیل خراب یا آسیب‌دیده‌اند و بخشی از تعداد کل دریافتی محسوب می‌شوند.</p>
+                                        <p class="mb-1" data-key="packing_damaged_quantity_help">تعداد معیوب بخشی از دریافتی است و به انبار کالای معیوب منتقل می‌شود.</p>
                                         <div id="pk-central-receipt-guidance" class="alert alert-light-info mt-2 mb-2"
-                                             role="status" data-key="packing_central_receipt_guidance">
-                                            پس از تکمیل تعداد دریافتی، تعداد معیوب و انبار مقصدِ همه ردیف‌ها، امکان آماده‌سازی رسید در انبار مرکزی فراهم می‌شود.
+                                             role="status" data-key="packing_sepidar_save_first">
+                                            ابتدا انبار مقصد و تعدادها را ثبت کنید، سپس اسناد را به سپیدار ارسال کنید.
                                         </div>
-                                        <button type="button" id="pk-central-receipt-button" class="btn btn-sm btn-light-primary"
-                                                hidden data-key="packing_central_receipt_button">رسید در انبار مرکزی</button>
+                                        <div class="d-flex flex-wrap gap-2 my-2">
+                                            <button type="button" id="pk-sepidar-preview" class="btn btn-sm btn-light-primary"
+                                                    data-key="packing_sepidar_preview">پیش‌نمایش اسناد</button>
+                                            {% if can_send_to_sepidar %}
+                                                <button type="button" id="pk-sepidar-send" class="btn btn-sm btn-primary"
+                                                        disabled data-key="packing_sepidar_send">ارسال به سپیدار</button>
+                                            {% endif %}
+                                        </div>
+                                        <div id="pk-sepidar-status" class="small mb-2" role="status" aria-live="polite"></div>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-striped align-middle">
+                                                <thead><tr>
+                                                    <th data-key="packing_sepidar_destination">انبار مقصد</th>
+                                                    <th data-key="packing_sepidar_quantity">تعداد</th>
+                                                    <th data-key="packing_sepidar_status">وضعیت</th>
+                                                    <th data-key="packing_sepidar_documents">اسناد</th>
+                                                </tr></thead>
+                                                <tbody id="pk-sepidar-transfer-rows"></tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 {% endif %}
                                 {% if wf_access %}
@@ -3338,6 +3358,14 @@
     <span data-key="packing_damaged_quantity_help">Damaged items are included in the received quantity.</span>
     <span data-key="packing_central_receipt_guidance">Complete quantities and destinations to prepare central receipt.</span>
     <span data-key="packing_central_receipt_button">Central Warehouse Receipt</span>
+    <span data-key="packing_sepidar_transfers_title">Sepidar Warehouse Transfers</span>
+    <span data-key="packing_sepidar_save_first">Save quantities and destination warehouses before sending to Sepidar.</span>
+    <span data-key="packing_sepidar_preview">Preview transfers</span>
+    <span data-key="packing_sepidar_send">Send to Sepidar</span>
+    <span data-key="packing_sepidar_destination">Destination</span>
+    <span data-key="packing_sepidar_quantity">Quantity</span>
+    <span data-key="packing_sepidar_status">Status</span>
+    <span data-key="packing_sepidar_documents">Documents</span>
     <span data-key="packing_row_more_info">Additional Row Information</span>
     <span data-key="packing_previous">Previous Packing</span>
     <span data-key="packing_carton_number">Carton Number</span>
@@ -3411,6 +3439,9 @@
     const isWarehouseStage = {{ is_warehouse_stage|yesno:"true,false" }};
     const centralWarehouseId = "{{ central_wh_id }}";
     const bulkWarehouseDestination = document.getElementById('pk-warehouse-bulk-destination');
+    // Initialized before initWarehouseReceiptControls() invokes the listeners.
+    let sepidarWarehouseDirty = false;
+    let packingRequestPending = false;
     // Every visit to warehouse stages starts in Jalali, even if an earlier
     // workflow stage saved Gregorian; users can still switch manually.
     const savedCalendar = localStorage.getItem(historyCalendarKey);
@@ -4706,13 +4737,104 @@ ${canViewPrices ? `
     }
 
     function refreshCentralReceiptState() {
-        const button = document.getElementById('pk-central-receipt-button');
+        const button = document.getElementById('pk-sepidar-send');
         const guidance = document.getElementById('pk-central-receipt-guidance');
-        if (!button || !guidance) return;
-        const ready = warehouseRowsReady();
-        button.hidden = !ready;
-        guidance.hidden = ready;
+        const ready = warehouseRowsReady() && !sepidarWarehouseDirty;
+        if (button) button.disabled = !ready || packingRequestPending;
+        if (guidance) guidance.hidden = ready;
     }
+
+    function sepText(fa, en) {
+        return workflowUiLanguage() === 'fa' ? fa : en;
+    }
+
+    function renderSepidarTransfers(transfers) {
+        const table = document.getElementById('pk-sepidar-transfer-rows');
+        if (!table) return;
+        table.replaceChildren();
+        const choices = Object.fromEntries(Array.from(
+            document.querySelectorAll('#pk-warehouse-bulk-destination option')
+        ).map(o => [o.value, o.textContent]));
+        (transfers || []).forEach(transfer => {
+            const tr = document.createElement('tr');
+            const destination = choices[String(transfer.destination_stock_ref)] ||
+                String(transfer.destination_stock_ref);
+            const typeLabel = transfer.type === 'damaged'
+                ? sepText('معیوب', 'Damaged') : sepText('سالم', 'Normal');
+            const statusLabels = {
+                success: sepText('ثبت موفق', 'Success'),
+                failed: sepText('ناموفق', 'Failed'),
+                unknown: sepText('نیازمند بررسی', 'Needs review'),
+                sending: sepText('در حال ارسال', 'Sending'),
+                pending: sepText('آماده ارسال', 'Pending'),
+            };
+            const documentText = transfer.delivery_number && transfer.receipt_number
+                ? sepText('حواله: ', 'Delivery: ') + transfer.delivery_number
+                  + sepText(' / رسید: ', ' / Receipt: ') + transfer.receipt_number
+                : (transfer.error || '—');
+            [typeLabel + ' / ' + destination, transfer.quantity,
+             statusLabels[transfer.status] || transfer.status, documentText]
+                .forEach(value => {
+                    const td = document.createElement('td');
+                    td.textContent = value || '—';  // No remote HTML injection
+                    tr.appendChild(td);
+                });
+            table.appendChild(tr);
+        });
+    }
+
+    async function refreshSepidarTransfers() {
+        const panel = document.getElementById('pk-sepidar-transfers');
+        if (!panel) return;
+        const status = document.getElementById('pk-sepidar-status');
+        try {
+            const response = await fetch(panel.dataset.previewUrl, {credentials: 'same-origin'});
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Sepidar preview failed.');
+            renderSepidarTransfers(result.transfers);
+            if (status) status.textContent = result.all_success
+                ? sepText('همه اسناد با موفقیت ثبت شده‌اند.', 'All transfer documents were registered.')
+                : '';
+        } catch (error) {
+            if (status) status.textContent = error.message;
+        }
+        refreshCentralReceiptState();
+    }
+
+    document.getElementById('pk-sepidar-preview')?.addEventListener('click', refreshSepidarTransfers);
+    document.getElementById('pk-sepidar-send')?.addEventListener('click', async function () {
+        if (!warehouseRowsReady() || sepidarWarehouseDirty || packingRequestPending) {
+            return showPackingFeedback('error', sepText('ابتدا تغییرات ردیف‌ها را ذخیره کنید.',
+                'Save item changes before sending.'));
+        }
+        if (!window.confirm(sepText('اسناد آماده به سپیدار ارسال شوند؟',
+                'Send pending transfers to Sepidar?'))) return;
+        const panel = document.getElementById('pk-sepidar-transfers');
+        const status = document.getElementById('pk-sepidar-status');
+        setPackingRequestPending(true);
+        refreshCentralReceiptState();
+        try {
+            const response = await fetch(panel.dataset.sendUrl, {
+                method: 'POST', credentials: 'same-origin',
+                headers: {'X-CSRFToken': getCookie('csrftoken')},
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Sepidar transfer failed.');
+            renderSepidarTransfers(result.transfers);
+            const message = result.all_success
+                ? sepText('تمام اسناد با موفقیت ثبت شدند.', 'All transfers were registered.')
+                : sepText('ارسال بخشی از اسناد کامل نشده؛ وضعیت هر سند را بررسی کنید.',
+                    'Some transfers remain incomplete. Check each transfer status.');
+            if (status) status.textContent = message;
+            showPackingFeedback(result.all_success ? 'success' : 'error', message);
+        } catch (error) {
+            if (status) status.textContent = error.message;
+            showPackingFeedback('error', error.message);
+        } finally {
+            setPackingRequestPending(false);
+            await refreshSepidarTransfers();
+        }
+    });
 
     function initWarehouseReceiptControls() {
         if (!isWarehouseStage) return;
@@ -4758,17 +4880,20 @@ ${canViewPrices ? `
         document.querySelectorAll('.pk-row-editor [name$="-wh_receipt_quantity"], .pk-row-editor [name$="-ruined_quantity"]').forEach(input => {
             input.addEventListener('input', refreshCentralReceiptState);
         });
-        document.getElementById('pk-central-receipt-button')?.addEventListener('click', function () {
-            if (!warehouseRowsReady()) return refreshCentralReceiptState();
-            // Sepidar API is intentionally NOT called in this phase.
-            // No actual receipt is created by this button.
-            showPackingFeedback('error', tr('packing_central_receipt_not_connected',
-                'اطلاعات کامل است؛ ارتباط با سپیدار در مرحله بعد پیاده‌سازی می‌شود. فعلاً هیچ رسیدی ثبت نشده است.'));
+        document.querySelectorAll('#existing-packing-items [name$="-wh_receipt_quantity"], #existing-packing-items [name$="-ruined_quantity"], #existing-packing-items [name$="-wh_destination"]').forEach(input => {
+            input.addEventListener('change', () => {
+                sepidarWarehouseDirty = true;
+                refreshCentralReceiptState();
+            });
+        });
+        bulkWarehouseDestination?.addEventListener('change', () => {
+            sepidarWarehouseDirty = true;
+            refreshCentralReceiptState();
         });
         refreshCentralReceiptState();
+        refreshSepidarTransfers();
     }
 
-    let packingRequestPending = false;
     function setPackingRequestPending(pending) {
         packingRequestPending = pending;
         document.querySelectorAll('#submit-packing, #packing-top-save, .packing-workflow-action')

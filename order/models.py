@@ -1366,6 +1366,59 @@ class PackingItem(BaseModeWF):
         return 'wh'
 
 
+
+class PackingSepidarTransfer(models.Model):
+    """One Sepidar warehouse transfer (delivery + receipt) per Packing destination."""
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('sending', 'Sending'),
+        ('success', 'Success'),
+        ('failed', 'Failed'),
+        ('unknown', 'Needs reconciliation'),
+    )
+    TYPE_CHOICES = (('normal', 'Normal'), ('damaged', 'Damaged'))
+
+    packing = models.ForeignKey('Packing', on_delete=models.PROTECT, related_name='sepidar_transfers')
+    transfer_type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    source_stock_ref = models.PositiveIntegerField()
+    destination_stock_ref = models.PositiveIntegerField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    delivery_id = models.BigIntegerField(null=True, blank=True)
+    delivery_number = models.CharField(max_length=64, null=True, blank=True)
+    receipt_id = models.BigIntegerField(null=True, blank=True)
+    receipt_number = models.CharField(max_length=64, null=True, blank=True)
+    request_payload = models.JSONField(default=dict)
+    response_payload = models.JSONField(default=dict)
+    attempt_count = models.PositiveIntegerField(default=0)
+    last_error = models.TextField(blank=True, default='')
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['packing', 'transfer_type', 'destination_stock_ref'],
+                name='unique_packing_sepidar_transfer',
+            ),
+        ]
+
+    def __str__(self):
+        return f'Packing {self.packing_id}: {self.transfer_type} -> {self.destination_stock_ref}'
+
+
+class PackingSepidarTransferItem(models.Model):
+    transfer = models.ForeignKey(PackingSepidarTransfer, on_delete=models.CASCADE, related_name='lines')
+    packing_item = models.ForeignKey('PackingItem', on_delete=models.PROTECT, related_name='sepidar_transfer_lines')
+    item_ref = models.PositiveIntegerField()
+    quantity = models.DecimalField(max_digits=18, decimal_places=4)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['transfer', 'packing_item'],
+                name='unique_packing_transfer_item',
+            ),
+        ]
+
 class GIO(BaseModeWF):
     quantity = models.FloatField(_('quantity'), default=0, null=True, blank=True)
     gio_date = models.DateField(_('gio_date'))
