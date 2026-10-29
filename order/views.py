@@ -48,6 +48,7 @@ from sepidar.models import Dl
 from tools.utils import is_ajax, parse_number
 from workflow.models import WorkFlow, FlowAdminGroup
 from changelog.models import ChangeLog
+from .packing_error_messages import packing_error_payload
 from .packing_change_history import build_packing_change_history
 from .packing_workflow_timeline import build_packing_workflow_timeline
 from .form_perm import ORDER_FIELDS_BY_PERMISSION
@@ -4280,7 +4281,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                         )
                         if not form.is_valid():
                             return JsonResponse(
-                                {'res': {'ERROR': form.errors.get_json_data()}},
+                                {'res': {'ERROR': form.errors.get_json_data()}, 'error_code': 'packing_err_form_invalid'},
                                 status=400,
                             )
 
@@ -4318,7 +4319,7 @@ class QuickPackingView(LoginRequiredMixin, View):
 
             if not packing_obj and not rows:
                 return JsonResponse(
-                    {'res': {'ERROR': 'Select at least one order for Packing.'}},
+                    {'res': {'ERROR': 'Select at least one order for Packing.'}, 'error_code': 'packing_err_no_order'},
                     status=400,
                 )
 
@@ -4336,7 +4337,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                 )
                 if not form.is_valid():
                     return JsonResponse(
-                        {'res': {'ERROR': form.errors.get_json_data()}},
+                        {'res': {'ERROR': form.errors.get_json_data()}, 'error_code': 'packing_err_form_invalid'},
                         status=400,
                     )
 
@@ -4405,7 +4406,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             raise
         except Exception as exc:
             return JsonResponse(
-                {'res': {'ERROR': str(exc)}},
+                {'res': {'ERROR': str(exc)}, **packing_error_payload(exc)},
                 status=400,
             )
 

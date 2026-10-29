@@ -9,6 +9,7 @@ from decimal import Decimal, InvalidOperation
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from order.packing_error_messages import packing_error_payload
 
 from order.models import Order, Packing, PackingSepidarTransfer, PackingSepidarTransferItem
 from sepidar.api_call import SepidarApiCall
@@ -143,6 +144,8 @@ def transfer_state(transfer):
         'receipt_id': transfer.receipt_id,
         'receipt_number': transfer.receipt_number,
         'error': transfer.last_error,
+        'error_code': (packing_error_payload(transfer.last_error)['error_code']
+                       if transfer.last_error else ''),
     }
 
 
@@ -180,6 +183,8 @@ def transfer_preview(packing):
             'delivery_number': transfer.delivery_number if transfer else None,
             'receipt_number': transfer.receipt_number if transfer else None,
             'error': transfer.last_error if transfer else '',
+            'error_code': (packing_error_payload(transfer.last_error)['error_code']
+                           if transfer and transfer.last_error else ''),
         })
     return result
 

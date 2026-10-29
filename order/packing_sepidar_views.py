@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_GET, require_POST
 from django.contrib.auth.decorators import login_required
 
+from order.packing_error_messages import packing_error_payload
 from order.models import Packing
 from order.packing_sepidar import (
     PackingTransferError, send_packing_transfers, transfer_preview,
@@ -41,7 +42,7 @@ def packing_sepidar_preview(request, pk):
     try:
         planned = transfer_preview(packing)
     except PackingTransferError as exc:
-        return JsonResponse({'error': str(exc)}, status=400)
+        return JsonResponse({'error': str(exc), **packing_error_payload(exc)}, status=400)
     return JsonResponse({
         'transfers': planned,
         'all_success': all(t['status'] == 'success' for t in planned),
@@ -71,7 +72,7 @@ def packing_sepidar_send(request, pk):
         # detailed groups first, with the existing summary built from them.
         records = transfer_preview(packing)
     except (PackingTransferError, ValueError, UnicodeDecodeError) as exc:
-        return JsonResponse({'error': str(exc)}, status=400)
+        return JsonResponse({'error': str(exc), **packing_error_payload(exc)}, status=400)
     return JsonResponse({
         'transfers': records,
         'all_success': all(t['status'] == 'success' for t in records),
