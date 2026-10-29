@@ -461,6 +461,34 @@
     }
     .pk-central-receipt [hidden] { display: none !important; }
     .pk-central-receipt p { font-size: .81rem; line-height: 1.8; }
+    /* Shared columns across thead/tbody: consistent alignment in RTL and LTR. */
+    #pk-sepidar-transfers .pk-sepidar-table-wrap { width: 100%; max-width: 100%; }
+    #pk-sepidar-transfers .pk-sepidar-table {
+        width: 100% !important;
+        min-width: 560px;
+        table-layout: fixed;
+        border-collapse: collapse;
+        direction: inherit;
+        margin-bottom: 0;
+    }
+    #pk-sepidar-transfers .pk-sepidar-table thead { display: table-header-group; }
+    #pk-sepidar-transfers .pk-sepidar-table tbody { display: table-row-group; }
+    #pk-sepidar-transfers .pk-sepidar-table tr { display: table-row; }
+    #pk-sepidar-transfers .pk-sepidar-table th,
+    #pk-sepidar-transfers .pk-sepidar-table td {
+        display: table-cell;
+        padding: .55rem .65rem;
+        text-align: start !important;
+        vertical-align: middle;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: normal;
+    }
+    #pk-sepidar-transfers .pk-sepidar-table th { font-weight: 700; }
+    #pk-sepidar-transfers .pk-sepidar-table .pk-sepidar-empty {
+        text-align: center !important;
+        color: #7e8299;
+    }
     .pk-row-warehouse-destination select { min-width: 0; }
     .pk-row-editor-fields .form-select { width: 100%; }
 
@@ -3215,8 +3243,14 @@
                                             {% endif %}
                                         </div>
                                         <div id="pk-sepidar-status" class="small mb-2" role="status" aria-live="polite"></div>
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-striped align-middle">
+                                        <div class="table-responsive pk-sepidar-table-wrap">
+                                            <table class="table table-sm table-striped align-middle pk-sepidar-table">
+                                                <colgroup>
+                                                    <col style="width: 31%">
+                                                    <col style="width: 13%">
+                                                    <col style="width: 21%">
+                                                    <col style="width: 35%">
+                                                </colgroup>
                                                 <thead><tr>
                                                     <th data-key="packing_sepidar_destination">انبار مقصد</th>
                                                     <th data-key="packing_sepidar_quantity">تعداد</th>
@@ -3355,7 +3389,7 @@
     <span data-key="packing_wh_destination_choose">Select destination warehouse</span>
     <span data-key="packing_wh_destination_bulk_hint">Header selection fills all item destinations.</span>
     <span data-key="packing_received_quantity_help">Received includes good and damaged items.</span>
-    <span data-key="packing_damaged_quantity_help">Damaged items are included in the received quantity.</span>
+    <span data-key="packing_damaged_quantity_help">Damaged items are included in the received quantity and transferred to the damaged-goods warehouse.</span>
     <span data-key="packing_central_receipt_guidance">Complete quantities and destinations to prepare central receipt.</span>
     <span data-key="packing_central_receipt_button">Central Warehouse Receipt</span>
     <span data-key="packing_sepidar_transfers_title">Sepidar Warehouse Transfers</span>
@@ -3686,6 +3720,68 @@
 
     // Keep page-specific fallbacks for offline use and for site locales that
     // do not have their own Quick Packing translations.
+    // Same keys live in assets/lang/*.json. These two catalogs provide an
+    // offline fallback if loading a language file fails.
+    const packingSepidarLabels = {
+        "fa": {
+                "packing_sepidar_transfers_title": "انتقال بین انبار در سپیدار",
+                "packing_sepidar_save_first": "ابتدا انبار مقصد و تعدادها را ذخیره کنید؛ سپس اسناد را به سپیدار ارسال کنید.",
+                "packing_sepidar_preview": "پیش‌نمایش اسناد",
+                "packing_sepidar_send": "ارسال به سپیدار",
+                "packing_sepidar_destination": "انبار مقصد",
+                "packing_sepidar_quantity": "تعداد",
+                "packing_sepidar_status": "وضعیت",
+                "packing_sepidar_documents": "اسناد",
+                "packing_sepidar_type_normal": "سالم",
+                "packing_sepidar_type_damaged": "معیوب",
+                "packing_sepidar_status_success": "ثبت موفق",
+                "packing_sepidar_status_failed": "ناموفق",
+                "packing_sepidar_status_unknown": "نیازمند بررسی",
+                "packing_sepidar_status_sending": "در حال ارسال",
+                "packing_sepidar_status_pending": "آماده ارسال",
+                "packing_sepidar_delivery_label": "حواله",
+                "packing_sepidar_receipt_label": "رسید",
+                "packing_sepidar_all_success": "همه اسناد با موفقیت در سپیدار ثبت شده‌اند.",
+                "packing_sepidar_send_success": "تمام اسناد با موفقیت ثبت شدند.",
+                "packing_sepidar_send_partial": "ارسال بخشی از اسناد کامل نشده است؛ وضعیت هر سند را بررسی کنید.",
+                "packing_sepidar_save_changes": "ابتدا تغییرات ردیف‌ها را ذخیره کنید.",
+                "packing_sepidar_confirm": "اسناد آماده به سپیدار ارسال شوند؟",
+                "packing_sepidar_preview_error": "دریافت پیش‌نمایش اسناد سپیدار ناموفق بود.",
+                "packing_sepidar_send_error": "ارسال اسناد به سپیدار ناموفق بود.",
+                "packing_sepidar_no_transfers": "هنوز سند انتقالی برای نمایش وجود ندارد.",
+                "packing_received_quantity_help": "تعداد کل دریافتی شامل تمام کالاهای سالم و معیوب دریافت‌شده در هر ردیف است.",
+                "packing_damaged_quantity_help": "تعداد معیوب بخشی از کل دریافتی است و به انبار کالای معیوب منتقل می‌شود."
+        },
+        "en": {
+                "packing_sepidar_transfers_title": "Sepidar warehouse transfers",
+                "packing_sepidar_save_first": "Save the destination warehouse and quantities before sending documents to Sepidar.",
+                "packing_sepidar_preview": "Preview documents",
+                "packing_sepidar_send": "Send to Sepidar",
+                "packing_sepidar_destination": "Destination warehouse",
+                "packing_sepidar_quantity": "Quantity",
+                "packing_sepidar_status": "Status",
+                "packing_sepidar_documents": "Documents",
+                "packing_sepidar_type_normal": "Undamaged",
+                "packing_sepidar_type_damaged": "Damaged",
+                "packing_sepidar_status_success": "Registered",
+                "packing_sepidar_status_failed": "Failed",
+                "packing_sepidar_status_unknown": "Needs review",
+                "packing_sepidar_status_sending": "Sending",
+                "packing_sepidar_status_pending": "Ready to send",
+                "packing_sepidar_delivery_label": "Delivery",
+                "packing_sepidar_receipt_label": "Receipt",
+                "packing_sepidar_all_success": "All transfer documents were registered in Sepidar.",
+                "packing_sepidar_send_success": "All transfer documents were registered successfully.",
+                "packing_sepidar_send_partial": "Some transfers could not be completed. Check each document status.",
+                "packing_sepidar_save_changes": "Save row changes first.",
+                "packing_sepidar_confirm": "Send the ready documents to Sepidar?",
+                "packing_sepidar_preview_error": "Could not load the Sepidar transfer preview.",
+                "packing_sepidar_send_error": "Could not send transfers to Sepidar.",
+                "packing_sepidar_no_transfers": "There are no transfers to display yet.",
+                "packing_received_quantity_help": "The total received quantity includes both undamaged and damaged items for each row.",
+                "packing_damaged_quantity_help": "Damaged items are included in the total received quantity and transferred to the damaged-goods warehouse."
+        }
+};
     const packingPageLabels = {
         fa: {
             back: 'عودت',
@@ -4006,7 +4102,8 @@
         const fallbackLang = lang === 'fa' ? 'fa' : 'en';
         const localDefaults = {
             ...packingPageLabels[fallbackLang],
-            ...packingTimelineUi[fallbackLang]
+            ...packingTimelineUi[fallbackLang],
+            ...packingSepidarLabels[fallbackLang]
         };
         let loaded = existingTranslations && typeof existingTranslations === 'object'
             ? existingTranslations : {};
@@ -4022,6 +4119,7 @@
         packingTranslations = { ...localDefaults, ...loaded };
         packingTranslationLanguage = fallbackLang;
         applyDynamicTranslations(document);
+        applySepidarTranslations();
         updatePackingTableLanguage();
         if (submitButton?.disabled) updatePackingSaveButtons(true);
     }
@@ -4744,42 +4842,54 @@ ${canViewPrices ? `
         if (guidance) guidance.hidden = ready;
     }
 
-    function sepText(fa, en) {
-        return workflowUiLanguage() === 'fa' ? fa : en;
+    let cachedSepidarTransfers = null;
+    function applySepidarTranslations() {
+        const panel = document.getElementById('pk-sepidar-transfers');
+        if (!panel) return;
+        panel.dir = currentLanguage() === 'fa' ? 'rtl' : 'ltr';
+        if (cachedSepidarTransfers) renderSepidarTransfers(cachedSepidarTransfers);
+        const status = document.getElementById('pk-sepidar-status');
+        const key = status?.dataset.sepidarMessageKey;
+        if (key) status.textContent = tr(key);
     }
 
     function renderSepidarTransfers(transfers) {
         const table = document.getElementById('pk-sepidar-transfer-rows');
         if (!table) return;
+        cachedSepidarTransfers = transfers || [];
         table.replaceChildren();
         const choices = Object.fromEntries(Array.from(
             document.querySelectorAll('#pk-warehouse-bulk-destination option')
-        ).map(o => [o.value, o.textContent]));
-        (transfers || []).forEach(transfer => {
-            const tr = document.createElement('tr');
+        ).map(option => [option.value, option.textContent]));
+        if (!cachedSepidarTransfers.length) {
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.colSpan = 4;
+            cell.className = 'pk-sepidar-empty';
+            cell.textContent = tr('packing_sepidar_no_transfers');
+            row.appendChild(cell);
+            table.appendChild(row);
+            return;
+        }
+        cachedSepidarTransfers.forEach(transfer => {
+            const row = document.createElement('tr');
             const destination = choices[String(transfer.destination_stock_ref)] ||
                 String(transfer.destination_stock_ref);
-            const typeLabel = transfer.type === 'damaged'
-                ? sepText('معیوب', 'Damaged') : sepText('سالم', 'Normal');
-            const statusLabels = {
-                success: sepText('ثبت موفق', 'Success'),
-                failed: sepText('ناموفق', 'Failed'),
-                unknown: sepText('نیازمند بررسی', 'Needs review'),
-                sending: sepText('در حال ارسال', 'Sending'),
-                pending: sepText('آماده ارسال', 'Pending'),
-            };
+            const typeKey = transfer.type === 'damaged'
+                ? 'packing_sepidar_type_damaged' : 'packing_sepidar_type_normal';
+            const statusKey = 'packing_sepidar_status_' + transfer.status;
             const documentText = transfer.delivery_number && transfer.receipt_number
-                ? sepText('حواله: ', 'Delivery: ') + transfer.delivery_number
-                  + sepText(' / رسید: ', ' / Receipt: ') + transfer.receipt_number
+                ? tr('packing_sepidar_delivery_label') + ': ' + transfer.delivery_number
+                  + ' / ' + tr('packing_sepidar_receipt_label') + ': ' + transfer.receipt_number
                 : (transfer.error || '—');
-            [typeLabel + ' / ' + destination, transfer.quantity,
-             statusLabels[transfer.status] || transfer.status, documentText]
+            [tr(typeKey) + ' / ' + destination, transfer.quantity,
+             packingTranslations[statusKey] || transfer.status, documentText]
                 .forEach(value => {
-                    const td = document.createElement('td');
-                    td.textContent = value || '—';  // No remote HTML injection
-                    tr.appendChild(td);
+                    const cell = document.createElement('td');
+                    cell.textContent = value == null || value === '' ? '—' : String(value);
+                    row.appendChild(cell);
                 });
-            table.appendChild(tr);
+            table.appendChild(row);
         });
     }
 
@@ -4790,13 +4900,17 @@ ${canViewPrices ? `
         try {
             const response = await fetch(panel.dataset.previewUrl, {credentials: 'same-origin'});
             const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Sepidar preview failed.');
+            if (!response.ok) throw new Error(result.error || tr('packing_sepidar_preview_error'));
             renderSepidarTransfers(result.transfers);
-            if (status) status.textContent = result.all_success
-                ? sepText('همه اسناد با موفقیت ثبت شده‌اند.', 'All transfer documents were registered.')
-                : '';
+            if (status) {
+                status.dataset.sepidarMessageKey = result.all_success ? 'packing_sepidar_all_success' : '';
+                status.textContent = result.all_success ? tr('packing_sepidar_all_success') : '';
+            }
         } catch (error) {
-            if (status) status.textContent = error.message;
+            if (status) {
+                status.dataset.sepidarMessageKey = '';
+                status.textContent = error.message;
+            }
         }
         refreshCentralReceiptState();
     }
@@ -4804,11 +4918,9 @@ ${canViewPrices ? `
     document.getElementById('pk-sepidar-preview')?.addEventListener('click', refreshSepidarTransfers);
     document.getElementById('pk-sepidar-send')?.addEventListener('click', async function () {
         if (!warehouseRowsReady() || sepidarWarehouseDirty || packingRequestPending) {
-            return showPackingFeedback('error', sepText('ابتدا تغییرات ردیف‌ها را ذخیره کنید.',
-                'Save item changes before sending.'));
+            return showPackingFeedback('error', tr('packing_sepidar_save_changes'));
         }
-        if (!window.confirm(sepText('اسناد آماده به سپیدار ارسال شوند؟',
-                'Send pending transfers to Sepidar?'))) return;
+        if (!window.confirm(tr('packing_sepidar_confirm'))) return;
         const panel = document.getElementById('pk-sepidar-transfers');
         const status = document.getElementById('pk-sepidar-status');
         setPackingRequestPending(true);
@@ -4819,16 +4931,21 @@ ${canViewPrices ? `
                 headers: {'X-CSRFToken': getCookie('csrftoken')},
             });
             const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Sepidar transfer failed.');
+            if (!response.ok) throw new Error(result.error || tr('packing_sepidar_send_error'));
             renderSepidarTransfers(result.transfers);
-            const message = result.all_success
-                ? sepText('تمام اسناد با موفقیت ثبت شدند.', 'All transfers were registered.')
-                : sepText('ارسال بخشی از اسناد کامل نشده؛ وضعیت هر سند را بررسی کنید.',
-                    'Some transfers remain incomplete. Check each transfer status.');
-            if (status) status.textContent = message;
+            const messageKey = result.all_success ? 'packing_sepidar_send_success'
+                : 'packing_sepidar_send_partial';
+            const message = tr(messageKey);
+            if (status) {
+                status.dataset.sepidarMessageKey = messageKey;
+                status.textContent = message;
+            }
             showPackingFeedback(result.all_success ? 'success' : 'error', message);
         } catch (error) {
-            if (status) status.textContent = error.message;
+            if (status) {
+                status.dataset.sepidarMessageKey = '';
+                status.textContent = error.message;
+            }
             showPackingFeedback('error', error.message);
         } finally {
             setPackingRequestPending(false);
