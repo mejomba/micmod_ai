@@ -88,6 +88,12 @@ class PackingSepidarUiTests(SimpleTestCase):
         self.assertIn('formatSepidarTransferRatio(', self.page)
         self.assertNotIn('item.healthy_quantity, item.damaged_quantity', self.page)
 
+    def test_hover_highlights_rows_in_each_sepidar_table(self):
+        self.assertIn('.pk-sepidar-group-table tbody tr:hover > td', self.page)
+        self.assertIn('.pk-sepidar-table tbody tr:hover > td', self.page)
+        self.assertIn('background-color: #e7f1ff !important;', self.page)
+        self.assertIn('box-shadow: inset 0 0 0 9999px #e7f1ff !important;', self.page)
+
     def test_summary_numeric_column_and_status_badges_align(self):
         self.assertIn('pk-sepidar-summary-quantity', self.page)
         self.assertIn('pk-sepidar-summary-status', self.page)

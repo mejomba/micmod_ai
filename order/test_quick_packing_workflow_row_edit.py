@@ -33,6 +33,9 @@ class QuickPackingWorkflowRowEditTests(SimpleTestCase):
         self.item.gross_weight_kg = 4
         self.item.size = 'M'
         self.item.description = 'Original'
+        # A bare Mock().filter().exists() is truthy. No Sepidar transfer
+        # exists by default; individual tests can explicitly simulate one.
+        self.item.sepidar_transfer_lines.filter.return_value.exists.return_value = False
 
         self.order = Mock()
         self.order.final_price = 50
@@ -95,6 +98,32 @@ class QuickPackingWorkflowRowEditTests(SimpleTestCase):
         self.assertTrue(self.item.is_deleted)
         self.item.save.assert_called_once_with()
         self.order.validate_for_packing.assert_not_called()
+
+    def test_sent_or_unresolved_sepidar_transfer_prevents_quantity_edits(self):
+        self.packing.workflow_state_index.return_value = 8
+        self.row.update(wh_receipt_quantity=4, ruined_quantity=1)
+        self.item.wh_receipt_quantity = 3
+        self.item.ruined_quantity = 0
+        self.item.sepidar_transfer_lines.filter.return_value.exists.return_value = True
+        with self.assertRaisesMessage(ValueError, 'A Sepidar transfer exists'):
+            self.edit()
+        self.item.sepidar_transfer_lines.filter.assert_called_once_with(
+            transfer__status__in=('success', 'sending', 'unknown'),
+        )
+        self.item.save.assert_not_called()
+
+    def test_definitely_failed_transfer_does_not_lock_row(self):
+        # The production query excludes 'failed' transfers, allowing fixes
+        # before retrying the affected destination group.
+        self.packing.workflow_state_index.return_value = 8
+        self.row.update(wh_receipt_quantity=4, ruined_quantity=1)
+        self.item.wh_receipt_quantity = None
+        self.item.ruined_quantity = None
+        self.item.sepidar_transfer_lines.filter.return_value.exists.return_value = False
+        self.edit()
+        self.assertEqual(self.item.wh_receipt_quantity, 4)
+        self.assertEqual(self.item.ruined_quantity, 1)
+        self.item.save.assert_called_once_with()
 
     def test_warehouse_only_updates_received_and_ruined_quantities(self):
         self.packing.workflow_state_index.return_value = 8
