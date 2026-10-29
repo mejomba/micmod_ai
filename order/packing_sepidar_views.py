@@ -40,9 +40,10 @@ def packing_sepidar_preview(request, pk):
         planned = transfer_preview(packing)
     except PackingTransferError as exc:
         return JsonResponse({'error': str(exc)}, status=400)
-    return JsonResponse({'transfers': planned, 'all_success': all(
-        t['status'] == 'success' for t in planned,
-    )})
+    return JsonResponse({
+        'transfers': planned,
+        'all_success': all(t['status'] == 'success' for t in planned),
+    })
 
 
 @login_required
@@ -53,6 +54,7 @@ def packing_sepidar_send(request, pk):
         records = send_packing_transfers(packing, request)
     except PackingTransferError as exc:
         return JsonResponse({'error': str(exc)}, status=400)
-    return JsonResponse({'transfers': records, 'all_success': all(
-        t['status'] == 'success' for t in records,
-    )})
+    return JsonResponse({
+        'transfers': records,
+        'all_success': all(t['status'] == 'success' for t in records),
+    })
