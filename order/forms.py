@@ -249,7 +249,11 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
         "estimated_shipping_start_date", "estimated_arrive_to_wh_date",
         "reserve_bar_date",
         "sum_qty", "sum_arrived_qty",
-        "description", "wh_destination", "sales_10_darsad",
+        # Warehouse selection lives outside the ModelForm as
+        # warehouse_destination (bulk) and PackingItem.wh_destination (rows).
+        # The legacy Packing.wh_destination choices (2/3) cannot validate
+        # Sepidar warehouse codes used by Quick Packing.
+        "description", "sales_10_darsad",
     ]
 
     class Meta:

@@ -143,6 +143,14 @@ class QuickPackingWarehouseUiTests(SimpleTestCase):
         self.assertEqual(set(kwargs['allowed_fields']), expected)
         self.assertEqual(kwargs['only_show'], [])
 
+    def test_legacy_header_wh_destination_not_in_superuser_form(self):
+        # The legacy model field has obsolete (2, 3) choices, but actual
+        # destination options come from Order.sepidar_wh_map.
+        from order.forms import PackingSafeForm
+        self.assertNotIn('wh_destination', PackingSafeForm.field_layout)
+        self.assertIn('name="warehouse_destination"', self.html)
+        self.assertIn('name="existing-{{ packing_item.pk }}-wh_destination"', self.html)
+
     def test_superuser_header_and_receipt_fields_are_rendered(self):
         self.assertIn(
             '{% if is_read_only_view or is_warehouse_stage and not is_superuser %}',
@@ -163,13 +171,12 @@ class QuickPackingWarehouseUiTests(SimpleTestCase):
         self.assertIn('bulkWarehouseDestination?.addEventListener', self.html)
         self.assertIn('warehouse_options', self.html)
 
-    def test_central_receipt_is_only_shown_after_valid_rows(self):
+    def test_sepidar_send_requires_valid_saved_warehouse_rows(self):
         self.assertIn('id="pk-central-receipt-guidance"', self.html)
-        self.assertIn('id="pk-central-receipt-button"', self.html)
+        self.assertIn('id="pk-sepidar-send"', self.html)
         self.assertIn('function warehouseRowsReady()', self.html)
-        self.assertIn('button.hidden = !ready;', self.html)
+        self.assertIn('button.disabled = !ready || packingRequestPending', self.html)
         self.assertIn('guidance.hidden = ready;', self.html)
-        self.assertIn('No actual receipt is created by this button.', self.html)
         self.assertIn('packing_received_quantity_help', self.html)
         self.assertIn('packing_damaged_quantity_help', self.html)
 

@@ -274,3 +274,51 @@ class QuickPackingWorkflowRowEditTests(SimpleTestCase):
         self.view._save_warehouse_destination(self.request, self.packing)
         self.packing.save.assert_not_called()
 
+
+
+class QuickPackingWarehouseReturnLockTests(SimpleTestCase):
+    """Warehouse metadata cannot be lost by returning the workflow backward."""
+
+    def setUp(self):
+        self.view = QuickPackingView()
+        self.view.request = SimpleNamespace(user=Mock())
+        self.packing = Mock(
+            wh_destination=None,
+            sepidar_wh_to_wh=None,
+        )
+        self.packing.workflow_state_index.return_value = 8
+        self.packing.user_has_workflow_access.return_value = True
+        self.view.flow_config = {
+            'flow_state_list': [
+                'پیش‌نویس', 'تحویل شرکت حمل', 'حمل',
+                'قبض انبار', 'تحویل اسناد', 'اظهار',
+                'ضمانتنامه', 'ترخیص', 'انبار', 'اتمام کار',
+            ],
+        }
+
+    def test_header_destination_alone_disables_return(self):
+        self.packing.wh_destination = '2'
+        self.assertTrue(self.view._has_saved_warehouse_data(self.packing))
+        self.packing.packing_item_rel.filter.assert_not_called()
+
+    def test_row_destination_or_received_quantity_disables_return(self):
+        rows = self.packing.packing_item_rel.filter.return_value
+        rows.filter.return_value.exists.return_value = True
+        self.packing.sepidar_transfers.exists.return_value = False
+        self.assertTrue(self.view._has_saved_warehouse_data(self.packing))
+        self.assertTrue(rows.filter.called)
+
+    def test_sepidar_transfer_disables_return_even_without_quantities(self):
+        self.packing.sepidar_transfers.exists.return_value = True
+        self.assertTrue(self.view._has_saved_warehouse_data(self.packing))
+        self.packing.packing_item_rel.filter.assert_not_called()
+
+    def test_no_warehouse_data_keeps_return_available(self):
+        self.packing.sepidar_transfers.exists.return_value = False
+        self.packing.packing_item_rel.filter.return_value.filter.return_value.exists.return_value = False
+        self.assertFalse(self.view._has_saved_warehouse_data(self.packing))
+
+    def test_back_action_rejected_server_side_even_for_superuser(self):
+        self.packing.wh_destination = '2'
+        with self.assertRaisesMessage(ValueError, 'امکان عودت'):
+            self.view._submit_workflow_action(self.packing, 'back')

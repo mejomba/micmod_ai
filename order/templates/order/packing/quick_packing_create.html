@@ -525,14 +525,15 @@
         gap: 5px;
         direction: inherit;
         white-space: nowrap;
-        font-size: .8rem;
+        font-size: .96rem;
+        font-weight: 700;
         font-variant-numeric: tabular-nums;
     }
     #pk-sepidar-transfers .pk-sepidar-quantity-ratio .pk-sepidar-total {
-        color: #64748b; font-size: .76rem;
+        color: #64748b; font-size: .91rem; font-weight: 600;
     }
     #pk-sepidar-transfers .pk-sepidar-quantity-ratio .pk-sepidar-of {
-        color: #8490a3; font-size: .7rem;
+        color: #8490a3; font-size: .76rem; font-weight: 400;
     }
     #pk-sepidar-transfers .pk-sepidar-group-error {
         font-size: .72rem; margin: 0; padding: 7px 11px;
@@ -579,6 +580,8 @@
         direction: ltr;
         unicode-bidi: isolate;
         display: inline-block;
+        font-size: .96rem;
+        font-weight: 700;
         font-variant-numeric: tabular-nums;
     }
     #pk-sepidar-transfers .pk-sepidar-table .pk-sepidar-empty {
@@ -3327,7 +3330,7 @@
                                         <p class="mb-1" data-key="packing_received_quantity_help">تعداد کل دریافتی شامل همه کالاهای سالم و معیوب دریافت‌شده در هر ردیف است.</p>
                                         <p class="mb-1" data-key="packing_damaged_quantity_help">تعداد معیوب بخشی از دریافتی است و به انبار کالای معیوب منتقل می‌شود.</p>
                                         <p class="mb-1 text-muted" data-key="packing_sepidar_damaged_to_42_note">
-                                            کالاهای معیوب فقط در گروه انبار کالای معیوب (۴۲) ارسال می‌شوند.
+                                            کالاهای معیوب فقط در گروه انبار کالای معیوب (42) ارسال می‌شوند.
                                         </p>
                                         <div id="pk-central-receipt-guidance" class="alert alert-light-info mt-2 mb-2"
                                              role="status" data-key="packing_sepidar_save_first">
@@ -3866,7 +3869,7 @@
                 "packing_sepidar_retry": "ارسال مجدد",
                 "packing_sepidar_group_confirm": "سند این گروه به سپیدار ارسال شود؟",
                 "packing_sepidar_group_send_success": "سند این گروه با موفقیت در سپیدار ثبت شد.",
-                "packing_sepidar_damaged_to_42_note": "کالاهای معیوب فقط در گروه انبار کالای معیوب (۴۲) ارسال می‌شوند.",
+                "packing_sepidar_damaged_to_42_note": "کالاهای معیوب فقط در گروه انبار کالای معیوب (42) ارسال می‌شوند.",
                 "packing_sepidar_transfer_ratio": "انتقالی از کل دریافتی",
                 "packing_sepidar_of": "از"
         },
@@ -4999,8 +5002,8 @@ ${canViewPrices ? `
     function sepidarFormatNumber(value) {
         const number = Number(value);
         if (!Number.isFinite(number)) return String(value ?? '—');
-        const locale = currentLanguage() === 'fa' ? 'fa-IR' : 'en-US';
-        return number.toLocaleString(locale, { maximumFractionDigits: 4 });
+        // Always use Latin digits regardless of the page language.
+        return number.toLocaleString('en-US', { maximumFractionDigits: 4 });
     }
 
     function formatSepidarTransferRatio(transferQuantity, receivedQuantity) {
@@ -5038,7 +5041,8 @@ ${canViewPrices ? `
             const meta = document.createElement('div');
             meta.className = 'pk-sepidar-group-meta';
             const total = document.createElement('span');
-            total.textContent = tr('packing_sepidar_group_total') + ': ' + transfer.quantity;
+            total.textContent = tr('packing_sepidar_group_total') + ': ' +
+                sepidarFormatNumber(transfer.quantity);
             const badge = document.createElement('span');
             badge.className = 'pk-sepidar-group-badge is-' + transfer.status;
             badge.textContent = tr('packing_sepidar_status_' + transfer.status);

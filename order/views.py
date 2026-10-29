@@ -3673,6 +3673,25 @@ class QuickPackingView(LoginRequiredMixin, View):
             raise ValueError('انبار مقصد انتخاب‌شده معتبر نیست.')
         return code
 
+    @staticmethod
+    def _has_saved_warehouse_data(packing_obj):
+        """Once any warehouse detail is saved, the Packing cannot move backward.
+
+        Include zero quantities: an explicitly entered zero is still warehouse
+        information. Existing Sepidar documents also permanently lock return.
+        """
+        if not packing_obj:
+            return False
+        if str(packing_obj.wh_destination or '').strip() or packing_obj.sepidar_wh_to_wh:
+            return True
+        if packing_obj.sepidar_transfers.exists():
+            return True
+        return packing_obj.packing_item_rel.filter(is_deleted=False).filter(
+            (Q(wh_destination__isnull=False) & ~Q(wh_destination=''))
+            | Q(wh_receipt_quantity__isnull=False)
+            | Q(ruined_quantity__isnull=False)
+        ).exists()
+
     def _save_warehouse_destination(self, request, packing_obj):
         if (not self._is_warehouse_stage(packing_obj)
                 or 'warehouse_destination' not in request.POST):
@@ -3908,6 +3927,10 @@ class QuickPackingView(LoginRequiredMixin, View):
         elif action == 'back':
             if state_index <= 0:
                 raise ValueError('Packing is already in the first workflow state.')
+            if self._has_saved_warehouse_data(packing_obj):
+                raise ValueError(
+                    'برای این پکینگ اطلاعات انبار ثبت شده و امکان عودت به مرحله قبل وجود ندارد.'
+                )
             target_index = state_index - 1
             wf_status = 2
         else:
@@ -4507,6 +4530,11 @@ class QuickPackingView(LoginRequiredMixin, View):
             Packing.normalize_workflow_state_name,
         )
 
+        warehouse_data_saved = (
+            self._has_saved_warehouse_data(packing_obj)
+            if packing_obj and state_index > 0 else False
+        )
+
         context = {
             'workflow_stages': timeline['stages'],
             'workflow_history': timeline['history'],
@@ -4533,7 +4561,10 @@ class QuickPackingView(LoginRequiredMixin, View):
             'warehouse_options': self._warehouse_choices(),
             'central_wh_id': str(settings.SEPIDAR_CONST_DATA.get('central_wh_id') or ''),
             'can_next': bool(wf_access and packing_obj and state_index < len(states) - 1),
-            'can_back': bool(wf_access and packing_obj and state_index > 0),
+            'can_back': bool(
+                wf_access and packing_obj and state_index > 0
+                and not warehouse_data_saved
+            ),
             'can_change_user': bool(packing_obj and self._can_change_user(packing_obj)),
             'workflow_current_user': (
                 packing_obj.workflow_assigned_user(

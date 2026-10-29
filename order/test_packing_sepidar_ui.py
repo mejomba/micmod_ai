@@ -92,3 +92,8 @@ class PackingSepidarUiTests(SimpleTestCase):
         self.assertIn('pk-sepidar-summary-quantity', self.page)
         self.assertIn('pk-sepidar-summary-status', self.page)
         self.assertIn("badge.className = 'pk-sepidar-group-badge is-'", self.page)
+
+
+    def test_sepidar_numbers_always_use_latin_digits(self):
+        self.assertIn("number.toLocaleString('en-US', { maximumFractionDigits: 4 })", self.page)
+        self.assertIn("font-size: .96rem;", self.page)
