@@ -1,4 +1,6 @@
 """Authenticated preview/send endpoints for Quick Packing Sepidar transfers."""
+import json
+
 from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -51,8 +53,24 @@ def packing_sepidar_preview(request, pk):
 def packing_sepidar_send(request, pk):
     packing = _get_authorized_packing(request, pk, sending=True)
     try:
-        records = send_packing_transfers(packing, request)
-    except PackingTransferError as exc:
+        # Empty body retains the old "send all pending groups" behavior.
+        payload = json.loads(request.body or b'{}')
+        if not isinstance(payload, dict):
+            raise PackingTransferError('Invalid transfer request.')
+        if 'transfer_type' in payload or 'destination_stock_ref' in payload:
+            from order.packing_sepidar import normalize_transfer_selection
+            group_key = normalize_transfer_selection(
+                payload.get('transfer_type'), payload.get('destination_stock_ref'),
+            )
+            if group_key is None:
+                raise PackingTransferError('Incomplete transfer group.')
+        else:
+            group_key = None
+        send_packing_transfers(packing, request, group_key=group_key)
+        # A single response contract for preview and either sending mode:
+        # detailed groups first, with the existing summary built from them.
+        records = transfer_preview(packing)
+    except (PackingTransferError, ValueError, UnicodeDecodeError) as exc:
         return JsonResponse({'error': str(exc)}, status=400)
     return JsonResponse({
         'transfers': records,

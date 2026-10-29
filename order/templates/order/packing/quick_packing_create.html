@@ -461,6 +461,62 @@
     }
     .pk-central-receipt [hidden] { display: none !important; }
     .pk-central-receipt p { font-size: .81rem; line-height: 1.8; }
+    #pk-sepidar-transfers .pk-sepidar-groups { display: grid; gap: 9px; margin: 12px 0 16px; }
+    #pk-sepidar-transfers .pk-sepidar-group {
+        border: 1px solid #dce5f1; border-radius: 9px; background: #fff;
+        overflow: hidden; min-width: 0;
+    }
+    #pk-sepidar-transfers .pk-sepidar-group-header {
+        display: flex; flex-wrap: wrap; gap: 7px 12px; padding: 9px 11px;
+        align-items: center; justify-content: space-between; background: #f0f5fc;
+    }
+    #pk-sepidar-transfers .pk-sepidar-group-title {
+        font-size: .84rem; font-weight: 700; color: #253a56;
+    }
+    #pk-sepidar-transfers .pk-sepidar-group-meta {
+        display: inline-flex; gap: 7px; flex-wrap: wrap; align-items: center;
+        color: #52627b; font-size: .74rem;
+    }
+    #pk-sepidar-transfers .pk-sepidar-group-badge {
+        border-radius: 999px; padding: 2px 8px; font-size: .71rem;
+        background: #e3ebf5; color: #415572;
+    }
+    #pk-sepidar-transfers .pk-sepidar-group-badge.is-success { background: #dcfce7; color: #166534; }
+    #pk-sepidar-transfers .pk-sepidar-group-badge.is-failed { background: #fee2e2; color: #991b1b; }
+    #pk-sepidar-transfers .pk-sepidar-group-badge.is-unknown { background: #fef3c7; color: #92400e; }
+    #pk-sepidar-transfers .pk-sepidar-group .pk-sepidar-group-send {
+        font-size: .74rem; padding: 4px 10px; white-space: nowrap;
+    }
+    #pk-sepidar-transfers .pk-sepidar-group-table {
+        table-layout: fixed; width: 100%; min-width: 430px; margin: 0;
+        border-collapse: collapse; direction: inherit;
+    }
+    #pk-sepidar-transfers .pk-sepidar-group-table th,
+    #pk-sepidar-transfers .pk-sepidar-group-table td {
+        padding: 6px 10px; text-align: start !important; vertical-align: middle;
+        font-size: .76rem; white-space: normal; overflow-wrap: anywhere;
+    }
+    #pk-sepidar-transfers .pk-sepidar-group-table th {
+        background: #f9fbfd; color: #59677d; font-weight: 600;
+        border-bottom: 1px solid #e4eaf3;
+    }
+    #pk-sepidar-transfers .pk-sepidar-group-table tbody tr:not(:last-child) td {
+        border-bottom: 1px solid #f0f2f6;
+    }
+    #pk-sepidar-transfers .pk-sepidar-group-table tfoot td {
+        font-weight: 700; border-top: 1px solid #e4eaf3; background: #fafbfd;
+    }
+    #pk-sepidar-transfers .pk-sepidar-group-table .pk-sepidar-quantity {
+        font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate;
+    }
+    #pk-sepidar-transfers .pk-sepidar-group-error {
+        font-size: .72rem; margin: 0; padding: 7px 11px;
+        color: #b42318; overflow-wrap: anywhere;
+    }
+    #pk-sepidar-transfers .pk-sepidar-summary-heading {
+        display: block; font-size: .82rem; font-weight: 700;
+        padding-top: 11px; margin-bottom: 8px; border-top: 1px solid #dce7f6;
+    }
     /* Shared columns across thead/tbody: consistent alignment in RTL and LTR. */
     #pk-sepidar-transfers .pk-sepidar-table-wrap { width: 100%; max-width: 100%; }
     #pk-sepidar-transfers .pk-sepidar-table {
@@ -3230,6 +3286,9 @@
                                         <strong data-key="packing_sepidar_transfers_title">انتقال بین انبار در سپیدار</strong>
                                         <p class="mb-1" data-key="packing_received_quantity_help">تعداد کل دریافتی شامل همه کالاهای سالم و معیوب دریافت‌شده در هر ردیف است.</p>
                                         <p class="mb-1" data-key="packing_damaged_quantity_help">تعداد معیوب بخشی از دریافتی است و به انبار کالای معیوب منتقل می‌شود.</p>
+                                        <p class="mb-1 text-muted" data-key="packing_sepidar_damaged_to_42_note">
+                                            کالاهای معیوب فقط در گروه انبار کالای معیوب (۴۲) ارسال می‌شوند.
+                                        </p>
                                         <div id="pk-central-receipt-guidance" class="alert alert-light-info mt-2 mb-2"
                                              role="status" data-key="packing_sepidar_save_first">
                                             ابتدا انبار مقصد و تعدادها را ثبت کنید، سپس اسناد را به سپیدار ارسال کنید.
@@ -3243,6 +3302,11 @@
                                             {% endif %}
                                         </div>
                                         <div id="pk-sepidar-status" class="small mb-2" role="status" aria-live="polite"></div>
+                                        <div id="pk-sepidar-group-list" class="pk-sepidar-groups"
+                                             aria-live="polite" aria-label="Warehouse transfer item groups"></div>
+                                        <strong class="pk-sepidar-summary-heading" data-key="packing_sepidar_summary_title">
+                                            خلاصه اسناد انتقال
+                                        </strong>
                                         <div class="table-responsive pk-sepidar-table-wrap">
                                             <table class="table table-sm table-striped align-middle pk-sepidar-table">
                                                 <colgroup>
@@ -3471,6 +3535,7 @@
     const auditCalendar = document.getElementById('packing-audit-calendar');
     const historyCalendarKey = 'packingWorkflowHistoryCalendar';
     const isWarehouseStage = {{ is_warehouse_stage|yesno:"true,false" }};
+    const canSendToSepidar = {{ can_send_to_sepidar|yesno:"true,false" }};
     const centralWarehouseId = "{{ central_wh_id }}";
     const bulkWarehouseDestination = document.getElementById('pk-warehouse-bulk-destination');
     // Initialized before initWarehouseReceiptControls() invokes the listeners.
@@ -3750,7 +3815,18 @@
                 "packing_sepidar_send_error": "ارسال اسناد به سپیدار ناموفق بود.",
                 "packing_sepidar_no_transfers": "هنوز سند انتقالی برای نمایش وجود ندارد.",
                 "packing_received_quantity_help": "تعداد کل دریافتی شامل تمام کالاهای سالم و معیوب دریافت‌شده در هر ردیف است.",
-                "packing_damaged_quantity_help": "تعداد معیوب بخشی از کل دریافتی است و به انبار کالای معیوب منتقل می‌شود."
+                "packing_damaged_quantity_help": "تعداد معیوب بخشی از کل دریافتی است و به انبار کالای معیوب منتقل می‌شود.",
+                "packing_sepidar_summary_title": "خلاصه اسناد انتقال",
+                "packing_sepidar_group_total": "جمع انتقال",
+                "packing_sepidar_sku": "کد کالا",
+                "packing_sepidar_part_number": "پارت‌نامبر",
+                "packing_sepidar_healthy_qty": "تعداد سالم",
+                "packing_sepidar_damaged_qty": "تعداد معیوب",
+                "packing_sepidar_group_send": "ارسال این انبار",
+                "packing_sepidar_retry": "ارسال مجدد",
+                "packing_sepidar_group_confirm": "سند این گروه به سپیدار ارسال شود؟",
+                "packing_sepidar_group_send_success": "سند این گروه با موفقیت در سپیدار ثبت شد.",
+                "packing_sepidar_damaged_to_42_note": "کالاهای معیوب فقط در گروه انبار کالای معیوب (۴۲) ارسال می‌شوند."
         },
         "en": {
                 "packing_sepidar_transfers_title": "Sepidar warehouse transfers",
@@ -3779,7 +3855,18 @@
                 "packing_sepidar_send_error": "Could not send transfers to Sepidar.",
                 "packing_sepidar_no_transfers": "There are no transfers to display yet.",
                 "packing_received_quantity_help": "The total received quantity includes both undamaged and damaged items for each row.",
-                "packing_damaged_quantity_help": "Damaged items are included in the total received quantity and transferred to the damaged-goods warehouse."
+                "packing_damaged_quantity_help": "Damaged items are included in the total received quantity and transferred to the damaged-goods warehouse.",
+                "packing_sepidar_summary_title": "Transfer document summary",
+                "packing_sepidar_group_total": "Transfer total",
+                "packing_sepidar_sku": "Item code",
+                "packing_sepidar_part_number": "Part number",
+                "packing_sepidar_healthy_qty": "Undamaged qty",
+                "packing_sepidar_damaged_qty": "Damaged qty",
+                "packing_sepidar_group_send": "Send this warehouse",
+                "packing_sepidar_retry": "Retry transfer",
+                "packing_sepidar_group_confirm": "Send this group's transfer document to Sepidar?",
+                "packing_sepidar_group_send_success": "This group's transfer document was registered in Sepidar.",
+                "packing_sepidar_damaged_to_42_note": "Damaged items are sent only in the damaged-goods warehouse (42) group."
         }
 };
     const packingPageLabels = {
@@ -4838,7 +4925,13 @@ ${canViewPrices ? `
         const button = document.getElementById('pk-sepidar-send');
         const guidance = document.getElementById('pk-central-receipt-guidance');
         const ready = warehouseRowsReady() && !sepidarWarehouseDirty;
-        if (button) button.disabled = !ready || packingRequestPending;
+        const actionNeeded = !cachedSepidarTransfers || cachedSepidarTransfers.some(
+            transfer => transfer.status === 'pending' || transfer.status === 'failed'
+        );
+        if (button) button.disabled = !ready || packingRequestPending || !actionNeeded;
+        document.querySelectorAll('#pk-sepidar-group-list .pk-sepidar-group-send').forEach(groupButton => {
+            groupButton.disabled = !ready || packingRequestPending;
+        });
         if (guidance) guidance.hidden = ready;
     }
 
@@ -4853,10 +4946,127 @@ ${canViewPrices ? `
         if (key) status.textContent = tr(key);
     }
 
+    function sepidarWarehouseLabel(warehouseCode) {
+        const option = document.querySelector('#pk-warehouse-bulk-destination option[value="' +
+            String(warehouseCode) + '"]');
+        return option ? option.textContent.trim() : String(warehouseCode);
+    }
+
+    function renderSepidarGroups(transfers) {
+        const root = document.getElementById('pk-sepidar-group-list');
+        if (!root) return;
+        root.replaceChildren();
+        (transfers || []).forEach(transfer => {
+            const group = document.createElement('section');
+            group.className = 'pk-sepidar-group';
+            const heading = document.createElement('div');
+            heading.className = 'pk-sepidar-group-header';
+
+            const title = document.createElement('span');
+            title.className = 'pk-sepidar-group-title';
+            title.textContent = sepidarWarehouseLabel(transfer.destination_stock_ref)
+                + ' / ' + tr('packing_sepidar_type_' + transfer.type);
+
+            const meta = document.createElement('div');
+            meta.className = 'pk-sepidar-group-meta';
+            const total = document.createElement('span');
+            total.textContent = tr('packing_sepidar_group_total') + ': ' + transfer.quantity;
+            const badge = document.createElement('span');
+            badge.className = 'pk-sepidar-group-badge is-' + transfer.status;
+            badge.textContent = tr('packing_sepidar_status_' + transfer.status);
+            meta.append(total, badge);
+
+            if (canSendToSepidar && (transfer.status === 'pending' || transfer.status === 'failed')) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'btn btn-sm ' +
+                    (transfer.status === 'failed' ? 'btn-light-warning' : 'btn-light-primary') +
+                    ' pk-sepidar-group-send';
+                button.dataset.transferType = transfer.type;
+                button.dataset.destinationStockRef = String(transfer.destination_stock_ref);
+                button.textContent = tr(transfer.status === 'failed'
+                    ? 'packing_sepidar_retry' : 'packing_sepidar_group_send');
+                meta.appendChild(button);
+            }
+            heading.append(title, meta);
+            group.appendChild(heading);
+
+            const tableWrap = document.createElement('div');
+            tableWrap.className = 'table-responsive';
+            const table = document.createElement('table');
+            table.className = 'table table-sm pk-sepidar-group-table';
+            const colgroup = document.createElement('colgroup');
+            [24, 36, 20, 20].forEach(percent => {
+                const col = document.createElement('col');
+                col.style.width = percent + '%';
+                colgroup.appendChild(col);
+            });
+            table.appendChild(colgroup);
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            ['packing_sepidar_sku', 'packing_sepidar_part_number',
+             'packing_sepidar_healthy_qty', 'packing_sepidar_damaged_qty']
+                .forEach(key => {
+                    const th = document.createElement('th');
+                    th.scope = 'col';
+                    th.textContent = tr(key);
+                    headerRow.appendChild(th);
+                });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            const tbody = document.createElement('tbody');
+            (transfer.items || []).forEach(item => {
+                const row = document.createElement('tr');
+                [item.sku, item.part_number, item.healthy_quantity, item.damaged_quantity]
+                    .forEach((value, index) => {
+                        const cell = document.createElement('td');
+                        cell.textContent = value == null || value === '' ? '—' : String(value);
+                        if (index >= 2) cell.className = 'pk-sepidar-quantity';
+                        row.appendChild(cell);
+                    });
+                tbody.appendChild(row);
+            });
+            table.appendChild(tbody);
+            const tfoot = document.createElement('tfoot');
+            const footerRow = document.createElement('tr');
+            const sumLabel = document.createElement('td');
+            sumLabel.colSpan = 2;
+            sumLabel.textContent = tr('packing_sepidar_group_total');
+            footerRow.appendChild(sumLabel);
+            [transfer.type === 'normal' ? transfer.quantity : '0',
+             transfer.type === 'damaged' ? transfer.quantity : '0']
+                .forEach(value => {
+                    const cell = document.createElement('td');
+                    cell.className = 'pk-sepidar-quantity';
+                    cell.textContent = value;
+                    footerRow.appendChild(cell);
+                });
+            tfoot.appendChild(footerRow);
+            table.appendChild(tfoot);
+            tableWrap.appendChild(table);
+            group.appendChild(tableWrap);
+            if (transfer.error) {
+                const error = document.createElement('p');
+                error.className = 'pk-sepidar-group-error';
+                error.textContent = transfer.error;
+                group.appendChild(error);
+            }
+            root.appendChild(group);
+        });
+        if (!(transfers || []).length) {
+            const note = document.createElement('p');
+            note.className = 'small text-muted';
+            note.textContent = tr('packing_sepidar_no_transfers');
+            root.appendChild(note);
+        }
+        refreshCentralReceiptState();
+    }
+
     function renderSepidarTransfers(transfers) {
         const table = document.getElementById('pk-sepidar-transfer-rows');
         if (!table) return;
         cachedSepidarTransfers = transfers || [];
+        renderSepidarGroups(cachedSepidarTransfers);
         table.replaceChildren();
         const choices = Object.fromEntries(Array.from(
             document.querySelectorAll('#pk-warehouse-bulk-destination option')
@@ -4893,7 +5103,7 @@ ${canViewPrices ? `
         });
     }
 
-    async function refreshSepidarTransfers() {
+    async function refreshSepidarTransfers(preserveMessage = false) {
         const panel = document.getElementById('pk-sepidar-transfers');
         if (!panel) return;
         const status = document.getElementById('pk-sepidar-status');
@@ -4902,9 +5112,12 @@ ${canViewPrices ? `
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || tr('packing_sepidar_preview_error'));
             renderSepidarTransfers(result.transfers);
-            if (status) {
-                status.dataset.sepidarMessageKey = result.all_success ? 'packing_sepidar_all_success' : '';
-                status.textContent = result.all_success ? tr('packing_sepidar_all_success') : '';
+            if (status && result.all_success) {
+                status.dataset.sepidarMessageKey = 'packing_sepidar_all_success';
+                status.textContent = tr('packing_sepidar_all_success');
+            } else if (status && preserveMessage !== true) {
+                status.dataset.sepidarMessageKey = '';
+                status.textContent = '';
             }
         } catch (error) {
             if (status) {
@@ -4916,11 +5129,14 @@ ${canViewPrices ? `
     }
 
     document.getElementById('pk-sepidar-preview')?.addEventListener('click', refreshSepidarTransfers);
-    document.getElementById('pk-sepidar-send')?.addEventListener('click', async function () {
-        if (!warehouseRowsReady() || sepidarWarehouseDirty || packingRequestPending) {
+
+    async function sendSepidarTransfers(selection = null) {
+        if (!canSendToSepidar || !warehouseRowsReady() || sepidarWarehouseDirty || packingRequestPending) {
             return showPackingFeedback('error', tr('packing_sepidar_save_changes'));
         }
-        if (!window.confirm(tr('packing_sepidar_confirm'))) return;
+        const confirmation = selection
+            ? tr('packing_sepidar_group_confirm') : tr('packing_sepidar_confirm');
+        if (!window.confirm(confirmation)) return;
         const panel = document.getElementById('pk-sepidar-transfers');
         const status = document.getElementById('pk-sepidar-status');
         setPackingRequestPending(true);
@@ -4928,19 +5144,28 @@ ${canViewPrices ? `
         try {
             const response = await fetch(panel.dataset.sendUrl, {
                 method: 'POST', credentials: 'same-origin',
-                headers: {'X-CSRFToken': getCookie('csrftoken')},
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(selection || {}),
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || tr('packing_sepidar_send_error'));
             renderSepidarTransfers(result.transfers);
-            const messageKey = result.all_success ? 'packing_sepidar_send_success'
-                : 'packing_sepidar_send_partial';
+            const target = selection && result.transfers.find(transfer =>
+                transfer.type === selection.transfer_type &&
+                transfer.destination_stock_ref === selection.destination_stock_ref
+            );
+            const successful = selection ? target?.status === 'success' : result.all_success;
+            const messageKey = selection && successful ? 'packing_sepidar_group_send_success'
+                : successful ? 'packing_sepidar_send_success' : 'packing_sepidar_send_partial';
             const message = tr(messageKey);
             if (status) {
                 status.dataset.sepidarMessageKey = messageKey;
                 status.textContent = message;
             }
-            showPackingFeedback(result.all_success ? 'success' : 'error', message);
+            showPackingFeedback(successful ? 'success' : 'error', message);
         } catch (error) {
             if (status) {
                 status.dataset.sepidarMessageKey = '';
@@ -4949,8 +5174,20 @@ ${canViewPrices ? `
             showPackingFeedback('error', error.message);
         } finally {
             setPackingRequestPending(false);
-            await refreshSepidarTransfers();
+            await refreshSepidarTransfers(true);
         }
+    }
+
+    document.getElementById('pk-sepidar-send')?.addEventListener('click', () => {
+        void sendSepidarTransfers();
+    });
+    document.getElementById('pk-sepidar-group-list')?.addEventListener('click', event => {
+        const button = event.target.closest('.pk-sepidar-group-send');
+        if (!button) return;
+        void sendSepidarTransfers({
+            transfer_type: button.dataset.transferType,
+            destination_stock_ref: Number(button.dataset.destinationStockRef),
+        });
     });
 
     function initWarehouseReceiptControls() {

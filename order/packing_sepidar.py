@@ -60,7 +60,12 @@ def plan_packing_transfers(packing):
         code = getattr(goods, 'sepidar_id_0', None)
         if not code:
             raise PackingTransferError(f'{label}: item has no Sepidar code.')
-        line = {'packing_item_id': item.pk, 'itemref': int(code)}
+        line = {
+            'packing_item_id': item.pk,
+            'itemref': int(code),
+            'sku': str(getattr(goods, 'sku', None) or code),
+            'part_number': str(item.part_number or getattr(goods, 'part_number', None) or ''),
+        }
         healthy = arrived - ruined
         if healthy > 0:
             groups[('normal', destination)].append({**line, 'quantity': healthy})
@@ -78,6 +83,37 @@ def plan_packing_transfers(packing):
 def transfer_snapshot(lines):
     return sorted((int(x['packing_item_id']), int(x['itemref']), str(x['quantity'].normalize()))
                   for x in lines)
+
+
+def _display_lines(group):
+    """Preview line quantities follow the actual Sepidar document destination."""
+    damaged = group['transfer_type'] == 'damaged'
+    return [
+        {
+            'packing_item_id': line['packing_item_id'],
+            'item_ref': line['itemref'],
+            'sku': line['sku'],
+            'part_number': line['part_number'],
+            'healthy_quantity': '0' if damaged else str(line['quantity']),
+            'damaged_quantity': str(line['quantity']) if damaged else '0',
+        }
+        for line in group['lines']
+    ]
+
+
+def normalize_transfer_selection(transfer_type=None, destination_stock_ref=None):
+    """None selects all; a group selection must provide both valid dimensions."""
+    if transfer_type is None and destination_stock_ref is None:
+        return None
+    if transfer_type not in ('normal', 'damaged'):
+        raise PackingTransferError('Invalid transfer group type.')
+    try:
+        destination = int(destination_stock_ref)
+    except (ValueError, TypeError, OverflowError):
+        raise PackingTransferError('Invalid destination warehouse.')
+    if destination <= 0 or (transfer_type == 'damaged' and destination != 42):
+        raise PackingTransferError('Invalid destination warehouse.')
+    return (transfer_type, destination)
 
 
 def saved_snapshot(transfer):
@@ -124,6 +160,7 @@ def transfer_preview(packing):
             'destination_stock_ref': group['destination_stock_ref'],
             'quantity': str(sum((line['quantity'] for line in group['lines']), Decimal('0'))),
             'rows': len(group['lines']),
+            'items': _display_lines(group),
             'status': transfer.status if transfer else 'pending',
             'delivery_number': transfer.delivery_number if transfer else None,
             'receipt_number': transfer.receipt_number if transfer else None,
@@ -158,10 +195,12 @@ def _parse_result(response):
         return 'unknown', None, 'Missing Sepidar delivery/receipt identifiers; reconcile manually.'
 
 
-def send_packing_transfers(packing, request):
-    """Atomically reserve work, POST one destination at a time, persist outcomes."""
+def send_packing_transfers(packing, request, group_key=None):
+    """Atomically reserve only requested work; never resend uncertain/successful documents."""
     from sepidar.data import SepidarDataFactory
 
+    if group_key is not None:
+        group_key = normalize_transfer_selection(*group_key)
     to_send = []
     with transaction.atomic():
         packing = Packing.objects.select_for_update().get(pk=packing.pk)
@@ -172,18 +211,24 @@ def send_packing_transfers(packing, request):
         if packing.sepidar_wh_to_wh and not existing:
             raise PackingTransferError('Legacy Sepidar transfer must be reconciled before resending.')
         group_keys = {(g['transfer_type'], g['destination_stock_ref']) for g in groups}
+        if group_key is not None and group_key not in group_keys:
+            raise PackingTransferError('This transfer group does not exist in the saved Packing.')
         for old in existing:
             if (old.transfer_type, old.destination_stock_ref) in group_keys:
                 continue
             if old.status in ('success', 'sending', 'unknown'):
                 raise PackingTransferError('Existing transfer records conflict with Packing rows.')
-            # Definite failures may be replanned after destination/quantity edits.
-            old.delete()
+            # In single-group mode, do not mutate unrelated failed records.
+            # Global mode may prune definitively failed, obsolete groups.
+            if group_key is None:
+                old.delete()
         prior = {(x.transfer_type, x.destination_stock_ref): x for x in existing
                  if (x.transfer_type, x.destination_stock_ref) in group_keys}
         for group in groups:
             key = (group['transfer_type'], group['destination_stock_ref'])
             record = prior.get(key)
+            if record is None and group_key is not None and group_key != key:
+                continue
             if record is None:
                 record = PackingSepidarTransfer.objects.create(
                     packing=packing, transfer_type=key[0],
@@ -193,7 +238,11 @@ def send_packing_transfers(packing, request):
             if record.status in ('success', 'sending', 'unknown'):
                 if saved_snapshot(record) != transfer_snapshot(group['lines']):
                     raise PackingTransferError('Previously sent transfer differs from current Packing.')
+                if group_key == key:
+                    raise PackingTransferError('This transfer is already registered or needs reconciliation.')
                 continue  # Never automatically resend success/in-flight/unknown.
+            if group_key is not None and group_key != key:
+                continue  # Leave every other group untouched.
             record.lines.all().delete()
             PackingSepidarTransferItem.objects.bulk_create([
                 PackingSepidarTransferItem(

@@ -24,7 +24,7 @@ class PackingSepidarUiTests(SimpleTestCase):
         self.assertNotIn('packing_central_receipt_not_connected', self.page)
 
     def test_preview_does_not_render_remote_html(self):
-        self.assertIn('td.textContent = value', self.page)
+        self.assertIn("cell.textContent = value == null || value === '' ? '—' : String(value)", self.page)
 
     def test_transfer_column_alignment(self):
         self.assertIn('pk-sepidar-table', self.page)
@@ -47,6 +47,17 @@ class PackingSepidarUiTests(SimpleTestCase):
             'packing_sepidar_type_damaged',
             'packing_sepidar_status_unknown',
             'packing_sepidar_all_success',
+            'packing_sepidar_summary_title',
+            'packing_sepidar_group_total',
+            'packing_sepidar_sku',
+            'packing_sepidar_part_number',
+            'packing_sepidar_healthy_qty',
+            'packing_sepidar_damaged_qty',
+            'packing_sepidar_group_send',
+            'packing_sepidar_retry',
+            'packing_sepidar_group_confirm',
+            'packing_sepidar_group_send_success',
+            'packing_sepidar_damaged_to_42_note',
         )
         for lang in ('fa', 'en', 'gr', 'it', 'ru', 'sp'):
             with self.subTest(lang=lang):
@@ -59,3 +70,14 @@ class PackingSepidarUiTests(SimpleTestCase):
         self.assertIn('applySepidarTranslations();', self.page)
         self.assertIn('cachedSepidarTransfers', self.page)
         self.assertIn("panel.dir = currentLanguage() === 'fa' ? 'rtl' : 'ltr'", self.page)
+
+    def test_grouped_item_preview_and_individual_actions(self):
+        self.assertIn('id="pk-sepidar-group-list"', self.page)
+        self.assertIn('function renderSepidarGroups(transfers)', self.page)
+        self.assertIn('item.healthy_quantity, item.damaged_quantity', self.page)
+        self.assertIn('packing_sepidar_retry', self.page)
+        self.assertIn('dataset.transferType', self.page)
+        self.assertIn('dataset.destinationStockRef', self.page)
+        self.assertIn('body: JSON.stringify(selection || {})', self.page)
+        self.assertIn('canSendToSepidar', self.page)
+        self.assertIn('packing_sepidar_summary_title', self.page)

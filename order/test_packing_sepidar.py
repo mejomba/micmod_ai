@@ -5,7 +5,9 @@ from unittest.mock import patch
 
 from django.test import SimpleTestCase, override_settings
 
-from order.packing_sepidar import PackingTransferError, _parse_result, plan_packing_transfers, transfer_snapshot
+from order.packing_sepidar import (PackingTransferError, _display_lines, _parse_result,
+                                    normalize_transfer_selection, plan_packing_transfers,
+                                    transfer_snapshot)
 
 
 class _Rows:
@@ -31,7 +33,10 @@ class PackingSepidarPlanTests(SimpleTestCase):
         return SimpleNamespace(
             pk=pk, wh_destination=destination,
             wh_receipt_quantity=received, ruined_quantity=damaged, quantity=received,
-            order=SimpleNamespace(item=SimpleNamespace(sepidar_id_0=100 + pk)),
+            part_number=f'PN-{pk}',
+            order=SimpleNamespace(item=SimpleNamespace(
+                sku=f'SKU-{pk}', part_number=f'ITEM-PN-{pk}', sepidar_id_0=100 + pk,
+            )),
         )
 
     def packing(self, *rows):
@@ -79,6 +84,26 @@ class PackingSepidarPlanTests(SimpleTestCase):
 
     def test_uncertain_remote_failure_is_not_retry_safe(self):
         self.assertEqual(_parse_result({'errors': 'HTTP 500', 'uncertain': True})[0], 'unknown')
+
+    def test_line_preview_includes_sku_part_number_and_split_quantities(self):
+        with patch('order.packing_sepidar.Order.sepidar_wh_map', {2: 'central', 42: 'damaged'}):
+            groups = plan_packing_transfers(self.packing(self.row(1, '2', 100, 5)))
+        normal = next(g for g in groups if g['transfer_type'] == 'normal')
+        damaged = next(g for g in groups if g['transfer_type'] == 'damaged')
+        self.assertEqual(_display_lines(normal)[0], {
+            'packing_item_id': 1, 'item_ref': 101, 'sku': 'SKU-1',
+            'part_number': 'PN-1', 'healthy_quantity': '95', 'damaged_quantity': '0',
+        })
+        self.assertEqual(_display_lines(damaged)[0]['damaged_quantity'], '5')
+        self.assertEqual(_display_lines(damaged)[0]['healthy_quantity'], '0')
+
+    def test_individual_group_selector(self):
+        self.assertIsNone(normalize_transfer_selection())
+        self.assertEqual(normalize_transfer_selection('normal', '73'), ('normal', 73))
+        self.assertEqual(normalize_transfer_selection('damaged', 42), ('damaged', 42))
+        for args in [('normal', None), ('damaged', 73), ('wrong', 2), ('normal', 0)]:
+            with self.subTest(args=args), self.assertRaises(PackingTransferError):
+                normalize_transfer_selection(*args)
 
     def test_incomplete_response_is_uncertain(self):
         self.assertEqual(_parse_result({'packing': {'sepidar': []}})[0], 'unknown')

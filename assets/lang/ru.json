@@ -195,5 +195,16 @@
     "packing_sepidar_send_error": "Не удалось отправить перемещения в Sepidar.",
     "packing_sepidar_no_transfers": "Пока нет перемещений для отображения.",
     "packing_received_quantity_help": "Общее полученное количество включает как целые, так и повреждённые товары.",
-    "packing_damaged_quantity_help": "Повреждённые товары входят в общее полученное количество и перемещаются на склад брака."
+    "packing_damaged_quantity_help": "Повреждённые товары входят в общее полученное количество и перемещаются на склад брака.",
+    "packing_sepidar_summary_title": "Сводка документов перемещения",
+    "packing_sepidar_group_total": "Итого перемещение",
+    "packing_sepidar_sku": "Код товара",
+    "packing_sepidar_part_number": "Номер детали",
+    "packing_sepidar_healthy_qty": "Без повреждений",
+    "packing_sepidar_damaged_qty": "Повреждённые",
+    "packing_sepidar_group_send": "Отправить этот склад",
+    "packing_sepidar_retry": "Повторить отправку",
+    "packing_sepidar_group_confirm": "Отправить документ перемещения этой группы в Sepidar?",
+    "packing_sepidar_group_send_success": "Документ перемещения этой группы зарегистрирован в Sepidar.",
+    "packing_sepidar_damaged_to_42_note": "Повреждённые товары отправляются только в группу склада брака (42)."
 }

@@ -457,5 +457,16 @@
     "packing_sepidar_confirm": "Send the ready documents to Sepidar?",
     "packing_sepidar_preview_error": "Could not load the Sepidar transfer preview.",
     "packing_sepidar_send_error": "Could not send transfers to Sepidar.",
-    "packing_sepidar_no_transfers": "There are no transfers to display yet."
+    "packing_sepidar_no_transfers": "There are no transfers to display yet.",
+    "packing_sepidar_summary_title": "Transfer document summary",
+    "packing_sepidar_group_total": "Transfer total",
+    "packing_sepidar_sku": "Item code",
+    "packing_sepidar_part_number": "Part number",
+    "packing_sepidar_healthy_qty": "Undamaged qty",
+    "packing_sepidar_damaged_qty": "Damaged qty",
+    "packing_sepidar_group_send": "Send this warehouse",
+    "packing_sepidar_retry": "Retry transfer",
+    "packing_sepidar_group_confirm": "Send this group's transfer document to Sepidar?",
+    "packing_sepidar_group_send_success": "This group's transfer document was registered in Sepidar.",
+    "packing_sepidar_damaged_to_42_note": "Damaged items are sent only in the damaged-goods warehouse (42) group."
 }

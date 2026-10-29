@@ -195,5 +195,16 @@
     "packing_sepidar_send_error": "Impossibile inviare i trasferimenti a Sepidar.",
     "packing_sepidar_no_transfers": "Non ci sono ancora trasferimenti da visualizzare.",
     "packing_received_quantity_help": "La quantità totale ricevuta comprende gli articoli integri e quelli danneggiati.",
-    "packing_damaged_quantity_help": "La quantità danneggiata è inclusa nel totale ricevuto e viene trasferita al magazzino dei prodotti danneggiati."
+    "packing_damaged_quantity_help": "La quantità danneggiata è inclusa nel totale ricevuto e viene trasferita al magazzino dei prodotti danneggiati.",
+    "packing_sepidar_summary_title": "Riepilogo dei documenti di trasferimento",
+    "packing_sepidar_group_total": "Totale trasferimento",
+    "packing_sepidar_sku": "Codice articolo",
+    "packing_sepidar_part_number": "Codice parte",
+    "packing_sepidar_healthy_qty": "Quantità integra",
+    "packing_sepidar_damaged_qty": "Quantità danneggiata",
+    "packing_sepidar_group_send": "Invia questo magazzino",
+    "packing_sepidar_retry": "Riprova invio",
+    "packing_sepidar_group_confirm": "Inviare a Sepidar il documento di trasferimento di questo gruppo?",
+    "packing_sepidar_group_send_success": "Il documento di trasferimento di questo gruppo è stato registrato in Sepidar.",
+    "packing_sepidar_damaged_to_42_note": "Gli articoli danneggiati vengono trasferiti soltanto al gruppo del magazzino difettosi (42)."
 }

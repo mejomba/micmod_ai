@@ -195,5 +195,16 @@
     "packing_sepidar_send_error": "No se pudieron enviar las transferencias a Sepidar.",
     "packing_sepidar_no_transfers": "Todavía no hay transferencias para mostrar.",
     "packing_received_quantity_help": "La cantidad total recibida incluye artículos sin daños y artículos dañados.",
-    "packing_damaged_quantity_help": "La cantidad dañada forma parte del total recibido y se transfiere al almacén de productos dañados."
+    "packing_damaged_quantity_help": "La cantidad dañada forma parte del total recibido y se transfiere al almacén de productos dañados.",
+    "packing_sepidar_summary_title": "Resumen de documentos de transferencia",
+    "packing_sepidar_group_total": "Total transferido",
+    "packing_sepidar_sku": "Código de artículo",
+    "packing_sepidar_part_number": "Número de pieza",
+    "packing_sepidar_healthy_qty": "Cantidad sin daños",
+    "packing_sepidar_damaged_qty": "Cantidad dañada",
+    "packing_sepidar_group_send": "Enviar este almacén",
+    "packing_sepidar_retry": "Reintentar envío",
+    "packing_sepidar_group_confirm": "¿Enviar el documento de transferencia de este grupo a Sepidar?",
+    "packing_sepidar_group_send_success": "El documento de transferencia de este grupo se registró en Sepidar.",
+    "packing_sepidar_damaged_to_42_note": "Los artículos dañados se envían únicamente al grupo del almacén de productos dañados (42)."
 }

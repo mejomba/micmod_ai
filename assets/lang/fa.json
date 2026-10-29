@@ -1062,5 +1062,16 @@
     "packing_sepidar_confirm": "اسناد آماده به سپیدار ارسال شوند؟",
     "packing_sepidar_preview_error": "دریافت پیش‌نمایش اسناد سپیدار ناموفق بود.",
     "packing_sepidar_send_error": "ارسال اسناد به سپیدار ناموفق بود.",
-    "packing_sepidar_no_transfers": "هنوز سند انتقالی برای نمایش وجود ندارد."
+    "packing_sepidar_no_transfers": "هنوز سند انتقالی برای نمایش وجود ندارد.",
+    "packing_sepidar_summary_title": "خلاصه اسناد انتقال",
+    "packing_sepidar_group_total": "جمع انتقال",
+    "packing_sepidar_sku": "کد کالا",
+    "packing_sepidar_part_number": "پارت‌نامبر",
+    "packing_sepidar_healthy_qty": "تعداد سالم",
+    "packing_sepidar_damaged_qty": "تعداد معیوب",
+    "packing_sepidar_group_send": "ارسال این انبار",
+    "packing_sepidar_retry": "ارسال مجدد",
+    "packing_sepidar_group_confirm": "سند این گروه به سپیدار ارسال شود؟",
+    "packing_sepidar_group_send_success": "سند این گروه با موفقیت در سپیدار ثبت شد.",
+    "packing_sepidar_damaged_to_42_note": "کالاهای معیوب فقط در گروه انبار کالای معیوب (۴۲) ارسال می‌شوند."
 }
