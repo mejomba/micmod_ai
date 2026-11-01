@@ -1195,11 +1195,8 @@ class Packing(BaseModeWF):
             return False
         if user.is_superuser:
             return True
-        # Financial-viewer membership always implies read-only, even when
-        # combined with an operational Packing group.
-        if user.groups.filter(name=cls.FINANCE_VIEW_ONLY_GROUP).exists():
-            return False
-
+        # Viewer memberships are additive; they cannot revoke permission to
+        # create a Packing granted by the first workflow group or its admins.
         from workflow.models import FlowAdminGroup
 
         flow_config = cls.get_flow_config(
@@ -1227,9 +1224,8 @@ class Packing(BaseModeWF):
             return False
         if user.is_superuser:
             return True
-        if user.groups.filter(name=self.FINANCE_VIEW_ONLY_GROUP).exists():
-            return False
-
+        # Only the current-stage assignee or group admin may edit. Viewer
+        # groups add read/price access without overriding this permission.
         from workflow.models import WorkFlow, FlowAdminGroup
         from django.contrib.contenttypes.models import ContentType
 
@@ -1272,7 +1268,7 @@ class Packing(BaseModeWF):
 
     @classmethod
     def user_can_view_prices(cls, user):
-        """Never send prices to ordinary Packing users, including operators."""
+        """Prices require superuser or financial-viewer membership."""
         return bool(
             user and getattr(user, 'is_authenticated', False)
             and (user.is_superuser or user.groups.filter(
@@ -1281,20 +1277,21 @@ class Packing(BaseModeWF):
         )
 
     def user_has_finance_view_only_access(self, user):
+        """Financial visibility supplements any workflow permissions."""
         return bool(
             user and getattr(user, 'is_authenticated', False)
             and user.groups.filter(name=self.FINANCE_VIEW_ONLY_GROUP).exists()
         )
 
     def user_has_view_only_access(self, user):
-        """Dedicated read-only group, independently of workflow assignment."""
+        """Document-wide read permission, without revoking editing rights."""
         return bool(
             user and getattr(user, 'is_authenticated', False)
             and user.groups.filter(name=self.VIEW_ONLY_GROUP).exists()
         )
 
     def user_can_view_workflow(self, user):
-        """Only the current workflow editors and explicit viewers see documents."""
+        """Combine stage-specific editor rights with global viewer grants."""
         return (
             self.user_has_workflow_access(user)
             or self.user_has_view_only_access(user)

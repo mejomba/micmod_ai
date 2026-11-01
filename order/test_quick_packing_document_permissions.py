@@ -22,6 +22,16 @@ class QuickPackingDocumentAccessTests(SimpleTestCase):
             user=self.user, GET={},
         )
 
+    @staticmethod
+    def _user_with_groups(*group_names, user_id=25):
+        user = Mock(
+            id=user_id, is_authenticated=True, is_superuser=False,
+        )
+        user.groups.filter.side_effect = lambda **kwargs: SimpleNamespace(
+            exists=lambda: kwargs.get('name') in group_names,
+        )
+        return user
+
     def test_unauthorized_user_cannot_open_document(self):
         with self.assertRaises(PermissionDenied):
             self.view.get(self.request, pk=42)
@@ -62,6 +72,88 @@ class QuickPackingDocumentAccessTests(SimpleTestCase):
         packing = Packing()
         user = Mock(is_authenticated=False, is_superuser=False)
         self.assertFalse(packing.user_has_view_only_access(user))
+
+    def test_viewer_roles_do_not_block_creator_group_on_create_page(self):
+        from workflow.models import FlowAdminGroup
+
+        with (
+            patch.object(Packing, 'get_flow_config', return_value={
+                'flow_users_groups': ['packing_user_p', 'packing_user_dep'],
+            }),
+            patch.object(FlowAdminGroup, 'is_admin_of_group', return_value=False),
+        ):
+            for memberships in (
+                ('packing_user_p', 'packing_viewer'),
+                ('packing_user_p', 'packing_finance_viewer'),
+                ('packing_user_p', 'packing_viewer', 'packing_finance_viewer'),
+            ):
+                with self.subTest(groups=memberships):
+                    user = self._user_with_groups(*memberships)
+                    self.assertTrue(Packing.user_can_create_workflow(user))
+                    self.view.request = SimpleNamespace(user=user)
+                    self.view._assert_create_access()
+
+            for memberships in (
+                ('packing_viewer',),
+                ('packing_finance_viewer',),
+                ('packing_viewer', 'packing_finance_viewer'),
+            ):
+                with self.subTest(groups=memberships):
+                    user = self._user_with_groups(*memberships)
+                    self.assertFalse(Packing.user_can_create_workflow(user))
+                    self.view.request = SimpleNamespace(user=user)
+                    with self.assertRaises(PermissionDenied):
+                        self.view._assert_create_access()
+
+    def test_viewer_membership_preserves_assignee_edits_only_in_own_stage(self):
+        from workflow.models import WorkFlow, FlowAdminGroup
+        from django.contrib.contenttypes.models import ContentType
+
+        packing = Packing(pk=42)
+        flow = Mock(to_user_id=25)
+        with (
+            patch.object(packing, 'workflow_state_index', return_value=2),
+            patch.object(Packing, 'get_flow_config', return_value={
+                'flow_users_groups': [
+                    'packing_user_p', 'packing_user_dep', 'packing_user_ship',
+                ],
+            }),
+            patch.object(FlowAdminGroup, 'is_admin_of_group', return_value=False),
+            patch.object(ContentType.objects, 'get_for_model', return_value=Mock()),
+            patch.object(WorkFlow.objects, 'filter') as query,
+        ):
+            query.return_value.order_by.return_value.last.return_value = flow
+            for viewer in ('packing_viewer', 'packing_finance_viewer'):
+                memberships = ('packing_user_ship', viewer)
+                with self.subTest(groups=memberships):
+                    user = self._user_with_groups(*memberships)
+                    self.assertTrue(packing.user_has_workflow_access(user))
+                    self.assertTrue(packing.user_can_view_workflow(user))
+                    self.assertEqual(
+                        Packing.user_can_view_prices(user),
+                        viewer == 'packing_finance_viewer',
+                    )
+                    self.view.request = SimpleNamespace(user=user)
+                    self.assertTrue(
+                        self.view._workflow_constraint(packing)['wf_access'],
+                    )
+
+            # Viewers can read every stage, but must not edit an unrelated
+            # stage, even if they were assigned a previous stage.
+            for memberships in (
+                ('packing_user_p', 'packing_viewer'),
+                ('packing_user_p', 'packing_finance_viewer'),
+            ):
+                with self.subTest(groups=memberships):
+                    user = self._user_with_groups(*memberships)
+                    self.assertFalse(packing.user_has_workflow_access(user))
+                    self.assertTrue(packing.user_can_view_workflow(user))
+
+            # Membership in the active group is not enough without assignment.
+            flow.to_user_id = 99
+            user = self._user_with_groups('packing_user_ship', 'packing_viewer')
+            self.assertFalse(packing.user_has_workflow_access(user))
+            self.assertTrue(packing.user_can_view_workflow(user))
 
     def test_viewer_form_cannot_post_any_header_or_file_field(self):
         self.view.request = self.request
@@ -160,16 +252,28 @@ class QuickPackingDocumentAccessTests(SimpleTestCase):
         self.assertIn("get_or_create(", migration)
         self.assertIn("'0129_packing_workflow_nine_stages'", migration)
 
-    def test_finance_viewer_can_view_pricing_but_not_edit(self):
-        packing = Packing()
-        user = Mock(is_authenticated=True, is_superuser=False)
-        user.groups.filter.side_effect = lambda **kwargs: SimpleNamespace(
-            exists=lambda: kwargs.get('name') == 'packing_finance_viewer',
-        )
-        self.assertTrue(packing.user_can_view_workflow(user))
-        self.assertFalse(packing.user_has_workflow_access(user))
-        self.assertFalse(Packing.user_can_create_workflow(user))
-        self.assertTrue(Packing.user_can_view_prices(user))
+    def test_finance_viewer_alone_can_view_prices_but_not_edit(self):
+        from workflow.models import WorkFlow, FlowAdminGroup
+        from django.contrib.contenttypes.models import ContentType
+
+        packing = Packing(pk=42)
+        user = self._user_with_groups('packing_finance_viewer')
+        with (
+            patch.object(packing, 'workflow_state_index', return_value=0),
+            patch.object(Packing, 'get_flow_config', return_value={
+                'flow_users_groups': ['packing_user_p'],
+            }),
+            patch.object(FlowAdminGroup, 'is_admin_of_group', return_value=False),
+            patch.object(ContentType.objects, 'get_for_model', return_value=Mock()),
+            patch.object(WorkFlow.objects, 'filter') as query,
+        ):
+            query.return_value.order_by.return_value.last.return_value = Mock(
+                to_user_id=25,
+            )
+            self.assertTrue(packing.user_can_view_workflow(user))
+            self.assertFalse(packing.user_has_workflow_access(user))
+            self.assertFalse(Packing.user_can_create_workflow(user))
+            self.assertTrue(Packing.user_can_view_prices(user))
 
     def test_ordinary_users_cannot_see_packing_prices(self):
         for name in ('packing_user_p', 'packing_viewer', 'wh_user'):
@@ -180,12 +284,23 @@ class QuickPackingDocumentAccessTests(SimpleTestCase):
                 )
                 self.assertFalse(Packing.user_can_view_prices(user))
 
-    def test_finance_group_overrides_editing_membership(self):
-        packing = Packing()
-        user = Mock(is_authenticated=True, is_superuser=False)
-        user.groups.filter.return_value.exists.return_value = True
-        self.assertFalse(packing.user_has_workflow_access(user))
-        self.assertFalse(Packing.user_can_create_workflow(user))
+    def test_finance_viewer_does_not_block_current_group_admin(self):
+        from workflow.models import FlowAdminGroup
+
+        packing = Packing(pk=42)
+        user = self._user_with_groups('packing_finance_viewer')
+        with (
+            patch.object(packing, 'workflow_state_index', return_value=2),
+            patch.object(Packing, 'get_flow_config', return_value={
+                'flow_users_groups': [
+                    'packing_user_p', 'packing_user_dep', 'packing_user_ship',
+                ],
+            }),
+            patch.object(FlowAdminGroup, 'is_admin_of_group', return_value=True),
+        ):
+            self.assertTrue(packing.user_has_workflow_access(user))
+            self.assertTrue(packing.user_can_view_workflow(user))
+            self.assertTrue(Packing.user_can_create_workflow(user))
 
     def test_superuser_keeps_price_access(self):
         user = Mock(is_authenticated=True, is_superuser=True)
