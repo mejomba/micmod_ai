@@ -1010,6 +1010,14 @@ class OrderOrder(BaseModel):
 
 
 class Packing(BaseModeWF):
+    # Destination warehouses offered by Quick Packing only. Extend this map
+    # when another destination is approved; do not change Order.sepidar_wh_map.
+    sepidar_wh_map = {
+        2: "انبار مرکزی",
+        73: "انبار رسالت",
+        42: "انبار کالای معیوب",
+    }
+
     SHIPMENT_TYPE = [("express", "express"), ("air", "air"), ("sea", "sea"), ]
     WH_DESTINATION_CHOICE = [(2, _("central")), (3, _("resalat")), ]
     packing_number = models.CharField(_('packing_number'), max_length=255, null=True, blank=True)

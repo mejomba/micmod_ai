@@ -3659,11 +3659,8 @@ class QuickPackingView(LoginRequiredMixin, View):
 
     @staticmethod
     def _warehouse_choices():
-        codes = dict(Order.sepidar_wh_map)
-        central = settings.SEPIDAR_CONST_DATA.get('central_wh_id')
-        if central is not None:
-            codes.setdefault(int(central), 'انبار مرکزی')
-        return [(str(code), label) for code, label in sorted(codes.items())]
+        # The selection catalog is intentionally narrower than the Order map.
+        return [(str(code), label) for code, label in Packing.sepidar_wh_map.items()]
 
     @classmethod
     def _parse_wh_destination(cls, value):

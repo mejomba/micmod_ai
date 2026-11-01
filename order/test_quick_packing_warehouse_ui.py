@@ -145,7 +145,7 @@ class QuickPackingWarehouseUiTests(SimpleTestCase):
 
     def test_legacy_header_wh_destination_not_in_superuser_form(self):
         # The legacy model field has obsolete (2, 3) choices, but actual
-        # destination options come from Order.sepidar_wh_map.
+        # destination options come from Packing.sepidar_wh_map.
         from order.forms import PackingSafeForm
         self.assertNotIn('wh_destination', PackingSafeForm.field_layout)
         self.assertIn('name="warehouse_destination"', self.html)
@@ -170,6 +170,23 @@ class QuickPackingWarehouseUiTests(SimpleTestCase):
         self.assertIn('pk-item-warehouse-destination', self.html)
         self.assertIn('bulkWarehouseDestination?.addEventListener', self.html)
         self.assertIn('warehouse_options', self.html)
+
+    def test_only_three_packing_destinations_are_allowed(self):
+        from order.models import Order, Packing
+        from order.views import QuickPackingView
+
+        self.assertEqual(
+            QuickPackingView._warehouse_choices(),
+            [('2', 'انبار مرکزی'), ('73', 'انبار رسالت'),
+             ('42', 'انبار کالای معیوب')],
+        )
+        self.assertIn(5, Order.sepidar_wh_map)  # unchanged main warehouse catalog
+        for value in ('2', '73', '42'):
+            self.assertEqual(QuickPackingView._parse_wh_destination(value), value)
+        for value in ('5', '91', '999999'):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                QuickPackingView._parse_wh_destination(value)
+        self.assertEqual(set(Packing.sepidar_wh_map), {2, 73, 42})
 
     def test_sepidar_send_requires_valid_saved_warehouse_rows(self):
         self.assertIn('id="pk-central-receipt-guidance"', self.html)

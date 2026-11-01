@@ -43,7 +43,7 @@ class PackingSepidarPlanTests(SimpleTestCase):
         return SimpleNamespace(packing_item_rel=_Rows(rows))
 
     def test_groups_healthy_and_damaged_in_separate_destinations(self):
-        with patch('order.packing_sepidar.Order.sepidar_wh_map', {2: 'central', 42: 'damaged', 73: 'resalat'}):
+        with patch('order.packing_sepidar.Packing.sepidar_wh_map', {2: 'central', 42: 'damaged', 73: 'resalat'}):
             groups = plan_packing_transfers(self.packing(
                 self.row(1, '2', 100, 5),
                 self.row(2, '73', 40, 10),
@@ -57,6 +57,11 @@ class PackingSepidarPlanTests(SimpleTestCase):
     def test_missing_destination_blocks_entire_plan(self):
         with self.assertRaises(PackingTransferError):
             plan_packing_transfers(self.packing(self.row(1, '', 10, 0)))
+
+    def test_other_order_warehouses_are_rejected_by_sepidar_planner(self):
+        # 5 belongs to the general Order map, not the Packing destination map.
+        with self.assertRaises(PackingTransferError):
+            plan_packing_transfers(self.packing(self.row(1, '5', 10, 0)))
 
     def test_received_cannot_exceed_packing_quantity(self):
         row = self.row(1, '2', 10, 0)
@@ -86,7 +91,7 @@ class PackingSepidarPlanTests(SimpleTestCase):
         self.assertEqual(_parse_result({'errors': 'HTTP 500', 'uncertain': True})[0], 'unknown')
 
     def test_line_preview_shows_only_group_transfer_out_of_total_received(self):
-        with patch('order.packing_sepidar.Order.sepidar_wh_map', {2: 'central', 42: 'damaged'}):
+        with patch('order.packing_sepidar.Packing.sepidar_wh_map', {2: 'central', 42: 'damaged'}):
             groups = plan_packing_transfers(self.packing(self.row(1, '2', 4000, 10)))
         normal = next(g for g in groups if g['transfer_type'] == 'normal')
         damaged = next(g for g in groups if g['transfer_type'] == 'damaged')
@@ -102,7 +107,7 @@ class PackingSepidarPlanTests(SimpleTestCase):
     def test_received_denominator_is_not_original_packing_quantity(self):
         row = self.row(1, '2', 3600, 10)
         row.quantity = 4000
-        with patch('order.packing_sepidar.Order.sepidar_wh_map', {2: 'central', 42: 'damaged'}):
+        with patch('order.packing_sepidar.Packing.sepidar_wh_map', {2: 'central', 42: 'damaged'}):
             groups = plan_packing_transfers(self.packing(row))
         normal = next(g for g in groups if g['transfer_type'] == 'normal')
         self.assertEqual(_display_lines(normal)[0]['transfer_quantity'], '3590')

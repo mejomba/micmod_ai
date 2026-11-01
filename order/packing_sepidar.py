@@ -11,7 +11,7 @@ from django.db import transaction
 from django.utils import timezone
 from order.packing_error_messages import packing_error_payload
 
-from order.models import Order, Packing, PackingSepidarTransfer, PackingSepidarTransferItem
+from order.models import Packing, PackingSepidarTransfer, PackingSepidarTransferItem
 from sepidar.api_call import SepidarApiCall
 
 
@@ -32,7 +32,7 @@ def decimal_quantity(value, label):
 def plan_packing_transfers(packing):
     """Split by (normal/damaged, Sepidar warehouse ID), never by header fallback."""
     groups = defaultdict(list)
-    stock_ids = {int(x) for x in Order.sepidar_wh_map}
+    stock_ids = {int(x) for x in Packing.sepidar_wh_map}
     source = settings.SEPIDAR_CONST_DATA.get('before_central_wh_id')
     if not source:
         raise PackingTransferError('Sepidar source warehouse is not configured.')

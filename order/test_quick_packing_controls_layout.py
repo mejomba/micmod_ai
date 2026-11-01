@@ -29,11 +29,13 @@ class QuickPackingControlLayoutTests(SimpleTestCase):
     def test_footer_has_save_header_history_back_and_next(self):
         html = self.markup
         self.assertEqual(html.count('id="packing-top-save"'), 1)
-        self.assertEqual(html.count('id="submit-packing"'), 1)
+        self.assertNotIn('id="submit-packing"', html)
         self.assertEqual(html.count('data-change-target="packing"'), 1)
         self.assertEqual(html.count('data-action="back"'), 1)
         self.assertEqual(html.count('data-action="next"'), 1)
-        self.assertIn('submitButton.click();', html)
+        self.assertNotIn('submitButton.click();', html)
+        self.assertIn("const submitButton = document.getElementById('packing-top-save');", html)
+        self.assertIn("submitButton && submitButton.addEventListener('click', function () {", html)
 
     def test_workflow_strip_combines_note_assignee_and_durations(self):
         html = self.markup

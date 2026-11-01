@@ -251,8 +251,8 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
         "sum_qty", "sum_arrived_qty",
         # Warehouse selection lives outside the ModelForm as
         # warehouse_destination (bulk) and PackingItem.wh_destination (rows).
-        # The legacy Packing.wh_destination choices (2/3) cannot validate
-        # Sepidar warehouse codes used by Quick Packing.
+        # The legacy Packing.wh_destination field has outdated choices;
+        # Quick Packing validates destinations using Packing.sepidar_wh_map.
         "description", "sales_10_darsad",
     ]
 

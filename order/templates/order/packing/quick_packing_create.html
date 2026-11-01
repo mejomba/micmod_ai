@@ -1026,13 +1026,6 @@
         color: #181c32;
     }
 
-    .pk-submit {
-        width: 100%;
-        min-height: 44px;
-        border-radius: 10px;
-        font-weight: 700;
-    }
-
     #ajax-response {
         font-size: .82rem;
         line-height: 1.6;
@@ -1160,7 +1153,7 @@
         backdrop-filter: blur(10px);
     }
 
-    /* Prevent the fixed footer obscuring form fields or the final Save button. */
+    /* Prevent the fixed footer from obscuring form fields. */
     .packing-page {
         padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px));
     }
@@ -3383,11 +3376,6 @@
                                         </div>
                                     </div>
                                 {% endif %}
-                                {% if wf_access %}
-                                    <button type="button" id="submit-packing" class="btn btn-primary pk-submit">
-                                        <span data-key="packing_submit">Save Packing</span>
-                                    </button>
-                                {% endif %}
                                 <div id="ajax-response" role="status" aria-live="polite" aria-atomic="true"></div>
                             </div>
                         </div>
@@ -3584,8 +3572,7 @@
     const canViewPrices = {{ can_view_prices|yesno:"true,false" }};
     const container = document.getElementById('formset-container');
     const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
-    const submitButton = document.getElementById('submit-packing');
-    const topSaveButton = document.getElementById('packing-top-save');
+    const submitButton = document.getElementById('packing-top-save');
     const durationButton = document.getElementById('packing-toggle-durations');
     const durationScroll = document.getElementById('packing-workflow-scroll');
     const historyCalendar = document.getElementById('packing-history-calendar');
@@ -5502,7 +5489,7 @@ ${canViewPrices ? `
 
     function setPackingRequestPending(pending) {
         packingRequestPending = pending;
-        document.querySelectorAll('#submit-packing, #packing-top-save, .packing-workflow-action')
+        document.querySelectorAll('#packing-top-save, .packing-workflow-action')
             .forEach(button => {
                 button.disabled = pending;
                 button.setAttribute('aria-busy', String(pending));
@@ -5563,7 +5550,7 @@ ${canViewPrices ? `
     });
 
     function updatePackingSaveButtons(isSaving) {
-        [submitButton, topSaveButton].forEach(function (button) {
+        [submitButton].forEach(function (button) {
             if (!button) return;
             button.disabled = isSaving;
             const label = button.querySelector('[data-key="packing_submit"]') || button;
@@ -5574,12 +5561,7 @@ ${canViewPrices ? `
         });
     }
 
-    // Both Save buttons call the same validation and AJAX handler.
-    // The primary button at the bottom remains fully functional.
-    topSaveButton?.addEventListener('click', function () {
-        if (!packingRequestPending && submitButton && !submitButton.disabled) submitButton.click();
-    });
-
+    // The fixed-footer Save button runs validation and AJAX directly.
     submitButton && submitButton.addEventListener('click', function () {
         if (packingRequestPending) return;
         const rows = container.querySelectorAll('.packing-selected-row');
