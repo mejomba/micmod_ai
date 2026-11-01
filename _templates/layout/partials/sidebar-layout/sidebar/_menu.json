@@ -238,6 +238,12 @@
               "title": "list",
               "path_key": "order/packing/list",
               "link": "order:packing.list"
+            },
+            {
+              "icon": "calendar",
+              "title": "مرور و تقویم حمل",
+              "path_key": "order/packing/transport-schedule",
+              "link": "order:packing.transport_schedule"
             }
           ]
         },
