@@ -98,8 +98,6 @@ class ShopApiCall:
         if factor customer is MICMOD SHOP and factor has sepidar_id call shop create buy_factor api
         """
 
-        cls.setup()
-        endpoint = cls.endpoints.get(settings.PRODUCT_API_VERSION).get('create_shop_buy_factor')
         try:
             customer = getattr(factor, 'customer_party_id', None) or getattr(factor.q, 'customer_party_id', None)
             if not customer:
@@ -107,6 +105,9 @@ class ShopApiCall:
 
             if customer.pk != 2691:  # 2691 is MICMOD SHOP pk in portal extra_data.customer
                 return
+
+            cls.setup()
+            endpoint = cls.endpoints.get(settings.PRODUCT_API_VERSION).get('create_shop_buy_factor')
 
             l = list()
             skus = ','.join(map(str, factor.factoritem_set.values_list('goods_code__id', flat=True)))

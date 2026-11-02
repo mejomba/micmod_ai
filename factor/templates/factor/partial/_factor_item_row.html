@@ -27,7 +27,7 @@
                         <span class=""></span>
                     {% if form_s_item.goods_code %}
                         {% if form_s_item.instance.factor.customer_party_id.pk == 2691 %}
-                            <input list="{{ form_s_item.prefix }}-product_id" placeholder="کالای شاپ" type="text" name="{{ form_s_item.prefix }}-product_id" class="LTR-RTL w-80 rounded text-center font-size-11" onmouseenter="get_product_selection(event)" required value="{{ form_s_item.instance.product_id|default_if_falsy:'' }}" >
+                            <input list="{{ form_s_item.prefix }}-product_id" placeholder="کالای شاپ" type="text" name="{{ form_s_item.prefix }}-product_id" class="LTR-RTL w-80 rounded text-center font-size-11" onmouseenter="get_product_selection_safe(event)" required value="{{ form_s_item.instance.product_id|default_if_falsy:'' }}" >
                             <datalist id="{{ form_s_item.prefix }}-product_id">
 
                             </datalist>
