@@ -22,7 +22,6 @@ from datetime import datetime
 
 class LocalPaymentOrderView(LoginRequiredMixin, BaseView):
     model = PaymentOrder
-    # form_class = PaymentOrderModelForm
     template_name = 'payment/payment_local.html'
     has_flow = True
     flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json',
@@ -32,6 +31,81 @@ class LocalPaymentOrderView(LoginRequiredMixin, BaseView):
         'form': PaymentOrderModelForm,
         'childes': [{}]
     }
+
+    COPY_FIELDS = (
+        'amount',
+        'currency_type',
+        'pay_to',
+        'is_formal2',
+        'need_pay_doc',
+        'force',
+        'description',
+        'credit_card',
+        'behalf',
+        'applicant',
+        'to_account',
+    )
+
+    def get_copy_source(self):
+        """
+        سند مبدا برای Copy.
+
+        فقط زمانی استفاده می‌شود که در صفحه Create هستیم.
+        سند مبدا نیز باید در محدوده دسترسی کاربر باشد.
+        """
+        if self.object:
+            return None
+
+        copy_from = self.request.GET.get('copy_from')
+
+        if not copy_from:
+            return None
+
+        try:
+            copy_from = int(copy_from)
+        except (TypeError, ValueError):
+            return None
+
+        payment_groups = self.request.user.groups.filter(
+            name__startswith='payment__'
+        )
+
+        allowed_qs = PaymentOrder.objects.get_access_object(
+            self.request.user,
+            q='all',
+            lst=False,
+            groups_list=payment_groups,
+        )
+
+        return allowed_qs.filter(pk=copy_from).first()
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+
+        copy_source = self.get_copy_source()
+
+        if not copy_source:
+            return kwargs
+
+        # initial شامل constraint مربوط به workflow هم هست؛
+        # بنابراین آن را replace نمی‌کنیم و فقط مقادیر Copy را اضافه می‌کنیم.
+        initial = kwargs.setdefault('initial', {})
+
+        initial.update({
+            'amount': copy_source.amount,
+            'currency_type': copy_source.currency_type,
+            'pay_to': copy_source.pay_to,
+            'is_formal2': copy_source.is_formal2,
+            'need_pay_doc': copy_source.need_pay_doc,
+            'force': copy_source.force,
+            'description': copy_source.description,
+            'credit_card': copy_source.credit_card_id,
+            'behalf': copy_source.behalf,
+            'applicant': copy_source.applicant,
+            'to_account': copy_source.to_account,
+        })
+
+        return kwargs
 
     def get(self, *args, **kwargs):
         return super().get(*args, **kwargs)
@@ -51,6 +125,10 @@ class LocalPaymentOrderView(LoginRequiredMixin, BaseView):
         context['show_pay_accounting_doc'] = True if self.state_index >= 1 else False
         context['wf_access'] = self.wf_access
         context['section_id'] = 'payment_order'
+
+        # NEW
+        context['copy_source'] = self.get_copy_source()
+        context['is_copy'] = bool(context['copy_source'])
 
         return context
 

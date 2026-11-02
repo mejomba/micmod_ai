@@ -88,6 +88,7 @@ def generate_direct_factor(request, quotation: Quotation):
             'is_official': quotation.is_official,
             'official_value': quotation.official_value,
             'sale_type': quotation.sale_type,
+            'sale_type_multi_condition': quotation.sale_type_multi_condition or [],
             'self_discount': quotation.self_discount,
             "creator_user": request.user,
             "editor_user": request.user,
@@ -1151,6 +1152,8 @@ def get_sku(request):
         return JsonResponse({})
 
 
+from .quotation_inquiry_timing import annotate_quotation_inquiry_timing, render_quotation_inquiry_timing
+
 class QuotationListDatatable(CustomAjaxDatatableView):
     model = Quotation
     title = 'currency_list'
@@ -1177,6 +1180,7 @@ class QuotationListDatatable(CustomAjaxDatatableView):
         {'name': 'inquiry_status', 'title': 'وضعیت استعلام', 'visible': True, 'orderable': False, 'searchable': False},
         {'name': 'not_over', 'title': 'وضعیت استهلاک','visible': True, 'orderable': False, 'searchable': False},
         {'name': 'last_work_flow','title': 'آخرین وضعیت', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
+        {'name': 'inquiry_duration', 'title': 'طول استعلام', 'visible': True, 'searchable': False, 'orderable': False, 'className': 'text-center text-nowrap px-1 py-0', 'width': '1%'},
         {'name': 'sepidar_number', 'title': "کد سپیدار", 'visible': True, 'orderable': True},
         {'name': 'cancel', 'visible': True, 'orderable': True},
         {'name': 'comment', 'visible': True, 'title': '<div class="px-10">نظرات</div>', 'searchable': False},
@@ -1193,10 +1197,11 @@ class QuotationListDatatable(CustomAjaxDatatableView):
         else:
             qs = Quotation.get_qs(request)
         qs = self.model.objects.filter(pk__in=[i.pk for i in qs])
-        return qs
+        return annotate_quotation_inquiry_timing(qs)
 
     # @timer
     def customize_row(self, row, obj):
+        row['inquiry_duration'] = render_quotation_inquiry_timing(obj)
         qi_comments = [x.comments.all() for x in obj.quotation.all()]
         c = 0
         for qs in qi_comments:

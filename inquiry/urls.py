@@ -36,6 +36,7 @@ urlpatterns = [
 
     path('item_list/', views.get_item, name='item_list'),
     path('items_list/', views.get_items, name='items_list'),
+    path('items_by_list/', views.get_items_by_list, name='items_by_list'),
 
     path('sku/list/', views.sku_list, name='sku_list'),
     path('all_prices/', views.all_prices, name='trade_all_prices'),
