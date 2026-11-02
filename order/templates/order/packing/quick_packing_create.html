@@ -6,7 +6,7 @@
 {% load order_tags %}
 {% load jalali_tags %}
 
-{% block title %}GIO create{% endblock title %}
+{% block title %}packing create{% endblock title %}
 {% block extra_css %} 
 <!-- Responsive Table css -->
 <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
@@ -31,7 +31,7 @@
         <div class="main-content " id="main-content">
             <div class="page-content">
                 <div class="container-fluid">
-                        <div class="d-flex">
+                        <div class="d-flex mb-16">
                             <div class="" style="width: 55%" id="section-1">
                             <div style="width: fit-content; position: relative; right: calc(100% - 30px); width: fit-content" class="d-flex">
                                 <div class="p-2 bg-white shadow-sm cursor-pointer" onclick="expandRight()">
@@ -54,14 +54,16 @@
                             </div>
                         </div>
                         <div class="mt-10" style="width: 45%" id="section-2">
-                            <div class="card px-2 py-5" id="gio-form-inputs">
+                            <div class="card px-2 py-5" id="packing-form-inputs">
+
+                                <form action="" id="quick-packing-form">
 
                             {% if not form.instance.pk %}
                                 <fieldset>
                                     <legend data-key="create_gio">create new packing</legend>
 {#                                    <form action="{% url 'order:gio.view' %}" method="post" id="gio_submit_form">#}
-                                    <div class="row row-cols-2 mt-16" id="packing-header">
-                                        {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.estimate_delivery_date form.description label='on-border' %}
+                                    <div class="row row-cols-3 mt-16" id="packing-header">
+                                        {% render_field_by_order form form.packing_number form.currency form.shipment_type form.source form.destination form.transporter_company form.bl_number form.bl_date form.estimated_delivery_date form.description label='on-border' %}
                                         {% render_field_by_order form form.file_1 form.file_2 form.file_3 form.file_4 form.file_5 form.file_6 form.file_7 form.file_8 form.file_9 label='on-border' %}
                                     </div>
 {#                                    </form>#}
@@ -75,12 +77,12 @@
                                         {% for form_s in formset %}
                                             <div class="item-form row pt-5 mb-1 ms-0">
                                                 <div class="col-12">
-                                                    <div class="row delete">
-                                                        <div class="col-3">
-                                                            {% render_field_by_order form_s form_s.order form_s.quantity  label='on-border' margin_b=0%}
-                                                        </div>
+                                                    <div class="row row-cols-4 delete">
+{#                                                        <div class="">#}
+                                                            {% render_field_by_order form_s form_s.order form_s.quantity form_s.carton_number form_s.gross_weight_kg form_s.size label='on-border' margin_b=3%}
+{#                                                        </div>#}
                                                         <div class="col-8">
-                                                            {% render_field_by_order form_s form_s.order form_s.description label='on-border' margin_b=0%}
+                                                            {% render_field_by_order form_s form_s.description label='on-border' margin_b=0%}
                                                         </div>
 {#                                                        {% render_field_by_order form_s form_s.order form_s.quantity form_s.description label='on-border' margin_b=0%}#}
                                                     </div>
@@ -96,11 +98,13 @@
 
                                     <div class="d-flex justify-content-between align-items-end">
                                         <div>
-                                            <button type="button" id="submit-gio" class="btn btn-primary mt-5 me-5">ثبت</button>
+                                            <input type="hidden" name="draft" value="1">
+                                            <button type="button" id="submit-packing" class="btn btn-primary mt-5 me-5">ثبت</button>
                                             <span id="ajax-response"></span>
                                         </div>
                                     </div>
                                 </fieldset>
+                                </form>
 
                             <div class="d-flex flex-column mt-8">
                                     <div>
@@ -260,10 +264,10 @@
             const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
             totalFormsInput.value = parseInt(totalForms) + 1;
             sync_datatable()
-            gio_total_quantity_show()
+            packing_total_quantity_show()
         });
 
-        gio_total_quantity_show()
+        packing_total_quantity_show()
 
         newForm.querySelector('.delete').appendChild(removeBtn);
     }
@@ -277,30 +281,41 @@
         forms.forEach(form => form.classList.add('d-none'));
     });
 
-    const submitGIO = document.querySelector("#submit-gio")
-    submitGIO && submitGIO.addEventListener('click', function (){
-        const container = document.getElementById('gio-form-inputs');
-        const inputs = container.querySelectorAll('input');
-        const gio_date = container.querySelector('#id_gio_date').value
-        const description = document.querySelector('#id_description').value
-        const rows_description = container.querySelectorAll('textarea');
-        const data = {};
-        inputs.forEach(input => {
-            let value = input.value.trim();
-            if (input.type === 'number' || input.type === 'range' || input.type === 'hidden') {
-                value = value ? parseFloat(value) : 0; // اگر خالی بود، صفر بگذار
-            }
-            data[input.name] = value || '';
-        });
+    const submitPacking = document.querySelector("#submit-packing")
+    submitPacking && submitPacking.addEventListener('click', function (){
+        debugger
 
-        data['gio_date'] = gio_date
-        data['description'] = description
+        {#const container = document.getElementById('packing-form-inputs');#}
+        {#const inputs = container.querySelectorAll('input');#}
+        {#const currency = container.querySelector('#id_currency').value#}
+        {#const shipment_type = container.querySelector('#id_shipment_type').value#}
+        {#const estimated_delivery_date = container.querySelector('#id_estimated_delivery_date').value#}
+        {#const description = document.querySelector('#id_description').value#}
+        {#const rows_description = container.querySelectorAll('textarea');#}
+        const form = document.querySelector("#quick-packing-form")
+        console.log(form)
+        let formData = new FormData(form)
+        console.log(formData)
+
+        {#inputs.forEach(input => {#}
+        {#    let value = input.value.trim();#}
+        {#    if (input.type === 'number' || input.type === 'range' || input.type === 'hidden') {#}
+        {#        value = value ? parseFloat(value) : 0; // اگر خالی بود، صفر بگذار#}
+        {#    }#}
+        {#    formData[input.name] = value || '';#}
+        //});
+        {##}
+        {#formData['currency'] = currency#}
+        {#formData['shipment_type'] = shipment_type#}
+        {#formData['estimated_delivery_date'] = estimated_delivery_date#}
+        {#formData['description'] = description#}
         const element = $('#ajax-response')
+        debugger
         $.ajax({
             type: 'POST',
-            url: '/order/quick_gio/',
-            dataType: 'json',
-            data: JSON.stringify(data),
+            url: '/order/quick_packing/',
+            {#dataType: 'json',#}
+            data: formData,
             headers: {
                 "X-CSRFToken": getCookie("csrftoken")
             },
@@ -324,14 +339,14 @@
             },
             error: function (data) {
                 {#initJsonAccordion(data.responseJSON['res'])#}
-                document.querySelector('#submit-gio').classList.remove('d-none')
+                document.querySelector('#submit-packing').classList.remove('d-none')
                 element.text(JSON.stringify(data.responseJSON['res']))
                 element.addClass('text-danger')
             },
             {#complete: release_main_container#}
         }); // end ajax
         {#custom_ajax_post_data(JSON.stringify(data), '/order/quick_gio/', $('#ajax-response'))#}
-        submitGIO.classList.add('d-none')
+        {#submitPacking.classList.add('d-none')#}
     })
 
  {#const submitGIO = document.querySelector("#main-submit-btn")#}
@@ -669,19 +684,19 @@
         }
     }
 
-    function gio_total_quantity_show(){
+    function packing_total_quantity_show(){
         let total_quantity = 0
-        const exist_gio_item_quantity = document.querySelectorAll('#gio_item_quantity')
-        const new_gio_item_quantity = document.querySelectorAll('input[name$="quantity"]')
-        const gio_total_quantity_show_element = document.querySelector('#qio-total-quantity')
-        exist_gio_item_quantity.forEach(function (item){
+        const exist_packing_item_quantity = document.querySelectorAll('#gio_item_quantity')
+        const new_packing_item_quantity = document.querySelectorAll('input[name$="quantity"]')
+        const packing_total_quantity_show_element = document.querySelector('#qio-total-quantity')
+        exist_packing_item_quantity.forEach(function (item){
             total_quantity += parseFloat(item.dataset.quantity)
         })
 
-        new_gio_item_quantity.forEach(function (item){
+        new_packing_item_quantity.forEach(function (item){
             total_quantity += parseFloat(item.value)
         })
-        gio_total_quantity_show_element.innerHTML = formatNumber(total_quantity)
+        packing_total_quantity_show_element.innerHTML = formatNumber(total_quantity)
     }
 
     </script>

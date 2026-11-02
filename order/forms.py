@@ -268,9 +268,12 @@ class PackingForm(CustomBaseModelForm):
         self.fields['cl_100_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['description'].widget.attrs['rows'] = 1
         self.fields['sales_10_darsad'].widget.attrs['rows'] = 2
-        self.fields['estimated_delivery_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
-        self.fields['estimated_arrive_to_wh_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
-        self.fields['reserve_bar_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+        # self.fields['estimated_delivery_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+        # self.fields['estimated_arrive_to_wh_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+        # self.fields['reserve_bar_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+        self.fields['estimated_delivery_date'] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}), required=False)
+        self.fields['estimated_arrive_to_wh_date'] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}), required=False)
+        self.fields['reserve_bar_date'].widget = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}), required=False)
 
         for f in self.fields:
             if type(self.fields[f]) == forms.FileField:
