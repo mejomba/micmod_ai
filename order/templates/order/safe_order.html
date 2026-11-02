@@ -214,6 +214,12 @@
                               <small class="float-end mt-1">{{ trade_parent_price.variants_json|default_if_falsy:'' }}</small>
                               </div>
                         {% endfor %}
+                    {% for item in inquiry_order_time_difference %}
+                        <div class="list-group-item  list-group-item-action bg-light-secondary">
+                            <span class="bold font-size-12">فاصله‌استعلام-ورود‌به‌بازرگانی: </span>
+                            <span>{{ item.days }} روز و {{ item.hours }} ساعت</span>
+                        </div>
+                    {% endfor %}
 
                     <div class="list-group-item  list-group-item-action inquiry-item bg-light-primary" aria-current="true" id="last_buy_price">
                         برای مشاهده آخرین خرید کلیک کنید

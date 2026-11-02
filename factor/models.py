@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import Q, Value
 from django.contrib import messages
@@ -38,6 +39,12 @@ class FactorItemManager(BaseManager):
 
     def base_qs(self):
         return self.get_queryset().order_by('-index', 'id')
+
+
+def validate_sale_type_multi_condition(value):
+    """Require a JSON array containing only JSON objects."""
+    if not isinstance(value, list) or any(not isinstance(item, dict) for item in value):
+        raise ValidationError('شرایط فروش باید یک لیست از آبجکت‌های JSON باشد.')
 
 
 class Factor(SLSDoc):
@@ -81,6 +88,12 @@ class Factor(SLSDoc):
     payment_method = models.CharField(choices=PaymentMethod, max_length=10, null=True, blank=True,
                                       verbose_name=_('payment_method'), default="6,2 Month")
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='factors')
+    sale_type_multi_condition = models.JSONField(
+        verbose_name='شرایط فروش چندشرطی',
+        default=list,
+        blank=True,
+        validators=[validate_sale_type_multi_condition],
+    )
 
     need_financial_approval = models.BooleanField(default=True, verbose_name=_('نیاز به تایید مالی'))
     wh_user = models.ManyToManyField(User, related_name='wh_factors', null=True, blank=True, verbose_name=_('کارشناس انبار'))

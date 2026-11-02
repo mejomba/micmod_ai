@@ -315,6 +315,23 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
         if self.object:
             context['trade_price_list'] = self.object.final_item.items.filter(active=True, is_deleted=False) if self.object else self.object.item.items.none()
             context['trade_parent_price_list'] = self.object.final_item.parent.items.filter(~Q(creator_user__groups__name__in=['bazar_user']), active=True, is_deleted=False) if self.object.final_item.parent else self.object.item.items.none()
+            order_dates = self.object.workflows.filter(state='تایید مدیر فروش', wf_status=3
+                                                      ).values_list('created_date', flat=True)
+            inquiry_date = self.object.final_item.items.filter(active=True, is_deleted=False).order_by('-created_date').values_list('created_date', flat=True).first() if self.object else self.object.item.items.none()
+            diffs = [
+                (order_date - inquiry_date)
+                for order_date in order_dates
+                if inquiry_date and order_date
+            ]
+            context['inquiry_order_time_difference'] = [
+                {
+                    "days": d.days,
+                    "seconds": d.seconds,
+                    "hours": d.seconds // 3600,
+                    "total_days": d.total_seconds() / 86400,
+                }
+                for d in diffs
+            ]
 
         context['section_id'] = 'order'
 
@@ -728,6 +745,9 @@ class OrderDataTableListView(AjaxDatatableView):
         ).values_list('item', flat=True)
 
         q = request.POST.get('q')
+        filter_value = request.POST.get('filter_value')
+        filter_type = request.POST.get('filter_type')
+        filter_stage = request.POST.get('filter_stage')
         user_group = request.user.base_group
 
         if self.request.user.is_superuser:
@@ -901,6 +921,13 @@ class OrderDataTableListView(AjaxDatatableView):
         elif q == 'my_orders':
             qs = qs.filter(creator_user=request.user)
 
+        if filter_type == 'my_orders':
+            qs = qs.filter(trade_user=request.user)
+        if filter_type == 'specific_expert':
+            if filter_stage:
+                qs = qs.filter(trade_user_id=filter_value, last_work_flow__current_state_name=filter_stage)
+            qs = qs.filter(trade_user_id=filter_value)
+
 
         # if user_group == 'trade':
         #     qs = qs.filter(is_bazar=False, sales_admin_cancel=False)
@@ -1061,6 +1088,12 @@ class OrderDataTableListView(AjaxDatatableView):
             ).strftime('%Y/%m/%d')
         else:
             row['commitment_date_to_customer'] = '-'
+        # The sales table shows packing numbers rather than packing completion percentage.
+        row['packing'] = self._sales_order_packing_numbers(obj)
+        # SALES ORDER COLUMN QUANTITIES: LOCAL PATCH v3
+        row['gio_quantity'] = total_gio
+        row['packing_quantity'] = total_packing
+
 
     def customize_row_mac(self, row, obj):
         order_wf_map = {
@@ -1085,6 +1118,23 @@ class OrderDataTableListView(AjaxDatatableView):
                 for x in obj.packing_item_order.select_related('packing').all()])
         except Exception as e:
             print(e)
+
+    def _sales_order_packing_numbers(self, obj):
+        """Unique packing numbers attached to this order, as safe links."""
+        from django.utils.html import format_html_join
+        packings = {}
+        for packing_item in obj.packing_item_order.select_related('packing').all():
+            packing = packing_item.packing
+            if packing and packing.pk not in packings:
+                packings[packing.pk] = packing
+        if not packings:
+            return '-'
+        return format_html_join(
+            '، ',
+            '<a href="{}" target="_blank" rel="noopener noreferrer">{}</a>',
+            ((reverse('order:order.packing.update', kwargs={'pk': packing.pk}),
+              packing.packing_number or packing.pk) for packing in packings.values()),
+        )
 
     def get_column_defs(self, request):
         if self.request.user.base_group == 'bazar':
@@ -1149,6 +1199,47 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'gio', 'searchable': False, 'orderable': False, 'visible': True, 'title': '<div class"px-4">GIO</div>', },
 
             ]
+            # SALES ORDER COLUMN ORDER: LOCAL PATCH v3
+            # Apply only to the original sales elif; details (+) ALWAYS precedes ID.
+            _sales_priority = [
+                ('order_status_icon', 'آیکون'),
+                ('last_work_flow', 'وضعیت'),
+                ('order_number', 'شماره سفارش'),
+                ('item', 'کد کالا'),
+                ('item__part_number', 'عنوان کالا'),
+                ('customer_party_id', 'مشتری'),
+                ('jalali_created_date', 'تاریخ درخواست'),
+                ('commitment_date_to_customer', 'تاریخ تعهد'),
+                ('estimated_arrive_date', 'تاریخ رسیدن بار'),
+                ('qi__quotation__id', 'شماره پیش\u200cفاکتور'),
+                ('transportation_method', 'روش حمل'),
+                ('quantity', 'تعداد درخواست'),
+                ('quantity_trade', 'تعداد خرید شده'),
+                ('description_sale', 'توضیحات'),
+                ('trade_user', 'کارشناس بازرگانی'),
+            ]
+            _sales_existing = self.column_defs
+            _sales_details = _sales_existing[0]
+            _sales_named = {col.get("name"): col for col in _sales_existing[1:]}
+            for _sales_name, _sales_title in _sales_priority:
+                _sales_named[_sales_name]["title"] = _sales_title
+                _sales_named[_sales_name]["visible"] = True
+            _sales_named["packing"]["title"] = "پکینگ"
+            _sales_named["packing"]["visible"] = True
+            _sales_selected = {"id", "packing"} | {name for name, _ in _sales_priority}
+            self.column_defs = (
+                [_sales_details, _sales_named["id"]]
+                + [_sales_named[name] for name, _ in _sales_priority]
+                + [col for col in _sales_existing[1:]
+                   if col.get("name") not in _sales_selected]
+                + [
+                    {"name": "gio_quantity", "title": "تعداد GIO", "visible": True,
+                     "orderable": False, "searchable": False},
+                    {"name": "packing_quantity", "title": "تعداد پکینگ", "visible": True,
+                     "orderable": False, "searchable": False},
+                    _sales_named["packing"],
+                ]
+            )
         elif self.request.user.base_group == 'trade':
             self.column_defs = [
                 AjaxDatatableView.render_row_tools_column_def(),
@@ -1156,6 +1247,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
                 {'name': 'order_title', 'orderable': False, 'visible': True, },
                 {'name': 'po_number_trade', 'orderable': False, 'visible': True, },
+                {'name': 'po_number_mac', 'orderable': False, 'visible': True, },
                 {'name': 'comments', 'orderable': True, 'title': '<div>خطای بازرگانی</div>', 'visible': True, 'lookup_field': '__comment_content__icontains'},
                 {'name': 'order_status_icon', 'title': 'ایکون سفارش', 'visible': True, 'orderable': False,
                  'searchable': False},
@@ -1163,6 +1255,7 @@ class OrderDataTableListView(AjaxDatatableView):
                  'lookup_field': '__current_state_name__icontains'},
                 {'name': 'order_type', 'title': 'Order Type', 'visible': True, 'searchable': True, 'orderable': True,},
                 {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True, 'searchable': False, 'orderable': False,},
+                {'name': 'commitment_date_to_customer', 'title': 'Commitment Date To Customer', 'visible': True, 'searchable': False, 'orderable': False,},
                 {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
                 {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'item__part_number', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__icontains'},
@@ -1217,6 +1310,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'pay_operator_date', 'orderable': True, 'visible': False, 'title': 'pay_operator_date'},
                 {'name': 'buy_operator_date', 'orderable': True, 'visible': False, 'title': 'buy_operator_date'},
             ]
+
 
         return super().get_column_defs(request)
 
@@ -4460,3 +4554,18 @@ class QuickPackingDataTableListView(AjaxDatatableView):
 #
 #         html = render_to_string('factor/safe_factor_create.html', context, request=self.request)
 #         return JsonResponse({'res': html})
+
+def expert_list_api(request):
+    User = get_user_model()
+    users = User.objects.filter(is_active=True)
+    experts = [
+        {'id': u.id, 'username': u.username}
+        for u in users if u.base_group == 'trade'
+    ]
+    return JsonResponse(experts, safe=False)
+
+
+def my_orders(request, *args, **kwargs):
+    my_orders_ = Order.objects.filter(trade_user=request.user, last_work_flow__current_state_name='تایید بازرگانی').values_list('id', flat=True)
+    my_orders_count = my_orders_.count()
+    return JsonResponse({'res': list(my_orders_), 'count': my_orders_count}, safe=False)

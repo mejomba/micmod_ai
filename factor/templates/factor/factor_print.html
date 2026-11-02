@@ -3,6 +3,8 @@
 {% load static %}
 {% load more_tags %}
 
+
+{% if not bulk_mode or forloop.first %} {# factor-bulk-2026-v1 #}
 {#<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700">#}
 <link href="/assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet" type="text/css">
@@ -31,6 +33,7 @@
         }
     </style>
 
+{% endif %}
 <div class="container" dir="rtl">
     <div>
         <a href="javascript:window.print()" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
@@ -300,6 +303,7 @@
             </div>
 {% endif %}
 {% block extra_js %}
+{% if not bulk_mode %}
     <script src="{% static 'js/base.js' %}"></script>
 
     <div id="result-container" style="display:none;"></div>
@@ -404,4 +408,5 @@ document.getElementById('calculate-button').addEventListener('click', function()
 
 
 
+{% endif %}
 {% endblock extra_js %}

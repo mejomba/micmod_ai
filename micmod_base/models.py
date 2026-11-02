@@ -117,6 +117,9 @@ class CustomerRequestItem(AbsBaseModel):
 
 class Quotation(SLSDoc):
     ENTITY_CODE = 2
+    sale_type_multi_condition = models.JSONField(
+        verbose_name='شرایط فروش چندشرطی', default=list, blank=True
+    )
     shop_document_id = models.IntegerField(null=True, blank=True)
     PAYMENT_STATUS_CHOICE = (("pending", _("pending")), ("payed", _("payed")), ("fail", _("fail")))
     payment_status = models.CharField(choices=PAYMENT_STATUS_CHOICE, null=True, blank=True)

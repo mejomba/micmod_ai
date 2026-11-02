@@ -1,3 +1,5 @@
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 import datetime
 import time
 from decimal import Decimal
@@ -621,6 +623,15 @@ class FactorListDatatable(AjaxDatatableView):
             self.cols.append({'name': 'official_value', 'title': _('official_value'), 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},)
 
         self.remove_duplicate_col()
+        # factor-bulk-2026-v1: column added after role-specific definitions
+        self.cols.insert(0, {
+            'name': 'bulk_select',
+            'title': 'چاپ',
+            'visible': True,
+            'orderable': False,
+            'searchable': False,
+            'className': 'text-center factor-bulk-column',
+        })
         return self.cols
 
     def get_initial_queryset(self, request=None):
@@ -670,6 +681,11 @@ class FactorListDatatable(AjaxDatatableView):
         return qs.distinct()
 
     def customize_row(self, row, obj):
+        # factor-bulk-2026-v1: stable primary-key checkbox
+        row['bulk_select'] = (
+            f'<input type="checkbox" class="form-check-input js-factor-bulk" '
+            f'value="{obj.pk}" aria-label="انتخاب فاکتور {obj.pk}">'
+        )
         if obj.q:
             row['q'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
                 reverse('micmod_base:quotations.view', args=(obj.q.id,)),
@@ -870,7 +886,7 @@ class FactorListDatatable(AjaxDatatableView):
         self.cols = unique_cols
 
 
-def print_view(request, id=-1):
+def print_view(request, id=-1, *, context_only=False):
 
     action_ = request.GET.get('action')
     if action_ == 'wh_exit_permit':
@@ -912,8 +928,55 @@ def print_view(request, id=-1):
         factor.created_date = datetime2jalali(factor.created_date).strftime('%y/%m/%d-%H:%M')
         factor.last_update_date = datetime2jalali(factor.last_update_date).strftime('%y/%m/%d-%H:%M')
     greeting['data'] = factor
+    if context_only:
+        return greeting
     return render(request, template_name, greeting)
 
+
+
+# factor-bulk-2026-v1 — Only for the invoice list; old print URL unchanged.
+@login_required
+@require_POST
+def factor_bulk_print(request):
+    from django.http import HttpResponseBadRequest
+
+    values = request.POST.getlist('ids')
+    if not values or len(values) > 30:
+        return HttpResponseBadRequest('تعداد فاکتورهای انتخاب‌شده نامعتبر است (حداکثر ۳۰).')
+    if any(not val.isascii() or not val.isdigit() or int(val) <= 0
+           for val in values):
+        return HttpResponseBadRequest('شناسه فاکتور نامعتبر است.')
+
+    ids = [int(val) for val in values]
+    if len(set(ids)) != len(ids):
+        return HttpResponseBadRequest('شناسه فاکتور تکراری است.')
+
+    # Intersect the base role access with the exact current list-query access.
+    # Some legacy list modes expose wider querysets; the intersection matters.
+    table_view = FactorListDatatable()
+    table_view.request = request
+    list_queryset = table_view.get_initial_queryset(request)
+    role_queryset = Factor.get_qs(request, lst=False)
+
+    visible = set(
+        list_queryset.filter(pk__in=ids).values_list('pk', flat=True).distinct()
+    )
+    permitted = set(
+        role_queryset.filter(pk__in=ids).values_list('pk', flat=True).distinct()
+    )
+    if visible != set(ids) or permitted != set(ids):
+        raise PermissionDenied('امکان چاپ یکی از فاکتورهای انتخاب‌شده وجود ندارد.')
+
+    # Reuse the exact current single-document context, forms and formsets.
+    documents = [
+        print_view(request, id=factor_id, context_only=True)
+        for factor_id in ids
+    ]
+    return render(
+        request,
+        'factor/bulk_print.html',
+        {'documents': documents, 'bulk_mode': True},
+    )
 
 class DirectFactorView(View):
     def get(self, request, *args, **kwargs):
@@ -1283,6 +1346,14 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
             return self.render_to_response(self.get_context_data(form=form))
         form.instance.extra_data.request = self.request
         self.object = form.save()
+        # Copy quotation payment terms on creation if no conditions were posted.
+        # Never replace terms that were explicitly saved on the Factor.
+        if is_new and not (self.object.sale_type_multi_condition or []):
+            quotation_source = getattr(self.object, 'q', None) or form.cleaned_data.get('q')
+            if quotation_source and getattr(quotation_source, 'sale_type_multi_condition', None):
+                from copy import deepcopy
+                self.object.sale_type_multi_condition = deepcopy(quotation_source.sale_type_multi_condition)
+                self.object.save(update_fields=['sale_type_multi_condition'])
 
         if form.file_model and form.file_groups_2:
             self.object.save_file(request=self.request,
@@ -1639,6 +1710,16 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
         # allowed_hidden = list(set(allowed_hidden))
         # allowed_edit = list(set(allowed_edit))
         # allowed_show = list(set(allowed_show))
+        # SALE_CONDITIONS_EDITOR_PERMISSION
+        # Use exactly the same workflow edit window as sale_type; only sales roles
+        # may submit JSON. All other users see the editor in read-only mode.
+        if ("sale_type" in edit and (
+            "factor.cp_factor_sales" in permissions
+            or "factor.cp_factor_sales_admin" in permissions
+            or self.request.user.is_superuser
+        )):
+            if "sale_type_multi_condition" not in edit:
+                edit.append("sale_type_multi_condition")
         return edit, hidden, show
         return allowed_edit, allowed_hidden, allowed_show
 
@@ -1723,6 +1804,7 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
                 'currency': quotation.currency_ref.pk,
                 'description': quotation.description,
                 'sale_type': quotation.sale_type,
+                'sale_type_multi_condition': quotation.sale_type_multi_condition or [],
                 'self_discount': quotation.self_discount,
                 'is_official': quotation.is_official,
                 'official_value': quotation.official_value,
@@ -1878,6 +1960,7 @@ def prefactor_json(request, pk):
         "currency_name": str(quotation.currency_ref) if quotation.currency_ref else "",
         "sale_type": quotation.sale_type.pk,
         "sale_type_name": str(quotation.sale_type) if quotation.sale_type else "",
+        "sale_type_multi_condition": quotation.sale_type_multi_condition or [],
         # ── ردیف‌ها ──
         "rows": [
             {

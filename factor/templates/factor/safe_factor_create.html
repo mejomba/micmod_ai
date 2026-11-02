@@ -353,6 +353,8 @@
                 </div>
             </div>
 
+        {% include 'factor/partial/sale_conditions_editor.html' %}
+
         <!--factor item header-->
         <div class="row py-2 bg-light-primary rounded-left">
             <span class="col-1 bold">
@@ -1496,6 +1498,13 @@ function renumberRows() {
           clearExistingRows();
           (pre.rows || []).forEach(addFactorRowFromData);
           if (typeof renumberRows === 'function') renumberRows();
+          // The factor payment editor listens for this event and copies the
+          // quotation's schedule without replacing other factor fields.
+          if (Array.isArray(pre.sale_type_multi_condition)) {
+            window.dispatchEvent(new CustomEvent('sac:prefactor-loaded', {
+              detail: {conditions: pre.sale_type_multi_condition}
+            }));
+          }
         }
 
         function setSimple(name, value) {

@@ -176,6 +176,7 @@
                                     </div>
                             </div>
                         </div>
+                        {% include 'factor/partial/sale_conditions_editor.html' with sac_document_type='quotation' %}
                         <!--list start-->
                         {{ formset.management_form }}
                         {{ formset.non_form_errors }}
