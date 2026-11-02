@@ -326,9 +326,9 @@ class Notification(AbsBaseModel):
         ).filter(has_order_supply=True).count()
 
         if trade_order_count:
-            message = "سند درخواست شما به شماره {0} به مبلغ {1} و شامل {2} ردیف کالا صادر گردید. همچنین برای {3} ردیف کالا سفارش خارجی ثبت شده و مطابق برنامه زمانبندی تحویل خواهد شد. جهت مشاهده جزئیات فاکتور به پنل خود مراجعه فرمایید.".format(factor.pk, f'{price:0.2f}'.rstrip('0').rstrip('.'), factor.factoritem_set.count(), trade_order_count)
+            message = "درخواست شما به شماره {0} به مبلغ {1} و شامل {2} ردیف کالا صادر گردید. همچنین برای {3} ردیف کالا سفارش خارجی ثبت شده و مطابق برنامه زمانبندی تحویل خواهد شد. جهت مشاهده جزئیات فاکتور به پنل خود مراجعه فرمایید.".format(factor.pk, f'{price:0.2f}'.rstrip('0').rstrip('.'), factor.factoritem_set.count(), trade_order_count)
         else:
-            message = "سند درخواست شما به شماره {0} به مبلغ {1} و شامل {2} ردیف کالا صادر گردید. جهت مشاهده جزئیات فاکتور به پنل خود مراجعه فرمایید.".format(factor.pk, f'{price:0.2f}'.rstrip('0').rstrip('.'), factor.factoritem_set.count())
+            message = "درخواست شما به شماره {0} به مبلغ {1} و شامل {2} ردیف کالا صادر گردید. جهت مشاهده جزئیات فاکتور به پنل خود مراجعه فرمایید.".format(factor.pk, f'{price:0.2f}'.rstrip('0').rstrip('.'), factor.factoritem_set.count())
 
         success, res = send_sms('', [notify_number], message)
         if success:
