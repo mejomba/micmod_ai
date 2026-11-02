@@ -1314,7 +1314,7 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
     def save_new_address(self):
         try:
             address = self.request.POST.get('new_address')
-            customer = self.request.POST.get('customer') or self.object.customer_party_id.pk
+            customer = self.request.POST.get('customer') or self.object.customer_party_id.sepidar_party_id
             if address and customer:
                 obj = CustomerAddress.objects.create(address=address, customer_id=customer)
 
@@ -1346,6 +1346,14 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
             return self.render_to_response(self.get_context_data(form=form))
         form.instance.extra_data.request = self.request
         self.object = form.save()
+        # Copy quotation payment terms on creation if no conditions were posted.
+        # Never replace terms that were explicitly saved on the Factor.
+        if is_new and not (self.object.sale_type_multi_condition or []):
+            quotation_source = getattr(self.object, 'q', None) or form.cleaned_data.get('q')
+            if quotation_source and getattr(quotation_source, 'sale_type_multi_condition', None):
+                from copy import deepcopy
+                self.object.sale_type_multi_condition = deepcopy(quotation_source.sale_type_multi_condition)
+                self.object.save(update_fields=['sale_type_multi_condition'])
 
         if form.file_model and form.file_groups_2:
             self.object.save_file(request=self.request,
@@ -1597,6 +1605,7 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
         else:
             initial = dict()
             if self.object:
+                context['is_all_supplied'] = self.object.is_all_supplied2
                 Notification.notify_customer_for_factor(self.object, self.request)
                 if self.object.last_work_flow and (self.object.last_work_flow.to_user == self.request.user or self.object.last_work_flow.to_user.team == self.request.user):
                     context['allow_cancel'] = self.object.last_work_flow.to_user
@@ -1795,6 +1804,7 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
                 'currency': quotation.currency_ref.pk,
                 'description': quotation.description,
                 'sale_type': quotation.sale_type,
+                'sale_type_multi_condition': quotation.sale_type_multi_condition or [],
                 'self_discount': quotation.self_discount,
                 'is_official': quotation.is_official,
                 'official_value': quotation.official_value,
@@ -1950,6 +1960,7 @@ def prefactor_json(request, pk):
         "currency_name": str(quotation.currency_ref) if quotation.currency_ref else "",
         "sale_type": quotation.sale_type.pk,
         "sale_type_name": str(quotation.sale_type) if quotation.sale_type else "",
+        "sale_type_multi_condition": quotation.sale_type_multi_condition or [],
         # ── ردیف‌ها ──
         "rows": [
             {

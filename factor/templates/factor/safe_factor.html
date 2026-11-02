@@ -1575,7 +1575,7 @@ function renumberRows() {
         }
 
 
-        function get_product_selection(event){
+        function get_product_selection_safe(event){
         const target = event.currentTarget
         const datalist = target.parentElement.querySelector('datalist[id$="-product_id"]')
         const sku = findAncestor(target, 'factor_item_self').querySelector('input[name$="-goods_code"]').value
