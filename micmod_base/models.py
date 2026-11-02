@@ -155,7 +155,7 @@ class Quotation(SLSDoc):
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='quotations')
     is_direct = models.BooleanField(default=False, null=True, blank=True)
     q_price_setting = models.ForeignKey(PriceSettings, on_delete=models.DO_NOTHING, related_name='quotation_price_settings', null=True, blank=True)
-    can_observe = models.BooleanField(default=True)
+    can_observe = models.BooleanField(default=False)
     notify_number = models.CharField(verbose_name=_('notify_number'), max_length=255, null=True, blank=True)
     tracking_code = models.CharField(
         max_length=20,

@@ -151,7 +151,14 @@
     }
 
     function wh_receipt_from_bazar(event, sepidar_buy_factor_id, order_ids=null){
-        debugger
+        const version = sepidar_buy_factor_id.pop();
+        let url_;
+        if (version === 0){
+            url_ = `${sepidar_buy_factor_id}/?send_to_sepidar=1&order_ids=${order_ids}`
+        } else if (version === 1){
+            url_ = `${sepidar_buy_factor_id}/new/?send_to_sepidar=1&order_ids=${order_ids}`
+        }
+
         const target = event.currentTarget
         try {
             target.classList.add('d-none')
@@ -175,7 +182,7 @@
 
         $.ajax({
             type: 'POST',
-            url: `${sepidar_buy_factor_id}/?send_to_sepidar=1&order_ids=${order_ids}`,
+            url: url_,
             dataType: 'json',
             contentType: 'application/json',
             cache: false,

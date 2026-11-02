@@ -4,7 +4,7 @@
 {% load jalali_tags %}
 {% load accounts_tag %}
 
-{% block title %}لیست دستور پرداخت{% endblock title %}
+{% block title %}لیست پرداخت های سفارش{% endblock title %}
 {% block extra_css %}
 <!-- Responsive Table css -->
 <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
@@ -60,40 +60,55 @@
 
 {% block extra_js %}
 
-    <script language="javascript">
-    $(document).ready(function() {
-        const url = new URL(window.location);
-        const q = url.searchParams.get("q")
-        AjaxDatatableViewUtils.initialize_table(
-            $('#payment_list'),
-            "{% url 'order:order.payment.list.datatable' %}",
-            {
-                processing: true,
-                autoWidth: false,
-                full_row_select: false,
-                scrollX: false,
-                bFilter: true,
-                dom: 'Blfrtip',
-                buttons: [
-                    'copyHtml5',
-                    'excelHtml5',
-                    'csvHtml5',
-                    'pdfHtml5'
-                ]
-            }, {
-                // extra_data
-                q:q
-            },
-        );
-    });
-    </script>
+    {# DataTables Core already loads in layout/master.html #}
 
+    {# Matching Buttons library #}
+    <script src="{% static 'libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
 
-    <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
-    <script src="{% static 'js/local/dataTables.buttons.min.js' %}"></script>
+    {# Export dependencies #}
     <script src="{% static 'js/local/jszip.min.js' %}"></script>
     <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
     <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
-    <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
+
+    {# HTML5 export extension #}
+    <script src="{% static 'libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+
+    <script>
+        $(document).ready(function () {
+
+            console.log(
+                'DataTables:', $.fn.dataTable.version
+            );
+
+            console.log(
+                'Buttons:', typeof $.fn.dataTable.Buttons
+            );
+
+            const url = new URL(window.location.href);
+            const q = url.searchParams.get("q");
+
+            AjaxDatatableViewUtils.initialize_table(
+                $('#payment_list'),
+                "{% url 'order:order.payment.list.datatable' %}",
+                {
+                    processing: true,
+                    autoWidth: false,
+                    full_row_select: false,
+                    scrollX: false,
+                    bFilter: true,
+                    dom: 'Blfrtip',
+                    buttons: [
+                        'copyHtml5',
+                        'excelHtml5',
+                        'csvHtml5',
+                        'pdfHtml5'
+                    ]
+                },
+                {
+                    q: q
+                }
+            );
+        });
+    </script>
 
 {% endblock extra_js %}

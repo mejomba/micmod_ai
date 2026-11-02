@@ -163,12 +163,12 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             "currencyref": currency,
             "currencyrate": rate,
             "totalprice": round(price, 4),
-            "totalpriceinbasecurrency": round(price * rate, 4) if currency != 1 else 0,
+            "totalpriceinbasecurrency": round(price * rate, 4),
             "totaltax": round(tax, 4),
             "totalduty": round(duty, 4),
             "totaltransportprice": 0,  # همیشه صفر بود. در جلسه تصمیم بر این شد که هزینه حمل روی رسید انبار بزنن
             "totalnetprice": round(net_price, 4),
-            "totalnetpriceinbasecurrency": round(net_price * rate, 4) if currency != 1 else 0,
+            "totalnetpriceinbasecurrency": round(net_price * rate, 4),
             "totalwithholdingtaxamount": None,  # همیشه null بجز یک رکورد Todo
             "totalinsuranceamount": None,  # همیشه null بجز یک رکورد Todo
             "fiscalyearref": fisicalyearref,
@@ -229,22 +229,22 @@ class SepidarDataFactory(metaclass=SingletonMeta):
                 "remainingsecondaryquantity": 0,  # همیشه 0
                 "currencyrate": rate,
                 "fee": fee,
-                "feeinbasecurrency": round(fee * rate, 4) if rate != 1 else 0,
+                "feeinbasecurrency": round(fee * rate, 4),
                 "price": round(fee * quantity, 4),  # کل ارزش ردیف
-                "priceinbasecurrency": round(fee * quantity * rate, 4) if rate != 1 else 0,  # کل ارزش ردیف همیشه به ریال
+                "priceinbasecurrency": round(fee * quantity * rate, 4),  # کل ارزش ردیف همیشه به ریال
                 "discount": round(discount, 4),
-                "discountinbasecurrentcy": round(discount * rate, 4) if rate != 1 else 0,
+                "discountinbasecurrentcy": round(discount * rate, 4),
                 "addition": round(addition, 4),
-                "additioninbasecurrency": round(addition * rate, 4) if rate != 1 else 0,
+                "additioninbasecurrency": round(addition * rate, 4),
                 "tax": round(tax, 4),
-                "taxinbasecurrency": round(tax * rate, 4) if rate != 1 else 0,
+                "taxinbasecurrency": round(tax * rate, 4),
                 "duty": round(all_duty / row_count, 4),
-                "dutyinbasecurrency": round((all_duty / row_count) * rate, 4) if rate != 1 else 0,
+                "dutyinbasecurrency": round((all_duty / row_count) * rate, 4),
                 "transportprice": None,  # همیشه null
                 "transporttax": None,  # همیشه null
                 "transportduty": None,  # همیشه null
                 "transportdescription": None,  # همیشه null
-                "netpriceinbasecurrency": round((fee * quantity) - discount, 4) if rate != 1 else 0,
+                "netpriceinbasecurrency": round((fee * quantity) - discount, 4),
                 "description": description,
                 "description_en": None,
                 "costserviceaccountslref": None,  # بجز یک رکورد همه null بودن TODO

@@ -639,16 +639,16 @@ class FactorListDatatable(AjaxDatatableView):
 
         if q == 'include_bazar':
             qs = self.model.objects.filter(factoritem__is_bazar=True).distinct()
-            return qs
+            return qs.distinct()
         elif q == 'include_trade':
             qs = self.model.objects.filter(Q(factoritem__supply_locations__is_bazar=False) & Q(factoritem__supply_locations__is_wh=False)).distinct()
-            return qs
+            return qs.distinct()
         elif q == 'all_wh':
             qs = (self.model.objects
                   .filter(factoritem__isnull=False, last_work_flow__current_state_name__in=['مرحله نهایی', 'تایید تحویل'])
                   .exclude(factoritem__supply_locations__sepidar_wh_code__isnull=True)
                   .distinct())
-            return qs
+            return qs.distinct()
         elif q == 'today':
             user = request.user
             user_groups_name = user.groups.values_list('name', flat=True) if hasattr(request,'user') else request.groups.values_list('name', flat=True)
@@ -667,7 +667,7 @@ class FactorListDatatable(AjaxDatatableView):
                                             "تخصیص کارشناس انبار", "جمع‌‌آوری", "چک نهایی", "ارسال یا تحویل",
                                         ])
 
-        return qs
+        return qs.distinct()
 
     def customize_row(self, row, obj):
         if obj.q:
