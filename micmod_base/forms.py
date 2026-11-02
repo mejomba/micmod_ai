@@ -12,6 +12,7 @@ from micmod_base.base import CurrencyExchange, Currency
 from translator import get_text as _
 
 from micmod_base.models import Quotation, QuotationItem, CustomerRequest, CustomerRequestItem
+from factor.sale_conditions import SaleConditionsFormMixin
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from core.forms import CustomBaseModelForm, CustomBaseForm
 import json
@@ -19,7 +20,7 @@ import json
 from transportation.models import TradeTransportationMethod
 
 
-class QuotationForm(CustomBaseModelForm):
+class QuotationForm(SaleConditionsFormMixin, CustomBaseModelForm):
     form_state = None
     has_comment = True
     has_addition = True
@@ -31,9 +32,10 @@ class QuotationForm(CustomBaseModelForm):
                   "description", "id", 'sepidar_number', 'self_discount', 'addition', 'duty', 'tax',
                   "is_official", "official_value", 'cancel', 'force_inquiry', 'sale_type', 'is_direct',
                   'sales_admin_confirm', 'description_sales', 'customer_request', 'q_price_setting', 'can_observe',
-                  'notify_number', "prepayment"]
+                  'notify_number', "prepayment", "sale_type_multi_condition"]
 
         widgets = {
+            'sale_type_multi_condition': forms.HiddenInput(),
             'description': forms.Textarea(attrs={"rows": 1}),
             'description_sales': forms.Textarea(attrs={"rows": 1}),
         }
