@@ -118,7 +118,7 @@
           "menus": [
             {
               "icon": "message-add",
-              "title": "نسخه قدیم",
+              "title": "create",
               "path_key": "factor/view",
               "link": "factor:factor.view"
             },
