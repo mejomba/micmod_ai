@@ -1706,7 +1706,8 @@ class PackingDataTableListView(AjaxDatatableView):
             reverse('order:quick_packing', args=(obj.id,)),
             obj.id if obj.id else 'بدون عنوان'
         )
-        row['carton_qty'] = f'{obj.computed_carton_qty}' if obj.computed_carton_qty else '-'
+        carton_count = obj.computed_carton_qty
+        row['carton_qty'] = str(carton_count) if carton_count is not None else '-'
         row['weight'] = f'{obj.computed_weight_kg}' if obj.computed_weight_kg else '-'
 
 
@@ -3778,10 +3779,31 @@ class QuickPackingView(LoginRequiredMixin, View):
             allowed_fields = []
             only_show = [f'file_{idx}' for idx in range(1, 12)]
         elif self._is_warehouse_stage(packing_obj):
-            # Non-superusers: warehouse header is display-only; files continue
-            # to honor this step's exact form_constraint permissions.
+            # Warehouse operators retain the legacy read-only header.
             allowed_fields = [name for name in allowed_fields if name.startswith('file_')]
             only_show = [name for name in only_show if name.startswith('file_')]
+
+        if packing_obj and form_state > 0 and constraint.get('wf_access'):
+            # These three registration fields are always editable by the
+            # authorized workflow editor after leaving the draft.
+            allowed_fields = list(dict.fromkeys(
+                allowed_fields + list(Packing.POST_DRAFT_FIELDS)
+            ))
+            only_show = [
+                name for name in only_show if name not in Packing.POST_DRAFT_FIELDS
+            ]
+        else:
+            allowed_fields = [
+                name for name in allowed_fields if name not in Packing.POST_DRAFT_FIELDS
+            ]
+
+        # Partial workflow requests that omit these optional fields must not
+        # erase previously saved registration data.
+        if packing_obj and data is not None:
+            allowed_fields = [
+                name for name in allowed_fields
+                if name not in Packing.POST_DRAFT_FIELDS or name in data
+            ]
 
         return self.form_class(
             data=data,
@@ -3994,6 +4016,18 @@ class QuickPackingView(LoginRequiredMixin, View):
             parsed[field] = value
         return parsed
 
+    @staticmethod
+    def _parse_carton_quantity(value):
+        if value is None or str(value).strip() == '':
+            return None
+        raw = str(value).strip()
+        if not raw.isascii() or not raw.isdecimal():
+            raise ValueError('تعداد کارتن باید عدد صحیح و غیرمنفی باشد.')
+        number = int(raw)
+        if number > 2147483647:
+            raise ValueError('تعداد کارتن بیشتر از حد مجاز است.')
+        return number
+
     def _parse_rows(self, request):
         total_forms = int(request.POST.get('form-TOTAL_FORMS', 1) or 1)
         rows = []
@@ -4013,6 +4047,9 @@ class QuickPackingView(LoginRequiredMixin, View):
                 'order_id': int(order_id),
                 'quantity': quantity,
                 'carton_number': request.POST.get(f'form-{row_index}-carton_number'),
+                'carton_quantity': self._parse_carton_quantity(
+                    request.POST.get(f'form-{row_index}-carton_quantity'),
+                ),
                 'gross_weight_kg': self._to_float(
                     request.POST.get(f'form-{row_index}-gross_weight_kg'),
                     0,
@@ -4100,6 +4137,11 @@ class QuickPackingView(LoginRequiredMixin, View):
                 'size': request.POST.get(f'existing-{item_id}-size'),
                 'description': request.POST.get(f'existing-{item_id}-description'),
             }
+            carton_key = f'existing-{item_id}-carton_quantity'
+            if carton_key in request.POST and not delete_requested:
+                row['carton_quantity'] = self._parse_carton_quantity(
+                    request.POST.get(carton_key),
+                )
             if superuser and not delete_requested:
                 dest_key = f'existing-{item_id}-wh_destination'
                 if dest_key in request.POST:
@@ -4207,6 +4249,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                 quantity_changed
                 or float(packing_item.gross_weight_kg or 0) != row['gross_weight_kg']
                 or (packing_item.carton_number or '') != (row['carton_number'] or '')
+                or ('carton_quantity' in row and packing_item.carton_quantity != row['carton_quantity'])
                 or (packing_item.size or '') != (row['size'] or '')
                 or (packing_item.description or '') != (row['description'] or '')
                 or bool(receipt_updates)
@@ -4235,6 +4278,8 @@ class QuickPackingView(LoginRequiredMixin, View):
                 )
             packing_item.gross_weight_kg = row['gross_weight_kg']
             packing_item.carton_number = row['carton_number']
+            if 'carton_quantity' in row:
+                packing_item.carton_quantity = row['carton_quantity']
             packing_item.size = row['size']
             packing_item.description = row['description']
             for attr, value in receipt_updates.items():
@@ -4382,6 +4427,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                             net_weight_kg=unit_weight * row['quantity'],
                             gross_weight_kg=row['gross_weight_kg'],
                             carton_number=row['carton_number'],
+                            carton_quantity=row['carton_quantity'],
                             size=row['size'],
                             brand=str(item.brand) if item and item.brand else None,
                             description=row['description'],

@@ -247,6 +247,7 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
         "cl_90_date", "cl_10_date", "cl_100_date",
         "arrive_to_wh_date",
         "estimated_shipping_start_date", "estimated_arrive_to_wh_date",
+        "order_registration_number", "proforma_pi_number", "commercial_card",
         "reserve_bar_date",
         "sum_qty", "sum_arrived_qty",
         # Warehouse selection lives outside the ModelForm as
@@ -316,6 +317,11 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
                     ),
                 )
 
+        if "order_registration_number" in self.fields:
+            self.fields["order_registration_number"].widget.attrs.update({
+                "inputmode": "numeric", "pattern": "[0-9]{8}", "maxlength": "8",
+                "autocomplete": "off",
+            })
         if "description" in self.fields:
             self.fields["description"].widget.attrs["rows"] = 1
         if "sales_10_darsad" in self.fields:
@@ -378,6 +384,20 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
         self.only_show = list(only_show or [])
         self.allowed_fields = list(allowed_fields or [])
         self.allowed_hidden = list(allowed_hidden or [])
+
+        # Never allow these fields on a new or draft Packing, even with a
+        # caller-supplied whitelist or superuser permissions.
+        if not self.instance.pk or self.instance.workflow_state_index() == 0:
+            restricted = set(Packing.POST_DRAFT_FIELDS)
+            self.allowed_fields = [
+                name for name in self.allowed_fields if name not in restricted
+            ]
+            self.allowed_hidden = [
+                name for name in self.allowed_hidden if name not in restricted
+            ]
+            self.only_show = [
+                name for name in self.only_show if name not in restricted
+            ]
 
         keep = set(self.allowed_fields) | set(self.allowed_hidden)
         for name in list(self.fields):

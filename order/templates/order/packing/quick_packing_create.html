@@ -2802,6 +2802,32 @@
                                     {% endif %}
                                 {% endif %}
 
+                                {% if packing_object and state_index > 0 %}
+                                    <section class="pk-post-draft-registration mt-4" aria-label="اطلاعات ثبت سفارش">
+                                        <h6 class="mb-3 fw-bold" data-key="packing_registration_section">اطلاعات ثبت سفارش و پرفورما</h6>
+                                        {% if wf_access %}
+                                            <div class="packing-meta-grid">
+                                                {% render_field_by_order form form.order_registration_number form.proforma_pi_number form.commercial_card label='on-border' %}
+                                            </div>
+                                        {% else %}
+                                            <div class="packing-meta-grid pk-warehouse-meta-grid">
+                                                <div class="pk-warehouse-meta-field">
+                                                    <span class="pk-mini-label" data-key="packing_order_registration_number">شماره ۸ رقمی ثبت سفارش</span>
+                                                    <div class="pk-warehouse-meta-value">{{ packing_object.order_registration_number|default:"—" }}</div>
+                                                </div>
+                                                <div class="pk-warehouse-meta-field">
+                                                    <span class="pk-mini-label" data-key="packing_proforma_pi_number">شماره پرفورما PI</span>
+                                                    <div class="pk-warehouse-meta-value">{{ packing_object.proforma_pi_number|default:"—" }}</div>
+                                                </div>
+                                                <div class="pk-warehouse-meta-field">
+                                                    <span class="pk-mini-label" data-key="packing_commercial_card">کارت بازرگانی</span>
+                                                    <div class="pk-warehouse-meta-value">{{ packing_object.get_commercial_card_display|default:"—" }}</div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </section>
+                                {% endif %}
+
                                 {% if is_warehouse_stage %}
                                     <div class="pk-warehouse-destination-bulk mt-3">
                                         <label class="pk-mini-label" for="pk-warehouse-bulk-destination"
@@ -2964,6 +2990,7 @@
                                             class="packing-selected-row packing-existing-row"
                                             data-order-id="{{ packing_item.order_id }}"
                                             data-item-id="{{ packing_item.pk }}"
+                                            data-carton-quantity="{{ packing_item.carton_quantity|default_if_none:'' }}"
                                             data-quantity="{{ packing_item.quantity|default_if_none:0 }}"
                                             data-total-weight="{{ packing_item.net_weight_kg|default_if_none:0 }}"
                                             {% if can_view_prices %}
@@ -3108,6 +3135,11 @@
                                                                 <input class="form-control" name="existing-{{ packing_item.pk }}-carton_number" value="{{ packing_item.carton_number|default_if_none:'' }}">
                                                             </div>
                                                             <div>
+                                                                <label class="pk-mini-label" data-key="packing_carton_quantity">Carton Count</label>
+                                                                <input type="number" step="1" min="0" max="2147483647" class="form-control"
+                                                                       name="existing-{{ packing_item.pk }}-carton_quantity" value="{{ packing_item.carton_quantity|default_if_none:'' }}">
+                                                            </div>
+                                                            <div>
                                                                 <label class="pk-mini-label" data-key="packing_gross_weight">Gross Weight</label>
                                                                 <input type="number" step="any" class="form-control" name="existing-{{ packing_item.pk }}-gross_weight_kg" value="{{ packing_item.gross_weight_kg|default_if_none:'' }}">
                                                             </div>
@@ -3206,6 +3238,11 @@
                                                         </div>
 
                                                         <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_carton_quantity">Carton Count</span>
+                                                            <strong>{{ packing_item.carton_quantity|default_if_none:"—" }}</strong>
+                                                        </div>
+
+                                                        <div class="pk-stat">
                                                             <span class="pk-mini-label" data-key="packing_size">Size</span>
                                                             <strong>{{ packing_item.size|default:"-" }}</strong>
                                                         </div>
@@ -3277,6 +3314,12 @@
                                                                    value="{{ packing_item.carton_number|default_if_none:'' }}" disabled>
                                                         </div>
                                                         <div>
+                                                            <label class="pk-mini-label" data-key="packing_carton_quantity">Carton Count</label>
+                                                            <input type="number" step="1" min="0" max="2147483647" class="form-control"
+                                                                   name="existing-{{ packing_item.pk }}-carton_quantity"
+                                                                   value="{{ packing_item.carton_quantity|default_if_none:'' }}" disabled>
+                                                        </div>
+                                                        <div>
                                                             <label class="pk-mini-label" data-key="packing_gross_weight">Gross Weight</label>
                                                             <input type="number" step="any" class="form-control"
                                                                    name="existing-{{ packing_item.pk }}-gross_weight_kg"
@@ -3316,6 +3359,10 @@
                                     <div class="pk-summary-item">
                                         <span data-key="packing_total_quantity">Total Quantity</span>
                                         <strong id="packing-total-quantity">0</strong>
+                                    </div>
+                                    <div class="pk-summary-item">
+                                        <span data-key="packing_total_cartons">Total Cartons</span>
+                                        <strong id="packing-total-cartons">—</strong>
                                     </div>
                                     <div class="pk-summary-item">
                                         <span data-key="packing_total_weight">Total Weight</span>
@@ -3512,6 +3559,12 @@
     <span data-key="packing_row_more_info">Additional Row Information</span>
     <span data-key="packing_previous">Previous Packing</span>
     <span data-key="packing_carton_number">Carton Number</span>
+    <span data-key="packing_carton_quantity">Carton Count</span>
+    <span data-key="packing_total_cartons">Total Cartons</span>
+    <span data-key="packing_registration_section">Order registration and Proforma</span>
+    <span data-key="packing_order_registration_number">8-digit Order Registration Number</span>
+    <span data-key="packing_proforma_pi_number">Proforma PI Number</span>
+    <span data-key="packing_commercial_card">Commercial Card</span>
     <span data-key="packing_gross_weight">Gross Weight</span>
     <span data-key="packing_size">Size</span>
     <span data-key="packing_description">Description</span>
@@ -4071,7 +4124,13 @@
             packing_cancel_row_edit: 'انصراف از ویرایش',
             packing_row_save_hint: 'تغییرات با ثبت پکینگ ذخیره می‌شوند.',
             packing_workflow_description_placeholder: 'توضیحات عملیات این مرحله',
-            packing_workflow_create_placeholder: 'توضیحات ایجاد پکینگ'
+            packing_workflow_create_placeholder: 'توضیحات ایجاد پکینگ',
+            packing_carton_quantity: 'تعداد کارتن',
+            packing_total_cartons: 'جمع کارتن‌ها',
+            packing_registration_section: 'اطلاعات ثبت سفارش و پرفورما',
+            packing_order_registration_number: 'شماره ۸ رقمی ثبت سفارش',
+            packing_proforma_pi_number: 'شماره پرفورما PI',
+            packing_commercial_card: 'کارت بازرگانی'
         },
         en: {
             back: 'Back',
@@ -4084,7 +4143,13 @@
             packing_cancel_row_edit: 'Cancel editing',
             packing_row_save_hint: 'Changes are saved with Save Packing.',
             packing_workflow_description_placeholder: 'Notes for this workflow action',
-            packing_workflow_create_placeholder: 'Notes when creating Packing'
+            packing_workflow_create_placeholder: 'Notes when creating Packing',
+            packing_carton_quantity: 'Carton Count',
+            packing_total_cartons: 'Total Cartons',
+            packing_registration_section: 'Order Registration and Proforma',
+            packing_order_registration_number: '8-digit Order Registration Number',
+            packing_proforma_pi_number: 'Proforma PI Number',
+            packing_commercial_card: 'Commercial Card'
         }
     };
 
@@ -4110,6 +4175,9 @@
         'id_shipment_type': 'packing_shipment_type_label',
         'id_bl_number': 'packing_bl_number_label',
         'id_description': 'packing_header_description_label',
+        'id_order_registration_number': 'packing_order_registration_number',
+        'id_proforma_pi_number': 'packing_proforma_pi_number',
+        'id_commercial_card': 'packing_commercial_card',
         'id_bl_date': 'packing_bl_date',
         'id_transportation_company': 'packing_transportation_company',
         'id_origin': 'packing_origin',
@@ -4609,6 +4677,8 @@
         let quantity = 0;
         let weight = 0;
         let value = 0;
+        let cartons = 0;
+        let hasCartonData = false;
 
         document.querySelectorAll('.packing-existing-row').forEach(row => {
             if (row.classList.contains('is-pending-delete')) return;
@@ -4623,6 +4693,12 @@
             quantity += q;
             weight += totalWeight;
             value += totalValue;
+            const cartonInput = row.querySelector('input[name$="-carton_quantity"]:not(:disabled)');
+            const cartonRaw = cartonInput ? cartonInput.value : row.dataset.cartonQuantity;
+            if (String(cartonRaw ?? '').trim() !== '') {
+                cartons += toNumber(cartonRaw);
+                hasCartonData = true;
+            }
 
             const weightTarget = row.querySelector('.existing-row-total-weight');
             const valueTarget = row.querySelector('.existing-row-total-value');
@@ -4641,6 +4717,11 @@
             quantity += q;
             weight += totalWeight;
             value += totalValue;
+            const cartonRaw = row.querySelector('input[name$="-carton_quantity"]')?.value;
+            if (String(cartonRaw ?? '').trim() !== '') {
+                cartons += toNumber(cartonRaw);
+                hasCartonData = true;
+            }
 
             row.querySelector('.row-total-weight').textContent = fmt(totalWeight);
             const valueTarget = row.querySelector('.row-total-value');
@@ -4648,12 +4729,20 @@
         });
 
         document.getElementById('packing-total-quantity').textContent = fmt(quantity);
+        document.getElementById('packing-total-cartons').textContent = hasCartonData ? fmt(cartons) : '—';
         document.getElementById('packing-total-weight').textContent = fmt(weight);
         const totalValueElement = document.getElementById('packing-total-value');
         if (totalValueElement) totalValueElement.textContent = fmtMoney(value);
 
         syncEmptyState();
     }
+
+    // Event delegation also covers freshly added order rows and edit panels.
+    document.addEventListener('input', function (event) {
+        if (event.target.matches('input[name$="-carton_quantity"]')) {
+            updateTotals();
+        }
+    });
 
     function reindexRows() {
         const rows = Array.from(container.querySelectorAll('.packing-selected-row'));
@@ -4753,6 +4842,11 @@ ${canViewPrices ? `
                     <div>
                         <label class="pk-mini-label"><span data-key="packing_carton_number">${tr('packing_carton_number', 'Carton Number')}</span></label>
                         <input class="form-control" name="form-${index}-carton_number">
+                    </div>
+
+                    <div>
+                        <label class="pk-mini-label"><span data-key="packing_carton_quantity">${tr('packing_carton_quantity', 'Carton Count')}</span></label>
+                        <input type="number" step="1" min="0" max="2147483647" class="form-control" name="form-${index}-carton_quantity">
                     </div>
 
                     <div>

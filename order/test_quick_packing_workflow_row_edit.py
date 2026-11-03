@@ -63,6 +63,21 @@ class QuickPackingWorkflowRowEditTests(SimpleTestCase):
         self.assertEqual(self.item.price, 20)
         self.order.validate_for_packing.assert_not_called()
 
+    def test_changing_only_carton_count_persists_in_later_stage(self):
+        self.item.carton_number = self.row['carton_number']
+        self.item.description = self.row['description']
+        self.item.carton_quantity = 2
+        self.row['carton_quantity'] = 7
+        self.edit()
+        self.assertEqual(self.item.carton_quantity, 7)
+        self.item.save.assert_called_once_with()
+        self.order.validate_for_packing.assert_not_called()
+
+    def test_partial_existing_row_post_does_not_clear_saved_carton_count(self):
+        self.item.carton_quantity = 4
+        self.edit()
+        self.assertEqual(self.item.carton_quantity, 4)
+
     def test_change_quantity_later_stage_is_revalidated(self):
         self.row['quantity'] = 6
         self.edit()

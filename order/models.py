@@ -2,6 +2,7 @@ import jdatetime
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.core.validators import RegexValidator
 from django.db.models import Sum, ExpressionWrapper, F, FloatField, Count
 from django.utils import timezone
 from django.utils.formats import number_format
@@ -1010,6 +1011,18 @@ class OrderOrder(BaseModel):
 
 
 class Packing(BaseModeWF):
+    POST_DRAFT_FIELDS = (
+        'order_registration_number', 'proforma_pi_number', 'commercial_card',
+    )
+    COMMERCIAL_CARD_CHOICES = [
+        ('rahavard_tejarat_ayande', 'رهاورد تجارت آینده'),
+        ('rasoul_rafie', 'رسول رفیع'),
+        ('modern_electronic', 'مدرن الکترونیک'),
+        ('faraz_fanavaran_faran', 'فراز فن آوران فاران'),
+        ('hikar', 'هایکار'),
+        ('hibar', 'هایبار'),
+    ]
+
     # Destination warehouses offered by Quick Packing only. Extend this map
     # when another destination is approved; do not change Order.sepidar_wh_map.
     sepidar_wh_map = {
@@ -1021,6 +1034,19 @@ class Packing(BaseModeWF):
     SHIPMENT_TYPE = [("express", "express"), ("air", "air"), ("sea", "sea"), ]
     WH_DESTINATION_CHOICE = [(2, _("central")), (3, _("resalat")), ]
     packing_number = models.CharField(_('packing_number'), max_length=255, null=True, blank=True)
+    order_registration_number = models.CharField(
+        'شماره ثبت سفارش (۸ رقم)', max_length=8, null=True, blank=True,
+        validators=[RegexValidator(
+            regex=r'^[0-9]{8}$', message='شماره ثبت سفارش باید دقیقاً ۸ رقم باشد.',
+        )],
+    )
+    proforma_pi_number = models.CharField(
+        'شماره پرفورما (PI)', max_length=255, null=True, blank=True,
+    )
+    commercial_card = models.CharField(
+        'کارت بازرگانی', max_length=32, choices=COMMERCIAL_CARD_CHOICES,
+        null=True, blank=True,
+    )
     shipment_type = models.CharField(_('shipment_type'), max_length=255, choices=SHIPMENT_TYPE, null=True, blank=True)
     bl_number = models.CharField(_('bl_number'), max_length=255, null=True, blank=True)
     bl_date = models.DateField(_('bl_date'), null=True, blank=True)
@@ -1309,7 +1335,9 @@ class Packing(BaseModeWF):
     @property
     def computed_carton_qty(self):
         # Todo: check this
-        return self.packing_item_rel.all().count()
+        return self.packing_item_rel.filter(is_deleted=False).aggregate(
+            total=Sum('carton_quantity'),
+        )['total']
 
     @property
     def computed_weight_kg(self):
@@ -1328,6 +1356,7 @@ class PackingItem(BaseModeWF):
     price = models.FloatField(_('price'), null=True, blank=True)
     packing = models.ForeignKey(Packing, on_delete=models.DO_NOTHING, related_name='packing_item_rel')
     carton_number = models.CharField(_('carton_number'), max_length=100, null=True, blank=True)
+    carton_quantity = models.PositiveIntegerField('تعداد کارتن', null=True, blank=True)
     net_weight_kg = models.FloatField(_('weight_kg'), null=True, blank=True)
     gross_weight_kg = models.FloatField(_('grows_weight_kg'), null=True, blank=True)
     size = models.CharField(_('size'), max_length=128, null=True, blank=True)
