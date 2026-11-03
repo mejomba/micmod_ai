@@ -522,8 +522,8 @@
       "action":"create",
         "list": [
           {
-            "state": "پیش نویس",
-            "group": "packing_user",
+            "state": "پیش‌نویس",
+            "group": "packing_user_p",
             "deadline": 0,
             "form_constraint": {
               "hide": [],
@@ -532,13 +532,15 @@
             "formset_constraint": [
               {
                 "hide": [],
-                "read": ["wh_receipt_quantity"]
+                "read": [
+                  "wh_receipt_quantity"
+                ]
               }
             ]
           },
           {
-            "state": "DEP",
-            "group": "packing_user",
+            "state": "تحویل شرکت حمل",
+            "group": "packing_user_dep",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
@@ -552,8 +554,8 @@
             ]
           },
           {
-            "state": "arrive",
-            "group": "packing_user",
+            "state": "حمل",
+            "group": "packing_user_ship",
             "deadline": 1,
             "form_constraint": {
               "hide": [],
@@ -567,8 +569,8 @@
             ]
           },
           {
-            "state": "10%",
-            "group": "packing_user",
+            "state": "قبض انبار",
+            "group": "packing_user_ghabz",
             "deadline": 1,
             "form_constraint": {
               "hide": [],
@@ -583,11 +585,13 @@
           },
           {
             "state": "تحویل اسناد",
-            "group": "trade_user",
+            "group": "trade_user_asnad",
             "deadline": 1,
             "form_constraint": {
               "hide": [],
-              "read": ["quantity"]
+              "read": [
+                "quantity"
+              ]
             },
             "formset_constraint": [
               {
@@ -597,12 +601,14 @@
             ]
           },
           {
-            "state": "اظهار گمرکی",
-            "group": "trade_user",
+            "state": "اظهار",
+            "group": "trade_user_ezhar",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
-              "read": ["quantity"]
+              "read": [
+                "quantity"
+              ]
             },
             "formset_constraint": [
               {
@@ -612,12 +618,31 @@
             ]
           },
           {
-            "state": "ترخیص گمرک",
-            "group": "trade_user",
+            "state": "ضمانتنامه",
+            "group": "trade_user_zemanat",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
-              "read": ["quantity"]
+              "read": [
+                "quantity"
+              ]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "ترخیص",
+            "group": "trade_user_tarkhis",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": [
+                "quantity"
+              ]
             },
             "formset_constraint": [
               {
@@ -632,7 +657,9 @@
             "deadline": 3,
             "form_constraint": {
               "hide": [],
-              "read": ["__all__"]
+              "read": [
+                "__all__"
+              ]
             },
             "formset_constraint": [
               {
@@ -640,6 +667,16 @@
                 "read": []
               }
             ]
+          },
+          {
+            "state": "اتمام کار",
+            "group": "wh_user",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
+              "read": ["__all__"]
+            },
+            "formset_constraint": [{"hide": [], "read": []}]
           }
         ]
       },

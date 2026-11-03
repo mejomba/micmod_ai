@@ -6,7 +6,8 @@
         document.getElementById("header-lang-img") && ("fa" == t ? document.getElementById("header-lang-img").src = "/static/images/flags/iran.jpg" :"en" == t ? document.getElementById("header-lang-img").src = "/static/images/flags/us.jpg" : "sp" == t ? document.getElementById("header-lang-img").src = "/static/images/flags/spain.jpg" : "gr" == t ? document.getElementById("header-lang-img").src = "/static/images/flags/germany.jpg" : "it" == t ? document.getElementById("header-lang-img").src = "/static/images/flags/italy.jpg" : "ru" == t && (document.getElementById("header-lang-img").src = "/static/images/flags/russia.jpg"), localStorage.setItem("Dason-language", t), null == (o = localStorage.getItem("Dason-language")) && d(r), n.getJSON("/static/lang/" + o + ".json", function (t) {
             n("html").attr("lang", o), n.each(t, function (t, e) {
                 "head" === t && n(document).attr("title", e.title), n("[data-key='" + t + "']").text(e)
-            })
+            });
+            document.dispatchEvent(new CustomEvent("dason:language-changed", {detail: {language: o, translations: t}}))
         }))
     }
 

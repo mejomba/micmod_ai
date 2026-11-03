@@ -592,57 +592,60 @@ class SepidarDataFactory(metaclass=SingletonMeta):
         return data
 
     @classmethod
-    def get_wh_to_wh_data(cls, packing):
-        description_format = 'wh transfer (portal)'
-        description_en_format = 'tozihat'
-        wh_destination = 2  # packing.destination
+    def get_wh_to_wh_data(cls, packing, *, destination_stock_ref, lines, creator_code=None):
+        """Build one Inventorydelivery payload for exactly one destination.
 
-        inventory_delivery_item_data = [{
-            # "inventorydeliveryref": inventory_delivery_data,  # inventorydeliveryid
-            "isreturn": 0,  # دوحالت  0 و 1 داره که الان برای ما حواله خروج هست
-            "rownumber": idx,
-            "baseinvoiceitem": None,  # invoiceitemid
-            "baseinventorydeliveryitem": None,  # بر اساس داده های سپیدار همه نال بودن
-            "basereturnedinvoiceitem": None,  # ایده به این است که شماره ردیف فاکتور برگشت خورده
-            "itemref": pi.order.item.sepidar_id_0,
-            "tracingref": None,  # همه نال بودن
-            "quantity": pi.wh_receipt_quantity,
-            "secondaryquantity": None,  # همیشه نال یا 0
-            "remainingquantity": 0,  # همیشه نال یا 0
-            "remainingsecondaryquantity": None,  # همیشه نال یا صفر
-            "slaccountref": settings.SEPIDAR_CONST_DATA.get('wh_to_wh_vaset'),  # واسط انتقال بین انبار
-            "price": None,  # invi.price خود سپیدار اینو نمیزد اما توی ورژن دوم میزد
-            "description": None,
-            "description_En": None,
+        The caller must split normal and damaged quantities before invoking this
+        method; a Sepidar packing endpoint creates one delivery/receipt pair.
+        """
+        if not lines:
+            raise ValueError('A warehouse transfer cannot have empty items.')
+        if not destination_stock_ref:
+            raise ValueError('Destination warehouse is required.')
+        creator = creator_code or packing.editor_user.sepidar_code
+        now = timezone.now()
+        inventory_delivery_item_data = []
+        for idx, line in enumerate(lines, start=1):
+            inventory_delivery_item_data.append({
+                "isreturn": 0,
+                "rownumber": idx,
+                "baseinvoiceitem": None,
+                "baseinventorydeliveryitem": None,
+                "basereturnedinvoiceitem": None,
+                "itemref": line['itemref'],
+                "tracingref": None,
+                "quantity": float(line['quantity']),
+                "secondaryquantity": None,
+                "remainingquantity": 0,
+                "remainingsecondaryquantity": None,
+                "slaccountref": settings.SEPIDAR_CONST_DATA.get('wh_to_wh_vaset'),
+                "price": None,
+                "description": None,
+                "description_En": None,
+                "version": 1,
+                "productorderref": None,
+                "paritycheck": None,
+                "quotationitemref": None,
+                "weighingref": None,
+                "itemrequestitemref": None,
+                "itemdescription": None,
+            })
+        return {
+            "isreturn": 0,
+            "type": 4,
+            "stockref": settings.SEPIDAR_CONST_DATA.get('before_central_wh_id'),
+            "receiverdlref": None,
+            "date": now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat(),
+            "totalprice": None,
+            "accountingvoucherref": None,
+            "fiscalyearref": settings.SEPIDAR_CONST_DATA.get('fiscalyearref'),
+            "destinationstockref": int(destination_stock_ref),
+            "creatorform": 1,
+            "creator": creator,
+            "creationdate": now.isoformat(),
+            "lastmodifier": creator,
+            "lastmodificationdate": now.isoformat(),
             "version": 1,
-            "productorderref": None,
-            # احتمالا اگه سفارش محصول ثبت کنن این مقدار میگیره(وقتی ایدی ردیف فاکتور نال بشه یعنی به ردیف فاکتور وصل نباسه و به جاش به سفارش وصل باشه)
-            "paritycheck": None,  # همیشه نال بود
-            "quotationitemref": None,  # در سند بین انبار پیش فاکتور نداریم
-            "weighingref": None  # همیشه نال
-            , "itemrequestitemref": None  # همیشه نال
-            , "itemdescription": None  # همیشه نال
-        } for idx, pi in enumerate(packing.packing_item_rel.all())]
-
-        inventory_delivery_data = {
-            "isreturn": 0
-            , "type": 4  # 1=sale, 2=use, 3=other, 4=wh_transfer
-            , "stockref": settings.SEPIDAR_CONST_DATA.get('before_central_wh_id')  # کد انبار قبل مرکزی
-            , "receiverdlref":  None  # اگر خروج بین انباری بود این فیلد نال میخوره
-            # , "number": "" # automation
-            , "date": timezone.now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
-            , "totalprice": None  # بعدا بر اساس فی انبار بدست میاد
-            , "accountingvoucherref": None  # شماره سند حسابداری که بعد از ایجاد میاد آپدیت میکنه
-            , "fiscalyearref": settings.SEPIDAR_CONST_DATA.get('fiscalyearref')
-            , "destinationstockref": wh_destination  # اگه از نوع بین انباری type=4 باشه انبار مقصد میخوره برای ما null
-            , "creatorform": 1  # بر اساس داده های سپیدار همیشه 1 بود
-            , "creator": packing.editor_user.sepidar_code
-            , "creationdate": timezone.now().isoformat()
-            , "lastmodifier": packing.editor_user.sepidar_code
-            , "lastmodificationdate": timezone.now().isoformat()
-            , "version": 1  # automation
-            , "description": description_format
-            , "inventorydeliveryitem_set": inventory_delivery_item_data
+            "description": f'Packing {packing.pk}: warehouse transfer (portal)',
+            "inventorydeliveryitem_set": inventory_delivery_item_data,
         }
-
-        return inventory_delivery_data

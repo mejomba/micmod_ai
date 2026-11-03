@@ -1,0 +1,69 @@
+{# Loaded on demand: the view queries one exact ChangeLog content_type/object_id pair. #}
+{% if change_history %}
+    <div class="pk-audit-timeline" aria-label="تاریخچه تغییرات">
+        {% for entry in change_history %}
+            <article class="pk-audit-event">
+                <div class="pk-audit-event-rail">
+                    <span class="pk-audit-event-dot is-{{ entry.action }}" aria-hidden="true"></span>
+                </div>
+                <div class="pk-audit-event-card">
+                    <div class="pk-audit-event-top">
+                        <span class="pk-audit-badge is-{{ entry.action }}" data-audit-action="{{ entry.action }}">
+                            {% if entry.action == 'create' %}ایجاد{% elif entry.action == 'delete' %}حذف{% else %}ویرایش{% endif %}
+                        </span>
+                        <time class="pk-audit-event-date text-nowrap"
+                              data-workflow-datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at|date:'Y/m/d H:i:s' }}</time>
+                        <span class="pk-audit-event-user">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            {{ entry.actor|default:"—" }}
+                        </span>
+                    </div>
+                    <details class="pk-audit-event-details"{% if forloop.first %} open{% endif %}>
+                        <summary>
+                            <span data-key="packing_audit_show_fields">جزئیات تغییرات</span>
+                            <span class="pk-audit-field-count">{{ entry.changes|length }}</span>
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="m6 9 6 6 6-6"></path>
+                            </svg>
+                        </summary>
+                        <div class="pk-audit-event-fields">
+                            {% for field in entry.changes %}
+                                <div class="pk-audit-field-card">
+                                    <div class="pk-audit-field-name" title="{{ field.key }}">{{ field.label }}</div>
+                                    <div class="pk-audit-values">
+                                        {% if entry.action != 'create' %}
+                                            <div class="pk-audit-value pk-audit-old">
+                                                <span data-key="packing_audit_previous">مقدار قبلی</span>
+                                                <strong>{{ field.old }}</strong>
+                                            </div>
+                                        {% endif %}
+                                        <div class="pk-audit-value pk-audit-new">
+                                            <span data-key="packing_audit_current">مقدار جدید</span>
+                                            <strong>{{ field.new }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <p class="pk-audit-empty" data-key="packing_audit_no_fields">تغییر فیلدی ثبت نشده است.</p>
+                            {% endfor %}
+                        </div>
+                    </details>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="pk-audit-no-results">
+        <svg viewBox="0 0 24 24" width="35" height="35" fill="none" stroke="currentColor"
+             stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"></path>
+            <path d="M3 3v5h5"></path>
+            <path d="M12 7v5l3 2"></path>
+        </svg>
+        <p data-key="packing_audit_empty">هنوز تغییری برای این بخش ثبت نشده است.</p>
+    </div>
+{% endif %}

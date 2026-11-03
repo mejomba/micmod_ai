@@ -230,14 +230,20 @@
             {
               "icon": "message-add",
               "title": "create",
-              "path_key": "order/packing/view",
-              "link": "order:packing.view"
+              "path_key": "order/quick_packing",
+              "link": "order:quick_packing"
             },
             {
               "icon": "burger-menu",
               "title": "list",
               "path_key": "order/packing/list",
               "link": "order:packing.list"
+            },
+            {
+              "icon": "calendar",
+              "title": "مرور و تقویم حمل",
+              "path_key": "order/packing/transport-schedule",
+              "link": "order:packing.transport_schedule"
             }
           ]
         },

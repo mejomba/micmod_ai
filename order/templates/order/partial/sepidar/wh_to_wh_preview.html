@@ -26,4 +26,6 @@
 
 
 
-<span id="to-sepidar" class="btn btn-sm btn-primary" data-url="{% url 'order:order_and_sepidar' %}?view_name=wh_to_wh_execute&packing_id={{ packing.pk }}" onclick="wh_to_wh_sepidar_execute(event)" data-bs-toggle="tooltip" data-bs-original-title="پس از ارسال به سپیدار سند قفل شده و امکان تغییر آن وجود نخواهد داشت.">ارسال به سپیدار</span>
+<a class="btn btn-sm btn-primary" href="{% url 'order:quick_packing' packing.pk %}">
+    باز کردن پکینگ جدید برای پیش‌نمایش و ارسال به سپیدار
+</a>

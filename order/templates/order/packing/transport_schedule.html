@@ -1,0 +1,350 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}مرور و تقویم حمل پکینگ{% endblock title %}
+
+{% block extra_css %}
+<style>
+.pt-wrap{direction:rtl;--pt-border:#e2e8f0;--pt-text:#273349;--pt-muted:#718096;--pt-blue:#86a9e9;--pt-green:#16a085;--pt-orange:#e1a342;--pt-red:#cf655c;color:var(--pt-text)}
+.pt-title{font-size:24px;font-weight:800;margin:0}
+.pt-subtitle{color:var(--pt-muted);margin:5px 0 0;font-size:13px}
+.pt-card{background:#fff;border:1px solid var(--pt-border);border-radius:13px;padding:16px;margin-bottom:16px;box-shadow:0 3px 14px rgba(22,33,55,.025)}
+.pt-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:15px}
+.pt-heading h2{font-size:17px;font-weight:750;margin:0}
+.pt-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.pt-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
+.pt-kpi{padding:17px;background:white;border:1px solid var(--pt-border);border-radius:12px}
+.pt-kpi span{display:block;color:var(--pt-muted);font-size:12px}
+.pt-kpi strong{display:block;font-size:27px;margin-top:4px;font-weight:800;font-variant-numeric:tabular-nums}
+.pt-form{display:grid;grid-template-columns:minmax(160px,2fr) repeat(4,minmax(120px,1fr)) auto;gap:10px;align-items:end}
+.pt-form label{display:block;font-size:12px;font-weight:600;margin-bottom:6px}
+.pt-form .form-control,.pt-form .form-select{width:100%;min-height:38px;font-size:13px}
+.pt-form-buttons{display:flex;gap:6px}
+.pt-legend{display:flex;flex-wrap:wrap;gap:14px;align-items:center;color:var(--pt-muted);font-size:12px}
+.pt-swatch{display:inline-block;vertical-align:middle;width:21px;height:8px;margin-left:5px;border-radius:3px}
+.pt-chart-scroll{overflow-x:auto;border:1px solid var(--pt-border);border-radius:10px}
+.pt-chart-grid{min-width:930px}
+.pt-chart-row{display:grid;grid-template-columns:218px minmax(0,1fr);border-bottom:1px solid var(--pt-border);direction:rtl}
+.pt-chart-row:last-child{border-bottom:0}
+.pt-chart-title{padding:9px 13px;border-left:1px solid var(--pt-border);min-height:75px}
+.pt-chart-title a{font-weight:700;text-decoration:none}
+.pt-chart-title small{display:block;color:var(--pt-muted);margin-top:3px;font-size:11px}
+.pt-chart-track{position:relative;direction:ltr;min-height:75px;background:repeating-linear-gradient(to right,transparent,transparent calc(20% - 1px),#f0f2f6 calc(20% - 1px),#f0f2f6 20%)}
+.pt-chart-bar{position:absolute;height:12px;border-radius:5px;min-width:5px}
+.pt-chart-bar.plan{top:19px;background:#acc4f1;border:1px dashed #5c82ce}
+.pt-chart-bar.actual{top:44px;background:var(--pt-green)}
+.pt-chart-bar.delayed{background:var(--pt-red)}
+.pt-chart-marker{position:absolute;top:39px;height:21px;width:2px;background:#187e65;z-index:2}
+.pt-chart-marker.end{background:#385c80}
+.pt-chart-marker.planned{top:14px;background:#5c82ce}
+.pt-chart-marker.overdue{top:14px;background:var(--pt-red)}
+.pt-chart-today{position:absolute;top:0;bottom:0;border-left:2px dashed #c68827;pointer-events:none;z-index:2}
+.pt-chart-axis .pt-chart-track{min-height:36px;background:#f9fafc}
+.pt-chart-axis .pt-chart-title{min-height:36px;font-weight:750}
+.pt-tick{position:absolute;top:8px;transform:translateX(-50%);font-size:11px;color:var(--pt-muted);white-space:nowrap}
+.pt-table-scroll{overflow-x:auto}
+.pt-table{width:100%;min-width:1200px;border-collapse:collapse;font-size:12px}
+.pt-table th{white-space:nowrap;background:#f8fafc;color:#53627a;text-align:right;font-weight:700;padding:12px 10px;border-bottom:1px solid var(--pt-border)}
+.pt-table td{vertical-align:middle;border-bottom:1px solid var(--pt-border);padding:12px 10px}
+.pt-table tbody tr:hover{background:#f6f9ff}
+.pt-table a{font-weight:700;text-decoration:none}
+.pt-table time{white-space:nowrap;font-variant-numeric:tabular-nums}
+.pt-table details{min-width:155px}
+.pt-table details summary{cursor:pointer;font-weight:600}
+.pt-table details ul{list-style:none;padding:7px 8px;margin:5px 0 0;border:1px solid var(--pt-border);border-radius:8px;background:#f8fafc;max-width:330px}
+.pt-table details li{padding:4px 0;border-bottom:1px solid #e8ecf2}
+.pt-table details li:last-child{border:0}
+.pt-tag{display:inline-block;border-radius:7px;padding:4px 8px;white-space:nowrap;font-size:11px;font-weight:700;background:#edf1f6;color:#53627a}
+.pt-tag-arrived{background:#e3f4ec;color:#087851}
+.pt-tag-in_transit{background:#eaf1fe;color:#2a5d9b}
+.pt-tag-delayed{background:#fdebe9;color:#b64540}
+.pt-delay{color:#b64540;font-weight:700;white-space:nowrap}
+.pt-empty{color:var(--pt-muted);padding:28px;text-align:center}
+.pt-page-links{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:16px;flex-wrap:wrap}
+.pt-page-links a{border:1px solid var(--pt-border);border-radius:7px;padding:6px 12px}
+.pt-help{font-size:12px;color:var(--pt-muted);margin:10px 0 0}
+@media(max-width:1250px){.pt-form{grid-template-columns:repeat(3,minmax(150px,1fr))}}
+@media(max-width:670px){.pt-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.pt-form{grid-template-columns:1fr 1fr}.pt-form>div:first-child,.pt-form-buttons{grid-column:1/-1}.pt-title{font-size:20px}}
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="container-fluid py-4 pt-wrap" id="packing-transport-page" data-today="{{ today_iso }}" data-packing-url="{% url 'order:quick_packing' %}">
+    <div class="pt-heading">
+        <div>
+            <h1 class="pt-title">مرور و تقویم حمل پکینگ</h1>
+            <p class="pt-subtitle">برنامه حمل، تاریخ‌های قطعی Workflow و سفارش‌های هر محموله در یک صفحه</p>
+        </div>
+        <div class="pt-actions">
+            <a class="btn btn-sm btn-light" href="{% url 'order:packing.list' %}">لیست پکینگ‌ها</a>
+        </div>
+    </div>
+
+    <div class="pt-kpis" aria-label="خلاصه وضعیت پکینگ‌های فیلترشده">
+        <div class="pt-kpi"><span>در انتظار شروع حمل</span><strong>{{ metrics.planned }}</strong></div>
+        <div class="pt-kpi"><span>شروع‌شده / در مسیر</span><strong>{{ metrics.in_transit }}</strong></div>
+        <div class="pt-kpi"><span>رسیده به مرحله انبار</span><strong>{{ metrics.arrived }}</strong></div>
+        <div class="pt-kpi"><span>دارای تأخیر نسبت به برنامه</span><strong class="text-danger">{{ metrics.delayed }}</strong></div>
+    </div>
+
+    <div class="pt-card">
+        <form class="pt-form" action="" method="get" aria-label="فیلتر مرور حمل">
+            <div><label for="pt-query">جست‌وجوی پکینگ، بارنامه، سفارش یا قطعه</label>
+                <input id="pt-query" class="form-control" type="search" name="q" value="{{ q }}" placeholder="شماره پکینگ / سفارش / بارنامه"></div>
+            <div><label for="pt-method">روش حمل</label>
+                <select id="pt-method" class="form-select" name="method">
+                    <option value="">همه روش‌ها</option>
+                    <option value="sea" {% if method == 'sea' %}selected{% endif %}>دریایی</option>
+                    <option value="air" {% if method == 'air' %}selected{% endif %}>هوایی</option>
+                    <option value="express" {% if method == 'express' %}selected{% endif %}>اکسپرس</option>
+                </select></div>
+            <div><label for="pt-status">وضعیت حمل</label>
+                <select id="pt-status" class="form-select" name="status">
+                    <option value="all" {% if status == 'all' %}selected{% endif %}>همه وضعیت‌ها</option>
+                    <option value="planned" {% if status == 'planned' %}selected{% endif %}>در انتظار حمل</option>
+                    <option value="in_transit" {% if status == 'in_transit' %}selected{% endif %}>در مسیر</option>
+                    <option value="arrived" {% if status == 'arrived' %}selected{% endif %}>رسیده به انبار</option>
+                    <option value="delayed" {% if status == 'delayed' %}selected{% endif %}>دارای تأخیر</option>
+                    <option value="unscheduled" {% if status == 'unscheduled' %}selected{% endif %}>فاقد برنامه کامل</option>
+                </select></div>
+            <div><label for="pt-from">از تاریخ (میلادی)</label>
+                <input id="pt-from" class="form-control" type="date" name="date_from" value="{{ date_from }}"></div>
+            <div><label for="pt-to">تا تاریخ (میلادی)</label>
+                <input id="pt-to" class="form-control" type="date" name="date_to" value="{{ date_to }}"></div>
+            <div class="pt-form-buttons">
+                <button class="btn btn-sm btn-primary" type="submit">اعمال</button>
+                <a class="btn btn-sm btn-light" href="{% url 'order:packing.transport_schedule' %}">پاک کردن</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="pt-card">
+        <div class="pt-heading">
+            <h2>نمای زمانی حرکت و رسیدن <span class="text-muted fs-7">({{ filtered_total }} پکینگ)</span></h2>
+            <div class="pt-actions">
+                <label for="pt-calendar" class="text-muted">نمایش تاریخ</label>
+                <select class="form-select form-select-sm" style="width:auto" id="pt-calendar">
+                    <option value="gregorian">میلادی</option><option value="jalali">شمسی</option>
+                </select>
+            </div>
+        </div>
+        <div class="pt-legend mb-3" aria-label="راهنمای نمودار">
+            <span><i class="pt-swatch" style="background:#acc4f1;border:1px dashed #5c82ce"></i> پیش‌بینی</span>
+            <span><i class="pt-swatch" style="background:#16a085"></i> واقعی</span>
+            <span><i class="pt-swatch" style="background:#cf655c"></i> تأخیر در بازه واقعی</span>
+            <span><i class="pt-swatch" style="width:2px;height:13px;border-left:2px dashed #c68827"></i> امروز</span>
+        </div>
+        <div id="pt-chart" class="pt-chart-scroll" role="region" aria-label="گانت حمل پکینگ" tabindex="0">
+            <div class="pt-empty">در حال آماده‌سازی نمای زمانی…</div>
+        </div>
+        <p class="pt-help">نوار بالا بازه پیش‌بینی و نوار پایین بازه ثبت‌شده در Workflow است. برای تاریخ‌های ناقص فقط نشانگر نمایش داده می‌شود. نمایش در هر صفحه حداکثر ۵۰ پکینگ است.</p>
+    </div>
+
+    <div class="pt-card">
+        <div class="pt-heading">
+            <h2>جدول مرور حمل</h2>
+            <span class="text-muted">{{ filtered_total }} رکورد مطابق فیلتر</span>
+        </div>
+        <div class="pt-table-scroll">
+            <table class="pt-table">
+                <thead><tr>
+                    <th>پکینگ / بارنامه</th><th>سفارش‌های مرتبط</th><th>تعداد کل</th>
+                    <th>روش / شرکت حمل</th><th>مبدأ / مقصد</th><th>مرحله Workflow</th><th>وضعیت</th>
+                    <th>شروع پیش‌بینی</th><th>شروع قطعی</th><th>رسیدن پیش‌بینی</th><th>رسیدن قطعی</th><th>تأخیر</th>
+                </tr></thead>
+                <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <td><a href="{% url 'order:quick_packing' pk=row.id %}">{{ row.number }}</a><br><small class="text-muted">BL: {{ row.bl_number }}</small></td>
+                        <td>
+                            <details><summary>{{ row.order_count }} سفارش</summary>
+                                <ul>{% for order in row.orders %}
+                                    <li><strong>{{ order.number }}</strong> · {{ order.part_number }} · {{ order.quantity|floatformat:-2 }}</li>
+                                {% empty %}<li>سفارشی ثبت نشده است</li>{% endfor %}</ul>
+                            </details>
+                        </td>
+                        <td>{{ row.total_quantity|floatformat:-2 }}</td>
+                        <td>{{ row.shipment_type }}<br><small class="text-muted">{{ row.transportation_company }}</small></td>
+                        <td>{{ row.origin }}<br><small class="text-muted">{{ row.destination }}</small></td>
+                        <td>{{ row.stage }}</td>
+                        <td><span class="pt-tag pt-tag-{{ row.status }}">{{ row.status_label }}</span></td>
+                        <td><time data-pt-date="{{ row.planned_start|date:'Y-m-d' }}">{{ row.planned_start|date:'Y-m-d'|default:'—' }}</time></td>
+                        <td><time data-pt-date="{{ row.actual_start|date:'Y-m-d' }}">{{ row.actual_start|date:'Y-m-d'|default:'—' }}</time></td>
+                        <td><time data-pt-date="{{ row.planned_arrival|date:'Y-m-d' }}">{{ row.planned_arrival|date:'Y-m-d'|default:'—' }}</time></td>
+                        <td><time data-pt-date="{{ row.actual_arrival|date:'Y-m-d' }}">{{ row.actual_arrival|date:'Y-m-d'|default:'—' }}</time></td>
+                        <td>
+                        {% if row.is_delayed %}
+                            <span class="pt-delay">
+                                {% if row.start_delay %}شروع: {{ row.start_delay }} روز{% endif %}
+                                {% if row.start_delay and row.arrival_delay %}<br>{% endif %}
+                                {% if row.arrival_delay %}رسیدن: {{ row.arrival_delay }} روز{% endif %}
+                            </span>
+                        {% else %}<span class="text-muted">—</span>{% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="12" class="pt-empty">هیچ پکینگ قابل‌مشاهده‌ای مطابق فیلتر پیدا نشد.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="pt-page-links" aria-label="صفحه‌بندی">
+            {% if page_obj.has_previous %}
+                <a href="?{{ page_query }}page={{ page_obj.previous_page_number }}">قبلی</a>
+            {% endif %}
+            <span>صفحه {{ page_obj.number }} از {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?{{ page_query }}page={{ page_obj.next_page_number }}">بعدی</a>
+            {% endif %}
+        </nav>
+        {% endif %}
+    </div>
+    <p class="pt-help">تاریخ قطعی شروع = ورود به مرحله «حمل»؛ تاریخ قطعی رسیدن = ورود به مرحله «انبار». هر دو از تاریخچه Workflow استخراج می‌شوند و در این صفحه قابل ویرایش نیستند.</p>
+    {{ plot_rows|json_script:"packing-transport-data" }}
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+    const root = document.getElementById('packing-transport-page');
+    const chart = document.getElementById('pt-chart');
+    const dataNode = document.getElementById('packing-transport-data');
+    if (!root || !chart || !dataNode) return;
+    const entries = JSON.parse(dataNode.textContent);
+    const today = root.dataset.today;
+    const prefix = root.dataset.packingUrl;
+    const calendar = document.getElementById('pt-calendar');
+    const DAY = 86400000;
+    function timestamp(iso) {
+        return iso ? Date.parse(iso + 'T00:00:00Z') : NaN;
+    }
+    function formatDate(iso) {
+        if (!iso) return '—';
+        if (calendar.value === 'gregorian') return iso;
+        const when = new Date(timestamp(iso));
+        return new Intl.DateTimeFormat('fa-IR-u-ca-persian-nu-latn', {
+            day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
+        }).format(when);
+    }
+    function elem(tag, cls, text) {
+        const node = document.createElement(tag);
+        if (cls) node.className = cls;
+        if (text !== undefined) node.textContent = text;
+        return node;
+    }
+    function renderTableDates() {
+        root.querySelectorAll('[data-pt-date]').forEach(function (node) {
+            node.textContent = formatDate(node.dataset.ptDate);
+        });
+    }
+    function renderChart() {
+        chart.textContent = '';
+        if (!entries.length) {
+            chart.appendChild(elem('div', 'pt-empty', 'رکوردی برای نمایش وجود ندارد.'));
+            return;
+        }
+        const values = entries.flatMap(function (row) {
+            return ['planned_start','planned_arrival','actual_start','actual_arrival']
+                .map(function (field) { return timestamp(row[field]); })
+                .filter(Number.isFinite);
+        });
+        if (!values.length) {
+            chart.appendChild(elem('div', 'pt-empty', 'پکینگ‌های انتخاب‌شده تاریخ حمل ندارند؛ جزئیات آن‌ها در جدول موجود است.'));
+            return;
+        }
+        if (entries.some(function (row) { return row.actual_start && !row.actual_arrival; })) {
+            values.push(timestamp(today));
+        }
+        let min = Math.min.apply(null, values) - 3 * DAY;
+        let max = Math.max.apply(null, values) + 3 * DAY;
+        if (max - min < 28 * DAY) {
+            const mid = (min + max) / 2;
+            min = mid - 14 * DAY; max = mid + 14 * DAY;
+        }
+        function percent(iso) {
+            return (timestamp(iso) - min) / (max - min) * 100;
+        }
+        function bar(track, from, to, cls, title) {
+            if (!from) return;
+            const left = Math.max(0, Math.min(100, percent(from)));
+            const right = to ? Math.max(left, Math.min(100, percent(to))) : left;
+            const node = elem('div', 'pt-chart-bar ' + cls);
+            node.style.left = left + '%';
+            node.style.width = Math.max(0.5, right - left) + '%';
+            node.title = title;
+            track.appendChild(node);
+        }
+        function marker(track, at, cls, title) {
+            if (!at) return;
+            const node = elem('div', 'pt-chart-marker ' + cls);
+            node.style.left = percent(at) + '%';
+            node.title = title;
+            track.appendChild(node);
+        }
+        function todayLine(track) {
+            const x = timestamp(today);
+            if (x >= min && x <= max) {
+                const node = elem('div', 'pt-chart-today');
+                node.style.left = (x - min) / (max - min) * 100 + '%';
+                node.title = 'امروز: ' + formatDate(today);
+                track.appendChild(node);
+            }
+        }
+        const grid = elem('div', 'pt-chart-grid');
+        const header = elem('div', 'pt-chart-row pt-chart-axis');
+        header.appendChild(elem('div', 'pt-chart-title', 'پکینگ / وضعیت'));
+        const axis = elem('div', 'pt-chart-track');
+        for (let i = 0; i <= 5; i++) {
+            const tick = elem('span', 'pt-tick');
+            const iso = new Date(min + (max - min) * i / 5).toISOString().slice(0,10);
+            tick.textContent = formatDate(iso);
+            tick.style.left = i * 20 + '%';
+            if (i === 0) tick.style.transform = 'translateX(0)';
+            if (i === 5) tick.style.transform = 'translateX(-100%)';
+            axis.appendChild(tick);
+        }
+        header.appendChild(axis); grid.appendChild(header);
+        entries.forEach(function (row) {
+            const wrap = elem('div', 'pt-chart-row');
+            const title = elem('div', 'pt-chart-title');
+            const link = elem('a', '', row.number);
+            link.href = prefix + row.id + '/';
+            title.appendChild(link);
+            title.appendChild(elem('small', '', row.stage + ' · ' + row.order_count + ' سفارش'));
+            if (row.is_delayed) title.appendChild(elem('small', 'text-danger', 'دارای تأخیر'));
+            wrap.appendChild(title);
+            const track = elem('div', 'pt-chart-track');
+            bar(track, row.planned_start, row.planned_arrival, 'plan',
+                'پیش‌بینی: ' + formatDate(row.planned_start) + ' تا ' + formatDate(row.planned_arrival));
+            if (!row.planned_start && row.planned_arrival) {
+                marker(track, row.planned_arrival, 'planned',
+                    'رسیدن پیش‌بینی‌شده: ' + formatDate(row.planned_arrival));
+            }
+            if (row.planned_start && !row.actual_start && timestamp(row.planned_start) < timestamp(today)) {
+                marker(track, row.planned_start, 'overdue', 'شروع حمل از برنامه عقب است');
+            }
+            if (row.planned_arrival && !row.actual_arrival && timestamp(row.planned_arrival) < timestamp(today)) {
+                marker(track, row.planned_arrival, 'overdue', 'رسیدن به انبار از برنامه عقب است');
+            }
+            const realEnd = row.actual_arrival || (row.actual_start && timestamp(today) >= timestamp(row.actual_start) ? today : null);
+            bar(track, row.actual_start, realEnd, 'actual' + (row.is_delayed ? ' delayed' : ''),
+                'واقعی: ' + formatDate(row.actual_start) + ' تا ' + formatDate(row.actual_arrival));
+            marker(track, row.actual_start, '', 'شروع قطعی: ' + formatDate(row.actual_start));
+            marker(track, row.actual_arrival, 'end', 'رسیدن قطعی: ' + formatDate(row.actual_arrival));
+            todayLine(track);
+            wrap.appendChild(track); grid.appendChild(wrap);
+        });
+        chart.appendChild(grid);
+    }
+    calendar.addEventListener('change', function () {
+        renderTableDates();
+        renderChart();
+    });
+    renderTableDates();
+    renderChart();
+})();
+</script>
+{% endblock extra_js %}
