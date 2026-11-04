@@ -456,6 +456,19 @@
 .sh-report #sh-fetching[hidden] {display:none!important}
 .sh-report .sh-top-detail {line-height:1.8}
 .sh-report .sh-table thead .sh-col-search:not(:placeholder-shown) {border-color:#8fb9f3;background:#f4f9ff}
+
+/* The disclosure must read as an actual interactive expandable button. */
+.sh-report .sh-advanced-filters>summary{display:flex!important;align-items:center;gap:10px;max-width:100%;width:fit-content;padding:11px 15px!important;background:#eaf2ff!important;border:1px solid #91b5e8!important;border-radius:11px!important;box-shadow:0 4px 12px rgba(37,99,235,.12)!important;color:#1e518f!important;cursor:pointer;transition:background .16s}
+.sh-report .sh-advanced-filters>summary:hover,.sh-report .sh-advanced-filters>summary:focus-visible{background:#dceaff!important;outline:2px solid #95bdf7;outline-offset:2px}
+.sh-report .sh-advanced-hint{font-size:10px;font-weight:650;color:#5b799c}
+.sh-report .sh-advanced-arrow{font-size:24px;line-height:12px;font-weight:900;transition:transform .18s}
+.sh-report .sh-hint-close{display:none}
+.sh-report .sh-advanced-filters[open] .sh-advanced-arrow{transform:rotate(180deg)}
+.sh-report .sh-advanced-filters[open] .sh-hint-open{display:none}
+.sh-report .sh-advanced-filters[open] .sh-hint-close{display:inline}
+.sh-report #sh-query-status[hidden],.sh-report #sh-truncated-note[hidden]{display:none!important}
+.sh-report .sh-state-message--error{color:#b53a30;background:#fff1f0}
+@media(max-width:680px){.sh-report .sh-advanced-hint{display:none!important}}
 </style>
 {% endblock extra_css %}
 
@@ -469,7 +482,7 @@
       </header>
 
       <details class="sh-advanced-filters" {% if advanced_active %}open{% endif %}>
-        <summary>فیلترهای پیشرفته (مشتری، کالا، سال مالی و نوع سند)</summary>
+        <summary><strong>فیلترهای پیشرفته</strong><span class="sh-advanced-hint sh-hint-open">برای مشاهده کلیک کنید</span><span class="sh-advanced-hint sh-hint-close">برای بستن کلیک کنید</span><span class="sh-advanced-arrow" aria-hidden="true">⌄</span></summary>
       <section class="sh-panel sh-filters" aria-label="فیلترهای پیشرفته دریافت اطلاعات">
         <form class="sh-compact-form" method="get" action="">
           <div class="sh-mini-field sh-mini-field--customer">
@@ -534,13 +547,9 @@
         <span class="sh-state-message" id="sh-fetching" role="status" aria-live="polite" hidden>در حال جست‌وجو در سوابق فروش پرتال و سپیدار…</span>
       </div>
       {% if report_error %}<div class="sh-state-message sh-state-message--error" role="alert">{{ report_error }}</div>{% endif %}
-      {% if not recent_default and not report_error %}
-        <div class="sh-state-message" role="status">نتایج از دیتابیس جست‌وجو شده‌اند؛ {{ row_count }} ردیف دریافت شد. برای جست‌وجو در کل تاریخچه، فیلترهای ستون‌ها را به کار ببرید.</div>
-      {% endif %}
+      <div class="sh-state-message" role="status" aria-live="polite" id="sh-query-status" {% if recent_default or report_error %}hidden{% endif %}>{{ row_count }} ردیف دریافت شد.</div>
 
-      {% if truncated %}
-        <div class="sh-help">توجه: نتایج به سقف دریافت ۳۰۰۰ ردیف از هر منبع رسیده‌اند. جدول و جمع‌ها فقط داده‌های دریافت‌شده را پوشش می‌دهند؛ فیلتر بازه تاریخ پایین نیز روی همین ردیف‌ها اجرا می‌شود.</div>
-      {% endif %}
+      <div class="sh-help" id="sh-truncated-note" {% if not truncated %}hidden{% endif %}>توجه: نتایج به سقف ۳۰۰۰ ردیف از هر منبع رسیده‌اند؛ جمع‌ها تنها داده‌های دریافت‌شده را پوشش می‌دهند.</div>
 
       <section class="sh-panel" aria-labelledby="sh-table-heading">
         <div class="sh-table-panel-heading">
@@ -592,48 +601,8 @@
             </tr>
           </thead>
           <tbody>
-          {% for item in list %}
-            <tr data-source="{{ item.source|default:'' }}"
-                data-doc-number="{{ item.Number|default_if_none:'' }}"
-                data-doc-year="{{ item.year_title|default_if_none:'' }}"
-                data-customer-code="{{ item.customer_code|default_if_none:'' }}"
-                data-item-code="{{ item.item_code|default_if_none:'' }}"
-                data-purchase-group="{{ item.purchase_group|default_if_none:'' }}"
-                data-sales-group="{{ item.sales_group|default_if_none:'' }}"
-                data-doc-type="{{ item.doc_type|default_if_none:'' }}"
-                data-row-date="{% if item.Date %}{{ item.Date|to_jalali:'%Y/%m/%d' }}{% endif %}"
-                data-row-fee="{{ item.Fee|default_if_none:0|unlocalize }}"
-                data-currency="{{ item.currency|default_if_none:'' }}"
-                data-row-price="{{ item.Price|default_if_none:0|unlocalize }}"
-                data-row-qty="{{ item.Quantity|default_if_none:0|unlocalize }}">
-              <td data-search="{{ item.source }}" data-sh-col="0">
-                {% if item.source == 'sepidar' %}<span class="sh-pill sh-pill--sepidar">سپیدار</span>{% else %}<span class="sh-pill sh-pill--portal">پرتال</span>{% endif %}
-              </td>
-              <td class="sh-number" data-sh-col="1" data-search="{{ item.Number|default_if_none:'' }}" data-order="{{ item.Number|default_if_none:'' }}">{{ item.Number|default_if_none:'—' }}</td>
-              <td title="{{ item.customer_title|default_if_none:'' }}" data-sh-col="2">{{ item.customer_title|default_if_none:'—' }}</td>
-              <td class="sh-number" data-sh-col="3" data-search="{{ item.customer_code|default_if_none:'' }}" data-order="{{ item.customer_code|default_if_none:'' }}">{{ item.customer_code|default_if_none:'—' }}</td>
-              <td class="sh-number" data-sh-col="4" data-search="{{ item.item_code|default_if_none:'' }}" data-order="{{ item.item_code|default_if_none:'' }}">{{ item.item_code|default_if_none:'—' }}</td>
-              <td title="{{ item.item_title|default_if_none:'' }}" data-sh-col="5">{{ item.item_title|default_if_none:'—' }}</td>
-              <td data-search="{{ item.doc_type }}">
-                {% if item.doc_type == 'invoice' %}<span class="sh-pill sh-pill--invoice">فاکتور</span>
-                {% elif item.doc_type == 'quotation' %}<span class="sh-pill sh-pill--quotation">پیش‌فاکتور</span>
-                {% elif item.doc_type == 'returned_invoice' %}<span class="sh-pill sh-pill--return">برگشت از فروش</span>
-                {% else %}{{ item.doc_type }}{% endif %}
-              </td>
-              <td class="sh-number" data-order="{{ item.Date|date:'Y-m-d' }}">{% if item.Date %}{{ item.Date|to_jalali:'%Y/%m/%d' }}{% else %}—{% endif %}</td>
-              <td>{{ item.sales_user_group|default_if_none:'—' }}</td>
-              <td data-search="{{ item.purchase_group|default_if_none:'' }}" data-order="{{ item.purchase_group|default_if_none:'' }}">{{ item.purchase_group|default_if_none:'—' }}</td>
-              <td data-search="{{ item.sales_group|default_if_none:'' }}" data-order="{{ item.sales_group|default_if_none:'' }}">{{ item.sales_group|default_if_none:'—' }}</td>
-              <td>{{ item.sales_type|default_if_none:'—' }}</td>
-              <td class="sh-number" data-search="{{ item.Quantity|default_if_none:0|unlocalize }}">{{ item.Quantity|default_if_none:0|floatformat:'-6'|intcomma }}</td>
-              <td class="sh-number sh-amount" data-search="{{ item.Fee|default_if_none:0|unlocalize }}">{{ item.Fee|default_if_none:0|floatformat:'-6'|intcomma }}</td>
-              <td class="sh-number sh-amount" data-search="{{ item.fee_after_discount|default_if_none:0|unlocalize }}">{{ item.fee_after_discount|default_if_none:0|floatformat:'-6'|intcomma }}</td>
-              <td class="sh-number sh-price" data-search="{{ item.Price|default_if_none:0|unlocalize }}">{{ item.Price|default_if_none:0|floatformat:'-6'|intcomma }}</td>
-              <td>{{ item.currency|default_if_none:'—' }}</td>
-              <td class="sh-number" data-search="{{ item.Rate|default_if_none:''|unlocalize }}">{% if item.Rate is not None %}{{ item.Rate|floatformat:'-4'|intcomma }}{% else %}<span class="sh-none">—</span>{% endif %}</td>
-            </tr>
-          {% endfor %}
-          </tbody>
+{% include 'sepidar/partial/sales_history_rows.html' %}
+</tbody>
         </table>
         <p class="sh-caption" id="sh-table-caption"></p>
       </section>
@@ -1101,117 +1070,146 @@
 
     }
 
-    // Search both full databases, before TOP/LIMIT, with a debounce.
-    var initialColumnFilters = {};
-    try {
-      initialColumnFilters = JSON.parse(document.getElementById('sh-server-filters').textContent) || {};
-    } catch (error) { initialColumnFilters = {}; }
-    $('#sales-history-report thead .sh-col-search').each(function () {
-      var key='col_'+this.getAttribute('data-col');
-      this.value=initialColumnFilters[key] || '';
-    });
-    var pendingSearchTimer=null, dateTimer=null;
-    function nextFilters() {
-      var params=new URLSearchParams(window.location.search);
-      $('#sales-history-report thead .sh-col-search').each(function () {
-        var key='col_'+this.getAttribute('data-col'),value=this.value.trim();
-        if(value)params.set(key,value);else params.delete(key);
-      });
-      if(fromInput.value.trim())params.set('date_from',fromInput.value.trim());
-      else params.delete('date_from');
-      if(toInput.value.trim())params.set('date_to',toInput.value.trim());
-      else params.delete('date_to');
-      return params;
-    }
-    function runServerSearch(focusKey) {
-      updateDateInputs();
-      if(invalidRange)return;
-      var params=nextFilters();
-      var target=window.location.pathname+(params.toString()?'?'+params.toString():'');
-      var current=window.location.pathname+window.location.search;
-      if(target===current)return;
-      var fetching=document.getElementById('sh-fetching');
-      if(fetching)fetching.hidden=false;
-      try {
-        var control=focusKey&&document.querySelector('[data-col="'+focusKey+'"]');
-        window.sessionStorage.setItem('sh-restore-search',JSON.stringify({
-          target:target,focus:focusKey,caret:control&&control.selectionStart,
-          y:window.scrollY,x:window.scrollX,
-          innerX:document.querySelector('.sh-table-scroll')?.scrollLeft||0
-        }));
-      } catch (e) {}
-      window.location.assign(target);
-    }
-    $('#sales-history-report thead .sh-col-search').on('mousedown click keydown',function(event) {
-      event.stopPropagation();
-      if(event.key==='Enter'){event.preventDefault();clearTimeout(pendingSearchTimer);runServerSearch(this.getAttribute('data-col'));}
-    });
-    $('#sales-history-report thead .sh-col-search').on('input change',function(){
-      var control=this;
-      clearTimeout(pendingSearchTimer);
-      // Avoid malformed date requests while the user is still typing.
-      if(control.getAttribute('data-col')==='7'&&control.value.trim()&&
-         !/^\d{4}(?:\/\d{1,2}(?:\/\d{1,2})?)?$/.test(latinDigits(control.value.trim())))return;
-      pendingSearchTimer=setTimeout(function(){runServerSearch(control.getAttribute('data-col'));},
-        control.tagName==='SELECT'?40:650);
-    });
-    $(fromInput).add(toInput).on('input change',function(){
-      clearTimeout(dateTimer);
-      updateDateInputs();
-      if(invalidRange)return;
-      dateTimer=setTimeout(function(){runServerSearch(null);},650);
-    });
-    $('#sh-clear-date').on('click',function(){
-      clearTimeout(dateTimer);clearTimeout(pendingSearchTimer);
-      fromInput.value='';toInput.value='';hideCalendar();
-      runServerSearch(null);
-    });
-    $('#sh-clear-table').on('click',function(){
-      clearTimeout(dateTimer);clearTimeout(pendingSearchTimer);
-      $('#sales-history-report thead .sh-col-search').val('');
-      fromInput.value='';toInput.value='';hideCalendar();
-      runServerSearch(null);
-    });
-    document.querySelectorAll('#sales-history-report .sh-filter-chip').forEach(function(chip){
-      chip.addEventListener('click',function(){
-        var key=chip.getAttribute('data-filter-key');
-        if(!key)return;
-        var params=new URLSearchParams(window.location.search);
-        params.delete(key);
-        window.location.assign(window.location.pathname+(params.toString()?'?'+params.toString():''));
-      });
+    // SQL-backed search uses AJAX, without navigating or recreating DataTable.
+    var initialColumnFilters={};
+    try{initialColumnFilters=JSON.parse(document.getElementById('sh-server-filters').textContent)||{};}catch(e){}
+    $('#sales-history-report thead .sh-col-search').each(function(){
+      this.value=initialColumnFilters['col_'+this.getAttribute('data-col')]||'';
     });
     var advancedForm=document.querySelector('#sales-history-report .sh-compact-form');
-    if(advancedForm)advancedForm.addEventListener('submit',function(){
-      advancedForm.querySelectorAll('[data-sh-carry]').forEach(function(el){el.remove();});
-      var active=nextFilters();
-      active.forEach(function(value,key){
-        if(!/^col_\d+$/.test(key)&&key!=='date_from'&&key!=='date_to')return;
-        var hidden=document.createElement('input');hidden.type='hidden';
-        hidden.name=key;hidden.value=value;hidden.setAttribute('data-sh-carry','1');
-        advancedForm.appendChild(hidden);
+    var advancedNames=['customer_code','item_code','part','g_p','doc_type','fisicalyearref'];
+    var advancedParams=new URLSearchParams(window.location.search);
+    var activeArea=document.querySelector('#sales-history-report .sh-active-filters');
+    var busy=document.getElementById('sh-fetching');
+    var state=document.getElementById('sh-query-status');
+    var truncation=document.getElementById('sh-truncated-note');
+    var timer=null,controller=null,sequence=0;
+    function getParams(){
+      var p=new URLSearchParams();
+      advancedNames.forEach(function(k){if(advancedParams.get(k))p.set(k,advancedParams.get(k));});
+      document.querySelectorAll('#sales-history-report thead .sh-col-search').forEach(function(el){
+        if(el.value.trim())p.set('col_'+el.dataset.col,el.value.trim());
       });
-    });
-    // Keep the active input focused after navigation.
-    try {
-      var saved=JSON.parse(window.sessionStorage.getItem('sh-restore-search')||'null');
-      if(saved&&saved.target===window.location.pathname+window.location.search){
-        window.sessionStorage.removeItem('sh-restore-search');
-        setTimeout(function(){
-          if(saved.focus!==null&&saved.focus!==undefined){
-            var element=document.querySelector('#sales-history-report thead [data-col="'+saved.focus+'"]');
-            if(element){element.focus({preventScroll:true});
-              if(typeof saved.caret==='number'&&element.setSelectionRange){
-                element.setSelectionRange(saved.caret,saved.caret);
-              }
-            }
-          }
-          var scroll=document.querySelector('.sh-table-scroll');
-          if(scroll)scroll.scrollLeft=saved.innerX||0;
-          window.scrollTo(saved.x||0,saved.y||0);
-        },100);
+      if(fromInput.value.trim())p.set('date_from',fromInput.value.trim());
+      if(toInput.value.trim())p.set('date_to',toInput.value.trim());
+      return p;
+    }
+    function message(text,isError){
+      if(!state)return;
+      state.hidden=!text;state.textContent=text||'';
+      state.classList.toggle('sh-state-message--error',!!isError);
+    }
+    function setBusy(x){if(busy)busy.hidden=!x;tableEl.setAttribute('aria-busy',x?'true':'false');}
+    function refreshChips(data){
+      if(!activeArea)return;
+      activeArea.querySelectorAll('.sh-period-chip,.sh-filter-chip').forEach(function(el){el.remove();});
+      if(data.recent_default){
+        var p=document.createElement('span');p.className='sh-period-chip';
+        p.textContent='نمایش خودکار ۳۰ روز اخیر: '+data.recent_from+' تا '+data.recent_to;
+        activeArea.insertBefore(p,busy);
       }
-    } catch (e) {}
+      (data.active_chips||[]).forEach(function(c){
+        var el=document.createElement('button');el.type='button';el.className='sh-filter-chip';
+        el.dataset.filterKey=c.key;el.title='حذف این فیلتر';
+        el.appendChild(document.createTextNode(c.label+': '+c.value+' '));
+        var x=document.createElement('span');x.className='sh-chip-remove';
+        x.textContent='×';x.setAttribute('aria-hidden','true');el.appendChild(x);
+        activeArea.insertBefore(el,busy);
+      });
+    }
+    function receiveResults(result,params){
+      var body=document.createElement('tbody');
+      body.innerHTML=result.rows_html||'';
+      var rows=Array.from(body.children).filter(function(el){return el.tagName==='TR';});
+      var horizontal=scrollArea?scrollArea.scrollLeft:0;
+      table.clear();
+      table.rows.add($(rows));
+      table.page.len(60).draw();
+      if(scrollArea){scrollArea.scrollLeft=horizontal;scrollArea.scrollTop=0;}
+      history.replaceState(history.state,'',window.location.pathname+(params.toString()?'?'+params:''));
+      refreshChips(result);
+      if(truncation)truncation.hidden=!result.truncated;
+      message(result.row_count?
+        'نمایش '+Number(result.row_count).toLocaleString('fa-IR')+' ردیف مطابق فیلترها':
+        result.recent_default?'در ۳۰ روز اخیر سابقه‌ای یافت نشد.':'هیچ نتیجه‌ای با فیلترهای فعلی پیدا نشد.',false);
+      updateSummary();requestAnimationFrame(refreshSticky);
+    }
+    function search(){
+      updateDateInputs();
+      if(invalidRange)return;
+      var params=getParams(),target=window.location.pathname+(params.toString()?'?'+params:'');
+      if(controller)controller.abort();
+      controller=new AbortController();var current=controller,id=++sequence;
+      setBusy(true);
+      fetch(target,{credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'},signal:current.signal})
+      .then(function(r){return r.json().then(function(d){if(!r.ok)throw Error(d.error||'خطا در دریافت اطلاعات');return d;});})
+      .then(function(d){if(id===sequence)receiveResults(d,params);})
+      .catch(function(e){if(e.name!=='AbortError'&&id===sequence)message(e.message||'ارتباط با سرور برقرار نشد.',true);})
+      .finally(function(){if(id===sequence){controller=null;setBusy(false);}});
+    }
+    function schedule(ms){
+      clearTimeout(timer);
+      if(controller){controller.abort();controller=null;sequence++;setBusy(false);}
+      timer=setTimeout(search,ms);
+    }
+    $('#sales-history-report thead .sh-col-search').on('mousedown click keydown',function(e){
+      e.stopPropagation();if(e.key==='Enter'){e.preventDefault();clearTimeout(timer);search();}
+    }).on('input change',function(){
+      if(this.dataset.col==='7'&&this.value.trim()&&!/^\d{4}(?:\/\d{1,2}(?:\/\d{1,2})?)?$/.test(latinDigits(this.value.trim())))return;
+      schedule(this.tagName==='SELECT'?40:600);
+    });
+    $(fromInput).add(toInput).on('input change',function(){updateDateInputs();if(!invalidRange)schedule(600);});
+    $('#sh-clear-date').on('click',function(){fromInput.value='';toInput.value='';hideCalendar();schedule(0);});
+    $('#sh-clear-table').on('click',function(){
+      $('#sales-history-report thead .sh-col-search').val('');
+      fromInput.value='';toInput.value='';hideCalendar();schedule(0);
+    });
+    if(activeArea)activeArea.addEventListener('click',function(e){
+      var chip=e.target.closest('.sh-filter-chip');if(!chip)return;
+      var key=chip.dataset.filterKey;
+      if(key.indexOf('col_')===0){
+        var field=document.querySelector('#sales-history-report thead [data-col="'+key.slice(4)+'"]');
+        if(field)field.value='';
+      }else if(key==='date_from')fromInput.value='';
+      else if(key==='date_to')toInput.value='';
+      else{
+        advancedParams.delete(key);
+        if(advancedForm)advancedForm.querySelectorAll('[name="'+key+'"]').forEach(function(el){
+          if(el.type==='radio')el.checked=el.value==='';else el.value='';
+        });
+      }
+      schedule(0);
+    });
+    if(advancedForm)advancedForm.addEventListener('submit',function(e){
+      e.preventDefault();advancedParams=new URLSearchParams();
+      var data=new FormData(advancedForm);
+      advancedNames.forEach(function(k){if(String(data.get(k)||'').trim())advancedParams.set(k,String(data.get(k)).trim());});
+      schedule(0);
+    });
+    var resetAdvanced=document.querySelector('#sales-history-report .sh-filter-actions a');
+    if(resetAdvanced)resetAdvanced.addEventListener('click',function(e){
+      e.preventDefault();advancedParams=new URLSearchParams();
+      if(advancedForm)advancedForm.querySelectorAll('input,select').forEach(function(el){
+        if(el.type==='radio')el.checked=el.value==='';else el.value='';
+      });
+      schedule(0);
+    });
+    // Forward wheel motion over the report to its internal table scroll,
+    // while allowing the page to scroll at the top/bottom boundary.
+    document.addEventListener('wheel',function(e){
+      if(e.defaultPrevented||e.ctrlKey||e.shiftKey||!scrollArea)return;
+      if(!e.target.closest('#sales-history-report'))return;
+      if(e.target.closest('.sh-table-scroll,.sh-advanced-filters,.sh-jalali-popover,input,select,textarea,[role="dialog"]'))return;
+      var box=scrollArea.getBoundingClientRect();
+      if(box.bottom<95||box.top>innerHeight-80)return;
+      var max=scrollArea.scrollHeight-scrollArea.clientHeight;
+      if(max<=0)return;
+      var delta=e.deltaY*(e.deltaMode===1?20:e.deltaMode===2?scrollArea.clientHeight:1);
+      if((delta>0&&scrollArea.scrollTop>=max-1)||(delta<0&&scrollArea.scrollTop<=0))return;
+      var before=scrollArea.scrollTop;
+      scrollArea.scrollTop=Math.max(0,Math.min(max,before+delta));
+      if(scrollArea.scrollTop!==before)e.preventDefault();
+    },{passive:false});
 
     // Sticky header and six RTL pinned columns: calculate real rendered widths,
     // so hiding a column never leaves empty space or an incorrect right offset.

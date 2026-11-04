@@ -503,6 +503,25 @@ class SalesHistory(LoginRequiredMixin, View):
             Decimal(str(row.get('Quantity') or 0))
             for row in data
         )
+        # Return just the table rows for in-place DataTable refreshes.
+        # Requests without AJAX continue to render the complete initial page.
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            if error:
+                return JsonResponse({'error': error}, status=status)
+            from django.template.loader import render_to_string
+            return JsonResponse({
+                'rows_html': render_to_string(
+                    'sepidar/partial/sales_history_rows.html',
+                    {'list': data},
+                    request=request,
+                ),
+                'row_count': len(data),
+                'truncated': truncated,
+                'active_chips': active_chips,
+                'recent_default': recent_default,
+                'recent_from': context['recent_from'],
+                'recent_to': context['recent_to'],
+            })
         return render(request, self.template_name, context, status=status)
 
 
