@@ -345,11 +345,21 @@ def _sepidar_history(filters):
     conditions.extend('AND ' + condition for condition in more_conditions)
     params.extend(more_params)
     where_sql = '\n'.join(conditions)
-    # Existing Portal quotations must be suppressed from the Sepidar stream.
     linked_ids = _portal_sepidar_quotation_ids() if 'quotation' in types else set()
-    # With linked quotations, unbounded streaming is needed so excluded lines do
-    # not consume the TOP cap; otherwise the SQL Server can cap the result early.
-    sql_top = '' if linked_ids else f'TOP ({MAX_ROWS_PER_SOURCE + 1})'
+    # Small exclusion sets can be passed safely as bound SQL Server parameters,
+    # allowing SQL Server to filter duplicates BEFORE TOP and avoid a full sort.
+    # Stay far below SQL Server's 2100-parameter limit (other search filters
+    # also require parameters). Larger sets are filtered from a single cursor.
+    use_sql_exclusion = bool(linked_ids) and len(linked_ids) <= 1000
+    if use_sql_exclusion:
+        placeholders = ', '.join(['%s'] * len(linked_ids))
+        where_sql += (
+            f"\nAND (docs.doc_type <> 'quotation' OR "
+            f"docs.sepidar_doc_id NOT IN ({placeholders}))"
+        )
+        params.extend(sorted(linked_ids))
+    sql_top = (f'TOP ({MAX_ROWS_PER_SOURCE + 1})'
+               if not linked_ids or use_sql_exclusion else '')
     query = f"""
     SELECT {sql_top}
         docs.Date,

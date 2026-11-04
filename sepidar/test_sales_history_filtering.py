@@ -131,3 +131,27 @@ class SalesHistorySourceOptimizationTests(SimpleTestCase):
         self.assertFalse(truncated)
         sepidar.assert_called_once()
         portal.assert_called_once()
+
+    def test_small_linked_quotation_set_filters_in_sql_before_top(self):
+        with patch('sepidar.sales_history_service._portal_sepidar_quotation_ids',
+                   return_value={71, 72}):
+            with patch('sepidar.sales_history_service._read_sepidar_unique_rows',
+                       return_value=[]) as read:
+                self.assertEqual(_sepidar_history({'doc_type': 'quotation'}), [])
+        sql, params, excluded = read.call_args.args
+        self.assertIn('SELECT TOP (3001)', sql)
+        self.assertIn('docs.sepidar_doc_id NOT IN (%s, %s)', sql)
+        self.assertEqual(params[-2:], [71, 72])
+        self.assertEqual(excluded, {71, 72})
+
+    def test_large_linked_quotation_set_uses_single_cursor_stream(self):
+        ids = set(range(1, 1002))
+        with patch('sepidar.sales_history_service._portal_sepidar_quotation_ids',
+                   return_value=ids):
+            with patch('sepidar.sales_history_service._read_sepidar_unique_rows',
+                       return_value=[]) as read:
+                self.assertEqual(_sepidar_history({'doc_type': 'quotation'}), [])
+        sql, params, excluded = read.call_args.args
+        self.assertNotIn('SELECT TOP (3001)', sql)
+        self.assertNotIn('docs.sepidar_doc_id NOT IN', sql)
+        self.assertEqual(excluded, ids)
