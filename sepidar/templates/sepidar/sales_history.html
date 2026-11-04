@@ -258,7 +258,7 @@
 .sh-report .sh-unique-chip{display:inline-flex;align-items:baseline;gap:7px;padding:5px 9px;border:1px solid #e0e9f6;border-radius:8px;background:#fff;color:#50647f;font-size:11px;font-weight:750;white-space:nowrap}
 .sh-report .sh-unique-chip strong{color:#194e94;font-size:14px;font-weight:850;font-variant-numeric:tabular-nums}
 .sh-report .sh-unique-hint{color:#8897ad;font-size:10px;margin-right:auto}
-.sh-report .sh-table-scroll{position:relative;overflow:auto!important;max-height:min(68vh,750px);overscroll-behavior:contain;direction:rtl;scrollbar-gutter:stable}
+.sh-report .sh-table-scroll{position:relative;overflow:auto!important;max-height:min(68vh,750px);overscroll-behavior-x:contain;overscroll-behavior-y:auto;direction:rtl;scrollbar-gutter:stable}
 .sh-report .sh-table{min-width:2020px!important;table-layout:auto}
 .sh-report .sh-table thead tr.sh-label-head th{position:sticky!important;top:0!important;z-index:30;background:#eaf2fc!important;box-shadow:0 1px 0 #d7e2ef}
 .sh-report .sh-table thead tr.sh-search-head th{position:sticky!important;top:var(--sh-head-height,54px)!important;z-index:29;background:#f7faff!important;box-shadow:0 2px 0 #cadcf4}
@@ -461,11 +461,18 @@
 .sh-report .sh-advanced-filters>summary{display:flex!important;align-items:center;gap:10px;max-width:100%;width:fit-content;padding:11px 15px!important;background:#eaf2ff!important;border:1px solid #91b5e8!important;border-radius:11px!important;box-shadow:0 4px 12px rgba(37,99,235,.12)!important;color:#1e518f!important;cursor:pointer;transition:background .16s}
 .sh-report .sh-advanced-filters>summary:hover,.sh-report .sh-advanced-filters>summary:focus-visible{background:#dceaff!important;outline:2px solid #95bdf7;outline-offset:2px}
 .sh-report .sh-advanced-hint{font-size:10px;font-weight:650;color:#5b799c}
-.sh-report .sh-advanced-arrow{font-size:24px;line-height:12px;font-weight:900;transition:transform .18s}
+.sh-report .sh-advanced-arrow{display:inline-block;flex:0 0 auto;width:10px;height:10px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .18s}
 .sh-report .sh-hint-close{display:none}
-.sh-report .sh-advanced-filters[open] .sh-advanced-arrow{transform:rotate(180deg)}
+.sh-report .sh-advanced-filters[open] .sh-advanced-arrow{transform:rotate(225deg)}
 .sh-report .sh-advanced-filters[open] .sh-hint-open{display:none}
 .sh-report .sh-advanced-filters[open] .sh-hint-close{display:inline}
+/* Keep the progress indicator close to the active column, including during debounce. */
+.sh-report #sh-fetching{gap:9px}
+.sh-report .sh-spinner{display:inline-block;flex:0 0 auto;width:16px;height:16px;border:2px solid #bfd4f3;border-top-color:#2563eb;border-radius:50%;animation:sh-spin .7s linear infinite}
+.sh-report .sh-search-head th.sh-searching-column .sh-col-search{padding-left:25px!important}
+.sh-report .sh-search-head th.sh-searching-column::after{content:"";position:absolute;left:9px;top:50%;width:14px;height:14px;margin-top:-7px;border:2px solid #bfd4f3;border-top-color:#2563eb;border-radius:50%;pointer-events:none;animation:sh-spin .7s linear infinite;z-index:3}
+@keyframes sh-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.sh-report .sh-spinner,.sh-report .sh-search-head th.sh-searching-column::after{animation:none;border-top-color:#20519f}}
 .sh-report #sh-query-status[hidden],.sh-report #sh-truncated-note[hidden]{display:none!important}
 .sh-report .sh-state-message--error{color:#b53a30;background:#fff1f0}
 @media(max-width:680px){.sh-report .sh-advanced-hint{display:none!important}}
@@ -482,7 +489,7 @@
       </header>
 
       <details class="sh-advanced-filters" {% if advanced_active %}open{% endif %}>
-        <summary><strong>فیلترهای پیشرفته</strong><span class="sh-advanced-hint sh-hint-open">برای مشاهده کلیک کنید</span><span class="sh-advanced-hint sh-hint-close">برای بستن کلیک کنید</span><span class="sh-advanced-arrow" aria-hidden="true">⌄</span></summary>
+        <summary><strong>فیلترهای پیشرفته</strong><span class="sh-advanced-hint sh-hint-open">برای مشاهده کلیک کنید</span><span class="sh-advanced-hint sh-hint-close">برای بستن کلیک کنید</span><span class="sh-advanced-arrow" aria-hidden="true"></span></summary>
       <section class="sh-panel sh-filters" aria-label="فیلترهای پیشرفته دریافت اطلاعات">
         <form class="sh-compact-form" method="get" action="">
           <div class="sh-mini-field sh-mini-field--customer">
@@ -544,7 +551,7 @@
             {{ chip.label }}: {{ chip.value }} <span class="sh-chip-remove" aria-hidden="true">×</span>
           </button>
         {% endfor %}
-        <span class="sh-state-message" id="sh-fetching" role="status" aria-live="polite" hidden>در حال جست‌وجو در سوابق فروش پرتال و سپیدار…</span>
+        <span class="sh-state-message" id="sh-fetching" role="status" aria-live="polite" hidden><span class="sh-spinner" aria-hidden="true"></span><span>در حال جست‌وجو در سوابق فروش پرتال و سپیدار…</span></span>
       </div>
       {% if report_error %}<div class="sh-state-message sh-state-message--error" role="alert">{{ report_error }}</div>{% endif %}
       <div class="sh-state-message" role="status" aria-live="polite" id="sh-query-status" {% if recent_default or report_error %}hidden{% endif %}>{{ row_count }} ردیف دریافت شد.</div>
@@ -1099,7 +1106,11 @@
       state.hidden=!text;state.textContent=text||'';
       state.classList.toggle('sh-state-message--error',!!isError);
     }
-    function setBusy(x){if(busy)busy.hidden=!x;tableEl.setAttribute('aria-busy',x?'true':'false');}
+    function setBusy(x){
+      if(busy)busy.hidden=!x;
+      tableEl.setAttribute('aria-busy',x?'true':'false');
+      if(!x)document.querySelectorAll('#sales-history-report .sh-searching-column').forEach(function(el){el.classList.remove('sh-searching-column');});
+    }
     function refreshChips(data){
       if(!activeArea)return;
       activeArea.querySelectorAll('.sh-period-chip,.sh-filter-chip').forEach(function(el){el.remove();});
@@ -1136,7 +1147,7 @@
     }
     function search(){
       updateDateInputs();
-      if(invalidRange)return;
+      if(invalidRange){setBusy(false);return;}
       var params=getParams(),target=window.location.pathname+(params.toString()?'?'+params:'');
       if(controller)controller.abort();
       controller=new AbortController();var current=controller,id=++sequence;
@@ -1147,18 +1158,33 @@
       .catch(function(e){if(e.name!=='AbortError'&&id===sequence)message(e.message||'ارتباط با سرور برقرار نشد.',true);})
       .finally(function(){if(id===sequence){controller=null;setBusy(false);}});
     }
-    function schedule(ms){
+    function cancelPendingSearch(){
       clearTimeout(timer);
-      if(controller){controller.abort();controller=null;sequence++;setBusy(false);}
+      if(controller){controller.abort();controller=null;sequence++;}
+      setBusy(false);
+    }
+    function schedule(ms,origin){
+      clearTimeout(timer);
+      if(controller){controller.abort();controller=null;sequence++;}
+      document.querySelectorAll('#sales-history-report .sh-searching-column').forEach(function(el){el.classList.remove('sh-searching-column');});
+      var cell=origin&&origin.closest('th');
+      if(cell)cell.classList.add('sh-searching-column');
+      setBusy(true);
       timer=setTimeout(search,ms);
     }
     $('#sales-history-report thead .sh-col-search').on('mousedown click keydown',function(e){
       e.stopPropagation();if(e.key==='Enter'){e.preventDefault();clearTimeout(timer);search();}
     }).on('input change',function(){
-      if(this.dataset.col==='7'&&this.value.trim()&&!/^\d{4}(?:\/\d{1,2}(?:\/\d{1,2})?)?$/.test(latinDigits(this.value.trim())))return;
-      schedule(this.tagName==='SELECT'?40:600);
+      if(this.dataset.col==='7'&&this.value.trim()&&!/^\d{4}(?:\/\d{1,2}(?:\/\d{1,2})?)?$/.test(latinDigits(this.value.trim()))){
+        cancelPendingSearch();return;
+      }
+      schedule(this.tagName==='SELECT'?40:600,this);
     });
-    $(fromInput).add(toInput).on('input change',function(){updateDateInputs();if(!invalidRange)schedule(600);});
+    $(fromInput).add(toInput).on('input change',function(){
+      updateDateInputs();
+      if(invalidRange)cancelPendingSearch();
+      else schedule(600);
+    });
     $('#sh-clear-date').on('click',function(){fromInput.value='';toInput.value='';hideCalendar();schedule(0);});
     $('#sh-clear-table').on('click',function(){
       $('#sales-history-report thead .sh-col-search').val('');
@@ -1194,18 +1220,32 @@
       });
       schedule(0);
     });
-    // Forward wheel motion over the report to its internal table scroll,
-    // while allowing the page to scroll at the top/bottom boundary.
+    // Scroll down the document first. Only at the page bottom should wheel
+    // motion enter the table. In reverse, unwind the table before the page.
+    // Kept pure so edge cases can be unit tested without a browser.
+    function wheelDestination(delta,pageAtEnd,tableTop,tableMax){
+      if(!delta||tableMax<=1)return 'page';
+      if(delta>0)return pageAtEnd&&tableTop<tableMax-1?'table':'page';
+      return tableTop>1?'table':'page';
+    }
     document.addEventListener('wheel',function(e){
       if(e.defaultPrevented||e.ctrlKey||e.shiftKey||!scrollArea)return;
       if(!e.target.closest('#sales-history-report'))return;
-      if(e.target.closest('.sh-table-scroll,.sh-advanced-filters,.sh-jalali-popover,input,select,textarea,[role="dialog"]'))return;
-      var box=scrollArea.getBoundingClientRect();
-      if(box.bottom<95||box.top>innerHeight-80)return;
-      var max=scrollArea.scrollHeight-scrollArea.clientHeight;
-      if(max<=0)return;
+      if(e.target.closest('.sh-advanced-filters,.sh-jalali-popover,select,textarea,[role="dialog"]'))return;
       var delta=e.deltaY*(e.deltaMode===1?20:e.deltaMode===2?scrollArea.clientHeight:1);
-      if((delta>0&&scrollArea.scrollTop>=max-1)||(delta<0&&scrollArea.scrollTop<=0))return;
+      if(!delta)return;
+      var page=document.scrollingElement||document.documentElement;
+      var pageAtEnd=page.scrollTop+page.clientHeight>=page.scrollHeight-2;
+      var max=scrollArea.scrollHeight-scrollArea.clientHeight;
+      var destination=wheelDestination(delta,pageAtEnd,scrollArea.scrollTop,max);
+      if(destination==='page'){
+        // overflow-y:auto on the table would otherwise trap wheel movement.
+        if(scrollArea.contains(e.target)){
+          e.preventDefault();
+          window.scrollBy(0,delta);
+        }
+        return;
+      }
       var before=scrollArea.scrollTop;
       scrollArea.scrollTop=Math.max(0,Math.min(max,before+delta));
       if(scrollArea.scrollTop!==before)e.preventDefault();
