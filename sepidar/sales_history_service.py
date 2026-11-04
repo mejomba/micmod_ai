@@ -3,7 +3,7 @@
 Copy this file to: sepidar/sales_history_service.py
 The implementation is not executed here against live databases.
 """
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import jdatetime
 from django.db import connections
@@ -17,6 +17,8 @@ from micmod_base.models import Quotation, QuotationItem, SaleType
 
 
 MAX_ROWS_PER_SOURCE = 3000
+# From this day forward Portal is the authoritative source for invoice lines.
+PORTAL_INVOICE_START = jdatetime.date(1405, 2, 10).togregorian()
 # Mapping from the existing HTML selector: Sepidar FiscalYearRef -> Jalali year.
 FISCAL_YEAR_MAP = {
     '48': 1405, '46': 1404, '44': 1403, '42': 1402,
@@ -219,6 +221,72 @@ def _column_constraints(filters, source):
             params.append('%' + value + '%')
     return conditions, params, False
 
+def _document_types(filters):
+    """Types eligible after both the advanced and per-column document filters."""
+    allowed = {'invoice', 'quotation', 'returned_invoice'}
+    for key in ('doc_type', 'col_6'):
+        value = str(filters.get(key) or '').strip()
+        if value:
+            if value not in allowed:
+                raise ValueError('نوع سند انتخاب‌شده نامعتبر است.')
+            allowed.intersection_update((value,))
+    return allowed
+
+
+def _sepidar_invoice_needed(filters):
+    """Avoid Sepidar entirely for recent invoice-only searches."""
+    if 'invoice' not in _document_types(filters):
+        return False
+    bounds = []
+    start = _history_date(filters.get('date_from'))
+    if start:
+        bounds.append(start)
+    column_date = str(filters.get('col_7') or '').strip()
+    if column_date:
+        bounds.append(_column_date_bounds(column_date)[0])
+    fiscal_ref = str(filters.get('fisicalyearref') or '').strip()
+    if fiscal_ref:
+        if fiscal_ref not in FISCAL_YEAR_MAP:
+            raise ValueError('سال مالی انتخاب‌شده نامعتبر است.')
+        bounds.append(jdatetime.date(FISCAL_YEAR_MAP[fiscal_ref], 1, 1).togregorian())
+    return not bounds or max(bounds) < PORTAL_INVOICE_START
+
+
+def _portal_sepidar_quotation_ids():
+    """Local-only lookup; no SQL Server request or remote table join."""
+    qs = Quotation.objects.using('default').filter(
+        is_deleted=False, cancel=False, sepidar_quotation_id__isnull=False,
+    ).exclude(sepidar_quotation_id=0)
+    return set(qs.values_list('sepidar_quotation_id', flat=True))
+
+
+def _read_sepidar_unique_rows(sql, params, quotation_ids):
+    """Use one SQL Server cursor; fetch until 3000 unique lines are found.
+
+    Filtering after TOP 3000 would silently hide unrelated older quotations.
+    Streaming the ordered result avoids that problem without issuing another
+    Sepidar query for each duplicate batch.
+    """
+    result = []
+    with connections['sepidar'].cursor() as cursor:
+        cursor.execute(sql, params)
+        columns = [desc[0].lower() for desc in cursor.description]
+        while len(result) <= MAX_ROWS_PER_SOURCE:
+            batch = cursor.fetchmany(256)
+            if not batch:
+                break
+            for values in batch:
+                record = dict(zip(columns, values))
+                if (record['doc_type'] == 'quotation'
+                        and record.get('sepidar_doc_id') is not None
+                        and int(record['sepidar_doc_id']) in quotation_ids):
+                    continue
+                result.append(_normalize_result(record, 'sepidar'))
+                if len(result) > MAX_ROWS_PER_SOURCE:
+                    break
+    return result
+
+
 def _sepidar_history(filters):
     conditions = []
     params = []
@@ -260,14 +328,32 @@ def _sepidar_history(filters):
         params.append(doc_type)
 
     more_conditions, more_params, skip_source = _column_constraints(filters, 'sepidar')
-    if skip_source:
+    if skip_source or not _document_types(filters):
         return []
+    types = _document_types(filters)
+    if not _sepidar_invoice_needed(filters):
+        types.discard('invoice')
+    if not types:
+        return []
+    if types != {'invoice', 'quotation', 'returned_invoice'}:
+        placeholders = ', '.join(['%s'] * len(types))
+        conditions.append(f'AND docs.doc_type IN ({placeholders})')
+        params.extend(sorted(types))
+    # The Sepidar invoice segment ends before the first fully covered Portal day.
+    conditions.append("AND (docs.doc_type <> 'invoice' OR docs.Date < %s)")
+    params.append(PORTAL_INVOICE_START)
     conditions.extend('AND ' + condition for condition in more_conditions)
     params.extend(more_params)
     where_sql = '\n'.join(conditions)
+    # Existing Portal quotations must be suppressed from the Sepidar stream.
+    linked_ids = _portal_sepidar_quotation_ids() if 'quotation' in types else set()
+    # With linked quotations, unbounded streaming is needed so excluded lines do
+    # not consume the TOP cap; otherwise the SQL Server can cap the result early.
+    sql_top = '' if linked_ids else f'TOP ({MAX_ROWS_PER_SOURCE + 1})'
     query = f"""
-    SELECT TOP ({MAX_ROWS_PER_SOURCE})
+    SELECT {sql_top}
         docs.Date,
+        docs.sepidar_doc_id,
         docs.Number,
         docs.coef,
         docs.doc_type,
@@ -315,6 +401,7 @@ def _sepidar_history(filters):
             II.NetPrice, II.NetPriceInBaseCurrency,
             II.Price, II.PriceInBaseCurrency,
             II.InvoiceItemID AS itemId,
+            NULL AS sepidar_doc_id,
             1 AS coef,
             'invoice' AS doc_type
         FROM [SLS].[Invoice] I
@@ -332,6 +419,7 @@ def _sepidar_history(filters):
             II.NetPrice, II.NetPriceInBaseCurrency,
             II.Price, II.PriceInBaseCurrency,
             II.QuotationItemID AS itemId,
+            I.QuotationId AS sepidar_doc_id,
             0 AS coef,
             'quotation' AS doc_type
         FROM [SLS].[Quotation] I
@@ -349,6 +437,7 @@ def _sepidar_history(filters):
             -II.NetPrice, -II.NetPriceInBaseCurrency,
             -II.Price, -II.PriceInBaseCurrency,
             II.ReturnedInvoiceItemID AS itemId,
+            NULL AS sepidar_doc_id,
             -1 AS coef,
             'returned_invoice' AS doc_type
         FROM [SLS].[ReturnedInvoice] I
@@ -389,7 +478,7 @@ def _sepidar_history(filters):
 
     ORDER BY docs.Date DESC, docs.itemId DESC
     """
-    return [_normalize_result(rec, 'sepidar') for rec in _rows('sepidar', query, params)]
+    return _read_sepidar_unique_rows(query, params, linked_ids)[:MAX_ROWS_PER_SOURCE + 1]
 
 
 def _portal_history(filters):
@@ -548,6 +637,10 @@ def _portal_history(filters):
     sql += ''.join('\nAND ' + condition for condition in more_conditions)
     params.extend(more_params)
 
+    # The full invoice period since 1405/02/10 is covered by the Portal.
+    # Apply the source boundary before LIMIT and before financial enrichment.
+    sql += '\nAND (doc_type <> \'invoice\' OR "Date" >= %s)'
+    params.append(PORTAL_INVOICE_START)
     sql += f'\nORDER BY "Date" DESC, "itemId" DESC LIMIT {MAX_ROWS_PER_SOURCE}'
     result = [_normalize_result(rec, 'portal') for rec in _rows('default', sql, params)]
     return _apply_portal_finance(result)
@@ -772,15 +865,17 @@ def _apply_portal_finance(rows):
 def get_sales_history_list(filters):
     """Return (merged_rows, potentially_truncated).
 
-    Both sources are always read even if the other has no matching rows.
-    Documents that exist in both databases remain as two separate source rows.
+    Invoices before the cutoff come from Sepidar, newer ones from Portal.
+    Portal-linked quotations are not repeated from Sepidar.
     """
+    # When explicitly filtering to recent invoices, skip SQL Server entirely.
+    # _sepidar_history also skips its connection when source=Portal.
     sepidar = _sepidar_history(filters)
     portal = _portal_history(filters)
 
-    results = sepidar + portal
+    results = sepidar[:MAX_ROWS_PER_SOURCE] + portal
     results.sort(key=lambda x: (x['Date'] or date.min, x['row_key']), reverse=True)
 
-    truncated = (len(sepidar) >= MAX_ROWS_PER_SOURCE or
+    truncated = (len(sepidar) > MAX_ROWS_PER_SOURCE or
                  len(portal) >= MAX_ROWS_PER_SOURCE)
     return results, truncated

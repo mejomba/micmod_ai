@@ -1,12 +1,15 @@
 """Read-only regression tests for SQL-backed sales history column filters."""
 from datetime import date
+from unittest.mock import patch, MagicMock
 from decimal import Decimal
 
 from django.test import SimpleTestCase
 
 from sepidar.sales_history_service import (
     COLUMN_LABELS, _column_constraints, _column_date_bounds,
-    _history_date,
+    _history_date, _document_types, _sepidar_invoice_needed,
+    _read_sepidar_unique_rows, _sepidar_history, PORTAL_INVOICE_START,
+    get_sales_history_list,
 )
 
 
@@ -67,3 +70,64 @@ class SalesHistoryColumnFilterTests(SimpleTestCase):
             _column_constraints(
                 {'date_from': '1405/08/13', 'date_to': '1405/08/01'}, 'sepidar'
             )
+
+
+class SalesHistorySourceOptimizationTests(SimpleTestCase):
+    def test_cutoff_is_jalali_1405_02_10(self):
+        self.assertEqual(PORTAL_INVOICE_START, date(2026, 4, 30))
+
+    def test_no_sepidar_connection_for_portal_only_source(self):
+        with patch('sepidar.sales_history_service._read_sepidar_unique_rows') as remote:
+            self.assertEqual(_sepidar_history({'col_0': 'portal'}), [])
+            remote.assert_not_called()
+
+    def test_recent_invoice_only_needs_no_sepidar_query(self):
+        for filters in (
+            {'doc_type': 'invoice', 'date_from': '1405/02/10'},
+            {'col_6': 'invoice', 'col_7': '1405/03'},
+            {'doc_type': 'invoice', 'fisicalyearref': '48', 'date_from': '1405/02/10'},
+        ):
+            with self.subTest(filters=filters):
+                self.assertFalse(_sepidar_invoice_needed(filters))
+                with patch('sepidar.sales_history_service._portal_sepidar_quotation_ids') as ids:
+                    with patch('sepidar.sales_history_service._read_sepidar_unique_rows') as remote:
+                        self.assertEqual(_sepidar_history(filters), [])
+                        ids.assert_not_called()
+                        remote.assert_not_called()
+
+    def test_old_invoices_still_read_from_sepidar(self):
+        self.assertTrue(_sepidar_invoice_needed(
+            {'doc_type': 'invoice', 'date_to': '1405/02/09'}))
+        self.assertTrue(_sepidar_invoice_needed({'doc_type': 'invoice'}))
+
+    def test_portal_quotation_query_excludes_linked_sepidar_quotation(self):
+        # A Portal-linked quotation always stays in Portal; Sepidar does not
+        # need a second matching row.
+        cursor = MagicMock()
+        cursor.description = [('doc_type',), ('sepidar_doc_id',), ('itemid',)]
+        cursor.fetchmany.side_effect = [
+            [('quotation', 71, 1), ('quotation', 72, 2),
+             ('quotation', 71, 3), ('invoice', None, 4)],
+            [],
+        ]
+        connection = MagicMock()
+        connection.cursor.return_value.__enter__.return_value = cursor
+        with patch('sepidar.sales_history_service.connections', {'sepidar': connection}):
+            rows = _read_sepidar_unique_rows('SELECT ...', [], {71})
+        self.assertEqual([(r['doc_type'], r['itemId']) for r in rows],
+                         [('quotation', 2), ('invoice', 4)])
+        cursor.execute.assert_called_once_with('SELECT ...', [])
+
+    def test_different_quotations_and_invoice_types_are_not_confused(self):
+        self.assertEqual(_document_types({'doc_type': 'quotation'}), {'quotation'})
+        self.assertEqual(_document_types({'doc_type': 'invoice'}), {'invoice'})
+        self.assertEqual(_document_types({'doc_type': 'invoice', 'col_6': 'quotation'}), set())
+
+    def test_combined_result_has_no_second_sepidar_lookup(self):
+        with patch('sepidar.sales_history_service._sepidar_history', return_value=[]) as sepidar:
+            with patch('sepidar.sales_history_service._portal_history', return_value=[]) as portal:
+                rows, truncated = get_sales_history_list({'doc_type': 'invoice', 'date_from': '1405/02/10'})
+        self.assertEqual(rows, [])
+        self.assertFalse(truncated)
+        sepidar.assert_called_once()
+        portal.assert_called_once()
