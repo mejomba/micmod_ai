@@ -424,31 +424,75 @@ class SalesHistory(LoginRequiredMixin, View):
     template_name = 'sepidar/sales_history.html'
 
     def get(self, request):
+        from datetime import timedelta
+        from django.utils import timezone
+        from sepidar.sales_history_service import COLUMN_LABELS
+        import jdatetime
+        import logging
+
+        advanced_names = (
+            'customer_code', 'item_code', 'part', 'g_p',
+            'doc_type', 'fisicalyearref',
+        )
+        column_filters = {
+            f'col_{index}': (request.GET.get(f'col_{index}') or '').strip()[:120]
+            for index in range(len(COLUMN_LABELS))
+        }
+        all_keys = advanced_names + ('date_from', 'date_to') + tuple(column_filters)
+        has_search = any((request.GET.get(key) or '').strip() for key in all_keys)
+        recent_default = not has_search
+        # The initial visit is immediately useful, without querying all years.
+        # Once any search is entered, the backend searches all historical dates
+        # unless the user explicitly specifies a date interval.
+        filters = request.GET.copy()
+        today = timezone.localdate()
+        from_date = today - timedelta(days=29)
+        if recent_default:
+            filters['date_from'] = from_date.isoformat()
+            filters['date_to'] = today.isoformat()
+
         context = {
             key: request.GET.get(key, '')
-            for key in (
-                'customer_code', 'item_code', 'part', 'g_p',
-                'doc_type', 'fisicalyearref',
-            )
+            for key in advanced_names + ('date_from', 'date_to')
         }
+        context['column_filters'] = column_filters
+        context['recent_default'] = recent_default
+        context['recent_from'] = jdatetime.date.fromgregorian(date=from_date).strftime('%Y/%m/%d')
+        context['recent_to'] = jdatetime.date.fromgregorian(date=today).strftime('%Y/%m/%d')
+        context['advanced_active'] = any((context.get(k) or '').strip() for k in advanced_names)
+        active_chips = []
+        for index, label in enumerate(COLUMN_LABELS):
+            key = f'col_{index}'
+            if column_filters[key]:
+                active_chips.append({'key': key, 'label': label, 'value': column_filters[key]})
+        other_labels = {
+            'customer_code': 'مشتری', 'item_code': 'کد کالا',
+            'part': 'کالا / پارت‌نامبر', 'g_p': 'گروه خرید',
+            'doc_type': 'نوع سند', 'fisicalyearref': 'سال مالی',
+            'date_from': 'از تاریخ', 'date_to': 'تا تاریخ',
+        }
+        for key, label in other_labels.items():
+            value = (context.get(key) or '').strip()
+            if value:
+                active_chips.append({'key': key, 'label': label, 'value': value})
+        context['active_chips'] = active_chips
 
+        data, truncated, error = [], False, ''
+        status = 200
         try:
-            # New opt-in mode; original callers of Dl.get_sales_history_list()
-            # still get their legacy Sepidar RawQuerySet.
-            result = Dl.get_sales_history_list(
-                request.GET,
-                include_portal=True
-            )
-
-            if result is None:
-                data, truncated = [], False
-            else:
-                data, truncated = result
+            data, truncated = Dl.get_sales_history_list(
+                filters, include_portal=True
+            ) or ([], False)
         except ValueError as exc:
-            return HttpResponseBadRequest(str(exc))
+            error, status = str(exc), 400
+        except Exception:
+            logging.getLogger(__name__).exception('Sales history query failed')
+            error, status = 'دریافت سوابق فروش با خطا مواجه شد. دوباره تلاش کنید یا به پشتیبانی اطلاع دهید.', 503
 
         context['list'] = data
         context['truncated'] = truncated
+        context['report_error'] = error
+        context['row_count'] = len(data)
         context['total_price'] = sum(
             (
                 Decimal(str(row.get('Fee') or 0))
@@ -459,8 +503,8 @@ class SalesHistory(LoginRequiredMixin, View):
             Decimal(str(row.get('Quantity') or 0))
             for row in data
         )
+        return render(request, self.template_name, context, status=status)
 
-        return render(request, self.template_name, context)
 
 class BuyHistory(LoginRequiredMixin, View):
     def get(self, requset):

@@ -438,6 +438,24 @@
 @media(max-width:960px){.sh-report .sh-finance-overview{grid-template-columns:1fr}}
 @media(max-width:600px){.sh-report .sh-finance-overview{margin:6px 5px 10px}.sh-report .sh-finance-group{padding:8px}}
 
+
+/* Search-first UX: keep per-column filters visible, collapse advanced filters. */
+.sh-report .sh-advanced-filters {margin:0 0 9px}
+.sh-report .sh-advanced-filters > summary {display:inline-flex;align-items:center;gap:9px;cursor:pointer;list-style:none;background:#fff;color:#25528c;border:1px solid #dce7f4;border-radius:10px;padding:9px 13px;font-size:12px;font-weight:800}
+.sh-report .sh-advanced-filters > summary::-webkit-details-marker {display:none}
+.sh-report .sh-advanced-filters > summary:before {content:'⚙';font-size:16px}
+.sh-report .sh-advanced-filters[open] > summary {background:#ebf3ff;border-color:#a9c8f3}
+.sh-report .sh-advanced-filters .sh-filters {margin-top:9px}
+.sh-report .sh-active-filters {display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 12px;min-height:26px}
+.sh-report .sh-period-chip,.sh-report .sh-filter-chip {display:inline-flex;gap:6px;align-items:center;background:#eaf2ff;color:#24518e;border:1px solid #ccdff7;border-radius:18px;padding:5px 10px;font-size:11px;font-weight:700;line-height:1.5}
+.sh-report .sh-filter-chip {cursor:pointer;background:#fff}
+.sh-report .sh-filter-chip:hover {background:#eef5ff}
+.sh-report .sh-filter-chip .sh-chip-remove {font-size:14px;color:#a33a3a}
+.sh-report .sh-state-message {display:flex;align-items:center;gap:8px;margin:8px 0;padding:10px 13px;border-radius:9px;background:#f0f6ff;border:1px solid #d9e6f8;color:#2c4a6f;font-size:12px}
+.sh-report .sh-state-message--error {background:#fff0ef;border-color:#f1cecc;color:#a23531}
+.sh-report #sh-fetching[hidden] {display:none!important}
+.sh-report .sh-top-detail {line-height:1.8}
+.sh-report .sh-table thead .sh-col-search:not(:placeholder-shown) {border-color:#8fb9f3;background:#f4f9ff}
 </style>
 {% endblock extra_css %}
 
@@ -447,10 +465,12 @@
     <div class="container-fluid sh-report" id="sales-history-report">
       <header class="sh-top">
         <h1 class="sh-title">مرور فروش</h1>
-        <p class="sh-top-detail"> جست‌وجو و فیلتر در جدول</p>
+        <p class="sh-top-detail">با فیلترهای بالای هر ستون، سوابق را در پرتال و سپیدار جست‌وجو کنید؛ جست‌وجو به نتایج دریافت‌شده محدود نیست.</p>
       </header>
 
-      <section class="sh-panel sh-filters" aria-label="فیلترهای اولیه دریافت اطلاعات">
+      <details class="sh-advanced-filters" {% if advanced_active %}open{% endif %}>
+        <summary>فیلترهای پیشرفته (مشتری، کالا، سال مالی و نوع سند)</summary>
+      <section class="sh-panel sh-filters" aria-label="فیلترهای پیشرفته دریافت اطلاعات">
         <form class="sh-compact-form" method="get" action="">
           <div class="sh-mini-field sh-mini-field--customer">
             <label for="sh-customer">مشتری یا کد مشتری</label>
@@ -500,7 +520,23 @@
 
         </form>
       </section>
-
+      </details>
+      {{ column_filters|json_script:"sh-server-filters" }}
+      <div class="sh-active-filters" role="group" aria-label="فیلترهای فعال">
+        {% if recent_default %}
+          <span class="sh-period-chip" title="فقط در ورود اولیه؛ جست‌وجوی ستونی تمام تاریخچه را بررسی می‌کند">نمایش خودکار ۳۰ روز اخیر: {{ recent_from }} تا {{ recent_to }}</span>
+        {% endif %}
+        {% for chip in active_chips %}
+          <button class="sh-filter-chip" type="button" data-filter-key="{{ chip.key }}" title="حذف این فیلتر">
+            {{ chip.label }}: {{ chip.value }} <span class="sh-chip-remove" aria-hidden="true">×</span>
+          </button>
+        {% endfor %}
+        <span class="sh-state-message" id="sh-fetching" role="status" aria-live="polite" hidden>در حال جست‌وجو در سوابق فروش پرتال و سپیدار…</span>
+      </div>
+      {% if report_error %}<div class="sh-state-message sh-state-message--error" role="alert">{{ report_error }}</div>{% endif %}
+      {% if not recent_default and not report_error %}
+        <div class="sh-state-message" role="status">نتایج از دیتابیس جست‌وجو شده‌اند؛ {{ row_count }} ردیف دریافت شد. برای جست‌وجو در کل تاریخچه، فیلترهای ستون‌ها را به کار ببرید.</div>
+      {% endif %}
 
       {% if truncated %}
         <div class="sh-help">توجه: نتایج به سقف دریافت ۳۰۰۰ ردیف از هر منبع رسیده‌اند. جدول و جمع‌ها فقط داده‌های دریافت‌شده را پوشش می‌دهند؛ فیلتر بازه تاریخ پایین نیز روی همین ردیف‌ها اجرا می‌شود.</div>
@@ -508,14 +544,14 @@
 
       <section class="sh-panel" aria-labelledby="sh-table-heading">
         <div class="sh-table-panel-heading">
-          <div><h2 id="sh-table-heading">جدول جزئیات فروش</h2><p>۶ ستون ثابت، سربرگ ثابت، جست‌وجوی ستونی و بارگذاری تدریجی</p></div>
+          <div><h2 id="sh-table-heading">جدول جزئیات فروش</h2><p>جست‌وجوی ستونی در همه سوابق، ۶ ستون ثابت و نمایش تدریجی نتایج</p></div>
           <button class="sh-button" id="sh-clear-table" type="button">پاک‌کردن فیلترهای جدول</button>
         </div>
         <div class="sh-table-tools">
-          <div class="sh-field sh-date-field"><label for="sh-date-from">از تاریخ (شمسی)</label><div class="sh-date-control"><input type="text" dir="ltr" inputmode="numeric" maxlength="10" class="sh-input" id="sh-date-from" autocomplete="off" placeholder="۱۴۰۵/۰۱/۰۱" aria-describedby="sh-date-message" aria-haspopup="dialog"><button class="sh-date-trigger" type="button" data-target="sh-date-from" aria-label="باز کردن تقویم تاریخ شروع" title="انتخاب تاریخ شروع">▦</button></div></div>
-          <div class="sh-field sh-date-field"><label for="sh-date-to">تا تاریخ (شمسی)</label><div class="sh-date-control"><input type="text" dir="ltr" inputmode="numeric" maxlength="10" class="sh-input" id="sh-date-to" autocomplete="off" placeholder="۱۴۰۵/۱۲/۲۹" aria-describedby="sh-date-message" aria-haspopup="dialog"><button class="sh-date-trigger" type="button" data-target="sh-date-to" aria-label="باز کردن تقویم تاریخ پایان" title="انتخاب تاریخ پایان">▦</button></div></div>
+          <div class="sh-field sh-date-field"><label for="sh-date-from">از تاریخ (شمسی)</label><div class="sh-date-control"><input type="text" dir="ltr" inputmode="numeric" maxlength="10" class="sh-input" id="sh-date-from" autocomplete="off" value="{{ date_from|default:'' }}" placeholder="۱۴۰۵/۰۱/۰۱" aria-describedby="sh-date-message" aria-haspopup="dialog"><button class="sh-date-trigger" type="button" data-target="sh-date-from" aria-label="باز کردن تقویم تاریخ شروع" title="انتخاب تاریخ شروع">▦</button></div></div>
+          <div class="sh-field sh-date-field"><label for="sh-date-to">تا تاریخ (شمسی)</label><div class="sh-date-control"><input type="text" dir="ltr" inputmode="numeric" maxlength="10" class="sh-input" id="sh-date-to" autocomplete="off" value="{{ date_to|default:'' }}" placeholder="۱۴۰۵/۱۲/۲۹" aria-describedby="sh-date-message" aria-haspopup="dialog"><button class="sh-date-trigger" type="button" data-target="sh-date-to" aria-label="باز کردن تقویم تاریخ پایان" title="انتخاب تاریخ پایان">▦</button></div></div>
           <button class="sh-button mt-8" id="sh-clear-date" type="button">حذف بازه تاریخ</button>
-          <span class="sh-date-note">بازه تاریخ و جست‌وجو روی همه داده‌های دریافت‌شده اعمال می‌شود، نه فقط ردیف‌های نمایان.</span>
+          <span class="sh-date-note">بازه تاریخ در دیتابیس هر دو منبع اعمال می‌شود. بازه خالی در جست‌وجوی جدید یعنی همه تاریخ‌ها.</span>
         </div>
         <div class="sh-date-message" id="sh-date-message" role="status"></div>
                 <!-- Sales History v10: figures in a compact strip, NOT within table headers. -->
@@ -805,7 +841,7 @@
       autoWidth: false,
       responsive: false,
       searchDelay: 150,
-      dom: "<'sh-dt-header'<'sh-dt-header-middle'f><'sh-dt-header-right'B>><'sh-table-scroll't><'sh-dt-footer'<'sh-dt-info'i>>",
+      dom: "<'sh-dt-header'<'sh-dt-header-middle'><'sh-dt-header-right'B>><'sh-table-scroll't><'sh-dt-footer'<'sh-dt-info'i>>",
       buttons: [
         {extend:'copyHtml5',text:'کپی',exportOptions:{columns:':visible',modifier:{search:'applied',order:'applied',page:'all'},format:{header:cleanExportHeader}}},
         {extend:'excelHtml5',text:'Excel',title:'sales_history',exportOptions:{columns:':visible',modifier:{search:'applied',order:'applied',page:'all'},format:{header:cleanExportHeader}}},
@@ -820,7 +856,7 @@
         infoFiltered:'(از _MAX_ ردیف دریافت‌شده)',
         infoEmpty:'هیچ ردیفی برای نمایش وجود ندارد',
         zeroRecords:'هیچ ردیفی با فیلترهای فعلی مطابقت ندارد',
-        emptyTable:'برای نمایش سوابق، فیلترهای اولیه را در بالا اعمال کنید.',
+        emptyTable:{% if report_error %}'دریافت اطلاعات ناموفق بود؛ لطفاً دوباره تلاش کنید.'{% elif recent_default %}'در ۳۰ روز اخیر سند فروشی پیدا نشد؛ با فیلترهای ستونی یا پیشرفته، تاریخچه را جست‌وجو کنید.'{% else %}'موردی مطابق فیلترهای شما پیدا نشد؛ برای جست‌وجوی گسترده‌تر، فیلترها را پاک کنید.'{% endif %},
         paginate:{first:'اول',last:'آخر',next:'بعدی',previous:'قبلی'},
         processing:'در حال پردازش...'
       }
@@ -1065,42 +1101,117 @@
 
     }
 
-    // جست‌وجو بالای تک‌تک ستون‌ها. ورودی‌ها نباید باعث مرتب‌سازی هدر شوند.
-    $('#sales-history-report thead .sh-col-search').on('mousedown click keydown', function (event) {
+    // Search both full databases, before TOP/LIMIT, with a debounce.
+    var initialColumnFilters = {};
+    try {
+      initialColumnFilters = JSON.parse(document.getElementById('sh-server-filters').textContent) || {};
+    } catch (error) { initialColumnFilters = {}; }
+    $('#sales-history-report thead .sh-col-search').each(function () {
+      var key='col_'+this.getAttribute('data-col');
+      this.value=initialColumnFilters[key] || '';
+    });
+    var pendingSearchTimer=null, dateTimer=null;
+    function nextFilters() {
+      var params=new URLSearchParams(window.location.search);
+      $('#sales-history-report thead .sh-col-search').each(function () {
+        var key='col_'+this.getAttribute('data-col'),value=this.value.trim();
+        if(value)params.set(key,value);else params.delete(key);
+      });
+      if(fromInput.value.trim())params.set('date_from',fromInput.value.trim());
+      else params.delete('date_from');
+      if(toInput.value.trim())params.set('date_to',toInput.value.trim());
+      else params.delete('date_to');
+      return params;
+    }
+    function runServerSearch(focusKey) {
+      updateDateInputs();
+      if(invalidRange)return;
+      var params=nextFilters();
+      var target=window.location.pathname+(params.toString()?'?'+params.toString():'');
+      var current=window.location.pathname+window.location.search;
+      if(target===current)return;
+      var fetching=document.getElementById('sh-fetching');
+      if(fetching)fetching.hidden=false;
+      try {
+        var control=focusKey&&document.querySelector('[data-col="'+focusKey+'"]');
+        window.sessionStorage.setItem('sh-restore-search',JSON.stringify({
+          target:target,focus:focusKey,caret:control&&control.selectionStart,
+          y:window.scrollY,x:window.scrollX,
+          innerX:document.querySelector('.sh-table-scroll')?.scrollLeft||0
+        }));
+      } catch (e) {}
+      window.location.assign(target);
+    }
+    $('#sales-history-report thead .sh-col-search').on('mousedown click keydown',function(event) {
       event.stopPropagation();
+      if(event.key==='Enter'){event.preventDefault();clearTimeout(pendingSearchTimer);runServerSearch(this.getAttribute('data-col'));}
     });
-    var columnTimers = Object.create(null);
-    $('#sales-history-report thead .sh-col-search').on('input change', function () {
-      var control = this, idx = control.getAttribute('data-col');
-      clearTimeout(columnTimers[idx]);
-      columnTimers[idx] = setTimeout(function () {
-        var column = table.column(Number(control.getAttribute('data-col')));
-        if (control.tagName === 'SELECT') {
-          // جست‌وجوی دقیق: invoice نباید returned_invoice را برگرداند.
-          column.search(control.value ? '^' + control.value + '$' : '', true, false).draw();
-        } else {
-          column.search(control.value || '', false, true).draw();
-        }
-      }, 140);
+    $('#sales-history-report thead .sh-col-search').on('input change',function(){
+      var control=this;
+      clearTimeout(pendingSearchTimer);
+      // Avoid malformed date requests while the user is still typing.
+      if(control.getAttribute('data-col')==='7'&&control.value.trim()&&
+         !/^\d{4}(?:\/\d{1,2}(?:\/\d{1,2})?)?$/.test(latinDigits(control.value.trim())))return;
+      pendingSearchTimer=setTimeout(function(){runServerSearch(control.getAttribute('data-col'));},
+        control.tagName==='SELECT'?40:650);
     });
-
-    var dateTimer = null;
-    $(fromInput).add(toInput).on('input change', function () {
+    $(fromInput).add(toInput).on('input change',function(){
       clearTimeout(dateTimer);
-      dateTimer = setTimeout(function () { updateDateInputs(); table.draw(); }, 160);
+      updateDateInputs();
+      if(invalidRange)return;
+      dateTimer=setTimeout(function(){runServerSearch(null);},650);
     });
-    $('#sh-clear-date').on('click', function () {
-      clearTimeout(dateTimer);
-      fromInput.value = ''; toInput.value = '';
-      hideCalendar(); updateDateInputs(); table.draw();
+    $('#sh-clear-date').on('click',function(){
+      clearTimeout(dateTimer);clearTimeout(pendingSearchTimer);
+      fromInput.value='';toInput.value='';hideCalendar();
+      runServerSearch(null);
     });
-    $('#sh-clear-table').on('click', function () {
-      clearTimeout(dateTimer);
-      Object.keys(columnTimers).forEach(function (key) { clearTimeout(columnTimers[key]); });
+    $('#sh-clear-table').on('click',function(){
+      clearTimeout(dateTimer);clearTimeout(pendingSearchTimer);
       $('#sales-history-report thead .sh-col-search').val('');
-      fromInput.value = ''; toInput.value = ''; hideCalendar();
-      table.columns().search(''); table.search(''); updateDateInputs(); table.draw();
+      fromInput.value='';toInput.value='';hideCalendar();
+      runServerSearch(null);
     });
+    document.querySelectorAll('#sales-history-report .sh-filter-chip').forEach(function(chip){
+      chip.addEventListener('click',function(){
+        var key=chip.getAttribute('data-filter-key');
+        if(!key)return;
+        var params=new URLSearchParams(window.location.search);
+        params.delete(key);
+        window.location.assign(window.location.pathname+(params.toString()?'?'+params.toString():''));
+      });
+    });
+    var advancedForm=document.querySelector('#sales-history-report .sh-compact-form');
+    if(advancedForm)advancedForm.addEventListener('submit',function(){
+      advancedForm.querySelectorAll('[data-sh-carry]').forEach(function(el){el.remove();});
+      var active=nextFilters();
+      active.forEach(function(value,key){
+        if(!/^col_\d+$/.test(key)&&key!=='date_from'&&key!=='date_to')return;
+        var hidden=document.createElement('input');hidden.type='hidden';
+        hidden.name=key;hidden.value=value;hidden.setAttribute('data-sh-carry','1');
+        advancedForm.appendChild(hidden);
+      });
+    });
+    // Keep the active input focused after navigation.
+    try {
+      var saved=JSON.parse(window.sessionStorage.getItem('sh-restore-search')||'null');
+      if(saved&&saved.target===window.location.pathname+window.location.search){
+        window.sessionStorage.removeItem('sh-restore-search');
+        setTimeout(function(){
+          if(saved.focus!==null&&saved.focus!==undefined){
+            var element=document.querySelector('#sales-history-report thead [data-col="'+saved.focus+'"]');
+            if(element){element.focus({preventScroll:true});
+              if(typeof saved.caret==='number'&&element.setSelectionRange){
+                element.setSelectionRange(saved.caret,saved.caret);
+              }
+            }
+          }
+          var scroll=document.querySelector('.sh-table-scroll');
+          if(scroll)scroll.scrollLeft=saved.innerX||0;
+          window.scrollTo(saved.x||0,saved.y||0);
+        },100);
+      }
+    } catch (e) {}
 
     // Sticky header and six RTL pinned columns: calculate real rendered widths,
     // so hiding a column never leaves empty space or an incorrect right offset.

@@ -78,6 +78,147 @@ def normalize_persian_sql(column):
         )
     """
 
+
+# The column search boxes query both databases BEFORE each source's row cap.
+# Keep these indexes synchronized with sales_history.html.
+COLUMN_LABELS = (
+    'منبع', 'شماره سند', 'مشتری', 'کد مشتری', 'کد کالا', 'عنوان کالا',
+    'نوع سند', 'تاریخ', 'کارشناس', 'گروه خرید', 'گروه فروش', 'نوع فروش',
+    'تعداد', 'فی', 'فی خالص', 'مبلغ نهایی', 'ارز', 'نرخ ارز',
+)
+
+_SEPIDAR_COLUMN_EXPRESSIONS = (
+    None, 'docs.Number', 'dl.Title', 'dl.Code', 'Item.Code',
+    'Item.Title', 'docs.doc_type', 'docs.Date', 'g1.Title', 'g_p.Title',
+    'g_s.Title', 'st.Title', 'docs.Quantity', 'docs.Fee',
+    '(docs.Fee * docs.Quantity - docs.Discount) / NULLIF(docs.Quantity, 0)',
+    'docs.Price', 'curr.Title', 'docs.Rate',
+)
+_PORTAL_COLUMN_EXPRESSIONS = (
+    None, '"Number"', 'customer_title', 'customer_code', 'item_code',
+    'item_title', 'doc_type', '"Date"', 'sales_user_group', 'purchase_group',
+    'sales_group', 'sales_type', '"Quantity"', '"Fee"',
+    'fee_after_discount', '"Price"', 'currency', '"Rate"',
+)
+_ALLOWED_DOCUMENT_TYPES = {'invoice', 'quotation', 'returned_invoice'}
+
+
+def _latin_digits(value):
+    return str(value or '').translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789'))
+
+
+def _history_date(value):
+    """Read an ISO Gregorian date or a Jalali date entered by a user."""
+    from datetime import date as date_type
+    import re
+
+    value = _latin_digits(value).strip()
+    if not value:
+        return None
+    try:
+        if re.fullmatch(r'\d{4}-\d{2}-\d{2}', value):
+            return date_type.fromisoformat(value)
+        parts = re.fullmatch(r'(\d{4})/(\d{1,2})/(\d{1,2})', value)
+        if parts:
+            return jdatetime.date(*map(int, parts.groups())).togregorian()
+    except (ValueError, OverflowError):
+        pass
+    raise ValueError('تاریخ نامعتبر است؛ از قالب شمسی ۱۴۰۵/۰۸/۱۳ استفاده کنید.')
+
+
+def _column_date_bounds(value):
+    """Allow YYYY, YYYY/MM or YYYY/MM/DD for the date-column search."""
+    from datetime import timedelta
+    import re
+
+    text = _latin_digits(value).strip()
+    if re.fullmatch(r'\d{4}-\d{2}-\d{2}', text):
+        start = _history_date(text)
+        return start, start + timedelta(days=1)
+    match = re.fullmatch(r'(\d{4})(?:/(\d{1,2})(?:/(\d{1,2}))?)?', text)
+    if not match:
+        raise ValueError('فیلتر ستون تاریخ باید به شکل ۱۴۰۵، ۱۴۰۵/۰۸ یا ۱۴۰۵/۰۸/۱۳ باشد.')
+    year, month, day = [int(v) if v is not None else None for v in match.groups()]
+    try:
+        if month is None:
+            return (jdatetime.date(year, 1, 1).togregorian(),
+                    jdatetime.date(year + 1, 1, 1).togregorian())
+        if day is None:
+            next_year = year + 1 if month == 12 else year
+            next_month = 1 if month == 12 else month + 1
+            return (jdatetime.date(year, month, 1).togregorian(),
+                    jdatetime.date(next_year, next_month, 1).togregorian())
+        start = jdatetime.date(year, month, day).togregorian()
+        return start, start + timedelta(days=1)
+    except (ValueError, OverflowError):
+        raise ValueError('تاریخ جست‌وجوشده معتبر نیست.')
+
+
+def _column_constraints(filters, source):
+    """Return (SQL conditions, bound parameters, skip_source).
+
+    Search is applied to the entire source in SQL, before TOP/LIMIT. Never
+    interpolate untrusted values into SQL expressions.
+    """
+    from datetime import timedelta
+    from decimal import Decimal, InvalidOperation
+
+    raw_source = str(filters.get('col_0') or '').strip()
+    if raw_source and raw_source not in ('portal', 'sepidar'):
+        raise ValueError('منبع گزارش نامعتبر است.')
+    if raw_source and raw_source != source:
+        return [], [], True
+
+    expressions = (_SEPIDAR_COLUMN_EXPRESSIONS if source == 'sepidar'
+                   else _PORTAL_COLUMN_EXPRESSIONS)
+    conditions, params = [], []
+    date_expr = expressions[7]
+
+    start = _history_date(filters.get('date_from'))
+    end = _history_date(filters.get('date_to'))
+    if start and end and start > end:
+        raise ValueError('تاریخ شروع نباید بعد از تاریخ پایان باشد.')
+    if start:
+        conditions.append(date_expr + ' >= %s')
+        params.append(start)
+    if end:
+        conditions.append(date_expr + ' < %s')
+        params.append(end + timedelta(days=1))
+
+    for idx in range(1, len(COLUMN_LABELS)):
+        value = _normalize_fa(_latin_digits(filters.get('col_' + str(idx)))).strip()[:120]
+        if not value:
+            continue
+        expr = expressions[idx]
+        if idx == 7:
+            lower, upper = _column_date_bounds(value)
+            conditions.extend((date_expr + ' >= %s', date_expr + ' < %s'))
+            params.extend((lower, upper))
+        elif idx == 6:
+            if value not in _ALLOWED_DOCUMENT_TYPES:
+                raise ValueError('نوع سند جست‌وجوشده نامعتبر است.')
+            conditions.append(expr + ' = %s')
+            params.append(value)
+        elif idx in (12, 13, 14, 15, 17):
+            try:
+                number = Decimal(value.replace(',', '').replace('٬', ''))
+            except InvalidOperation:
+                raise ValueError('برای جست‌وجوی ستون‌های عددی، مقدار عددی وارد کنید.')
+            if not number.is_finite():
+                raise ValueError('مقدار عددی معتبر نیست.')
+            conditions.append(expr + ' = %s')
+            params.append(number)
+        elif source == 'sepidar':
+            # Normalize Arabic/Persian letter variants without mutating data.
+            normalized = normalize_persian_sql(expr)
+            conditions.append(normalized + ' LIKE %s')
+            params.append('%' + value + '%')
+        else:
+            normalized = "REPLACE(REPLACE(COALESCE(" + expr + "::text,''),'ي','ی'),'ك','ک')"
+            conditions.append(normalized + ' ILIKE %s')
+            params.append('%' + value + '%')
+    return conditions, params, False
+
 def _sepidar_history(filters):
     conditions = []
     params = []
@@ -118,6 +259,11 @@ def _sepidar_history(filters):
         conditions.append('AND docs.doc_type = %s')
         params.append(doc_type)
 
+    more_conditions, more_params, skip_source = _column_constraints(filters, 'sepidar')
+    if skip_source:
+        return []
+    conditions.extend('AND ' + condition for condition in more_conditions)
+    params.extend(more_params)
     where_sql = '\n'.join(conditions)
     query = f"""
     SELECT TOP ({MAX_ROWS_PER_SOURCE})
@@ -396,6 +542,12 @@ def _portal_history(filters):
         sql += '\nAND doc_type = %s'
         params.append(doc_type)
 
+    more_conditions, more_params, skip_source = _column_constraints(filters, 'portal')
+    if skip_source:
+        return []
+    sql += ''.join('\nAND ' + condition for condition in more_conditions)
+    params.extend(more_params)
+
     sql += f'\nORDER BY "Date" DESC, "itemId" DESC LIMIT {MAX_ROWS_PER_SOURCE}'
     result = [_normalize_result(rec, 'portal') for rec in _rows('default', sql, params)]
     return _apply_portal_finance(result)
@@ -623,10 +775,6 @@ def get_sales_history_list(filters):
     Both sources are always read even if the other has no matching rows.
     Documents that exist in both databases remain as two separate source rows.
     """
-    if not any((filters.get(name) or '').strip() for name in
-               ('customer_code', 'item_code', 'g_p', 'part')):
-        return [], False
-
     sepidar = _sepidar_history(filters)
     portal = _portal_history(filters)
 
