@@ -1106,10 +1106,17 @@
       state.hidden=!text;state.textContent=text||'';
       state.classList.toggle('sh-state-message--error',!!isError);
     }
+    function showColumnSpinner(field){
+      document.querySelectorAll('#sales-history-report .sh-searching-column').forEach(function(el){
+        el.classList.remove('sh-searching-column');
+      });
+      var th=field&&field.closest('th');
+      if(th)th.classList.add('sh-searching-column');
+    }
     function setBusy(x){
       if(busy)busy.hidden=!x;
       tableEl.setAttribute('aria-busy',x?'true':'false');
-      if(!x)document.querySelectorAll('#sales-history-report .sh-searching-column').forEach(function(el){el.classList.remove('sh-searching-column');});
+      if(!x)showColumnSpinner(null);
     }
     function refreshChips(data){
       if(!activeArea)return;
@@ -1133,6 +1140,7 @@
       body.innerHTML=result.rows_html||'';
       var rows=Array.from(body.children).filter(function(el){return el.tagName==='TR';});
       var horizontal=scrollArea?scrollArea.scrollLeft:0;
+      stopWheelAnimation();
       table.clear();
       table.rows.add($(rows));
       table.page.len(60).draw();
@@ -1163,22 +1171,30 @@
       if(controller){controller.abort();controller=null;sequence++;}
       setBusy(false);
     }
+    function columnSearchDelay(tag,value){
+      return tag==='SELECT'||!String(value||'').trim()?0:280;
+    }
     function schedule(ms,origin){
       clearTimeout(timer);
       if(controller){controller.abort();controller=null;sequence++;}
-      document.querySelectorAll('#sales-history-report .sh-searching-column').forEach(function(el){el.classList.remove('sh-searching-column');});
-      var cell=origin&&origin.closest('th');
-      if(cell)cell.classList.add('sh-searching-column');
+      showColumnSpinner(origin);
       setBusy(true);
       timer=setTimeout(search,ms);
     }
     $('#sales-history-report thead .sh-col-search').on('mousedown click keydown',function(e){
-      e.stopPropagation();if(e.key==='Enter'){e.preventDefault();clearTimeout(timer);search();}
+      e.stopPropagation();
+      if(e.key==='Enter'){
+        e.preventDefault();clearTimeout(timer);showColumnSpinner(this);search();
+      }
+    }).on('focus',function(){
+      // Moving to an untouched field must not leave a spinner in the old field.
+      // The global busy message still represents any in-flight request.
+      showColumnSpinner(null);
     }).on('input change',function(){
       if(this.dataset.col==='7'&&this.value.trim()&&!/^\d{4}(?:\/\d{1,2}(?:\/\d{1,2})?)?$/.test(latinDigits(this.value.trim()))){
         cancelPendingSearch();return;
       }
-      schedule(this.tagName==='SELECT'?40:600,this);
+      schedule(columnSearchDelay(this.tagName,this.value),this);
     });
     $(fromInput).add(toInput).on('input change',function(){
       updateDateInputs();
@@ -1220,13 +1236,54 @@
       });
       schedule(0);
     });
-    // Scroll down the document first. Only at the page bottom should wheel
-    // motion enter the table. In reverse, unwind the table before the page.
-    // Kept pure so edge cases can be unit tested without a browser.
+    // Page first on the way down; table first on the way up.
     function wheelDestination(delta,pageAtEnd,tableTop,tableMax){
       if(!delta||tableMax<=1)return 'page';
       if(delta>0)return pageAtEnd&&tableTop<tableMax-1?'table':'page';
       return tableTop>1?'table':'page';
+    }
+    function wheelStep(current,target,elapsed){
+      var distance=target-current;
+      if(Math.abs(distance)<=0.6)return target;
+      var factor=1-Math.exp(-Math.min(64,Math.max(1,elapsed))/65);
+      var next=current+distance*factor;
+      return Math.abs(target-next)<0.6?target:next;
+    }
+    function clampWheel(value,max){return Math.max(0,Math.min(Math.max(0,max),value));}
+    var wheelMotion={element:null,target:0,frame:0,lastTime:0};
+    var reducedWheelMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function stopWheelAnimation(){
+      if(wheelMotion.frame)cancelAnimationFrame(wheelMotion.frame);
+      wheelMotion.element=null;wheelMotion.frame=0;wheelMotion.lastTime=0;
+    }
+    function animateWheel(time){
+      var el=wheelMotion.element;
+      if(!el){wheelMotion.frame=0;return;}
+      wheelMotion.target=clampWheel(wheelMotion.target,el.scrollHeight-el.clientHeight);
+      var elapsed=wheelMotion.lastTime?time-wheelMotion.lastTime:16;
+      wheelMotion.lastTime=time;
+      el.scrollTop=wheelStep(el.scrollTop,wheelMotion.target,elapsed);
+      if(Math.abs(el.scrollTop-wheelMotion.target)<=0.8){
+        el.scrollTop=wheelMotion.target;
+        wheelMotion.frame=0;wheelMotion.element=null;wheelMotion.lastTime=0;
+      }else{
+        wheelMotion.frame=requestAnimationFrame(animateWheel);
+      }
+    }
+    function moveWheel(el,delta,instant){
+      var max=el.scrollHeight-el.clientHeight;
+      if(instant){
+        stopWheelAnimation();
+        el.scrollTop=clampWheel(el.scrollTop+delta,max);
+        return;
+      }
+      if(wheelMotion.element!==el){
+        stopWheelAnimation();
+        wheelMotion.element=el;
+        wheelMotion.target=el.scrollTop;
+      }
+      wheelMotion.target=clampWheel(wheelMotion.target+delta,max);
+      if(!wheelMotion.frame)wheelMotion.frame=requestAnimationFrame(animateWheel);
     }
     document.addEventListener('wheel',function(e){
       if(e.defaultPrevented||e.ctrlKey||e.shiftKey||!scrollArea)return;
@@ -1238,18 +1295,19 @@
       var pageAtEnd=page.scrollTop+page.clientHeight>=page.scrollHeight-2;
       var max=scrollArea.scrollHeight-scrollArea.clientHeight;
       var destination=wheelDestination(delta,pageAtEnd,scrollArea.scrollTop,max);
-      if(destination==='page'){
-        // overflow-y:auto on the table would otherwise trap wheel movement.
-        if(scrollArea.contains(e.target)){
-          e.preventDefault();
-          window.scrollBy(0,delta);
-        }
+      var insideTable=scrollArea.contains(e.target);
+      var instant=reducedWheelMotion||(e.deltaMode===0&&Math.abs(delta)<35);
+      if(destination==='page'&&!insideTable){
+        // Keep the browser's native page scrolling whenever possible.
+        stopWheelAnimation();
         return;
       }
-      var before=scrollArea.scrollTop;
-      scrollArea.scrollTop=Math.max(0,Math.min(max,before+delta));
-      if(scrollArea.scrollTop!==before)e.preventDefault();
+      e.preventDefault();
+      moveWheel(destination==='table'?scrollArea:page,delta,instant);
     },{passive:false});
+    // A scrollbar drag, touch gesture, or redraw takes priority over old wheel inertia.
+    document.addEventListener('pointerdown',stopWheelAnimation);
+    document.addEventListener('touchstart',stopWheelAnimation,{passive:true});
 
     // Sticky header and six RTL pinned columns: calculate real rendered widths,
     // so hiding a column never leaves empty space or an incorrect right offset.
@@ -1375,7 +1433,7 @@
     function loadIfNearEnd(){
       if(!scrollArea||pendingScroll)return;
       var remaining=scrollArea.scrollHeight-scrollArea.clientHeight-scrollArea.scrollTop;
-      if(remaining>170)return;
+      if(remaining>Math.max(280,scrollArea.clientHeight*.7))return;
       var filtered=table.rows({search:'applied',page:'all'}).count();
       var shown=table.page.len();
       if(shown>=filtered)return;

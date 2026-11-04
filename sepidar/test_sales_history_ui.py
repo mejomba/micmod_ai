@@ -26,18 +26,23 @@ class SalesHistoryInteractionTests(SimpleTestCase):
         self.assertIn('border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg)', self.source)
         self.assertIn('.sh-advanced-filters[open] .sh-advanced-arrow{transform:rotate(225deg)}', self.source)
 
-    def test_busy_spinner_is_available_during_debounce_and_near_active_column(self):
+    def test_busy_spinner_follows_new_input_not_previous_field(self):
         self.assertIn('class="sh-spinner" aria-hidden="true"', self.source)
         self.assertIn('role="status" aria-live="polite" hidden', self.source)
         self.assertIn('th.sh-searching-column::after', self.source)
-        self.assertRegex(self.source, r'function schedule\(ms,origin\)\{[\s\S]*?setBusy\(true\);\s*timer=setTimeout\(search,ms\);')
-        self.assertIn("if(!x)document.querySelectorAll('#sales-history-report .sh-searching-column')", self.source)
+        self.assertIn("function showColumnSpinner(field)", self.source)
+        self.assertIn("}).on('focus',function(){", self.source)
+        self.assertIn('showColumnSpinner(null);', self.source)
+        self.assertRegex(self.source, r'function schedule\(ms,origin\)\{[\s\S]*?showColumnSpinner\(origin\);\s*setBusy\(true\);\s*timer=setTimeout\(search,ms\);')
+        self.assertIn('if(!x)showColumnSpinner(null)', self.source)
 
-    def test_document_wheel_has_page_priority_and_table_reversal(self):
+    def test_document_wheel_has_page_priority_and_smooth_table_animation(self):
         self.assertIn('document.scrollingElement||document.documentElement', self.source)
-        self.assertIn("if(destination==='page')", self.source)
-        self.assertIn('window.scrollBy(0,delta)', self.source)
-        self.assertIn("scrollArea.scrollTop=Math.max(0,Math.min(max,before+delta))", self.source)
+        self.assertIn("if(destination==='page'&&!insideTable)", self.source)
+        self.assertIn("moveWheel(destination==='table'?scrollArea:page,delta,instant)", self.source)
+        self.assertIn("wheelMotion.frame=requestAnimationFrame(animateWheel)", self.source)
+        self.assertIn("if(instant)", self.source)
+        self.assertIn("Math.max(280,scrollArea.clientHeight*.7)", self.source)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js needed for JS behavior tests")
     def test_wheel_destination_boundary_cases(self):
@@ -57,8 +62,25 @@ assert.equal(wheelDestination(-120, true, 0, 500), 'page');
 assert.equal(wheelDestination(0, true, 0, 500), 'page');
 assert.equal(wheelDestination(120, true, 0, 0), 'page');
 """
+        helpers = [match.group(0)]
+        for name, args in (("wheelStep", "current,target,elapsed"),
+                           ("columnSearchDelay", "tag,value")):
+            found = re.search(
+                r"    function " + name + r"\(" + args + r"\)\{[\s\S]*?\n    \}",
+                self.source,
+            )
+            self.assertIsNotNone(found, name)
+            helpers.append(found.group(0))
+        assertions += """
+assert.equal(columnSearchDelay('INPUT', '123'), 280);
+assert.equal(columnSearchDelay('INPUT', ''), 0);
+assert.equal(columnSearchDelay('SELECT', 'portal'), 0);
+assert.ok(wheelStep(0, 150, 16)>0 && wheelStep(0, 150, 16)<150);
+assert.ok(wheelStep(150, 0, 16)>0 && wheelStep(150, 0, 16)<150);
+assert.equal(wheelStep(149.7, 150, 16), 150);
+"""
         result = subprocess.run(
-            ["node", "-e", match.group(0) + "\n" + assertions],
+            ["node", "-e", "\n".join(helpers) + "\n" + assertions],
             check=False, capture_output=True, text=True, timeout=10,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
