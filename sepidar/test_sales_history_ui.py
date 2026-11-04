@@ -36,13 +36,24 @@ class SalesHistoryInteractionTests(SimpleTestCase):
         self.assertRegex(self.source, r'function schedule\(ms,origin\)\{[\s\S]*?showColumnSpinner\(origin\);\s*setBusy\(true\);\s*timer=setTimeout\(search,ms\);')
         self.assertIn('if(!x)showColumnSpinner(null)', self.source)
 
-    def test_document_wheel_has_page_priority_and_smooth_table_animation(self):
+    def test_document_wheel_restored_and_can_scroll_above_table(self):
         self.assertIn('document.scrollingElement||document.documentElement', self.source)
-        self.assertIn("if(destination==='page'&&!insideTable)", self.source)
-        self.assertIn("moveWheel(destination==='table'?scrollArea:page,delta,instant)", self.source)
-        self.assertIn("wheelMotion.frame=requestAnimationFrame(animateWheel)", self.source)
-        self.assertIn("if(instant)", self.source)
-        self.assertIn("Math.max(280,scrollArea.clientHeight*.7)", self.source)
+        self.assertIn("if(destination==='page')", self.source)
+        self.assertIn("if(scrollArea.contains(e.target))", self.source)
+        self.assertIn('window.scrollBy(0,delta)', self.source)
+        self.assertIn("scrollArea.scrollTop=Math.max(0,Math.min(max,before+delta))", self.source)
+        self.assertIn('if(remaining>170)return;', self.source)
+        self.assertNotIn('moveWheel(', self.source)
+        self.assertNotIn('stopWheelAnimation()', self.source)
+
+    def test_initial_loader_visible_until_window_load(self):
+        self.assertIn('id="sh-initial-loading" role="status"', self.source)
+        self.assertIn('class="sh-initial-spinner"', self.source)
+        self.assertIn('#sh-initial-loading[hidden]{display:none!important}', self.source)
+        self.assertIn("window.addEventListener('load',finishInitialLoading,{once:true})", self.source)
+        self.assertIn("if(document.readyState==='complete')finishInitialLoading()", self.source)
+        self.assertIn('if(overlay)overlay.hidden=true', self.source)
+
 
     @unittest.skipUnless(shutil.which("node"), "Node.js needed for JS behavior tests")
     def test_wheel_destination_boundary_cases(self):
@@ -59,12 +70,14 @@ assert.equal(wheelDestination(120, true, 0, 500), 'table');
 assert.equal(wheelDestination(120, true, 499, 500), 'page');
 assert.equal(wheelDestination(-120, true, 150, 500), 'table');
 assert.equal(wheelDestination(-120, true, 0, 500), 'page');
+assert.equal(wheelDestination(-120, false, 0, 500), 'page'); // upward at top: scroll document
+assert.equal(wheelDestination(-120, false, 1, 500), 'page'); // very near the top
+assert.equal(wheelDestination(-120, false, 25, 500), 'table'); // upward inside table
 assert.equal(wheelDestination(0, true, 0, 500), 'page');
 assert.equal(wheelDestination(120, true, 0, 0), 'page');
 """
         helpers = [match.group(0)]
-        for name, args in (("wheelStep", "current,target,elapsed"),
-                           ("columnSearchDelay", "tag,value")):
+        for name, args in (("columnSearchDelay", "tag,value"),):
             found = re.search(
                 r"    function " + name + r"\(" + args + r"\)\{[\s\S]*?\n    \}",
                 self.source,
@@ -75,9 +88,6 @@ assert.equal(wheelDestination(120, true, 0, 0), 'page');
 assert.equal(columnSearchDelay('INPUT', '123'), 280);
 assert.equal(columnSearchDelay('INPUT', ''), 0);
 assert.equal(columnSearchDelay('SELECT', 'portal'), 0);
-assert.ok(wheelStep(0, 150, 16)>0 && wheelStep(0, 150, 16)<150);
-assert.ok(wheelStep(150, 0, 16)>0 && wheelStep(150, 0, 16)<150);
-assert.equal(wheelStep(149.7, 150, 16), 150);
 """
         result = subprocess.run(
             ["node", "-e", "\n".join(helpers) + "\n" + assertions],

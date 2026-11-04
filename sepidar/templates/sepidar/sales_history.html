@@ -466,6 +466,12 @@
 .sh-report .sh-advanced-filters[open] .sh-advanced-arrow{transform:rotate(225deg)}
 .sh-report .sh-advanced-filters[open] .sh-hint-open{display:none}
 .sh-report .sh-advanced-filters[open] .sh-hint-close{display:inline}
+/* Initial page loading is separate from per-column AJAX search. */
+#sh-initial-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(247,250,255,.97);direction:rtl}
+#sh-initial-loading[hidden]{display:none!important}
+#sh-initial-loading .sh-initial-card{display:flex;flex-direction:column;align-items:center;gap:16px;padding:32px 44px;border:1px solid #dce7f7;border-radius:16px;background:#fff;box-shadow:0 12px 38px rgba(28,64,117,.1);color:#23476f;font-size:14px;font-weight:750}
+#sh-initial-loading .sh-initial-spinner{display:block;width:40px;height:40px;border:4px solid #dceafd;border-top-color:#2463eb;border-radius:50%;animation:sh-spin .75s linear infinite}
+@media(prefers-reduced-motion:reduce){#sh-initial-loading .sh-initial-spinner{animation:none;border-top-color:#2463eb}}
 /* Keep the progress indicator close to the active column, including during debounce. */
 .sh-report #sh-fetching{gap:9px}
 .sh-report .sh-spinner{display:inline-block;flex:0 0 auto;width:16px;height:16px;border:2px solid #bfd4f3;border-top-color:#2563eb;border-radius:50%;animation:sh-spin .7s linear infinite}
@@ -480,6 +486,9 @@
 {% endblock extra_css %}
 
 {% block content %}
+<div id="sh-initial-loading" role="status" aria-live="polite" aria-label="در حال بارگذاری مرور فروش">
+  <div class="sh-initial-card"><span class="sh-initial-spinner" aria-hidden="true"></span><span>در حال بارگذاری اطلاعات مرور فروش…</span></div>
+</div>
 <div class="main-content sh-main-shell">
   <div class="page-content sh-main-page">
     <div class="container-fluid sh-report" id="sales-history-report">
@@ -619,6 +628,23 @@
 {% endblock content %}
 
 {% block extra_js %}
+<script>
+(function(){
+  'use strict';
+  var overlay=document.getElementById('sh-initial-loading');
+  function finishInitialLoading(){
+    // Wait for the browser's full load (images, scripts and styles) then paint
+    // the initialized report before removing the page-wide progress indicator.
+    window.requestAnimationFrame(function(){
+      window.requestAnimationFrame(function(){
+        if(overlay)overlay.hidden=true;
+      });
+    });
+  }
+  if(document.readyState==='complete')finishInitialLoading();
+  else window.addEventListener('load',finishInitialLoading,{once:true});
+})();
+</script>
 <script src="{% static 'libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
 <script src="{% static 'libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
@@ -1140,7 +1166,6 @@
       body.innerHTML=result.rows_html||'';
       var rows=Array.from(body.children).filter(function(el){return el.tagName==='TR';});
       var horizontal=scrollArea?scrollArea.scrollLeft:0;
-      stopWheelAnimation();
       table.clear();
       table.rows.add($(rows));
       table.page.len(60).draw();
@@ -1236,54 +1261,13 @@
       });
       schedule(0);
     });
-    // Page first on the way down; table first on the way up.
+    // Scroll down the document first. Only at the page bottom should wheel
+    // motion enter the table. In reverse, unwind the table before the page.
+    // Kept pure so edge cases can be unit tested without a browser.
     function wheelDestination(delta,pageAtEnd,tableTop,tableMax){
       if(!delta||tableMax<=1)return 'page';
       if(delta>0)return pageAtEnd&&tableTop<tableMax-1?'table':'page';
       return tableTop>1?'table':'page';
-    }
-    function wheelStep(current,target,elapsed){
-      var distance=target-current;
-      if(Math.abs(distance)<=0.6)return target;
-      var factor=1-Math.exp(-Math.min(64,Math.max(1,elapsed))/65);
-      var next=current+distance*factor;
-      return Math.abs(target-next)<0.6?target:next;
-    }
-    function clampWheel(value,max){return Math.max(0,Math.min(Math.max(0,max),value));}
-    var wheelMotion={element:null,target:0,frame:0,lastTime:0};
-    var reducedWheelMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    function stopWheelAnimation(){
-      if(wheelMotion.frame)cancelAnimationFrame(wheelMotion.frame);
-      wheelMotion.element=null;wheelMotion.frame=0;wheelMotion.lastTime=0;
-    }
-    function animateWheel(time){
-      var el=wheelMotion.element;
-      if(!el){wheelMotion.frame=0;return;}
-      wheelMotion.target=clampWheel(wheelMotion.target,el.scrollHeight-el.clientHeight);
-      var elapsed=wheelMotion.lastTime?time-wheelMotion.lastTime:16;
-      wheelMotion.lastTime=time;
-      el.scrollTop=wheelStep(el.scrollTop,wheelMotion.target,elapsed);
-      if(Math.abs(el.scrollTop-wheelMotion.target)<=0.8){
-        el.scrollTop=wheelMotion.target;
-        wheelMotion.frame=0;wheelMotion.element=null;wheelMotion.lastTime=0;
-      }else{
-        wheelMotion.frame=requestAnimationFrame(animateWheel);
-      }
-    }
-    function moveWheel(el,delta,instant){
-      var max=el.scrollHeight-el.clientHeight;
-      if(instant){
-        stopWheelAnimation();
-        el.scrollTop=clampWheel(el.scrollTop+delta,max);
-        return;
-      }
-      if(wheelMotion.element!==el){
-        stopWheelAnimation();
-        wheelMotion.element=el;
-        wheelMotion.target=el.scrollTop;
-      }
-      wheelMotion.target=clampWheel(wheelMotion.target+delta,max);
-      if(!wheelMotion.frame)wheelMotion.frame=requestAnimationFrame(animateWheel);
     }
     document.addEventListener('wheel',function(e){
       if(e.defaultPrevented||e.ctrlKey||e.shiftKey||!scrollArea)return;
@@ -1295,19 +1279,18 @@
       var pageAtEnd=page.scrollTop+page.clientHeight>=page.scrollHeight-2;
       var max=scrollArea.scrollHeight-scrollArea.clientHeight;
       var destination=wheelDestination(delta,pageAtEnd,scrollArea.scrollTop,max);
-      var insideTable=scrollArea.contains(e.target);
-      var instant=reducedWheelMotion||(e.deltaMode===0&&Math.abs(delta)<35);
-      if(destination==='page'&&!insideTable){
-        // Keep the browser's native page scrolling whenever possible.
-        stopWheelAnimation();
+      if(destination==='page'){
+        // overflow-y:auto on the table would otherwise trap wheel movement.
+        if(scrollArea.contains(e.target)){
+          e.preventDefault();
+          window.scrollBy(0,delta);
+        }
         return;
       }
-      e.preventDefault();
-      moveWheel(destination==='table'?scrollArea:page,delta,instant);
+      var before=scrollArea.scrollTop;
+      scrollArea.scrollTop=Math.max(0,Math.min(max,before+delta));
+      if(scrollArea.scrollTop!==before)e.preventDefault();
     },{passive:false});
-    // A scrollbar drag, touch gesture, or redraw takes priority over old wheel inertia.
-    document.addEventListener('pointerdown',stopWheelAnimation);
-    document.addEventListener('touchstart',stopWheelAnimation,{passive:true});
 
     // Sticky header and six RTL pinned columns: calculate real rendered widths,
     // so hiding a column never leaves empty space or an incorrect right offset.
@@ -1433,7 +1416,7 @@
     function loadIfNearEnd(){
       if(!scrollArea||pendingScroll)return;
       var remaining=scrollArea.scrollHeight-scrollArea.clientHeight-scrollArea.scrollTop;
-      if(remaining>Math.max(280,scrollArea.clientHeight*.7))return;
+      if(remaining>170)return;
       var filtered=table.rows({search:'applied',page:'all'}).count();
       var shown=table.page.len();
       if(shown>=filtered)return;
