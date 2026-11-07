@@ -363,9 +363,8 @@ def _sepidar_history(filters):
         placeholders = ', '.join(['%s'] * len(types))
         conditions.append(f'AND docs.doc_type IN ({placeholders})')
         params.extend(sorted(types))
-    # The Sepidar invoice segment ends before the first fully covered Portal day.
-    conditions.append("AND (docs.doc_type <> 'invoice' OR docs.Date < %s)")
-    params.append(PORTAL_INVOICE_START)
+    # The Sepidar invoice cutoff is pushed into the source invoice table, so
+    # the index on Invoice.Date can be used before joining invoice items.
     conditions.extend('AND ' + condition for condition in more_conditions)
     params.extend(more_params)
     where_sql = '\n'.join(conditions)
@@ -441,6 +440,8 @@ def _sepidar_history(filters):
         FROM [SLS].[Invoice] I
         JOIN [SLS].[InvoiceItem] II
             ON II.InvoiceRef = I.InvoiceId
+        WHERE I.Date < %s
+          AND {'1 = 1' if 'invoice' in types else '1 = 0'}
 
         UNION ALL
 
@@ -459,6 +460,7 @@ def _sepidar_history(filters):
         FROM [SLS].[Quotation] I
         JOIN [SLS].[QuotationItem] II
             ON II.QuotationRef = I.QuotationId
+        WHERE {'1 = 1' if 'quotation' in types else '1 = 0'}
 
         UNION ALL
 
@@ -477,6 +479,7 @@ def _sepidar_history(filters):
         FROM [SLS].[ReturnedInvoice] I
         JOIN [SLS].[ReturnedInvoiceItem] II
             ON II.ReturnedInvoiceRef = I.ReturnedInvoiceId
+        WHERE {'1 = 1' if 'returned_invoice' in types else '1 = 0'}
 
     ) docs
 
@@ -512,8 +515,9 @@ def _sepidar_history(filters):
 
     ORDER BY docs.Date DESC, docs.itemId DESC
     """
+    # The first bound argument belongs to the invoice source-level cutoff.
     return _read_sepidar_unique_rows(
-        query, params, linked_ids
+        query, [PORTAL_INVOICE_START] + params, linked_ids
     )[:MAX_ROWS_PER_SOURCE + 1]
 
 
@@ -528,6 +532,13 @@ def _portal_history(filters):
         the latest CurrencyAmount.open_rate for its currency.
       * Currency-converted fields remain NULL until conversion rules are agreed.
     """
+    # Avoid PostgreSQL entirely for Sepidar-only, returned-invoice-only or
+    # contradictory document filters. The other CTE arm is then pruned by the
+    # PostgreSQL planner using an explicit FALSE condition.
+    more_conditions, more_params, skip_source = _column_constraints(filters, 'portal')
+    types = _document_types(filters).intersection({'quotation', 'invoice'})
+    if skip_source or not types:
+        return []
     db = connections['default']
     qn = db.ops.quote_name
     tables = {
@@ -580,6 +591,7 @@ def _portal_history(filters):
         WHERE COALESCE(q.is_deleted, false) = false
           AND COALESCE(qi.is_deleted, false) = false
           AND COALESCE(q.cancel, false) = false
+          AND {'TRUE' if 'quotation' in types else 'FALSE'}
 
         UNION ALL
 
@@ -624,12 +636,15 @@ def _portal_history(filters):
         WHERE COALESCE(f.is_deleted, false) = false
           AND COALESCE(fi.is_deleted, false) = false
           AND COALESCE(f.cancel, false) = false
+          AND f.created_date >= %s
+          AND {'TRUE' if 'invoice' in types else 'FALSE'}
     )
     SELECT * FROM docs
     WHERE 1 = 1
     """
 
-    params = []
+    # The source-level invoice date predicate precedes all outer filters.
+    params = [PORTAL_INVOICE_START]
     customer = _normalize_fa(filters.get('customer_code') or '')
     item_code = str(filters.get('item_code') or '').strip()
     part = _normalize_fa(filters.get('part') or '')
@@ -667,16 +682,10 @@ def _portal_history(filters):
         sql += '\nAND doc_type = %s'
         params.append(doc_type)
 
-    more_conditions, more_params, skip_source = _column_constraints(filters, 'portal')
-    if skip_source:
-        return []
     sql += ''.join('\nAND ' + condition for condition in more_conditions)
     params.extend(more_params)
 
-    # The full invoice period since 1405/02/10 is covered by the Portal.
-    # Apply the source boundary before LIMIT and before financial enrichment.
-    sql += '\nAND (doc_type <> \'invoice\' OR "Date" >= %s)'
-    params.append(PORTAL_INVOICE_START)
+    # Invoice cutoff was applied directly to Factor.created_date before JOINs.
     sql += f'\nORDER BY "Date" DESC, "itemId" DESC LIMIT {MAX_ROWS_PER_SOURCE}'
     result = [_normalize_result(rec, 'portal') for rec in _rows('default', sql, params)]
     return _apply_portal_finance(result)

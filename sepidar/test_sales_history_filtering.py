@@ -8,7 +8,7 @@ from django.test import SimpleTestCase
 from sepidar.sales_history_service import (
     COLUMN_LABELS, _column_constraints, _column_date_bounds,
     _history_date, _document_types, _sepidar_invoice_needed,
-    _read_sepidar_unique_rows, _sepidar_history, PORTAL_INVOICE_START,
+    _read_sepidar_unique_rows, _sepidar_history, _portal_history, PORTAL_INVOICE_START,
     _portal_sepidar_quotation_ids, _matches_portal_quotation,
     get_sales_history_list,
 )
@@ -243,3 +243,41 @@ class SalesHistorySourceOptimizationTests(SimpleTestCase):
             rows = _read_sepidar_unique_rows('SELECT ...', [], {2022})
         self.assertEqual([row['itemId'] for row in rows], [2, 3, 4])
         cursor.execute.assert_called_once_with('SELECT ...', [])
+
+    def test_portal_does_not_query_for_sepidar_only_source_or_returns(self):
+        for filters in ({'col_0': 'sepidar'}, {'doc_type': 'returned_invoice'},
+                        {'doc_type': 'invoice', 'col_6': 'quotation'}):
+            with self.subTest(filters=filters):
+                with patch('sepidar.sales_history_service._rows') as db_rows:
+                    self.assertEqual(_portal_history(filters), [])
+                    db_rows.assert_not_called()
+
+    def test_portal_selects_only_requested_document_branch(self):
+        for doc_type, quotation_enabled, invoice_enabled in (
+            ('quotation', True, False), ('invoice', False, True),
+        ):
+            with self.subTest(doc_type=doc_type):
+                with patch('sepidar.sales_history_service._rows', return_value=[]) as db_rows:
+                    self.assertEqual(_portal_history({'doc_type': doc_type}), [])
+                alias, sql, params = db_rows.call_args.args
+                self.assertEqual(alias, 'default')
+                self.assertIn("AND " + ("TRUE" if quotation_enabled else "FALSE"), sql)
+                self.assertIn("AND f.created_date >= %s", sql)
+                self.assertEqual(params[0], PORTAL_INVOICE_START)
+                # The unused SELECT branch is constant FALSE and can be pruned.
+                self.assertEqual("AND FALSE" in sql, not (quotation_enabled and invoice_enabled))
+                self.assertIn("AND " + ("TRUE" if invoice_enabled else "FALSE"), sql)
+
+    def test_sepidar_pushes_invoice_cutoff_to_invoice_table(self):
+        with patch('sepidar.sales_history_service._portal_sepidar_quotation_ids',
+                   return_value=set()):
+            with patch('sepidar.sales_history_service._read_sepidar_unique_rows',
+                       return_value=[]) as remote:
+                self.assertEqual(_sepidar_history({'doc_type': 'invoice'}), [])
+        sql, params, linked = remote.call_args.args
+        self.assertIn('FROM [SLS].[Invoice] I', sql)
+        self.assertIn('WHERE I.Date < %s', sql)
+        self.assertEqual(params[0], PORTAL_INVOICE_START)
+        self.assertNotIn("docs.doc_type <> 'invoice' OR docs.Date < %s", sql)
+        self.assertIn('WHERE 1 = 0', sql)  # Other UNION arms are planner-prunable.
+        self.assertEqual(linked, set())
