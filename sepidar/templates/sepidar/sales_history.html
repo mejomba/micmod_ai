@@ -525,6 +525,71 @@
 .sh-report .sh-document-select{flex-wrap:wrap}
 }
 @media(max-width:380px){.sh-report .sh-compact-form>.sh-mini-field--date{grid-column:span 2}}
+
+/* Sales History filter form: grouped, readable and compact in RTL. */
+.sh-report .sh-advanced-filters .sh-filters{
+  margin-top:10px;border:1px solid #d2e2f4!important;border-radius:15px!important;
+  background:#f7faff!important;overflow:visible!important;
+  box-shadow:0 10px 28px rgba(35,72,124,.08)!important
+}
+.sh-report .sh-filters-toolbar{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  gap:12px;padding:15px 18px;background:#edf4ff;border-bottom:1px solid #dbe7f6;
+  border-radius:14px 14px 0 0
+}
+.sh-report .sh-filters-intro{display:flex;align-items:center;gap:11px;min-width:0;flex:1 1 290px}
+.sh-report .sh-filters-icon{
+  display:flex;align-items:center;justify-content:center;flex:0 0 38px;width:38px;height:38px;
+  font-size:28px;line-height:1;border-radius:10px;background:#fff;color:#2b60a5;border:1px solid #c9dbf4
+}
+.sh-report .sh-filters-intro h2{font-size:14px;line-height:1.5;font-weight:850;color:#214b81;margin:0 0 3px}
+.sh-report .sh-filters-intro p{font-size:11px;line-height:1.8;color:#536f91;margin:0}
+.sh-report .sh-filters-toolbar .sh-filters-reset{
+  min-height:35px;padding:7px 12px;border:1px solid #cbd8e9;color:#516887;
+  background:#fff;font-size:11px;flex-shrink:0;white-space:nowrap
+}
+.sh-report .sh-filters-toolbar .sh-filters-reset:hover{background:#fff0ef;color:#ab3939;border-color:#eab9b5}
+.sh-report .sh-compact-form{padding:13px 15px 16px;gap:9px;align-items:stretch}
+.sh-report .sh-compact-form>.sh-filter-group-title{
+  grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:3px 3px 2px;border:0;color:#2a527f;flex-wrap:wrap
+}
+.sh-report .sh-filter-group-title>span{font-size:12px;font-weight:850;display:inline-flex;align-items:center;gap:8px}
+.sh-report .sh-filter-group-title>span::before{content:'';display:inline-block;width:4px;height:15px;border-radius:3px;background:#447ee3}
+.sh-report .sh-filter-group-title small{font-size:10px;color:#7a8da6;font-weight:600}
+.sh-report .sh-filter-group-title--secondary{border-top:1px solid #dce6f3!important;margin-top:5px;padding-top:12px!important}
+.sh-report .sh-compact-form>.sh-mini-field{
+  background:#fff;border:1px solid #e0e8f4;border-radius:10px;padding:9px 10px;
+  gap:6px;min-height:79px;transition:border-color .15s,box-shadow .15s;
+}
+.sh-report .sh-compact-form>.sh-mini-field:focus-within{
+  border-color:#98baf0;box-shadow:0 0 0 2px rgba(76,126,215,.10)
+}
+.sh-report .sh-compact-form>.sh-mini-field label,
+.sh-report .sh-compact-form>.sh-mini-field legend{color:#3d5879;font-size:11.5px;font-weight:800;line-height:1.5;margin:0}
+.sh-report .sh-compact-form>.sh-mini-field--type{min-height:79px}
+.sh-report .sh-compact-form .sh-input,.sh-report .sh-compact-form .sh-select{
+  border-color:#d8e2ef;background:#fff;min-width:0;height:35px;font-size:12px
+}
+.sh-report .sh-compact-form .sh-radio span{min-height:34px}
+.sh-report .sh-compact-form>.sh-date-message{border-radius:8px}
+.sh-jalali-popover .sh-cal-pickers{flex:1;min-width:0;justify-content:center;flex-wrap:nowrap}
+.sh-jalali-popover .sh-cal-header .sh-cal-title{
+  padding:7px 10px;border-radius:8px;border:1px solid #dfebf9;
+  background:#f8fbff;white-space:nowrap
+}
+.sh-jalali-popover .sh-cal-header .sh-cal-title.is-active{
+  background:#deebff;color:#174e99;border-color:#8eb5ed;box-shadow:0 0 0 2px rgba(64,123,217,.1)
+}
+.sh-jalali-popover .sh-cal-view-label{font-size:11px;color:#57749a;font-weight:700;text-align:center;margin:3px 0 9px;line-height:1.8}
+.sh-jalali-popover .sh-cal-view-label small{font-size:10px;color:#788ba7}
+@media(max-width:650px){
+  .sh-report .sh-filters-toolbar{padding:12px}
+  .sh-report .sh-compact-form{padding:12px;gap:8px}
+  .sh-report .sh-filter-group-title small{width:100%;font-size:10px}
+  .sh-report .sh-filters-toolbar .sh-filters-reset{width:100%}
+  .sh-report .sh-compact-form>.sh-mini-field{min-height:70px}
+}
 </style>
 {% endblock extra_css %}
 
@@ -543,7 +608,18 @@
       <details class="sh-advanced-filters" {% if advanced_active %}open{% endif %}>
         <summary><strong>فیلترهای پیشرفته</strong><span class="sh-advanced-hint sh-hint-open">برای مشاهده کلیک کنید</span><span class="sh-advanced-hint sh-hint-close">برای بستن کلیک کنید</span><span class="sh-advanced-arrow" aria-hidden="true"></span></summary>
       <section class="sh-panel sh-filters" aria-label="فیلترهای پیشرفته دریافت اطلاعات">
+        <div class="sh-filters-toolbar">
+          <div class="sh-filters-intro">
+            <span class="sh-filters-icon" aria-hidden="true">⌕</span>
+            <div>
+              <h2>جست‌وجوی دقیق در سوابق فروش</h2>
+              <p>فیلترهای موردنظر را انتخاب کنید؛ نتایج به‌صورت خودکار و بدون بارگذاری دوباره صفحه نمایش داده می‌شوند.</p>
+            </div>
+          </div>
+          <button class="sh-button sh-filters-reset" id="sh-clear-all" type="button" title="پاک‌کردن تمام فیلترهای پیشرفته، تاریخ و ستون‌ها">✕ <span>پاک‌کردن تمام فیلترها</span></button>
+        </div>
         <form class="sh-compact-form" method="get" action="">
+          <div class="sh-filter-group-title"><span>مشخصات مشتری و کالا</span><small>برای جست‌وجو می‌توانید یک یا چند فیلتر را هم‌زمان انتخاب کنید</small></div>
           <div class="sh-mini-field sh-mini-field--customer">
             <label for="sh-customer">مشتری یا کد مشتری</label>
             <input id="sh-customer" class="sh-input" name="customer_code" value="{{ customer_code|default:'' }}" placeholder="نام یا کد مشتری">
@@ -577,6 +653,7 @@
               <option value="3" {% if fisicalyearref == '3' %}selected{% endif %}>۱۳۹۵</option>
             </select>
           </div>
+          <div class="sh-filter-group-title sh-filter-group-title--secondary"><span>نوع سند و بازه زمانی</span><small>برای محدودکردن نتایج، نوع سند یا بازه شمسی را مشخص کنید</small></div>
           <fieldset class="sh-mini-field sh-mini-field--type">
             <legend>نوع سند</legend>
             <div class="sh-document-select" aria-label="نوع سند">
@@ -593,9 +670,7 @@
             <label for="sh-date-to">تا تاریخ (شمسی)</label>
             <div class="sh-date-control"><input type="text" dir="ltr" inputmode="numeric" maxlength="10" class="sh-input" id="sh-date-to" autocomplete="off" value="{{ date_to|default:'' }}" placeholder="۱۴۰۵/۱۲/۲۹" aria-describedby="sh-date-message" aria-haspopup="dialog"><button class="sh-date-trigger" type="button" data-target="sh-date-to" aria-label="باز کردن تقویم تاریخ پایان" title="انتخاب تاریخ پایان">▦</button></div>
           </div>
-          <div class="sh-filter-actions"><button class="sh-button" id="sh-clear-all" type="button">حذف تمام فیلترها</button></div>
           <div class="sh-date-message" id="sh-date-message" role="status"></div>
-          <span class="sh-date-note">هر تغییر فیلتر به‌صورت خودکار نتایج را به‌روزرسانی می‌کند.</span>
 
         </form>
       </section>
@@ -809,14 +884,28 @@
       cal.style.left=Math.round(left)+'px';cal.style.top=Math.round(top)+'px';
     }
 
+
+    function calendarHeaderHTML() {
+      var before,after;
+      if(calendarMode==='years'){
+        before='<button type="button" class="sh-cal-nav" data-year-shift="-12" aria-label="۱۲ سال قبل"'+(yearPageStart<=1300?' disabled':'')+'>‹</button>';
+        after='<button type="button" class="sh-cal-nav" data-year-shift="12" aria-label="۱۲ سال بعد"'+(yearPageStart+12>1600?' disabled':'')+'>›</button>';
+      }else if(calendarMode==='months'){
+        before='<button type="button" class="sh-cal-nav" data-year-nav="-1" aria-label="سال قبل"'+(shownYear<=1300?' disabled':'')+'>‹</button>';
+        after='<button type="button" class="sh-cal-nav" data-year-nav="1" aria-label="سال بعد"'+(shownYear>=1600?' disabled':'')+'>›</button>';
+      }else{
+        before='<button type="button" class="sh-cal-nav" data-nav="-1" aria-label="ماه قبل">‹</button>';
+        after='<button type="button" class="sh-cal-nav" data-nav="1" aria-label="ماه بعد">›</button>';
+      }
+      return '<div class="sh-cal-header">'+before+
+        '<div class="sh-cal-pickers">'+
+        '<button type="button" class="sh-cal-title'+(calendarMode==='months'?' is-active':'')+'" data-mode="months" aria-expanded="'+(calendarMode==='months')+'" aria-label="انتخاب ماه: '+months[shownMonth-1]+'">'+months[shownMonth-1]+' <span aria-hidden="true">▾</span></button>'+
+        '<button type="button" class="sh-cal-title'+(calendarMode==='years'?' is-active':'')+'" data-mode="years" aria-expanded="'+(calendarMode==='years')+'" aria-label="انتخاب سال: '+shownYear+'">'+shownYear+' <span aria-hidden="true">▾</span></button>'+
+        '</div>'+after+'</div>';
+    }
     function renderCalendar() {
-      var html='<div class="sh-cal-header">';
+      var html=calendarHeaderHTML();
       if(calendarMode==='days'){
-        html+='<button type="button" class="sh-cal-nav" data-nav="-1" aria-label="ماه قبل">‹</button>'+
-          '<div class="sh-cal-pickers">'+
-          '<button type="button" class="sh-cal-title" data-mode="months" aria-label="انتخاب ماه">'+months[shownMonth-1]+' ▾</button>'+
-          '<button type="button" class="sh-cal-title" data-mode="years" aria-label="انتخاب سال">'+shownYear+' ▾</button></div>'+
-          '<button type="button" class="sh-cal-nav" data-nav="1" aria-label="ماه بعد">›</button></div>';
         var first=gregorianUTCForJalali(shownYear,shownMonth,1);
         if(!first){cal.innerHTML='<p>امکان نمایش تقویم وجود ندارد.</p>';return;}
         var firstCol=(first.getUTCDay()+1)%7;
@@ -832,19 +921,15 @@
           html+='<button type="button" class="sh-cal-day'+(key===today?' is-today':'')+(key===selected?' is-selected':'')+'" data-day="'+d+'" aria-label="'+isoJalali(shownYear,shownMonth,d)+'">'+d+'</button>';
         }
       }else if(calendarMode==='months'){
-        html+='<button type="button" class="sh-cal-nav" data-mode="days" aria-label="بازگشت به روزها">×</button>'+
-          '<button type="button" class="sh-cal-title" data-mode="years" aria-label="انتخاب سال">'+shownYear+' ▾</button>'+
-          '<span></span></div><div class="sh-cal-choice-grid">';
+        html+='<p class="sh-cal-view-label">ماه موردنظر را انتخاب کنید</p><div class="sh-cal-choice-grid">';
         months.forEach(function(m,i){
-          html+='<button type="button" class="sh-cal-choice'+(i+1===shownMonth?' is-selected':'')+'" data-select-month="'+(i+1)+'">'+m+'</button>';
+          html+='<button type="button" class="sh-cal-choice'+(i+1===shownMonth?' is-selected':'')+'" data-select-month="'+(i+1)+'" aria-pressed="'+(i+1===shownMonth)+'">'+m+'</button>';
         });
       }else{
-        html+='<button type="button" class="sh-cal-nav" data-year-shift="-12" aria-label="۱۲ سال قبل"'+(yearPageStart<=1300?' disabled':'')+'>‹</button>'+
-          '<span class="sh-cal-year-range">'+yearPageStart+' تا '+Math.min(1600,yearPageStart+11)+'</span>'+
-          '<button type="button" class="sh-cal-nav" data-year-shift="12" aria-label="۱۲ سال بعد"'+(yearPageStart+12>1600?' disabled':'')+'>›</button></div>'+
+        html+='<p class="sh-cal-view-label">سال موردنظر را انتخاب کنید <small>('+yearPageStart+' تا '+Math.min(1600,yearPageStart+11)+')</small></p>'+
           '<div class="sh-cal-choice-grid is-years">';
         for(var y=yearPageStart;y<=Math.min(1600,yearPageStart+11);y++){
-          html+='<button type="button" class="sh-cal-choice'+(y===shownYear?' is-selected':'')+'" data-select-year="'+y+'">'+y+'</button>';
+          html+='<button type="button" class="sh-cal-choice'+(y===shownYear?' is-selected':'')+'" data-select-year="'+y+'" aria-pressed="'+(y===shownYear)+'">'+y+'</button>';
         }
       }
       html+='</div><div class="sh-cal-actions"><button type="button" data-action="today">امروز</button><button type="button" data-action="clear">پاک کردن</button><button type="button" data-action="close">بستن</button></div>';
@@ -878,8 +963,12 @@
     cal.addEventListener('click',function(ev){
       var btn=ev.target.closest('button');if(!btn)return;
       if(btn.hasAttribute('data-mode')){
-        calendarMode=btn.getAttribute('data-mode');
+        var targetMode=btn.getAttribute('data-mode');
+        calendarMode=calendarMode===targetMode?'days':targetMode;
         if(calendarMode==='years')yearPageStart=1300+12*Math.floor((shownYear-1300)/12);
+        renderCalendar();
+      }else if(btn.hasAttribute('data-year-nav')){
+        shownYear=Math.max(1300,Math.min(1600,shownYear+Number(btn.getAttribute('data-year-nav'))));
         renderCalendar();
       }else if(btn.hasAttribute('data-year-shift')){
         yearPageStart=Math.max(1300,Math.min(1600,yearPageStart+Number(btn.getAttribute('data-year-shift'))));

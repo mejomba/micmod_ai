@@ -64,6 +64,25 @@ class SalesHistoryInteractionTests(SimpleTestCase):
         self.assertIn('data-nav="-1" aria-label="ماه قبل">‹', self.source)
         self.assertIn('data-nav="1" aria-label="ماه بعد">›', self.source)
 
+    def test_calendar_keeps_month_and_year_controls_visible_in_every_mode(self):
+        self.assertIn('function calendarHeaderHTML()', self.source)
+        self.assertIn('var html=calendarHeaderHTML();', self.source)
+        self.assertIn('aria-expanded="'+ "(calendarMode==='months')" + "', self.source)
+        self.assertIn('aria-expanded="'+ "(calendarMode==='years')" + "', self.source)
+        self.assertIn("calendarMode=calendarMode===targetMode?'days':targetMode", self.source)
+        self.assertIn('ماه موردنظر را انتخاب کنید', self.source)
+        self.assertIn('سال موردنظر را انتخاب کنید', self.source)
+        self.assertIn("data-year-nav", self.source)
+
+    def test_advanced_filters_have_clear_groups_and_help_text(self):
+        self.assertIn('class="sh-filters-toolbar"', self.source)
+        self.assertIn('class="sh-filters-intro"', self.source)
+        self.assertIn('class="sh-filter-group-title"', self.source)
+        self.assertIn('sh-filter-group-title--secondary', self.source)
+        self.assertIn('id="sh-clear-all"', self.source)
+        self.assertIn('بدون بارگذاری دوباره صفحه', self.source)
+        self.assertIn('.sh-compact-form>.sh-mini-field:focus-within', self.source)
+
     def test_calendar_date_fields_live_in_advanced_form_only(self):
         form = self.source.split('<form class="sh-compact-form"', 1)[1].split('</form>', 1)[0]
         self.assertIn('id="sh-date-from"', form)
