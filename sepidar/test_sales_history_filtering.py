@@ -242,4 +242,4 @@ class SalesHistorySourceOptimizationTests(SimpleTestCase):
         with patch('sepidar.sales_history_service.connections', {'sepidar': connection}):
             rows = _read_sepidar_unique_rows('SELECT ...', [], {2022})
         self.assertEqual([row['itemId'] for row in rows], [2, 3, 4])
-        cursor.execute.assert_called_once_with('SELECT ...')
+        cursor.execute.assert_called_once_with('SELECT ...', [])
