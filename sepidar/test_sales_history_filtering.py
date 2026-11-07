@@ -122,6 +122,26 @@ class SalesHistorySourceOptimizationTests(SimpleTestCase):
         self.assertEqual(_document_types({'doc_type': 'quotation'}), {'quotation'})
         self.assertEqual(_document_types({'doc_type': 'invoice'}), {'invoice'})
         self.assertEqual(_document_types({'doc_type': 'invoice', 'col_6': 'quotation'}), set())
+        self.assertEqual(_document_types({'doc_type': 'quotation', 'col_6': 'invoice'}), set())
+        self.assertEqual(_document_types({'doc_type': 'invoice', 'col_6': 'invoice'}), {'invoice'})
+
+    def test_conflicting_valid_document_types_do_not_query_sepidar(self):
+        for filters in (
+            {'doc_type': 'invoice', 'col_6': 'quotation'},
+            {'doc_type': 'quotation', 'col_6': 'invoice'},
+        ):
+            with self.subTest(filters=filters):
+                with patch('sepidar.sales_history_service._portal_sepidar_quotation_ids') as local:
+                    with patch('sepidar.sales_history_service._read_sepidar_unique_rows') as remote:
+                        self.assertEqual(_sepidar_history(filters), [])
+                        local.assert_not_called()
+                        remote.assert_not_called()
+
+    def test_invalid_document_type_still_raises_validation_error(self):
+        for key in ('doc_type', 'col_6'):
+            with self.subTest(key=key):
+                with self.assertRaisesRegex(ValueError, 'نوع سند انتخاب‌شده نامعتبر است'):
+                    _document_types({key: 'unknown_type'})
 
     def test_combined_result_has_no_second_sepidar_lookup(self):
         with patch('sepidar.sales_history_service._sepidar_history', return_value=[]) as sepidar:

@@ -222,12 +222,17 @@ def _column_constraints(filters, source):
     return conditions, params, False
 
 def _document_types(filters):
-    """Types eligible after both the advanced and per-column document filters."""
-    allowed = {'invoice', 'quotation', 'returned_invoice'}
+    """Intersect valid document filters; conflicting choices match no documents.
+
+    Each input is validated against the complete supported set, not the
+    progressively narrowed intersection. Otherwise two individually valid but
+    contradictory filters incorrectly raise a validation error.
+    """
+    allowed = set(_ALLOWED_DOCUMENT_TYPES)
     for key in ('doc_type', 'col_6'):
         value = str(filters.get(key) or '').strip()
         if value:
-            if value not in allowed:
+            if value not in _ALLOWED_DOCUMENT_TYPES:
                 raise ValueError('نوع سند انتخاب‌شده نامعتبر است.')
             allowed.intersection_update((value,))
     return allowed
@@ -328,9 +333,9 @@ def _sepidar_history(filters):
         params.append(doc_type)
 
     more_conditions, more_params, skip_source = _column_constraints(filters, 'sepidar')
-    if skip_source or not _document_types(filters):
-        return []
     types = _document_types(filters)
+    if skip_source or not types:
+        return []
     if not _sepidar_invoice_needed(filters):
         types.discard('invoice')
     if not types:
