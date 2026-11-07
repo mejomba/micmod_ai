@@ -132,6 +132,19 @@ assert(calendarHeaderHTML().includes('aria-label="۱۲ سال قبل"'));
         self.assertIn('بدون بارگذاری دوباره صفحه', self.source)
         self.assertIn('.sh-compact-form>.sh-mini-field:focus-within', self.source)
 
+    def test_selecting_month_or_year_returns_to_day_calendar(self):
+        """Both period pickers should immediately reveal the day grid."""
+        for field, target in (('year', 'shownYear'), ('month', 'shownMonth')):
+            with self.subTest(picker=field):
+                branch = re.search(
+                    r"btn\\.hasAttribute\\('data-select-" + field +
+                    r"'\\)\\)\\{\\s*" + target +
+                    r"=Number\\(btn\\.getAttribute\\('data-select-" + field +
+                    r"'\\)\\);\\s*calendarMode='days';\\s*renderCalendar\\(\\);",
+                    self.source,
+                )
+                self.assertIsNotNone(branch, field + ' selection must show day grid')
+
     def test_calendar_date_fields_live_in_advanced_form_only(self):
         form = self.source.split('<form class="sh-compact-form"', 1)[1].split('</form>', 1)[0]
         self.assertIn('id="sh-date-from"', form)
