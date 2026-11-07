@@ -90,7 +90,7 @@ class SalesHistoryInteractionTests(SimpleTestCase):
     @unittest.skipUnless(shutil.which("node"), "Node.js needed for JS behavior tests")
     def test_calendar_title_remains_visible_across_all_views(self):
         helper = re.search(
-            r'    function calendarHeaderHTML\\(\\) \\{[\\s\\S]*?\\n    \\}',
+            r'    function calendarHeaderHTML\(\) \{[\s\S]*?\n    \}',
             self.source,
         )
         self.assertIsNotNone(helper, "calendar header should be one shared renderer")
