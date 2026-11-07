@@ -1194,7 +1194,6 @@
     });
     var advancedForm=document.querySelector('#sales-history-report .sh-compact-form');
     var advancedNames=['customer_code','item_code','part','g_p','doc_type','fisicalyearref'];
-    var advancedParams=new URLSearchParams(window.location.search);
     var activeArea=document.querySelector('#sales-history-report .sh-active-filters');
     var busy=document.getElementById('sh-fetching');
     var state=document.getElementById('sh-query-status');
@@ -1202,12 +1201,20 @@
     var timer=null,controller=null,sequence=0;
     function getParams(){
       var p=new URLSearchParams();
-      advancedNames.forEach(function(k){if(advancedParams.get(k))p.set(k,advancedParams.get(k));});
+      if(advancedForm){
+        var data=new FormData(advancedForm);
+        advancedNames.forEach(function(k){
+          var v=String(data.get(k)||'').trim();
+          if(v)p.set(k,v);
+        });
+      }
       document.querySelectorAll('#sales-history-report thead .sh-col-search').forEach(function(el){
         if(el.value.trim())p.set('col_'+el.dataset.col,el.value.trim());
       });
       if(fromInput.value.trim())p.set('date_from',fromInput.value.trim());
       if(toInput.value.trim())p.set('date_to',toInput.value.trim());
+      // A deliberate clear-all must not restore the first-visit 30-day preset.
+      if(!p.toString())p.set('all_dates','1');
       return p;
     }
     function message(text,isError){
@@ -1304,16 +1311,20 @@
       }
       schedule(columnSearchDelay(this.tagName,this.value),this);
     });
-    $(fromInput).add(toInput).on('input change',function(){
+    $(fromInput).add(toInput).on('input change',function(ev){
       updateDateInputs();
       if(invalidRange)cancelPendingSearch();
-      else schedule(600);
+      else schedule(ev.type==='change'?0:520);
     });
-    $('#sh-clear-date').on('click',function(){fromInput.value='';toInput.value='';hideCalendar();schedule(0);});
-    $('#sh-clear-table').on('click',function(){
-      $('#sales-history-report thead .sh-col-search').val('');
-      fromInput.value='';toInput.value='';hideCalendar();schedule(0);
-    });
+    function clearAllFilters(){
+      document.querySelectorAll('#sales-history-report thead .sh-col-search').forEach(function(el){el.value='';});
+      if(advancedForm)advancedForm.querySelectorAll('[name]').forEach(function(el){
+        if(el.type==='radio')el.checked=el.value==='';else el.value='';
+      });
+      fromInput.value='';toInput.value='';hideCalendar();updateDateInputs();
+      schedule(0);
+    }
+    $('#sh-clear-table, #sh-clear-all').on('click',clearAllFilters);
     if(activeArea)activeArea.addEventListener('click',function(e){
       var chip=e.target.closest('.sh-filter-chip');if(!chip)return;
       var key=chip.dataset.filterKey;
@@ -1322,28 +1333,23 @@
         if(field)field.value='';
       }else if(key==='date_from')fromInput.value='';
       else if(key==='date_to')toInput.value='';
-      else{
-        advancedParams.delete(key);
-        if(advancedForm)advancedForm.querySelectorAll('[name="'+key+'"]').forEach(function(el){
-          if(el.type==='radio')el.checked=el.value==='';else el.value='';
-        });
-      }
-      schedule(0);
-    });
-    if(advancedForm)advancedForm.addEventListener('submit',function(e){
-      e.preventDefault();advancedParams=new URLSearchParams();
-      var data=new FormData(advancedForm);
-      advancedNames.forEach(function(k){if(String(data.get(k)||'').trim())advancedParams.set(k,String(data.get(k)).trim());});
-      schedule(0);
-    });
-    var resetAdvanced=document.querySelector('#sales-history-report .sh-filter-actions a');
-    if(resetAdvanced)resetAdvanced.addEventListener('click',function(e){
-      e.preventDefault();advancedParams=new URLSearchParams();
-      if(advancedForm)advancedForm.querySelectorAll('input,select').forEach(function(el){
+      else if(advancedForm)advancedForm.querySelectorAll('[name="'+key+'"]').forEach(function(el){
         if(el.type==='radio')el.checked=el.value==='';else el.value='';
       });
+      updateDateInputs();
       schedule(0);
     });
+    if(advancedForm){
+      advancedForm.addEventListener('submit',function(e){e.preventDefault();schedule(0);});
+      advancedForm.addEventListener('input',function(e){
+        if(e.target===fromInput||e.target===toInput||e.target.type==='radio')return;
+        schedule(320);
+      });
+      advancedForm.addEventListener('change',function(e){
+        if(e.target===fromInput||e.target===toInput)return;
+        schedule(0);
+      });
+    }
     // Scroll down the document first. Only at the page bottom should wheel
     // motion enter the table. In reverse, unwind the table before the page.
     // Kept pure so edge cases can be unit tested without a browser.

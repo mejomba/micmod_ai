@@ -439,7 +439,8 @@ class SalesHistory(LoginRequiredMixin, View):
             for index in range(len(COLUMN_LABELS))
         }
         all_keys = advanced_names + ('date_from', 'date_to') + tuple(column_filters)
-        has_search = any((request.GET.get(key) or '').strip() for key in all_keys)
+        has_search = (any((request.GET.get(key) or '').strip() for key in all_keys)
+                      or request.GET.get('all_dates') == '1')
         recent_default = not has_search
         # The initial visit is immediately useful, without querying all years.
         # Once any search is entered, the backend searches all historical dates

@@ -73,6 +73,24 @@ class SalesHistoryInteractionTests(SimpleTestCase):
         self.assertNotIn('<div class="sh-table-tools">', self.source)
         self.assertNotIn('type="submit">اعمال', self.source)
 
+    def test_auto_ajax_advanced_filters_and_global_clear(self):
+        self.assertIn("advancedForm.addEventListener('input'", self.source)
+        self.assertIn("advancedForm.addEventListener('change'", self.source)
+        self.assertIn("advancedForm.addEventListener('submit'", self.source)
+        self.assertIn("var data=new FormData(advancedForm)", self.source)
+        self.assertIn("$('#sh-clear-table, #sh-clear-all').on('click',clearAllFilters)", self.source)
+        self.assertIn("if(!p.toString())p.set('all_dates','1')", self.source)
+        self.assertIn('id="sh-clear-all"', self.source)
+        self.assertIn('id="sh-clear-table"', self.source)
+        self.assertNotIn('advancedParams=new URLSearchParams', self.source)
+        self.assertNotIn('sh-filter-actions a', self.source)
+
+    def test_ajax_chips_clear_any_type_of_filter(self):
+        self.assertIn("key.indexOf('col_')===0", self.source)
+        self.assertIn("key==='date_from'", self.source)
+        self.assertIn("key==='date_to'", self.source)
+        self.assertIn("advancedForm.querySelectorAll('[name=", self.source)
+
     @unittest.skipUnless(shutil.which("node"), "Node.js needed for JS behavior tests")
     def test_wheel_destination_boundary_cases(self):
         match = re.search(
