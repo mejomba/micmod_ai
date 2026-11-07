@@ -80,12 +80,48 @@ class SalesHistoryInteractionTests(SimpleTestCase):
     def test_calendar_keeps_month_and_year_controls_visible_in_every_mode(self):
         self.assertIn('function calendarHeaderHTML()', self.source)
         self.assertIn('var html=calendarHeaderHTML();', self.source)
-        self.assertIn("aria-expanded=\\\"'+(calendarMode==='months')+'\\\"", self.source)
-        self.assertIn("aria-expanded=\\\"'+(calendarMode==='years')+'\\\"", self.source)
+        self.assertIn("""aria-expanded="'+(calendarMode==='months')+'""", self.source)
+        self.assertIn("""aria-expanded="'+(calendarMode==='years')+'""", self.source)
         self.assertIn("calendarMode=calendarMode===targetMode?'days':targetMode", self.source)
         self.assertIn('ماه موردنظر را انتخاب کنید', self.source)
         self.assertIn('سال موردنظر را انتخاب کنید', self.source)
         self.assertIn("data-year-nav", self.source)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js needed for JS behavior tests")
+    def test_calendar_title_remains_visible_across_all_views(self):
+        helper = re.search(
+            r'    function calendarHeaderHTML\\(\\) \\{[\\s\\S]*?\\n    \\}',
+            self.source,
+        )
+        self.assertIsNotNone(helper, "calendar header should be one shared renderer")
+        assertions = """
+const assert = require('node:assert/strict');
+const months = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+let calendarMode='days', shownYear=1405, shownMonth=2, yearPageStart=1400;
+"""
+        assertions += helper.group(0) + """
+for (const mode of ['days','months','years']) {
+  calendarMode = mode;
+  const html = calendarHeaderHTML();
+  assert(html.includes('data-mode="months"'));
+  assert(html.includes('data-mode="years"'));
+  assert(html.includes('اردیبهشت'));
+  assert(html.includes('1405'));
+  assert.equal((html.match(/data-mode="months"/g) || []).length, 1);
+  assert.equal((html.match(/data-mode="years"/g) || []).length, 1);
+}
+calendarMode='days';
+assert(calendarHeaderHTML().includes('aria-label="ماه قبل"'));
+calendarMode='months';
+assert(calendarHeaderHTML().includes('aria-label="سال قبل"'));
+calendarMode='years';
+assert(calendarHeaderHTML().includes('aria-label="۱۲ سال قبل"'));
+"""
+        proc = subprocess.run(
+            ["node", "-e", assertions],
+            check=False, capture_output=True, text=True, timeout=10,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
 
     def test_advanced_filters_have_clear_groups_and_help_text(self):
         self.assertIn('class="sh-filters-toolbar"', self.source)
