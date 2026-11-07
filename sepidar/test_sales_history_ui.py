@@ -29,12 +29,25 @@ class SalesHistoryInteractionTests(SimpleTestCase):
     def test_busy_spinner_follows_new_input_not_previous_field(self):
         self.assertIn('class="sh-spinner" aria-hidden="true"', self.source)
         self.assertIn('role="status" aria-live="polite" hidden', self.source)
-        self.assertIn('th.sh-searching-column::after', self.source)
+        self.assertIn('.sh-search-head th.sh-searching-column .sh-col-filter-shell .sh-col-loader', self.source)
+        self.assertNotIn('th.sh-searching-column::after', self.source)
+        self.assertNotIn('padding-left:25px!important', self.source)
         self.assertIn("function showColumnSpinner(field)", self.source)
         self.assertIn("}).on('focus',function(){", self.source)
         self.assertIn('showColumnSpinner(null);', self.source)
         self.assertRegex(self.source, r'function schedule\(ms,origin\)\{[\s\S]*?showColumnSpinner\(origin\);\s*setBusy\(true\);\s*timer=setTimeout\(search,ms\);')
         self.assertIn('if(!x)showColumnSpinner(null)', self.source)
+
+    def test_column_spinner_is_separate_from_input_clear_control(self):
+        self.assertIn("shell.className='sh-col-filter-shell'", self.source)
+        self.assertIn("loader.className='sh-col-loader'", self.source)
+        self.assertIn('shell.appendChild(this);', self.source)
+        self.assertIn('shell.appendChild(loader);', self.source)
+        self.assertIn("loader.setAttribute('aria-hidden','true')", self.source)
+        self.assertIn('.sh-col-filter-shell .sh-col-search', self.source)
+        self.assertIn('flex:0 0 13px', self.source)
+        self.assertIn("if(th)th.classList.add('sh-searching-column')", self.source)
+        self.assertNotIn('th.sh-searching-column::after', self.source)
 
     def test_document_wheel_restored_and_can_scroll_above_table(self):
         self.assertIn('document.scrollingElement||document.documentElement', self.source)
@@ -67,8 +80,8 @@ class SalesHistoryInteractionTests(SimpleTestCase):
     def test_calendar_keeps_month_and_year_controls_visible_in_every_mode(self):
         self.assertIn('function calendarHeaderHTML()', self.source)
         self.assertIn('var html=calendarHeaderHTML();', self.source)
-        self.assertIn('aria-expanded="'+ "(calendarMode==='months')" + "', self.source)
-        self.assertIn('aria-expanded="'+ "(calendarMode==='years')" + "', self.source)
+        self.assertIn("aria-expanded=\\\"'+(calendarMode==='months')+'\\\"", self.source)
+        self.assertIn("aria-expanded=\\\"'+(calendarMode==='years')+'\\\"", self.source)
         self.assertIn("calendarMode=calendarMode===targetMode?'days':targetMode", self.source)
         self.assertIn('ماه موردنظر را انتخاب کنید', self.source)
         self.assertIn('سال موردنظر را انتخاب کنید', self.source)

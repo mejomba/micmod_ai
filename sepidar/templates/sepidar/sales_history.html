@@ -475,10 +475,9 @@
 /* Keep the progress indicator close to the active column, including during debounce. */
 .sh-report #sh-fetching{gap:9px}
 .sh-report .sh-spinner{display:inline-block;flex:0 0 auto;width:16px;height:16px;border:2px solid #bfd4f3;border-top-color:#2563eb;border-radius:50%;animation:sh-spin .7s linear infinite}
-.sh-report .sh-search-head th.sh-searching-column .sh-col-search{padding-left:25px!important}
-.sh-report .sh-search-head th.sh-searching-column::after{content:"";position:absolute;left:9px;top:50%;width:14px;height:14px;margin-top:-7px;border:2px solid #bfd4f3;border-top-color:#2563eb;border-radius:50%;pointer-events:none;animation:sh-spin .7s linear infinite;z-index:3}
+/* Column loading indicator is a sibling of the search input, not an overlay on its native clear button. */
 @keyframes sh-spin{to{transform:rotate(360deg)}}
-@media(prefers-reduced-motion:reduce){.sh-report .sh-spinner,.sh-report .sh-search-head th.sh-searching-column::after{animation:none;border-top-color:#20519f}}
+@media(prefers-reduced-motion:reduce){.sh-report .sh-spinner,.sh-report .sh-col-loader{animation:none;border-top-color:#20519f}}
 .sh-report #sh-query-status[hidden],.sh-report #sh-truncated-note[hidden]{display:none!important}
 .sh-report .sh-state-message--error{color:#b53a30;background:#fff1f0}
 @media(max-width:680px){.sh-report .sh-advanced-hint{display:none!important}}
@@ -589,6 +588,25 @@
   .sh-report .sh-filter-group-title small{width:100%;font-size:10px}
   .sh-report .sh-filters-toolbar .sh-filters-reset{width:100%}
   .sh-report .sh-compact-form>.sh-mini-field{min-height:70px}
+}
+
+/* A dedicated side slot keeps the native search-clear × and loading spinner apart. */
+.sh-report .sh-table thead tr.sh-search-head th .sh-col-filter-shell{
+  display:flex;align-items:center;gap:4px;width:100%;min-width:0;direction:rtl
+}
+.sh-report .sh-table thead tr.sh-search-head th .sh-col-filter-shell .sh-col-search{
+  flex:1 1 auto;width:100%!important;min-width:0!important;padding-inline:5px!important;
+}
+.sh-report .sh-table thead tr.sh-search-head th .sh-col-filter-shell .sh-col-loader{
+  display:none;flex:0 0 13px;width:13px;height:13px;
+  border:2px solid #bfd4f3;border-top-color:#2563eb;border-radius:50%;
+  animation:sh-spin .7s linear infinite;pointer-events:none
+}
+.sh-report .sh-table thead tr.sh-search-head th.sh-searching-column .sh-col-filter-shell .sh-col-loader{
+  display:block
+}
+@media(prefers-reduced-motion:reduce){
+.sh-report .sh-table thead tr.sh-search-head th .sh-col-filter-shell .sh-col-loader{animation:none}
 }
 </style>
 {% endblock extra_css %}
@@ -1280,6 +1298,16 @@
     try{initialColumnFilters=JSON.parse(document.getElementById('sh-server-filters').textContent)||{};}catch(e){}
     $('#sales-history-report thead .sh-col-search').each(function(){
       this.value=initialColumnFilters['col_'+this.getAttribute('data-col')]||'';
+      // The browser owns the input's clear ×; the spinner has its own flex slot.
+      if(this.parentElement && this.parentElement.classList.contains('sh-col-filter-shell'))return;
+      var shell=document.createElement('div');
+      shell.className='sh-col-filter-shell';
+      this.parentNode.insertBefore(shell,this);
+      shell.appendChild(this);
+      var loader=document.createElement('span');
+      loader.className='sh-col-loader';
+      loader.setAttribute('aria-hidden','true');
+      shell.appendChild(loader);
     });
     var advancedForm=document.querySelector('#sales-history-report .sh-compact-form');
     var advancedNames=['customer_code','item_code','part','g_p','doc_type','fisicalyearref'];
