@@ -257,15 +257,47 @@ def _sepidar_invoice_needed(filters):
     return not bounds or max(bounds) < PORTAL_INVOICE_START
 
 
-def _portal_sepidar_quotation_ids():
-    """Local-only lookup; no SQL Server request or remote table join."""
-    qs = Quotation.objects.using('default').filter(
-        is_deleted=False, cancel=False, sepidar_quotation_id__isnull=False,
-    ).exclude(sepidar_quotation_id=0)
-    return set(qs.values_list('sepidar_quotation_id', flat=True))
+def _portal_sepidar_quotation_matches():
+    """Get Portal quotation references in ONE local query, never SQL Server.
+
+    Sepidar Number (the business-facing document number) differs from
+    QuotationId (the internal primary key). Match number + fiscal year to avoid
+    treating the same number in two years as the same document, and retain the
+    internal ID as an independent exact-match fallback.
+    """
+    references = Quotation.objects.using('default').filter(
+        is_deleted=False, cancel=False,
+    ).exclude(
+        sepidar_quotation_id__isnull=True, sepidar_number__isnull=True,
+    ).values_list('sepidar_quotation_id', 'sepidar_number', 'request_date')
+
+    by_year = {}
+    for fiscal_ref, jalali_year in FISCAL_YEAR_MAP.items():
+        by_year.setdefault(jalali_year, set()).add(int(fiscal_ref))
+
+    linked_ids, linked_numbers = set(), set()
+    for doc_id, number, requested_on in references:
+        if doc_id and int(doc_id) > 0:
+            linked_ids.add(int(doc_id))
+        if number and int(number) > 0 and requested_on:
+            year = jdatetime.date.fromgregorian(date=requested_on).year
+            for fiscal_ref in by_year.get(year, ()):
+                linked_numbers.add((fiscal_ref, int(number)))
+    return linked_ids, linked_numbers
 
 
-def _read_sepidar_unique_rows(sql, params, quotation_ids):
+def _matches_portal_quotation(record, linked_ids, linked_numbers):
+    if record.get('doc_type') != 'quotation':
+        return False
+    doc_id = record.get('sepidar_doc_id')
+    if doc_id is not None and int(doc_id) in linked_ids:
+        return True
+    year_ref, number = record.get('fiscalyearref'), record.get('number')
+    return (year_ref is not None and number is not None
+            and (int(year_ref), int(number)) in linked_numbers)
+
+
+def _read_sepidar_unique_rows(sql, params, linked_ids, linked_numbers):
     """Use one SQL Server cursor; fetch until 3000 unique lines are found.
 
     Filtering after TOP 3000 would silently hide unrelated older quotations.
@@ -282,9 +314,7 @@ def _read_sepidar_unique_rows(sql, params, quotation_ids):
                 break
             for values in batch:
                 record = dict(zip(columns, values))
-                if (record['doc_type'] == 'quotation'
-                        and record.get('sepidar_doc_id') is not None
-                        and int(record['sepidar_doc_id']) in quotation_ids):
+                if _matches_portal_quotation(record, linked_ids, linked_numbers):
                     continue
                 result.append(_normalize_result(record, 'sepidar'))
                 if len(result) > MAX_ROWS_PER_SOURCE:
@@ -350,25 +380,45 @@ def _sepidar_history(filters):
     conditions.extend('AND ' + condition for condition in more_conditions)
     params.extend(more_params)
     where_sql = '\n'.join(conditions)
-    linked_ids = _portal_sepidar_quotation_ids() if 'quotation' in types else set()
-    # Small exclusion sets can be passed safely as bound SQL Server parameters,
-    # allowing SQL Server to filter duplicates BEFORE TOP and avoid a full sort.
-    # Stay far below SQL Server's 2100-parameter limit (other search filters
-    # also require parameters). Larger sets are filtered from a single cursor.
-    use_sql_exclusion = bool(linked_ids) and len(linked_ids) <= 1000
+    linked_ids, linked_numbers = (
+        _portal_sepidar_quotation_matches()
+        if 'quotation' in types else (set(), set())
+    )
+    # Filter overlapping quotations inside SQL Server before TOP, using bound
+    # params. Guard the SQL Server 2100-parameter ceiling; for a larger set,
+    # stream rows through the same single remote cursor (not multiple queries).
+    numbers_by_year = {}
+    for fiscal_ref, number in linked_numbers:
+        numbers_by_year.setdefault(fiscal_ref, set()).add(number)
+    parameter_count = (
+        len(linked_ids) + len(linked_numbers) + len(numbers_by_year)
+    )
+    use_sql_exclusion = bool(linked_ids or linked_numbers) and parameter_count <= 900
     if use_sql_exclusion:
-        placeholders = ', '.join(['%s'] * len(linked_ids))
+        match_clauses = []
+        if linked_ids:
+            placeholders = ', '.join(['%s'] * len(linked_ids))
+            match_clauses.append(f"docs.sepidar_doc_id IN ({placeholders})")
+            params.extend(sorted(linked_ids))
+        for fiscal_ref in sorted(numbers_by_year):
+            numbers = sorted(numbers_by_year[fiscal_ref])
+            placeholders = ', '.join(['%s'] * len(numbers))
+            match_clauses.append(
+                f"(docs.FiscalYearRef = %s AND docs.Number IN ({placeholders}))"
+            )
+            params.extend([fiscal_ref, *numbers])
         where_sql += (
-            f"\nAND (docs.doc_type <> 'quotation' OR "
-            f"docs.sepidar_doc_id NOT IN ({placeholders}))"
+            "\nAND (docs.doc_type <> 'quotation' OR NOT ("
+            + ' OR '.join(match_clauses) + '))'
         )
-        params.extend(sorted(linked_ids))
     sql_top = (f'TOP ({MAX_ROWS_PER_SOURCE + 1})'
-               if not linked_ids or use_sql_exclusion else '')
+               if not linked_ids and not linked_numbers or use_sql_exclusion
+               else '')
     query = f"""
     SELECT {sql_top}
         docs.Date,
         docs.sepidar_doc_id,
+        docs.FiscalYearRef,
         docs.Number,
         docs.coef,
         docs.doc_type,
@@ -493,7 +543,9 @@ def _sepidar_history(filters):
 
     ORDER BY docs.Date DESC, docs.itemId DESC
     """
-    return _read_sepidar_unique_rows(query, params, linked_ids)[:MAX_ROWS_PER_SOURCE + 1]
+    return _read_sepidar_unique_rows(
+        query, params, linked_ids, linked_numbers
+    )[:MAX_ROWS_PER_SOURCE + 1]
 
 
 def _portal_history(filters):

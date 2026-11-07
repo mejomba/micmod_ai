@@ -9,6 +9,7 @@ from sepidar.sales_history_service import (
     COLUMN_LABELS, _column_constraints, _column_date_bounds,
     _history_date, _document_types, _sepidar_invoice_needed,
     _read_sepidar_unique_rows, _sepidar_history, PORTAL_INVOICE_START,
+    _portal_sepidar_quotation_matches, _matches_portal_quotation,
     get_sales_history_list,
 )
 
@@ -89,7 +90,7 @@ class SalesHistorySourceOptimizationTests(SimpleTestCase):
         ):
             with self.subTest(filters=filters):
                 self.assertFalse(_sepidar_invoice_needed(filters))
-                with patch('sepidar.sales_history_service._portal_sepidar_quotation_ids') as ids:
+                with patch('sepidar.sales_history_service._portal_sepidar_quotation_matches') as ids:
                     with patch('sepidar.sales_history_service._read_sepidar_unique_rows') as remote:
                         self.assertEqual(_sepidar_history(filters), [])
                         ids.assert_not_called()
@@ -113,7 +114,7 @@ class SalesHistorySourceOptimizationTests(SimpleTestCase):
         connection = MagicMock()
         connection.cursor.return_value.__enter__.return_value = cursor
         with patch('sepidar.sales_history_service.connections', {'sepidar': connection}):
-            rows = _read_sepidar_unique_rows('SELECT ...', [], {71})
+            rows = _read_sepidar_unique_rows('SELECT ...', [], {71}, set())
         self.assertEqual([(r['doc_type'], r['itemId']) for r in rows],
                          [('quotation', 2), ('invoice', 4)])
         cursor.execute.assert_called_once_with('SELECT ...', [])
@@ -131,7 +132,7 @@ class SalesHistorySourceOptimizationTests(SimpleTestCase):
             {'doc_type': 'quotation', 'col_6': 'invoice'},
         ):
             with self.subTest(filters=filters):
-                with patch('sepidar.sales_history_service._portal_sepidar_quotation_ids') as local:
+                with patch('sepidar.sales_history_service._portal_sepidar_quotation_matches') as local:
                     with patch('sepidar.sales_history_service._read_sepidar_unique_rows') as remote:
                         self.assertEqual(_sepidar_history(filters), [])
                         local.assert_not_called()
@@ -152,26 +153,99 @@ class SalesHistorySourceOptimizationTests(SimpleTestCase):
         sepidar.assert_called_once()
         portal.assert_called_once()
 
-    def test_small_linked_quotation_set_filters_in_sql_before_top(self):
-        with patch('sepidar.sales_history_service._portal_sepidar_quotation_ids',
-                   return_value={71, 72}):
+    def test_portal_number_2022_is_loaded_with_its_fiscal_year(self):
+        # The user's reported example: sepidar_number, NOT the internal ID.
+        queryset = MagicMock()
+        queryset.values_list.return_value = [
+            (None, 2022, date(2026, 5, 12)),
+            (813, None, date(2026, 5, 15)),
+            (None, 2022, date(2025, 5, 12)),
+            (None, None, date(2026, 5, 12)),
+        ]
+        manager = MagicMock()
+        manager.using.return_value.filter.return_value.exclude.return_value = queryset
+        with patch('sepidar.sales_history_service.Quotation.objects', manager):
+            ids, numbers = _portal_sepidar_quotation_matches()
+        self.assertEqual(ids, {813})
+        self.assertEqual(numbers, {(48, 2022), (46, 2022)})
+        manager.using.assert_called_once_with('default')
+
+    def test_number_2022_matches_without_matching_internal_id(self):
+        ids = set()
+        numbers = {(48, 2022)}
+        duplicate = {'doc_type': 'quotation', 'sepidar_doc_id': 99999,
+                     'fiscalyearref': 48, 'number': 2022}
+        other_year = dict(duplicate, fiscalyearref=46)
+        other_number = dict(duplicate, number=2023)
+        other_type = dict(duplicate, doc_type='invoice')
+        self.assertTrue(_matches_portal_quotation(duplicate, ids, numbers))
+        self.assertFalse(_matches_portal_quotation(other_year, ids, numbers))
+        self.assertFalse(_matches_portal_quotation(other_number, ids, numbers))
+        self.assertFalse(_matches_portal_quotation(other_type, ids, numbers))
+        self.assertTrue(_matches_portal_quotation(
+            dict(other_year, sepidar_doc_id=813), {813}, numbers
+        ))
+
+    def test_sql_excludes_portal_number_2022_before_top(self):
+        with patch('sepidar.sales_history_service._portal_sepidar_quotation_matches',
+                   return_value=(set(), {(48, 2022)})):
             with patch('sepidar.sales_history_service._read_sepidar_unique_rows',
                        return_value=[]) as read:
                 self.assertEqual(_sepidar_history({'doc_type': 'quotation'}), [])
-        sql, params, excluded = read.call_args.args
+        sql, params, ids, numbers = read.call_args.args
         self.assertIn('SELECT TOP (3001)', sql)
-        self.assertIn('docs.sepidar_doc_id NOT IN (%s, %s)', sql)
-        self.assertEqual(params[-2:], [71, 72])
-        self.assertEqual(excluded, {71, 72})
+        self.assertIn('docs.FiscalYearRef = %s AND docs.Number IN (%s)', sql)
+        self.assertIn("docs.doc_type <> 'quotation' OR NOT", sql)
+        self.assertIn('docs.FiscalYearRef,', sql)
+        self.assertEqual(params[-2:], [48, 2022])
+        self.assertEqual(ids, set())
+        self.assertEqual(numbers, {(48, 2022)})
+
+    def test_small_linked_ids_and_numbers_are_excluded_in_one_sql_query(self):
+        with patch('sepidar.sales_history_service._portal_sepidar_quotation_matches',
+                   return_value=({71, 72}, {(48, 2022)})):
+            with patch('sepidar.sales_history_service._read_sepidar_unique_rows',
+                       return_value=[]) as read:
+                self.assertEqual(_sepidar_history({'doc_type': 'quotation'}), [])
+        sql, params, ids, numbers = read.call_args.args
+        self.assertIn('SELECT TOP (3001)', sql)
+        self.assertIn('docs.sepidar_doc_id IN (%s, %s)', sql)
+        self.assertIn('docs.FiscalYearRef = %s AND docs.Number IN (%s)', sql)
+        self.assertEqual(params[-4:], [71, 72, 48, 2022])
+        self.assertEqual(ids, {71, 72})
+        self.assertEqual(numbers, {(48, 2022)})
 
     def test_large_linked_quotation_set_uses_single_cursor_stream(self):
         ids = set(range(1, 1002))
-        with patch('sepidar.sales_history_service._portal_sepidar_quotation_ids',
-                   return_value=ids):
+        with patch('sepidar.sales_history_service._portal_sepidar_quotation_matches',
+                   return_value=(ids, {(48, 2022)})):
             with patch('sepidar.sales_history_service._read_sepidar_unique_rows',
                        return_value=[]) as read:
                 self.assertEqual(_sepidar_history({'doc_type': 'quotation'}), [])
-        sql, params, excluded = read.call_args.args
+        sql, params, excluded_ids, excluded_numbers = read.call_args.args
         self.assertNotIn('SELECT TOP (3001)', sql)
-        self.assertNotIn('docs.sepidar_doc_id NOT IN', sql)
-        self.assertEqual(excluded, ids)
+        self.assertNotIn('docs.sepidar_doc_id IN (', sql)
+        self.assertNotIn('docs.FiscalYearRef = %s AND docs.Number IN (', sql)
+        self.assertEqual(excluded_ids, ids)
+        self.assertEqual(excluded_numbers, {(48, 2022)})
+
+    def test_streamed_rows_remove_matching_number_and_preserve_other_year(self):
+        cursor = MagicMock()
+        cursor.description = [
+            ('doc_type',), ('sepidar_doc_id',), ('fiscalyearref',),
+            ('number',), ('itemid',),
+        ]
+        cursor.fetchmany.side_effect = [[
+            ('quotation', 900, 48, 2022, 1),
+            ('quotation', 901, 46, 2022, 2),
+            ('quotation', 902, 48, 2023, 3),
+        ], []]
+        connection = MagicMock()
+        connection.cursor.return_value.__enter__.return_value = cursor
+        with patch('sepidar.sales_history_service.connections', {'sepidar': connection}):
+            rows = _read_sepidar_unique_rows(
+                'SELECT ...', [], set(), {(48, 2022)}
+            )
+        self.assertEqual([row['itemId'] for row in rows], [2, 3])
+        cursor.execute.assert_called_once_with('SELECT ...', [])
+
