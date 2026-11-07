@@ -136,14 +136,15 @@ assert(calendarHeaderHTML().includes('aria-label="۱۲ سال قبل"'));
         """Both period pickers should immediately reveal the day grid."""
         for field, target in (('year', 'shownYear'), ('month', 'shownMonth')):
             with self.subTest(picker=field):
-                branch = re.search(
-                    r"btn\\.hasAttribute\\('data-select-" + field +
-                    r"'\\)\\)\\{\\s*" + target +
-                    r"=Number\\(btn\\.getAttribute\\('data-select-" + field +
-                    r"'\\)\\);\\s*calendarMode='days';\\s*renderCalendar\\(\\);",
-                    self.source,
+                marker = "}else if(btn.hasAttribute('data-select-" + field + "')){"
+                self.assertIn(marker, self.source)
+                branch = self.source.split(marker, 1)[1].split('}else if(', 1)[0]
+                self.assertIn(
+                    target + "=Number(btn.getAttribute('data-select-" + field + "'));",
+                    branch,
                 )
-                self.assertIsNotNone(branch, field + ' selection must show day grid')
+                self.assertIn("calendarMode='days';", branch)
+                self.assertIn('renderCalendar();', branch)
 
     def test_calendar_date_fields_live_in_advanced_form_only(self):
         form = self.source.split('<form class="sh-compact-form"', 1)[1].split('</form>', 1)[0]
