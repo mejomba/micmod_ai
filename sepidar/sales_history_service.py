@@ -404,7 +404,8 @@ def _sepidar_history(filters):
             numbers = sorted(numbers_by_year[fiscal_ref])
             placeholders = ', '.join(['%s'] * len(numbers))
             match_clauses.append(
-                f"(docs.FiscalYearRef = %s AND docs.Number IN ({placeholders}))"
+                f"(docs.FiscalYearRef = %s AND docs.Number IS NOT NULL "
+                f"AND docs.Number IN ({placeholders}))"
             )
             params.extend([fiscal_ref, *numbers])
         where_sql += (

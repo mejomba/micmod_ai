@@ -194,7 +194,8 @@ class SalesHistorySourceOptimizationTests(SimpleTestCase):
                 self.assertEqual(_sepidar_history({'doc_type': 'quotation'}), [])
         sql, params, ids, numbers = read.call_args.args
         self.assertIn('SELECT TOP (3001)', sql)
-        self.assertIn('docs.FiscalYearRef = %s AND docs.Number IN (%s)', sql)
+        self.assertIn('docs.FiscalYearRef = %s AND docs.Number IS NOT NULL', sql)
+        self.assertIn('AND docs.Number IN (%s)', sql)
         self.assertIn("docs.doc_type <> 'quotation' OR NOT", sql)
         self.assertIn('docs.FiscalYearRef,', sql)
         self.assertEqual(params[-2:], [48, 2022])
@@ -210,7 +211,8 @@ class SalesHistorySourceOptimizationTests(SimpleTestCase):
         sql, params, ids, numbers = read.call_args.args
         self.assertIn('SELECT TOP (3001)', sql)
         self.assertIn('docs.sepidar_doc_id IN (%s, %s)', sql)
-        self.assertIn('docs.FiscalYearRef = %s AND docs.Number IN (%s)', sql)
+        self.assertIn('docs.FiscalYearRef = %s AND docs.Number IS NOT NULL', sql)
+        self.assertIn('AND docs.Number IN (%s)', sql)
         self.assertEqual(params[-4:], [71, 72, 48, 2022])
         self.assertEqual(ids, {71, 72})
         self.assertEqual(numbers, {(48, 2022)})
