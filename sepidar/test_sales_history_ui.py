@@ -55,6 +55,24 @@ class SalesHistoryInteractionTests(SimpleTestCase):
         self.assertIn('if(overlay)overlay.hidden=true', self.source)
 
 
+    def test_calendar_month_year_picker_and_navigation(self):
+        self.assertIn('data-mode="months"', self.source)
+        self.assertIn('data-mode="years"', self.source)
+        self.assertIn('data-select-month', self.source)
+        self.assertIn('data-select-year', self.source)
+        self.assertIn('data-year-shift', self.source)
+        self.assertIn('data-nav="-1" aria-label="ماه قبل">‹', self.source)
+        self.assertIn('data-nav="1" aria-label="ماه بعد">›', self.source)
+
+    def test_calendar_date_fields_live_in_advanced_form_only(self):
+        form = self.source.split('<form class="sh-compact-form"', 1)[1].split('</form>', 1)[0]
+        self.assertIn('id="sh-date-from"', form)
+        self.assertIn('id="sh-date-to"', form)
+        self.assertEqual(self.source.count('id="sh-date-from"'), 1)
+        self.assertEqual(self.source.count('id="sh-date-to"'), 1)
+        self.assertNotIn('<div class="sh-table-tools">', self.source)
+        self.assertNotIn('type="submit">اعمال', self.source)
+
     @unittest.skipUnless(shutil.which("node"), "Node.js needed for JS behavior tests")
     def test_wheel_destination_boundary_cases(self):
         match = re.search(
