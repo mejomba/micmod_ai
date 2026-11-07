@@ -608,6 +608,18 @@
 @media(prefers-reduced-motion:reduce){
 .sh-report .sh-table thead tr.sh-search-head th .sh-col-filter-shell .sh-col-loader{animation:none}
 }
+
+/* Fast optional 30-day range: compact, clearly separate from the default chip. */
+.sh-report .sh-active-filters .sh-period-extend {
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid #b5ccea;background:#fff;color:#2c588f;
+  border-radius:18px;padding:5px 11px;min-height:29px;
+  font-size:11px;font-weight:750;cursor:pointer;line-height:1.5
+}
+.sh-report .sh-active-filters .sh-period-extend:hover,
+.sh-report .sh-active-filters .sh-period-extend:focus-visible {
+  color:#174785;background:#eaf2ff;border-color:#78a5e0;outline-offset:2px
+}
 </style>
 {% endblock extra_css %}
 
@@ -696,7 +708,8 @@
       {{ column_filters|json_script:"sh-server-filters" }}
       <div class="sh-active-filters" role="group" aria-label="فیلترهای فعال">
         {% if recent_default %}
-          <span class="sh-period-chip" title="فقط در ورود اولیه؛ جست‌وجوی ستونی تمام تاریخچه را بررسی می‌کند">نمایش خودکار ۳۰ روز اخیر: {{ recent_from }} تا {{ recent_to }}</span>
+          <span class="sh-period-chip" title="در ورود اولیه یا پس از پاک‌سازی فیلترها؛ جست‌وجوی جدید می‌تواند تمام تاریخچه را بررسی کند">نمایش خودکار ۷ روز اخیر: {{ recent_from }} تا {{ recent_to }}</span>
+          <button class="sh-period-extend" type="button" data-period="30" data-date-from="{{ recent_30_from }}" data-date-to="{{ recent_to }}" title="نمایش ۳۰ روز اخیر با فیلتر تاریخ">نمایش ۳۰ روز اخیر</button>
         {% endif %}
         {% for chip in active_chips %}
           <button class="sh-filter-chip" type="button" data-filter-key="{{ chip.key }}" title="حذف این فیلتر">
@@ -1048,7 +1061,7 @@
         infoFiltered:'(از _MAX_ ردیف دریافت‌شده)',
         infoEmpty:'هیچ ردیفی برای نمایش وجود ندارد',
         zeroRecords:'هیچ ردیفی با فیلترهای فعلی مطابقت ندارد',
-        emptyTable:{% if report_error %}'دریافت اطلاعات ناموفق بود؛ لطفاً دوباره تلاش کنید.'{% elif recent_default %}'در ۳۰ روز اخیر سند فروشی پیدا نشد؛ با فیلترهای ستونی یا پیشرفته، تاریخچه را جست‌وجو کنید.'{% else %}'موردی مطابق فیلترهای شما پیدا نشد؛ برای جست‌وجوی گسترده‌تر، فیلترها را پاک کنید.'{% endif %},
+        emptyTable:{% if report_error %}'دریافت اطلاعات ناموفق بود؛ لطفاً دوباره تلاش کنید.'{% elif recent_default %}'در ۷ روز اخیر سند فروشی پیدا نشد؛ با فیلترهای ستونی یا پیشرفته، تاریخچه را جست‌وجو کنید.'{% else %}'موردی مطابق فیلترهای شما پیدا نشد؛ برای جست‌وجوی گسترده‌تر، فیلترها را پاک کنید.'{% endif %},
         paginate:{first:'اول',last:'آخر',next:'بعدی',previous:'قبلی'},
         processing:'در حال پردازش...'
       }
@@ -1330,8 +1343,8 @@
       });
       if(fromInput.value.trim())p.set('date_from',fromInput.value.trim());
       if(toInput.value.trim())p.set('date_to',toInput.value.trim());
-      // A deliberate clear-all must not restore the first-visit 30-day preset.
-      if(!p.toString())p.set('all_dates','1');
+      // An empty query restores the same default seven-day window as first load.
+      // Real filters continue searching all historical dates unless dates are set.
       return p;
     }
     function message(text,isError){
@@ -1353,11 +1366,17 @@
     }
     function refreshChips(data){
       if(!activeArea)return;
-      activeArea.querySelectorAll('.sh-period-chip,.sh-filter-chip').forEach(function(el){el.remove();});
+      activeArea.querySelectorAll('.sh-period-chip,.sh-period-extend,.sh-filter-chip').forEach(function(el){el.remove();});
       if(data.recent_default){
         var p=document.createElement('span');p.className='sh-period-chip';
-        p.textContent='نمایش خودکار ۳۰ روز اخیر: '+data.recent_from+' تا '+data.recent_to;
+        p.textContent='نمایش خودکار ۷ روز اخیر: '+data.recent_from+' تا '+data.recent_to;
         activeArea.insertBefore(p,busy);
+        var extend=document.createElement('button');
+        extend.type='button';extend.className='sh-period-extend';extend.dataset.period='30';
+        extend.dataset.dateFrom=data.recent_30_from;extend.dataset.dateTo=data.recent_to;
+        extend.textContent='نمایش ۳۰ روز اخیر';
+        extend.title='نمایش ۳۰ روز اخیر با فیلتر تاریخ';
+        activeArea.insertBefore(extend,busy);
       }
       (data.active_chips||[]).forEach(function(c){
         var el=document.createElement('button');el.type='button';el.className='sh-filter-chip';
@@ -1382,7 +1401,7 @@
       if(truncation)truncation.hidden=!result.truncated;
       message(result.row_count?
         'نمایش '+Number(result.row_count).toLocaleString('fa-IR')+' ردیف مطابق فیلترها':
-        result.recent_default?'در ۳۰ روز اخیر سابقه‌ای یافت نشد.':'هیچ نتیجه‌ای با فیلترهای فعلی پیدا نشد.',false);
+        result.recent_default?'در ۷ روز اخیر سابقه‌ای یافت نشد.':'هیچ نتیجه‌ای با فیلترهای فعلی پیدا نشد.',false);
       updateSummary();requestAnimationFrame(refreshSticky);
     }
     function search(){
@@ -1443,6 +1462,16 @@
     }
     $('#sh-clear-table, #sh-clear-all').on('click',clearAllFilters);
     if(activeArea)activeArea.addEventListener('click',function(e){
+      var period=e.target.closest('.sh-period-extend');
+      if(period){
+        // The server supplies dates in the project's timezone. Reuse the
+        // normal date filters so both databases are bounded before LIMIT.
+        fromInput.value=period.dataset.dateFrom||'';
+        toInput.value=period.dataset.dateTo||'';
+        updateDateInputs();
+        schedule(0);
+        return;
+      }
       var chip=e.target.closest('.sh-filter-chip');if(!chip)return;
       var key=chip.dataset.filterKey;
       if(key.indexOf('col_')===0){

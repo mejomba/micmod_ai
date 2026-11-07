@@ -161,11 +161,24 @@ assert(calendarHeaderHTML().includes('aria-label="۱۲ سال قبل"'));
         self.assertIn("advancedForm.addEventListener('submit'", self.source)
         self.assertIn("var data=new FormData(advancedForm)", self.source)
         self.assertIn("$('#sh-clear-table, #sh-clear-all').on('click',clearAllFilters)", self.source)
-        self.assertIn("if(!p.toString())p.set('all_dates','1')", self.source)
+        self.assertNotIn("if(!p.toString())p.set('all_dates','1')", self.source)
+        self.assertIn("An empty query restores the same default seven-day window", self.source)
         self.assertIn('id="sh-clear-all"', self.source)
         self.assertIn('id="sh-clear-table"', self.source)
         self.assertNotIn('advancedParams=new URLSearchParams', self.source)
         self.assertNotIn('sh-filter-actions a', self.source)
+
+    def test_seven_day_default_and_optional_thirty_day_range(self):
+        self.assertIn('نمایش خودکار ۷ روز اخیر:', self.source)
+        self.assertIn('در ۷ روز اخیر سند فروشی پیدا نشد', self.source)
+        self.assertIn('در ۷ روز اخیر سابقه‌ای یافت نشد.', self.source)
+        self.assertIn('data-period="30"', self.source)
+        self.assertIn('data-date-from="{{ recent_30_from }}"', self.source)
+        self.assertIn("extend.dataset.dateFrom=data.recent_30_from", self.source)
+        self.assertIn("fromInput.value=period.dataset.dateFrom||''", self.source)
+        self.assertIn("toInput.value=period.dataset.dateTo||''", self.source)
+        self.assertIn("activeArea.querySelectorAll('.sh-period-chip,.sh-period-extend,.sh-filter-chip')", self.source)
+        self.assertNotIn('نمایش خودکار ۳۰ روز اخیر:', self.source)
 
     def test_ajax_chips_clear_any_type_of_filter(self):
         self.assertIn("key.indexOf('col_')===0", self.source)

@@ -442,12 +442,12 @@ class SalesHistory(LoginRequiredMixin, View):
         has_search = (any((request.GET.get(key) or '').strip() for key in all_keys)
                       or request.GET.get('all_dates') == '1')
         recent_default = not has_search
-        # The initial visit is immediately useful, without querying all years.
-        # Once any search is entered, the backend searches all historical dates
-        # unless the user explicitly specifies a date interval.
+        # Default (including a clear-all action) shows only the last seven
+        # calendar days. An explicit search still covers full history unless
+        # the user selects a date range. all_dates=1 remains an explicit opt-in.
         filters = request.GET.copy()
         today = timezone.localdate()
-        from_date = today - timedelta(days=29)
+        from_date = today - timedelta(days=6)  # Seven days, including today.
         if recent_default:
             filters['date_from'] = from_date.isoformat()
             filters['date_to'] = today.isoformat()
@@ -460,6 +460,9 @@ class SalesHistory(LoginRequiredMixin, View):
         context['recent_default'] = recent_default
         context['recent_from'] = jdatetime.date.fromgregorian(date=from_date).strftime('%Y/%m/%d')
         context['recent_to'] = jdatetime.date.fromgregorian(date=today).strftime('%Y/%m/%d')
+        context['recent_30_from'] = jdatetime.date.fromgregorian(
+            date=today - timedelta(days=29)
+        ).strftime('%Y/%m/%d')
         context['advanced_active'] = any((context.get(k) or '').strip() for k in advanced_names)
         active_chips = []
         for index, label in enumerate(COLUMN_LABELS):
@@ -522,6 +525,7 @@ class SalesHistory(LoginRequiredMixin, View):
                 'recent_default': recent_default,
                 'recent_from': context['recent_from'],
                 'recent_to': context['recent_to'],
+                'recent_30_from': context['recent_30_from'],
             })
         return render(request, self.template_name, context, status=status)
 
