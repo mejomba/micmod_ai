@@ -3853,7 +3853,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
         const raw = fxRates[sourceId];
         if (raw === undefined || raw === null || String(raw).trim() === '') return null;
         const asText = String(raw).trim();
-        const decimal = /^(?:\\d+)(?:\\.(\\d+))?$/.exec(asText);
+        const decimal = /^(?:\d+)(?:\.(\d+))?$/.exec(asText);
         // Same 8-decimal precision and positivity guard as the backend.
         if (!decimal || (decimal[1] || '').replace(/0+$/, '').length > 8) return null;
         const value = Number(asText);
