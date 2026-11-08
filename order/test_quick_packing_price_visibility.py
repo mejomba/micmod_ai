@@ -19,6 +19,7 @@ class QuickPackingPriceVisibilityTests(SimpleTestCase):
             quantity_in_gio=10, available_for_packing=8,
             remaining_quantity_in_order=0, effective_unit_weight=2,
             effective_unit_price=123.45, effective_currency_title='USD',
+            effective_currency_pk=3,
             order_number='P-10', pk=10,
         )
 
@@ -29,6 +30,7 @@ class QuickPackingPriceVisibilityTests(SimpleTestCase):
         row = {}
         self.view.customize_row(row, self.item)
         self.assertEqual(row['final_price'], '')
+        self.assertEqual(row['currency_pk'], '')
         self.assertNotIn('123.45', str(row))
 
     def test_ajax_superuser_can_receive_price(self):
@@ -36,6 +38,7 @@ class QuickPackingPriceVisibilityTests(SimpleTestCase):
         row = {}
         self.view.customize_row(row, self.item)
         self.assertEqual(row['final_price'], 123.45)
+        self.assertEqual(row['currency_pk'], '3')
 
     def test_viewers_cannot_query_order_datatable_directly(self):
         with patch.object(Packing, 'user_can_create_workflow', return_value=False):
