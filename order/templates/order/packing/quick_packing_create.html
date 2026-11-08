@@ -2450,6 +2450,9 @@
             padding: 12px;
         }
     }
+.pk-carton-size-warning{font-size:12px;line-height:1.55;font-weight:600}
+.pk-carton-size-warning[hidden]{display:none!important}
+input.pk-carton-size-invalid{border-color:#dc3545!important}
 </style>
 {% endblock %}
 
@@ -2991,6 +2994,8 @@
                                             data-order-id="{{ packing_item.order_id }}"
                                             data-item-id="{{ packing_item.pk }}"
                                             data-carton-quantity="{{ packing_item.carton_quantity|default_if_none:'' }}"
+                                            data-carton-number="{{ packing_item.carton_number|default_if_none:'' }}"
+                                            data-carton-size="{{ packing_item.size|default_if_none:'' }}"
                                             data-quantity="{{ packing_item.quantity|default_if_none:0 }}"
                                             data-total-weight="{{ packing_item.net_weight_kg|default_if_none:0 }}"
                                             {% if can_view_prices %}
@@ -3175,6 +3180,7 @@
                                                             <div>
                                                                 <label class="pk-mini-label" data-key="packing_size">Size</label>
                                                                 <input class="form-control" name="existing-{{ packing_item.pk }}-size" value="{{ packing_item.size|default_if_none:'' }}">
+                                                                <div class="pk-carton-size-warning text-danger mt-1" role="alert" hidden></div>
                                                             </div>
                                                             <div class="pk-desc">
                                                                 <label class="pk-mini-label" data-key="packing_description">Description</label>
@@ -3404,6 +3410,7 @@
                                                             <input type="text" maxlength="128" class="form-control"
                                                                    name="existing-{{ packing_item.pk }}-size"
                                                                    value="{{ packing_item.size|default_if_none:'' }}" disabled>
+                                                            <div class="pk-carton-size-warning text-danger mt-1" role="alert" hidden></div>
                                                         </div>
                                                         <div class="pk-editor-description">
                                                             <label class="pk-mini-label" data-key="packing_description">Description</label>
@@ -3733,6 +3740,92 @@
     const splitStorageKey = 'quickPackingSplitPercent';
     const defaultSplitPercent = 62;
     let packingTranslations = {};
+    // Carton Number identifies one outer carton; Size must agree across rows.
+    function cartonNumberKey(value) {
+        return String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+    }
+    function cartonSizeKey(value) {
+        return String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase()
+            .replace(/\s*[×x*]\s*/g, 'x');
+    }
+    function cartonRowData(row) {
+        const numberInput = row.querySelector('input[name$="-carton_number"]:not(:disabled)');
+        const sizeInput = row.querySelector('input[name$="-size"]:not(:disabled)');
+        return {
+            row, sizeInput,
+            number: (numberInput ? numberInput.value : row.dataset.cartonNumber || '').trim(),
+            size: (sizeInput ? sizeInput.value : row.dataset.cartonSize || '').trim()
+        };
+    }
+    function updatePackingCartonSizes() {
+        // Warehouse receipts are not carton metadata edits.
+        if (isWarehouseStage && !isSuperuser) return true;
+        const groups = new Map();
+        document.querySelectorAll('.packing-selected-row').forEach(row => {
+            if (row.classList.contains('is-pending-delete')) return;
+            const item = cartonRowData(row);
+            const key = cartonNumberKey(item.number);
+            if (!key) {
+                if (item.sizeInput) {
+                    item.sizeInput.setCustomValidity('');
+                    item.sizeInput.classList.remove('pk-carton-size-invalid');
+                    const warning = item.sizeInput.parentElement.querySelector('.pk-carton-size-warning');
+                    if (warning) warning.hidden = true;
+                }
+                return;
+            }
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(item);
+        });
+        let valid = true;
+        groups.forEach(items => {
+            const known = new Map();
+            items.forEach(item => {
+                const key = cartonSizeKey(item.size);
+                if (key) known.set(key, item.size);
+            });
+            if (known.size === 1) {
+                const size = [...known.values()][0];
+                items.forEach(item => {
+                    if (item.sizeInput && !item.sizeInput.value.trim()) {
+                        item.sizeInput.value = size;
+                        item.size = size;
+                    }
+                });
+            }
+            const conflict = known.size > 1;
+            const missing = known.size === 0;
+            const key = conflict ? 'packing_carton_size_mismatch' : 'packing_carton_size_missing';
+            const fallback = conflict ? 'Carton sizes differ: {number}' : 'Enter Size for {number}';
+            const message = conflict || missing
+                ? packingVolumePhrase(key, fallback).replace('{number}', items[0].number)
+                : '';
+            items.forEach(item => {
+                const input = item.sizeInput;
+                if (!input) return;
+                input.setCustomValidity(message);
+                input.classList.toggle('pk-carton-size-invalid', !!message);
+                const warning = input.parentElement.querySelector('.pk-carton-size-warning');
+                if (warning) {
+                    warning.hidden = !message;
+                    warning.textContent = message;
+                }
+                if (message) valid = false;
+            });
+        });
+        return valid;
+    }
+    document.addEventListener('input', function (event) {
+        if (event.target.matches?.('input[name$="-carton_number"], input[name$="-size"]')) {
+            updatePackingCartonSizes();
+        }
+    });
+    document.addEventListener('change', function (event) {
+        if (event.target.matches?.('input[name$="-carton_number"], input[name$="-size"]')) {
+            updatePackingCartonSizes();
+        }
+    });
+
     // Each classifier is independent. Both use their own autocomplete
     // values; never clear or filter one when the other changes.
     const packingSuggestTimers = new WeakMap();
@@ -4354,6 +4447,9 @@
             packing_workflow_description_placeholder: 'توضیحات عملیات این مرحله',
             packing_workflow_create_placeholder: 'توضیحات ایجاد پکینگ',
             packing_carton_quantity: 'تعداد کارتن',
+            packing_carton_size_mismatch: 'سایز تمام ردیف‌های کارتن «{number}» باید یکسان باشد.',
+            packing_carton_size_missing: 'برای شماره کارتن «{number}» سایز وارد کنید.',
+            packing_carton_size_invalid: 'سایز کارتن‌های انتخاب‌شده را اصلاح کنید.',
             packing_category: 'دسته‌بندی',
             packing_main_category: 'دسته‌بندی اصلی',
             packing_row_brand: 'برند',
@@ -4379,6 +4475,9 @@
             packing_workflow_description_placeholder: 'Notes for this workflow action',
             packing_workflow_create_placeholder: 'Notes when creating Packing',
             packing_carton_quantity: 'Carton Count',
+            packing_carton_size_mismatch: 'All rows of carton “{number}” must use the same Size.',
+            packing_carton_size_missing: 'Please enter a Size for carton “{number}”.',
+            packing_carton_size_invalid: 'Please correct conflicting carton sizes.',
             packing_category: 'Category',
             packing_main_category: 'Main Category',
             packing_row_brand: 'Brand',
@@ -5121,6 +5220,7 @@ ${canViewPrices ? `
                     <div>
                         <label class="pk-mini-label"><span data-key="packing_size">${tr('packing_size', 'Size')}</span></label>
                         <input class="form-control" name="form-${index}-size">
+                        <div class="pk-carton-size-warning text-danger mt-1" role="alert" hidden></div>
                     </div>
 
                     <div class="pk-desc">
@@ -5155,6 +5255,7 @@ ${canViewPrices ? `
         // Set through .value rather than interpolating untrusted text into HTML.
         const newBrandInput = row.querySelector('input[name$="-brand"]');
         if (newBrandInput) newBrandInput.value = data.brand || '';
+        updatePackingCartonSizes();
         queuePackingVolumePreview(row);
 
         row.querySelector('.packing-quantity').addEventListener('input', function () {
@@ -5168,6 +5269,7 @@ ${canViewPrices ? `
             row.remove();
             reindexRows();
             updateTotals();
+            updatePackingCartonSizes();
             syncDatatable();
         });
 
@@ -5229,6 +5331,7 @@ ${canViewPrices ? `
                 row.classList.add('is-editing');
                 button.setAttribute('aria-expanded', 'true');
                 button.disabled = true;
+                updatePackingCartonSizes();
                 (editor.querySelector('[name$="-wh_receipt_quantity"]') ||
                  editor.querySelector('.packing-existing-quantity'))?.focus();
                 updateTotals();
@@ -5263,7 +5366,8 @@ ${canViewPrices ? `
                     field.classList.remove('border-danger', 'text-danger');
                 });
                 editor.hidden = true;
-                row.classList.remove('is-editing');
+                row.classList.remove('is-editing'); 
+                updatePackingCartonSizes();
                 const volumeInput = editor.querySelector('input[data-packing-volume]');
                 if (volumeInput) {
                     delete volumeInput.dataset.volumeEdited;
@@ -5317,6 +5421,7 @@ ${canViewPrices ? `
 
         syncEmptyState();
         updateTotals();
+        updatePackingCartonSizes();
     });
     document.querySelectorAll('input[data-packing-volume]').forEach(input => {
         showPackingVolumeWarning(input);
@@ -6019,6 +6124,13 @@ ${canViewPrices ? `
         if (!valid) {
             showPackingFeedback('error', localizedPackingError(warehouseInvalid
                 ? 'packing_err_quantities_out_of_range' : 'packing_err_packing_capacity'));
+            return;
+        }
+
+        if (!updatePackingCartonSizes()) {
+            showPackingFeedback('error', packingVolumePhrase(
+                'packing_carton_size_invalid', 'Please correct conflicting carton sizes.'
+            ));
             return;
         }
 
