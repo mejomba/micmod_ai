@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 from django.test import SimpleTestCase
 
 from order.models import PackingItem
+from order.forms import PackingItemForm
 from order.packing_volume import (
     calculate_packing_volume, parse_packing_volume, resolve_packing_volume,
 )
@@ -87,3 +88,33 @@ class PackingVolumeTemplateTests(SimpleTestCase):
         self.assertIn('volume_preview', html)
         self.assertIn('body.calculated_volume', html)
         self.assertIn('Math.abs(entered - calculated)', html)
+
+
+class PackingVolumePermissionTests(SimpleTestCase):
+    def test_warehouse_model_form_keeps_volume_readonly(self):
+        source = (
+            Path(settings.BASE_DIR) / 'order/forms.py'
+        ).read_text(encoding='utf-8')
+        self.assertIn("'gross_weight_kg',\n                    'volume',", source)
+
+    def test_same_page_preview_requires_create_permission(self):
+        from django.core.exceptions import PermissionDenied
+        view = QuickPackingView()
+        request = SimpleNamespace(
+            GET={'volume_preview': '1', 'quantity': '10'},
+            user=Mock(),
+        )
+        with patch.object(view, '_assert_create_access', side_effect=PermissionDenied):
+            with self.assertRaises(PermissionDenied):
+                view.get(request)
+
+    def test_preview_returns_null_until_formula_provided(self):
+        import json
+        view = QuickPackingView()
+        request = SimpleNamespace(
+            GET={'volume_preview': '1', 'quantity': '10'}, user=Mock(),
+        )
+        with patch.object(view, '_assert_create_access'):
+            response = view.get(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(json.loads(response.content)['calculated_volume'])

@@ -586,6 +586,7 @@ class PackingItemForm(CustomBaseModelForm):
                     'carton_number',
                     'net_weight_kg',
                     'gross_weight_kg',
+                    'volume',
                     'size',
                     'brand',
                     'description',
