@@ -3852,8 +3852,12 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
         if (String(sourceId) === fxTarget()) return 1;
         const raw = fxRates[sourceId];
         if (raw === undefined || raw === null || String(raw).trim() === '') return null;
-        const value = Number(raw);
-        return Number.isFinite(value) && value > 0 ? value : null;
+        const asText = String(raw).trim();
+        const decimal = /^(?:\\d+)(?:\\.(\\d+))?$/.exec(asText);
+        // Same 8-decimal precision and positivity guard as the backend.
+        if (!decimal || (decimal[1] || '').replace(/0+$/, '').length > 8) return null;
+        const value = Number(asText);
+        return Number.isFinite(value) && value > 0 && value < 1e18 ? value : null;
     }
     function fxSyncHidden() {
         if (!fxHidden || !fxEditable) return;
@@ -4984,7 +4988,11 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
 
         root.querySelectorAll('[data-key]').forEach(function (element) {
             const key = element.dataset.key;
-            if (packingTranslations[key] !== undefined) {
+            // Existing dictionary entries may still call the old Packing
+            // currency field simply "Currency". It is now the FX target.
+            if (key === 'packing_currency_label') {
+                element.textContent = packingPageLabels[workflowUiLanguage()][key];
+            } else if (packingTranslations[key] !== undefined) {
                 element.textContent = packingTranslations[key];
             } else if (packingPageLabels[workflowUiLanguage()]?.[key] !== undefined) {
                 element.textContent = packingPageLabels[workflowUiLanguage()][key];
