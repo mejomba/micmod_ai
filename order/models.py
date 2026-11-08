@@ -1083,6 +1083,11 @@ class Packing(BaseModeWF):
     sales_10_darsad = models.TextField('sales_10_darsad', null=True, blank=True, help_text='شماره کارتن هایی که به عنوان 10 درصد هستند. با علامت / جدا کنید')
     currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, null=True, blank=True,
                                  related_name='packings')
+    # FX configuration only. Converted totals are deliberately calculated
+    # in the Quick Packing browser and must never be persisted.
+    currency_exchange_rates = models.JSONField(
+        'نرخ‌های تبدیل ارز', default=dict, blank=True,
+    )
 
     @staticmethod
     def normalize_workflow_state_name(state_name):

@@ -333,6 +333,10 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
             })
         if "description" in self.fields:
             self.fields["description"].widget.attrs["rows"] = 1
+        if "currency_exchange_rates" in self.fields:
+            # The interactive editor is rendered inside the existing Quick
+            # Packing header. The ModelForm sees only the JSON hidden field.
+            self.fields["currency_exchange_rates"].widget = forms.HiddenInput()
         if "sales_10_darsad" in self.fields:
             self.fields["sales_10_darsad"].widget.attrs["rows"] = 2
 
@@ -420,6 +424,27 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
         # only_show values are display-only and must never be accepted from POST.
         for name in self.only_show:
             self.fields.pop(name, None)
+
+    def clean(self):
+        cleaned = super().clean()
+        if 'currency_exchange_rates' not in self.fields:
+            return cleaned
+        from micmod_base.base import Currency
+        from .packing_currency_rates import normalize_packing_currency_rates
+
+        destination = cleaned.get('currency')
+        if destination is None and 'currency' not in self.fields:
+            destination = self.instance.currency if self.instance.pk else None
+        target_id = destination.pk if destination is not None else None
+        try:
+            cleaned['currency_exchange_rates'] = normalize_packing_currency_rates(
+                cleaned.get('currency_exchange_rates'),
+                target_id,
+                valid_currency_ids=Currency.objects.values_list('pk', flat=True),
+            )
+        except ValidationError as error:
+            self.add_error('currency_exchange_rates', error)
+        return cleaned
 
     def _iter_packing_file_groups(self, indexes):
         groups = []

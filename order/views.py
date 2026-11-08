@@ -3750,6 +3750,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             'packing_number',
             'currency',
             'shipment_type',
+            'currency_exchange_rates',
             'bl_number',
             'bl_date',
             'transportation_company',
@@ -3778,7 +3779,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             # available to all workflow groups, independent of current stage.
             # Never expose audit/user/workflow relation fields from Meta='__all__'.
             allowed_fields = list(dict.fromkeys(
-                list(PackingSafeForm.field_layout)
+                list(PackingSafeForm.field_layout) + ['currency_exchange_rates']
                 + [f'file_{idx}' for idx in range(1, PackingSafeForm.file_groups_2 + 1)]
             ))
             only_show = []
@@ -3791,6 +3792,11 @@ class QuickPackingView(LoginRequiredMixin, View):
             # Warehouse operators retain the legacy read-only header.
             allowed_fields = [name for name in allowed_fields if name.startswith('file_')]
             only_show = [name for name in only_show if name.startswith('file_')]
+
+        if 'currency' not in allowed_fields or not Packing.user_can_view_prices(self.request.user):
+            allowed_fields = [
+                name for name in allowed_fields if name != 'currency_exchange_rates'
+            ]
 
         if packing_obj and form_state > 0 and constraint.get('wf_access'):
             # These three registration fields are always editable by the
@@ -3805,6 +3811,10 @@ class QuickPackingView(LoginRequiredMixin, View):
             allowed_fields = [
                 name for name in allowed_fields if name not in Packing.POST_DRAFT_FIELDS
             ]
+
+        # A workflow transition/partial header POST must retain saved rates.
+        if packing_obj and data is not None and 'currency_exchange_rates' not in data:
+            allowed_fields = [name for name in allowed_fields if name != 'currency_exchange_rates']
 
         # Partial workflow requests that omit these optional fields must not
         # erase previously saved registration data.
