@@ -209,7 +209,7 @@
                 {% if row.unassigned_row_count %}<span>ردیف بدون شماره کارتن: {{ row.unassigned_row_count }}</span>{% endif %}
             </div>
             {% if row.size_conflicts %}<div class="pt-alert" role="alert">{{ row.size_conflicts }} کارتن دارای مغایرت سایز است؛ اطلاعات را در پکینگ اصلاح کنید.</div>{% endif %}
-            <p class="pt-help">حجم فعلاً آزمایشی است. اولویت کالای اصلی بر اساس بیشترین حجم ثبت‌شده است؛ وزن محاسباتی و وزن واردشده جداگانه محاسبه می‌شوند.</p>
+            <p class="pt-help">حجم فعلاً آزمایشی است. اولویت کالاها بر اساس حجم نزولی است و در نبود حجم، وزن محاسباتی ملاک می‌شود. وزن محاسباتی و وزن واردشده جداگانه گزارش می‌شوند.</p>
             <div class="pt-group-tabs" role="group" aria-label="انتخاب گروه‌بندی">
                 <button class="pt-group-tab is-active" type="button" data-pt-group="carton" aria-pressed="true">بر اساس Carton Number</button>
                 <button class="pt-group-tab" type="button" data-pt-group="category" aria-pressed="false">بر اساس Category</button>
@@ -234,7 +234,7 @@
                                 <th>سهم محاسباتی</th><th>وزن واردشده (kg)</th><th>سهم وزن واردشده</th><th>حجم</th></tr></thead>
                             <tbody>{% for item in carton.rows %}
                                 <tr>
-                                    <td><strong>{{ item.part_number }}</strong>{% if forloop.first %} <span class="pt-tag">اولویت حجم</span>{% endif %}</td>
+                                    <td><strong>{{ item.part_number }}</strong>{% if forloop.first %} <span class="pt-tag">{% if item.volume is not None %}بیشترین حجم{% else %}اولویت وزن محاسباتی{% endif %}</span>{% endif %}</td>
                                     <td>{{ item.order_number }}</td><td>{{ item.category }}</td><td>{{ item.main_category }}</td>
                                     <td>{{ item.brand }}</td><td>{{ item.quantity|default_if_none:"—"|floatformat:-2 }}</td>
                                     <td>{{ item.carton_quantity|default_if_none:"—" }}</td>

@@ -171,3 +171,22 @@ class PackingTransportScheduleTests(SimpleTestCase):
         self.assertIn('row.orders', html)
         self.assertIn('row.actual_start', html)
         self.assertIn('row.actual_arrival', html)
+
+
+    def test_timeline_contains_embedded_details_instead_of_second_table(self):
+        html = (Path(settings.BASE_DIR) /
+                'order/templates/order/packing/transport_schedule.html').read_text(
+                    encoding='utf-8',
+                )
+        self.assertIn('pt-detail-source-{{ row.id }}', html)
+        self.assertIn('row.unique_carton_count', html)
+        self.assertIn('pt-chart-toggle', html)
+        self.assertIn('row.cartons', html)
+        self.assertIn('row.category_groups', html)
+        self.assertIn('data-pt-group="category"', html)
+        self.assertIn('item.net_percent', html)
+        self.assertIn('item.entered_percent', html)
+        self.assertIn('carton.size_conflict', html)
+        self.assertNotIn('<h2>جدول مرور حمل</h2>', html)
+        self.assertIn("if (!values.length) values.push(timestamp(today));", html)
+        self.assertIn('renderTableDates(panel)', html)

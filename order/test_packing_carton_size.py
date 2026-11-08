@@ -66,3 +66,38 @@ class CartonSizeValidationTests(SimpleTestCase):
         row = {'id': 1, 'carton_number': 'A', 'size': '40x30',
                'category': 'New'}
         self.assertEqual(reconcile_carton_sizes(old, [row], []), [])
+
+    def test_warehouse_editing_does_not_run_carton_size_updates(self):
+        from unittest.mock import Mock, patch
+        from order.views import QuickPackingView
+        view = QuickPackingView()
+        request = SimpleNamespace(
+            user=SimpleNamespace(is_superuser=False),
+            POST={'existing-17-id': '17',
+                  'existing-17-wh_receipt_quantity': '1',
+                  'existing-17-ruined_quantity': '0'},
+        )
+        with patch.object(view, '_is_warehouse_stage', return_value=True), \
+             patch('order.views.PackingItem.objects.select_for_update') as db:
+            result = view._prepare_carton_sizes(request, Mock(), [])
+        self.assertNotIn('size', result[0])
+        db.assert_not_called()
+
+    def test_prepare_persists_backfilled_size_with_request_actor(self):
+        from unittest.mock import Mock, patch
+        from order.views import QuickPackingView
+        view = QuickPackingView()
+        user = Mock(is_superuser=False)
+        request = SimpleNamespace(user=user, POST={})
+        packing = Mock()
+        existing = [stored(1, 'BOX', None), stored(2, 'BOX', '40x30')]
+        # Unsaved new row joins an existing carton but omitted its size.
+        new = [{'carton_number': 'BOX', 'size': ''}]
+        with patch.object(view, '_is_warehouse_stage', return_value=False), \
+             patch.object(view, '_parse_existing_rows', return_value=[]), \
+             patch('order.views.PackingItem.objects.select_for_update') as lock:
+            lock.return_value.filter.return_value.only.return_value = existing
+            result = view._prepare_carton_sizes(request, packing, new)
+        self.assertEqual(result, [])
+        self.assertEqual(new[0]['size'], '40x30')
+        self.assertEqual(existing[0].size, '40x30')
