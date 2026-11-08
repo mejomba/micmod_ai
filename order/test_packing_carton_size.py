@@ -90,7 +90,9 @@ class CartonSizeValidationTests(SimpleTestCase):
         user = Mock(is_superuser=False)
         request = SimpleNamespace(user=user, POST={})
         packing = Mock()
-        existing = [stored(1, 'BOX', None), stored(2, 'BOX', '40x30')]
+        missing = Mock(pk=1, carton_number='BOX', size=None)
+        missing.extra_data = Mock()
+        existing = [missing, stored(2, 'BOX', '40x30')]
         # Unsaved new row joins an existing carton but omitted its size.
         new = [{'carton_number': 'BOX', 'size': ''}]
         with patch.object(view, '_is_warehouse_stage', return_value=False), \
@@ -101,3 +103,6 @@ class CartonSizeValidationTests(SimpleTestCase):
         self.assertEqual(result, [])
         self.assertEqual(new[0]['size'], '40x30')
         self.assertEqual(existing[0].size, '40x30')
+        missing.save.assert_called_once_with()
+        self.assertIs(missing.editor_user, user)
+        self.assertIs(missing.extra_data.request, request)
