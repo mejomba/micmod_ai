@@ -101,6 +101,7 @@ class PackingExchangePreferenceTests(SimpleTestCase):
             view._build_form(packing_obj=Mock(), data=submitted)
         fields = form_factory.call_args.kwargs['allowed_fields']
         self.assertNotIn('currency_exchange_rates', fields)
+        self.assertNotIn('currency', fields)
 
 
 class PackingExchangeFormTests(TestCase):

@@ -3794,7 +3794,14 @@ class QuickPackingView(LoginRequiredMixin, View):
             allowed_fields = [name for name in allowed_fields if name.startswith('file_')]
             only_show = [name for name in only_show if name.startswith('file_')]
 
-        if 'currency' not in allowed_fields or not Packing.user_can_view_prices(self.request.user):
+        if not Packing.user_can_view_prices(self.request.user):
+            # A user who cannot see financial values must not silently
+            # change the target currency while leaving its rates unchanged.
+            allowed_fields = [
+                name for name in allowed_fields
+                if name not in ('currency', 'currency_exchange_rates')
+            ]
+        elif 'currency' not in allowed_fields:
             allowed_fields = [
                 name for name in allowed_fields if name != 'currency_exchange_rates'
             ]
