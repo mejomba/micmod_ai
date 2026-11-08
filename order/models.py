@@ -2,7 +2,7 @@ import jdatetime
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, MinValueValidator
 from django.db.models import Sum, ExpressionWrapper, F, FloatField, Count
 from django.utils import timezone
 from django.utils.formats import number_format
@@ -1359,6 +1359,11 @@ class PackingItem(BaseModeWF):
     carton_quantity = models.PositiveIntegerField('تعداد کارتن', null=True, blank=True)
     net_weight_kg = models.FloatField(_('weight_kg'), null=True, blank=True)
     gross_weight_kg = models.FloatField(_('grows_weight_kg'), null=True, blank=True)
+    # User-editable volume. The formula is intentionally not defined yet.
+    volume = models.DecimalField(
+        'Volume', max_digits=18, decimal_places=6, null=True, blank=True,
+        validators=[MinValueValidator(0)],
+    )
     size = models.CharField(_('size'), max_length=128, null=True, blank=True)
     brand = models.CharField(_('brand'), null=True, blank=True)
     description = models.TextField(_('description'), null=True, blank=True)
@@ -1393,6 +1398,15 @@ class PackingItem(BaseModeWF):
     def computed_volume_cbm(self):
         # Todo check this
         return 0
+
+    @property
+    def calculated_volume(self):
+        """None until the Packing volume business formula is provided."""
+        from .packing_volume import calculate_packing_volume
+        return calculate_packing_volume(
+            quantity=self.quantity, size=self.size,
+            carton_quantity=self.carton_quantity,
+        )
 
     @property
     def computed_status(self):

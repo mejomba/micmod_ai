@@ -51,6 +51,7 @@ from changelog.models import ChangeLog
 from .packing_error_messages import packing_error_payload
 from .packing_change_history import build_packing_change_history
 from .packing_workflow_timeline import build_packing_workflow_timeline
+from .packing_volume import calculate_packing_volume, parse_packing_volume, resolve_packing_volume
 from .form_perm import ORDER_FIELDS_BY_PERMISSION
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
     OrderPaymentItemForm, OrderPaymentItemFormSet, BazarBuyFactorForm, \
@@ -4056,6 +4057,9 @@ class QuickPackingView(LoginRequiredMixin, View):
                 ),
                 'size': request.POST.get(f'form-{row_index}-size'),
                 'description': request.POST.get(f'form-{row_index}-description'),
+                'volume': parse_packing_volume(
+                    request.POST.get(f'form-{row_index}-volume'),
+                ),
             }
             if getattr(getattr(request, 'user', None), 'is_superuser', False) is True:
                 dest_key = f'form-{row_index}-wh_destination'
@@ -4138,6 +4142,9 @@ class QuickPackingView(LoginRequiredMixin, View):
                 'description': request.POST.get(f'existing-{item_id}-description'),
             }
             carton_key = f'existing-{item_id}-carton_quantity'
+            volume_key = f'existing-{item_id}-volume'
+            if volume_key in request.POST and not delete_requested:
+                row['volume'] = parse_packing_volume(request.POST.get(volume_key))
             if carton_key in request.POST and not delete_requested:
                 row['carton_quantity'] = self._parse_carton_quantity(
                     request.POST.get(carton_key),
@@ -4250,6 +4257,13 @@ class QuickPackingView(LoginRequiredMixin, View):
                 or float(packing_item.gross_weight_kg or 0) != row['gross_weight_kg']
                 or (packing_item.carton_number or '') != (row['carton_number'] or '')
                 or ('carton_quantity' in row and packing_item.carton_quantity != row['carton_quantity'])
+                or (
+                    'volume' in row
+                    and packing_item.volume != resolve_packing_volume(
+                        row['volume'], quantity=row['quantity'], size=row['size'],
+                        carton_quantity=row.get('carton_quantity', packing_item.carton_quantity),
+                    )
+                )
                 or (packing_item.size or '') != (row['size'] or '')
                 or (packing_item.description or '') != (row['description'] or '')
                 or bool(receipt_updates)
@@ -4282,6 +4296,11 @@ class QuickPackingView(LoginRequiredMixin, View):
                 packing_item.carton_quantity = row['carton_quantity']
             packing_item.size = row['size']
             packing_item.description = row['description']
+            if 'volume' in row:
+                packing_item.volume = resolve_packing_volume(
+                    row['volume'], quantity=row['quantity'],
+                    size=row['size'], carton_quantity=packing_item.carton_quantity,
+                )
             for attr, value in receipt_updates.items():
                 setattr(packing_item, attr, value)
             packing_item.editor_user = request.user
@@ -4431,6 +4450,10 @@ class QuickPackingView(LoginRequiredMixin, View):
                             size=row['size'],
                             brand=str(item.brand) if item and item.brand else None,
                             description=row['description'],
+                            volume=resolve_packing_volume(
+                                row['volume'], quantity=row['quantity'],
+                                size=row['size'], carton_quantity=row['carton_quantity'],
+                            ),
                             wh_receipt_quantity=row.get('wh_receipt_quantity'),
                             ruined_quantity=row.get('ruined_quantity'),
                             wh_destination=row.get('wh_destination'),
@@ -4521,6 +4544,22 @@ class QuickPackingView(LoginRequiredMixin, View):
             # Apply before AJAX change-history too; never leak document data
             # to users outside the current workflow stage and viewer group.
             raise PermissionDenied('Packing document view access denied.')
+
+        # Same-page, read-only preview. No new form or page is created.
+        if request.GET.get('volume_preview') is not None:
+            if packing_obj:
+                if not packing_obj.user_has_workflow_access(request.user):
+                    raise PermissionDenied('Packing workflow access denied.')
+            else:
+                self._assert_create_access()
+            proposed = calculate_packing_volume(
+                quantity=request.GET.get('quantity'),
+                size=request.GET.get('size'),
+                carton_quantity=request.GET.get('carton_quantity'),
+            )
+            return JsonResponse({
+                'calculated_volume': str(proposed) if proposed is not None else None,
+            })
 
         if request.GET.get('audit_scope') is not None:
             if not packing_obj:
