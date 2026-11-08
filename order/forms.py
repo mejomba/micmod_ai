@@ -22,7 +22,7 @@ class OrderSafeForm(FormMX, CustomBaseModelForm):
     field_layout = [
         "customer_party_id", "order_title", "order_number", "item",
         "transportation_method", "commitment_date_to_customer", "quantity", "description_sale", "order_type", "price",
-        "item_trade", "quantity_trade", "po_number_trade", "supplier_trade", "price_trade", "description_trade",
+        "brand", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade", "price_trade", "description_trade",
         "apply_mac", "mohandes_confirmation", "trade_commitment_date", "production_lead_time", "trade_lock_order",
         "supplier_mac", "price_mac", "part_number_mac", "po_number_mac", "quantity_mac", "description_mac",
         "sales_admin_confirmation", "cancel", "qi", "currency", "order_m2m", "customer_request_item",
@@ -37,6 +37,7 @@ class OrderSafeForm(FormMX, CustomBaseModelForm):
         "qi": {"ajax": "qi", "min_input": 2, "placeholder": "انتخاب یک ردیف از پیش فاکتور"},
         "item": {"ajax": "item", "min_input": 2, "placeholder": "انتخاب کالا"},
         "item_trade": {"ajax": "item", "min_input": 2, "placeholder": "انتخاب کالا بازرگانی"},
+        "brand": {"ajax": "brand", "min_input": 0, "placeholder": "انتخاب برند سفارش"},
         # "supplier_trade": {"ajax": "supplier", "min_input": 2, "placeholder": "انتخاب تامین کننده بازرگانی"},
         # "supplier_mac": {"ajax": "supplier", "min_input": 2, "placeholder": "select supplier (mac)"},
         "price_inquiry_result": {"ajax": "inquiry", "min_input": 0, "placeholder": "جستجو با کد کالا"},
@@ -128,6 +129,14 @@ class OrderForm(CustomBaseModelForm):
                 self.formset_constraint_read = self.formset_constraint[self.form_state][0].get('read')
                 self.formset_constraint_hide = self.formset_constraint[self.form_state][0].get('hide')
         super(OrderForm, self).__init__(*args, **kwargs)
+        # Legacy OrderForm follows the post-sales-manager Trade-only rule.
+        if not (
+            self.request
+            and getattr(self.request.user, 'base_group', None) == 'trade'
+            and self.form_state is not None
+            and self.form_state >= 2
+        ):
+            self.fields.pop('brand', None)
         qs = Supplier.objects.filter(base_group='trade')
         self.fields['supplier_trade'] = forms.ModelChoiceField(
             queryset=qs,

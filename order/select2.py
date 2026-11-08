@@ -1,12 +1,16 @@
 from django.db.models import Q
 from django.http import JsonResponse
 
-from extra_data.models import Customer, Item
+from extra_data.models import Customer, Item, Brand
 from inquiry.models import Supplier, PriceInquiryResult
 from micmod_base.models import Quotation, QuotationItem
 from django.contrib.auth import get_user_model
 
 SELECT2_SOURCES = {
+    "brand": {"qs": Brand.objects.all(),
+              "search": ["title__icontains"],
+              "default_order": ["title"]},
+
     "customer_party_id": {"qs": Customer.objects.all(),
                           "search": ["sepidar_dl_id__icontains", "sepidar_dl_code__icontains",
                                      "title__icontains", "name__icontains", "last_name__icontains"],

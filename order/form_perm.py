@@ -271,7 +271,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
-                "buy_operator", "pay_operator",
+                "buy_operator", "pay_operator", "brand",
             ],
             "hidden": [
 
@@ -285,7 +285,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
-                "buy_operator", "pay_operator",
+                "buy_operator", "pay_operator", "brand",
             ],
             "hidden": [
 
@@ -299,7 +299,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
-                "buy_operator", "pay_operator",
+                "buy_operator", "pay_operator", "brand",
             ],
             "hidden": [
 
@@ -313,7 +313,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
-                "buy_operator", "pay_operator",
+                "buy_operator", "pay_operator", "brand",
             ],
             "hidden": [
 
@@ -327,7 +327,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
-                "buy_operator", "pay_operator",
+                "buy_operator", "pay_operator", "brand",
             ],
             "hidden": [
 
@@ -341,7 +341,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
-                "buy_operator", "pay_operator",
+                "buy_operator", "pay_operator", "brand",
             ],
             "hidden": [
 
@@ -355,7 +355,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
-                "buy_operator", "pay_operator",
+                "buy_operator", "pay_operator", "brand",
             ],
             "hidden": [
 

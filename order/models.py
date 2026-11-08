@@ -178,6 +178,11 @@ class Order(BaseModeWF):
     order_title = models.CharField(max_length=255, blank=True, null=True)
     order_number = models.CharField(max_length=255, blank=True, null=True)
     item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, null=True)
+    # Filled explicitly by Trade; no default or Item.brand backfill.
+    brand = models.ForeignKey(
+        Brand, on_delete=models.PROTECT, related_name='orders_with_brand',
+        null=True, blank=True, verbose_name='Brand',
+    )
     sales_admin_cancel = models.BooleanField(_('sales_admin_cancel'), default=False)
     has_customer_prepaid = models.BooleanField(_('has_customer_prepaid'), default=False)
     transportation_method = models.CharField(_('transportation_method'), max_length=64, choices=TRANSPORTATION_CHOICE,
@@ -1357,6 +1362,9 @@ class PackingItem(BaseModeWF):
     packing = models.ForeignKey(Packing, on_delete=models.DO_NOTHING, related_name='packing_item_rel')
     carton_number = models.CharField(_('carton_number'), max_length=100, null=True, blank=True)
     carton_quantity = models.PositiveIntegerField('تعداد کارتن', null=True, blank=True)
+    # Independent metadata labels; no Category/Main Category hierarchy.
+    category = models.CharField('Category', max_length=150, null=True, blank=True)
+    main_category = models.CharField('Main Category', max_length=150, null=True, blank=True)
     net_weight_kg = models.FloatField(_('weight_kg'), null=True, blank=True)
     gross_weight_kg = models.FloatField(_('grows_weight_kg'), null=True, blank=True)
     # User-editable volume. The formula is intentionally not defined yet.
