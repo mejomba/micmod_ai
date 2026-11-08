@@ -3813,9 +3813,17 @@ class QuickPackingView(LoginRequiredMixin, View):
                 name for name in allowed_fields if name not in Packing.POST_DRAFT_FIELDS
             ]
 
-        # A workflow transition/partial header POST must retain saved rates.
-        if packing_obj and data is not None and 'currency_exchange_rates' not in data:
-            allowed_fields = [name for name in allowed_fields if name != 'currency_exchange_rates']
+        # Preserve the saved target/rates on workflow-only or partial POSTs.
+        # When the destination field is absent, do not clear it implicitly.
+        if packing_obj and data is not None and 'currency' not in data:
+            allowed_fields = [
+                name for name in allowed_fields
+                if name not in ('currency', 'currency_exchange_rates')
+            ]
+        elif packing_obj and data is not None and 'currency_exchange_rates' not in data:
+            allowed_fields = [
+                name for name in allowed_fields if name != 'currency_exchange_rates'
+            ]
 
         # Partial workflow requests that omit these optional fields must not
         # erase previously saved registration data.

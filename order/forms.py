@@ -497,7 +497,9 @@ class PackingForm(CustomBaseModelForm):
 
     class Meta:
         model = Packing
-        exclude = ['group']
+        # FX rates are edited only in the validated QuickPackingSafeForm;
+        # the legacy generic Packing form must not expose a raw JSON editor.
+        exclude = ['group', 'currency_exchange_rates']
 
     def __init__(self, *args, **kwargs):
         request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
