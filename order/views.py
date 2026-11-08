@@ -4025,6 +4025,16 @@ class QuickPackingView(LoginRequiredMixin, View):
             parsed[field] = value
         return parsed
 
+    @classmethod
+    def _parse_gross_weight(cls, value):
+        """Empty user weight is unknown, not the number zero."""
+        if value is None or str(value).strip() == '':
+            return None
+        weight = cls._to_float(value, default=None)
+        if weight is None or not isfinite(weight) or weight < 0:
+            raise ValueError('وزن واردشده باید عددی معتبر و غیرمنفی باشد.')
+        return weight
+
     @staticmethod
     def _parse_carton_quantity(value):
         if value is None or str(value).strip() == '':
@@ -4059,9 +4069,8 @@ class QuickPackingView(LoginRequiredMixin, View):
                 'carton_quantity': self._parse_carton_quantity(
                     request.POST.get(f'form-{row_index}-carton_quantity'),
                 ),
-                'gross_weight_kg': self._to_float(
+                'gross_weight_kg': self._parse_gross_weight(
                     request.POST.get(f'form-{row_index}-gross_weight_kg'),
-                    0,
                 ),
                 'size': request.POST.get(f'form-{row_index}-size'),
                 'description': request.POST.get(f'form-{row_index}-description'),
@@ -4153,13 +4162,14 @@ class QuickPackingView(LoginRequiredMixin, View):
                 'delete': delete_requested,
                 'quantity': quantity,
                 'carton_number': request.POST.get(f'existing-{item_id}-carton_number'),
-                'gross_weight_kg': self._to_float(
-                    request.POST.get(f'existing-{item_id}-gross_weight_kg'),
-                    0,
-                ),
                 'size': request.POST.get(f'existing-{item_id}-size'),
                 'description': request.POST.get(f'existing-{item_id}-description'),
             }
+            gross_weight_key = f'existing-{item_id}-gross_weight_kg'
+            if gross_weight_key in request.POST and not delete_requested:
+                row['gross_weight_kg'] = self._parse_gross_weight(
+                    request.POST.get(gross_weight_key),
+                )
             carton_key = f'existing-{item_id}-carton_quantity'
             for field in ('category', 'main_category', 'brand'):
                 key = f'existing-{item_id}-{field}'
@@ -4304,7 +4314,10 @@ class QuickPackingView(LoginRequiredMixin, View):
             # upstream GIO capacity has changed since this Packing was created.
             if not first_stage and not (
                 quantity_changed
-                or float(packing_item.gross_weight_kg or 0) != row['gross_weight_kg']
+                or (
+                    'gross_weight_kg' in row
+                    and packing_item.gross_weight_kg != row['gross_weight_kg']
+                )
                 or (packing_item.carton_number or '') != (row['carton_number'] or '')
                 or ('carton_quantity' in row and packing_item.carton_quantity != row['carton_quantity'])
                 or ('category' in row and (packing_item.category or '') != (row['category'] or ''))
@@ -4344,7 +4357,8 @@ class QuickPackingView(LoginRequiredMixin, View):
                 packing_item.net_weight_kg = (
                     float(order.final_weight or 0) * row['quantity']
                 )
-            packing_item.gross_weight_kg = row['gross_weight_kg']
+            if 'gross_weight_kg' in row:
+                packing_item.gross_weight_kg = row['gross_weight_kg']
             packing_item.carton_number = row['carton_number']
             if 'carton_quantity' in row:
                 packing_item.carton_quantity = row['carton_quantity']
