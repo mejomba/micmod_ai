@@ -2453,6 +2453,21 @@
 .pk-carton-size-warning{font-size:12px;line-height:1.55;font-weight:600}
 .pk-carton-size-warning[hidden]{display:none!important}
 input.pk-carton-size-invalid{border-color:#dc3545!important}
+
+.pk-fx-header{margin-top:14px;padding:14px 16px;border:1px solid #dae5f2;border-radius:12px;background:#f8fbff}
+.pk-fx-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:7px}
+.pk-fx-head strong{font-size:14px}
+.pk-fx-hint{font-size:12px;color:#6d7d8f;line-height:1.65}
+.pk-fx-rates{display:flex;gap:10px;flex-wrap:wrap;margin-top:9px}
+.pk-fx-rate{border:1px solid #e0e9f3;border-radius:9px;background:#fff;padding:10px;min-width:200px;flex:1 1 220px;max-width:350px}
+.pk-fx-rate label{display:block;font-size:12px;font-weight:650;margin-bottom:6px}
+.pk-fx-rate small{display:block;font-size:11px;color:#65768b;margin-top:5px}
+.pk-fx-placeholder{font-size:12px;color:#72839b;padding:8px 0}
+.pk-fx-breakdown{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.pk-fx-breakdown span{background:#eaf2fa;border:1px solid #d6e3f3;border-radius:7px;padding:4px 7px;font-size:12px}
+.pk-fx-result{background:#f4f9ff;border:1px solid #d5e6fa;border-radius:9px;padding:8px}
+.pk-fx-status{display:block;margin-top:7px;font-size:11px;color:#6c7e90;line-height:1.5}
+.pk-fx-status.is-incomplete{color:#b65724}
 </style>
 {% endblock %}
 
@@ -2766,7 +2781,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                         </div>
                                         {% if is_read_only_view and not is_warehouse_stage %}
                                             <div class="pk-warehouse-meta-field">
-                                                <span class="pk-mini-label" data-key="currency">Currency</span>
+                                                <span class="pk-mini-label" data-key="packing_currency_label">ارز مقصد</span>
                                                 <div class="pk-warehouse-meta-value">{{ packing_object.currency|default:"—" }}</div>
                                             </div>
                                             <div class="pk-warehouse-meta-field">
@@ -2803,6 +2818,27 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                             </div>
                                         </details>
                                     {% endif %}
+                                {% endif %}
+
+                                {% if can_view_prices %}
+                                <section id="pk-currency-fx" class="pk-fx-header"
+                                         data-target-currency-id="{{ packing_object.currency_id|default_if_none:'' }}"
+                                         data-editable="{{ fx_can_edit|yesno:'true,false' }}"
+                                         aria-label="نرخ تبدیل ارزهای پکینگ">
+                                    <div class="pk-fx-head">
+                                        <strong data-key="packing_fx_header">ارز مقصد و نرخ‌های تبدیل</strong>
+                                        <span class="pk-fx-hint" data-key="packing_fx_direction">۱ واحد ارز مبدا، چند واحد ارز مقصد است؟</span>
+                                    </div>
+                                    {% if fx_can_edit %}
+                                        {{ form.currency_exchange_rates }}
+                                    {% endif %}
+                                    <div id="pk-fx-rate-rows" class="pk-fx-rates"></div>
+                                    <p class="pk-fx-hint mt-2 mb-0" data-key="packing_fx_saved_hint">
+                                        ارز مقصد و نرخ‌ها ذخیره می‌شوند؛ ارزش تبدیل‌شده تنها در همین صفحه محاسبه می‌شود.
+                                    </p>
+                                </section>
+                                {{ fx_currency_catalog|json_script:"pk-fx-catalog" }}
+                                {{ fx_saved_config|json_script:"pk-fx-saved-config" }}
                                 {% endif %}
 
                                 {% if packing_object and state_index > 0 %}
@@ -3001,6 +3037,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                             {% if can_view_prices %}
                                             data-unit-price="{{ packing_item.price|default_if_none:0 }}"
                                             data-currency="{{ packing_item.order.currency.title_en|default_if_none:'' }}"
+                                            data-currency-pk="{{ packing_item.order.currency_id|default_if_none:'' }}"
                                             {% endif %}
                                             data-unit-weight="{{ packing_item.order.final_weight|default_if_none:0 }}"
                                         >
@@ -3451,8 +3488,14 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                     </div>
                                     {% if can_view_prices %}
                                     <div class="pk-summary-item">
-                                        <span data-key="packing_total_value">Total Value</span>
-                                        <strong id="packing-total-value">0</strong>
+                                        <span data-key="packing_fx_original_totals">ارزش به تفکیک ارز</span>
+                                        <strong id="packing-total-value">—</strong>
+                                        <div id="packing-currency-breakdown" class="pk-fx-breakdown" aria-live="polite"></div>
+                                    </div>
+                                    <div class="pk-summary-item pk-fx-result">
+                                        <span data-key="packing_fx_converted_total">ارزش تبدیل‌شده به ارز مقصد</span>
+                                        <strong id="packing-fx-converted-total">—</strong>
+                                        <small id="packing-fx-status" class="pk-fx-status" role="status" aria-live="polite"></small>
                                     </div>
                                     {% endif %}
                                 </div>
@@ -3621,6 +3664,11 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
     <span data-key="packing_unit_weight">Unit Weight</span>
     <span data-key="packing_row_total_value">Row Total Value</span>
     <span data-key="packing_unit_price">Unit Price</span>
+    <span data-key="packing_fx_header">Destination currency &amp; exchange rates</span>
+    <span data-key="packing_fx_direction">1 unit of source currency = N destination units</span>
+    <span data-key="packing_fx_saved_hint">Only target currency and FX rates are saved.</span>
+    <span data-key="packing_fx_original_totals">Totals by source currency</span>
+    <span data-key="packing_fx_converted_total">Converted total in destination currency</span>
     <span data-key="packing_wh_destination_header">Destination warehouse (apply to all)</span>
     <span data-key="packing_wh_destination_row">Destination warehouse</span>
     <span data-key="packing_wh_destination_choose">Select destination warehouse</span>
@@ -4457,6 +4505,19 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_volume_test_hint: 'مقدار پیشنهادی آزمایشی است و هنوز از فرمول واقعی به‌دست نمی‌آید.',
             packing_volume_override_warning: 'حجم واردشده با مقدار محاسباتی متفاوت است. مقدار محاسباتی: {value}',
             packing_total_cartons: 'جمع کارتن‌ها',
+            packing_currency_label: 'ارز مقصد',
+            packing_fx_header: 'ارز مقصد و نرخ تبدیل ارزها',
+            packing_fx_direction: 'هر ۱ واحد ارز مبدا معادل چند واحد ارز مقصد است؟',
+            packing_fx_saved_hint: 'فقط ارز مقصد و نرخ‌های تبدیل ذخیره می‌شوند؛ مجموع تبدیل‌شده در همین صفحه محاسبه می‌شود.',
+            packing_fx_original_totals: 'ارزش به تفکیک ارز',
+            packing_fx_converted_total: 'ارزش محاسباتی در ارز مقصد',
+            packing_fx_select_target: 'ابتدا ارز مقصد را در سربرگ انتخاب کنید.',
+            packing_fx_no_rows: 'هنوز ردیف دارای مبلغ وجود ندارد.',
+            packing_fx_rate_missing: 'نرخ تبدیل این ارزها مشخص نیست: {currencies}',
+            packing_fx_currency_missing: 'ارز برخی ردیف‌ها مشخص نیست؛ محاسبه مجموع امکان‌پذیر نیست.',
+            packing_fx_rate_label: '۱ {source} = چند {target}؟',
+            packing_fx_rate_hint: 'نرخ مثبت با حداکثر ۸ رقم اعشار وارد کنید.',
+            packing_fx_same_currency: 'برای ارز یکسان نرخ تبدیل برابر با ۱ است.',
             packing_registration_section: 'اطلاعات ثبت سفارش و پرفورما',
             packing_order_registration_number: 'شماره ۸ رقمی ثبت سفارش',
             packing_proforma_pi_number: 'شماره پرفورما PI',
@@ -4485,6 +4546,19 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_volume_test_hint: 'The proposed value is for testing only; it is not calculated from a real formula yet.',
             packing_volume_override_warning: 'Entered volume differs from the calculated value. Calculated: {value}',
             packing_total_cartons: 'Total Cartons',
+            packing_currency_label: 'Destination currency',
+            packing_fx_header: 'Destination currency and exchange rates',
+            packing_fx_direction: 'How many destination units equal 1 source currency unit?',
+            packing_fx_saved_hint: 'Only the destination and rates are saved, not the converted total.',
+            packing_fx_original_totals: 'Totals by source currency',
+            packing_fx_converted_total: 'Total converted into destination currency',
+            packing_fx_select_target: 'Select a destination currency in the header.',
+            packing_fx_no_rows: 'No priced Packing rows yet.',
+            packing_fx_rate_missing: 'Exchange rate missing for: {currencies}',
+            packing_fx_currency_missing: 'Some rows are missing their source currency.',
+            packing_fx_rate_label: '1 {source} = how many {target}?',
+            packing_fx_rate_hint: 'Positive rate, up to 8 decimal places.',
+            packing_fx_same_currency: 'Rate 1 is used automatically for the same currency.',
             packing_registration_section: 'Order Registration and Proforma',
             packing_order_registration_number: '8-digit Order Registration Number',
             packing_proforma_pi_number: 'Proforma PI Number',
