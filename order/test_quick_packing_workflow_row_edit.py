@@ -29,6 +29,9 @@ class QuickPackingWorkflowRowEditTests(SimpleTestCase):
         self.item.order_id = 10
         self.item.quantity = 5
         self.item.price = 20
+        self.item.category = None
+        self.item.main_category = None
+        self.item.brand = 'Original packing brand'
         self.item.volume = None
         self.item.carton_number = 'Carton A'
         self.item.gross_weight_kg = 4
@@ -93,6 +96,39 @@ class QuickPackingWorkflowRowEditTests(SimpleTestCase):
             with self.assertRaises(PermissionDenied):
                 self.view._update_existing_rows(self.request, self.packing)
         self.item.save.assert_not_called()
+
+    def test_independent_categories_and_brand_are_editable_in_later_stage(self):
+        self.item.carton_number = self.row['carton_number']
+        self.item.description = self.row['description']
+        self.row['category'] = 'Capacitor'
+        self.row['main_category'] = 'Integrated Circuit'
+        self.row['brand'] = 'Alternate packing brand'
+        self.edit()
+        self.assertEqual(self.item.category, 'Capacitor')
+        self.assertEqual(self.item.main_category, 'Integrated Circuit')
+        self.assertEqual(self.item.brand, 'Alternate packing brand')
+        self.item.save.assert_called_once_with()
+        self.order.validate_for_packing.assert_not_called()
+
+    def test_partial_row_post_does_not_replace_manual_brand(self):
+        self.item.brand = 'User-selected brand'
+        self.edit()
+        self.assertEqual(self.item.brand, 'User-selected brand')
+
+    def test_warehouse_only_payload_cannot_edit_categories_or_brand(self):
+        post = {
+            'existing-123-id': '123',
+            'existing-123-category': 'tampered',
+            'existing-123-main_category': 'tampered',
+            'existing-123-brand': 'tampered',
+            'existing-123-wh_receipt_quantity': '1',
+            'existing-123-ruined_quantity': '0',
+        }
+        row = self.view._parse_existing_rows(
+            SimpleNamespace(POST=post), warehouse_stage=True,
+        )[0]
+        for name in ('category', 'main_category', 'brand'):
+            self.assertNotIn(name, row)
 
     def test_changing_only_carton_count_persists_in_later_stage(self):
         self.item.carton_number = self.row['carton_number']

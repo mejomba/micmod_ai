@@ -26,6 +26,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
+from django.utils.html import escape
 from django.views import View
 from django.views.generic import ListView
 from rest_framework import viewsets
@@ -5013,7 +5014,7 @@ class QuickPackingDataTableListView(AjaxDatatableView):
         row['available_for_packing'] = obj.available_for_packing or 0
         row['remaining_quantity_in_order'] = obj.remaining_quantity_in_order or 0
         row['unit_weight'] = obj.effective_unit_weight or 0
-        row['brand_title'] = obj.brand.title if obj.brand_id else ''
+        row['brand_title'] = escape(obj.brand.title) if obj.brand_id else ''
         # Hiding a DataTables column does not hide its HTTP response data.
         row['final_price'] = (
             (obj.effective_unit_price or 0)
