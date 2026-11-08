@@ -162,7 +162,7 @@ def build_schedule_row(packing, events, today):
         'order_count': len(orders),
         'total_quantity': quantity,
         'unique_carton_count': len({
-            carton_key(item.carton_number)
+            carton_key(getattr(item, 'carton_number', None))
             for item in packing.active_schedule_items
             if carton_key(getattr(item, 'carton_number', None))
         }),

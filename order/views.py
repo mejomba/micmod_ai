@@ -54,6 +54,7 @@ from .packing_change_history import build_packing_change_history
 from .packing_workflow_timeline import build_packing_workflow_timeline
 from .packing_volume import calculate_packing_volume, parse_packing_volume, resolve_packing_volume
 from .packing_inline_labels import normalize_packing_label, packing_label_suggestions
+from .packing_carton_size import reconcile_carton_sizes
 from .form_perm import ORDER_FIELDS_BY_PERMISSION
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
     OrderPaymentItemForm, OrderPaymentItemFormSet, BazarBuyFactorForm, \
@@ -4182,10 +4183,35 @@ class QuickPackingView(LoginRequiredMixin, View):
 
         return rows
 
-    def _update_existing_rows(self, request, packing_obj):
+    def _prepare_carton_sizes(self, request, packing_obj, new_rows):
         superuser = getattr(request.user, 'is_superuser', False) is True
         warehouse_only = self._is_warehouse_stage(packing_obj) and not superuser
-        rows = self._parse_existing_rows(
+        existing_rows = self._parse_existing_rows(
+            request, warehouse_stage=warehouse_only, superuser=superuser,
+        )
+        if warehouse_only or not (new_rows or existing_rows):
+            return existing_rows
+
+        # The Packing header is locked by the caller's transaction. Lock its
+        # active items as well, so concurrent document edits cannot bypass the
+        # cross-row carton invariant.
+        saved_items = list(
+            PackingItem.objects.select_for_update()
+            .filter(packing=packing_obj, is_deleted=False)
+            .only('pk', 'carton_number', 'size')
+        )
+        fill_saved = reconcile_carton_sizes(saved_items, existing_rows, new_rows)
+        for packing_item, size in fill_saved:
+            packing_item.size = size
+            packing_item.editor_user = request.user
+            packing_item.extra_data.request = request
+            packing_item.save()
+        return existing_rows
+
+    def _update_existing_rows(self, request, packing_obj, pre_parsed_rows=None):
+        superuser = getattr(request.user, 'is_superuser', False) is True
+        warehouse_only = self._is_warehouse_stage(packing_obj) and not superuser
+        rows = pre_parsed_rows if pre_parsed_rows is not None else self._parse_existing_rows(
             request, warehouse_stage=warehouse_only, superuser=superuser,
         )
         if not rows:
@@ -4384,7 +4410,12 @@ class QuickPackingView(LoginRequiredMixin, View):
                         form.instance.extra_data.request = request
                         packing_obj = form.save() or form.instance
                         self._save_warehouse_destination(request, packing_obj)
-                        self._update_existing_rows(request, packing_obj)
+                        existing_rows = self._prepare_carton_sizes(
+                            request, packing_obj, [],
+                        )
+                        self._update_existing_rows(
+                            request, packing_obj, pre_parsed_rows=existing_rows,
+                        )
                         self._save_uploaded_files(request, packing_obj, form=form)
 
                         if workflow_action == 'change_user':
@@ -4440,7 +4471,12 @@ class QuickPackingView(LoginRequiredMixin, View):
                 packing_obj = form.save() or form.instance
                 self._save_warehouse_destination(request, packing_obj)
 
-                self._update_existing_rows(request, packing_obj)
+                existing_rows = self._prepare_carton_sizes(
+                    request, packing_obj, rows,
+                )
+                self._update_existing_rows(
+                    request, packing_obj, pre_parsed_rows=existing_rows,
+                )
 
                 if rows:
                     if packing_obj.workflow_state_index() > 0:
