@@ -15,6 +15,7 @@ from django.utils import timezone
 from django.views import View
 
 from order.models import Order, Packing, PackingItem
+from order.packing_carton_report import build_carton_report, carton_key
 from workflow.models import WorkFlow
 
 
@@ -160,6 +161,11 @@ def build_schedule_row(packing, events, today):
         'orders': list(orders.values()),
         'order_count': len(orders),
         'total_quantity': quantity,
+        'unique_carton_count': len({
+            carton_key(item.carton_number)
+            for item in packing.active_schedule_items
+            if carton_key(getattr(item, 'carton_number', None))
+        }),
     }
 
 
@@ -268,6 +274,11 @@ class PackingTransportScheduleView(LoginRequiredMixin, View):
         }
         paginator = Paginator(rows, 50)
         page = paginator.get_page(request.GET.get('page'))
+        packings_by_id = {packing.pk: packing for packing in visible}
+        for row in page.object_list:
+            row.update(build_carton_report(
+                packings_by_id[row['id']].active_schedule_items
+            ))
         plot_rows = [
             {
                 'id': row['id'],
@@ -276,6 +287,7 @@ class PackingTransportScheduleView(LoginRequiredMixin, View):
                 'status': row['status'],
                 'is_delayed': row['is_delayed'],
                 'order_count': row['order_count'],
+                'unique_carton_count': row['unique_carton_count'],
                 'planned_start': row['planned_start'].isoformat() if row['planned_start'] else None,
                 'planned_arrival': row['planned_arrival'].isoformat() if row['planned_arrival'] else None,
                 'actual_start': row['actual_start'].isoformat() if row['actual_start'] else None,
