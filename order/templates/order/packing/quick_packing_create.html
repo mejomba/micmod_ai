@@ -3135,6 +3135,26 @@
                                                                 <input class="form-control" name="existing-{{ packing_item.pk }}-carton_number" value="{{ packing_item.carton_number|default_if_none:'' }}">
                                                             </div>
                                                             <div>
+                                                                <label class="pk-mini-label" data-key="packing_category">Category</label>
+                                                                <input type="text" class="form-control" maxlength="150" autocomplete="off"
+                                                                       data-packing-autocomplete="category"
+                                                                       name="existing-{{ packing_item.pk }}-category"
+                                                                       value="{{ packing_item.category|default_if_none:'' }}">
+                                                            </div>
+                                                            <div>
+                                                                <label class="pk-mini-label" data-key="packing_main_category">Main Category</label>
+                                                                <input type="text" class="form-control" maxlength="150" autocomplete="off"
+                                                                       data-packing-autocomplete="main_category"
+                                                                       name="existing-{{ packing_item.pk }}-main_category"
+                                                                       value="{{ packing_item.main_category|default_if_none:'' }}">
+                                                            </div>
+                                                            <div>
+                                                                <label class="pk-mini-label" data-key="packing_row_brand">Brand</label>
+                                                                <input type="text" class="form-control" maxlength="150"
+                                                                       name="existing-{{ packing_item.pk }}-brand"
+                                                                       value="{{ packing_item.brand|default_if_none:'' }}">
+                                                            </div>
+                                                            <div>
                                                                 <label class="pk-mini-label" data-key="packing_carton_quantity">Carton Count</label>
                                                                 <input type="number" step="1" min="0" max="2147483647" class="form-control"
                                                                        name="existing-{{ packing_item.pk }}-carton_quantity" value="{{ packing_item.carton_quantity|default_if_none:'' }}">
@@ -3249,6 +3269,18 @@
                                                             <span class="pk-mini-label" data-key="packing_carton_number">Carton Number</span>
                                                             <strong>{{ packing_item.carton_number|default:"-" }}</strong>
                                                         </div>
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_category">Category</span>
+                                                            <strong>{{ packing_item.category|default:"-" }}</strong>
+                                                        </div>
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_main_category">Main Category</span>
+                                                            <strong>{{ packing_item.main_category|default:"-" }}</strong>
+                                                        </div>
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_row_brand">Brand</span>
+                                                            <strong>{{ packing_item.brand|default:"-" }}</strong>
+                                                        </div>
 
                                                         <div class="pk-stat">
                                                             <span class="pk-mini-label" data-key="packing_carton_quantity">Carton Count</span>
@@ -3325,6 +3357,26 @@
                                                             <input type="text" class="form-control"
                                                                    name="existing-{{ packing_item.pk }}-carton_number"
                                                                    value="{{ packing_item.carton_number|default_if_none:'' }}" disabled>
+                                                        </div>
+                                                        <div>
+                                                            <label class="pk-mini-label" data-key="packing_category">Category</label>
+                                                            <input type="text" class="form-control" maxlength="150" autocomplete="off"
+                                                                   data-packing-autocomplete="category"
+                                                                   name="existing-{{ packing_item.pk }}-category"
+                                                                   value="{{ packing_item.category|default_if_none:'' }}" disabled>
+                                                        </div>
+                                                        <div>
+                                                            <label class="pk-mini-label" data-key="packing_main_category">Main Category</label>
+                                                            <input type="text" class="form-control" maxlength="150" autocomplete="off"
+                                                                   data-packing-autocomplete="main_category"
+                                                                   name="existing-{{ packing_item.pk }}-main_category"
+                                                                   value="{{ packing_item.main_category|default_if_none:'' }}" disabled>
+                                                        </div>
+                                                        <div>
+                                                            <label class="pk-mini-label" data-key="packing_row_brand">Brand</label>
+                                                            <input type="text" class="form-control" maxlength="150"
+                                                                   name="existing-{{ packing_item.pk }}-brand"
+                                                                   value="{{ packing_item.brand|default_if_none:'' }}" disabled>
                                                         </div>
                                                         <div>
                                                             <label class="pk-mini-label" data-key="packing_carton_quantity">Carton Count</label>
@@ -3582,6 +3634,9 @@
     <span data-key="packing_previous">Previous Packing</span>
     <span data-key="packing_carton_number">Carton Number</span>
     <span data-key="packing_carton_quantity">Carton Count</span>
+    <span data-key="packing_category">Category</span>
+    <span data-key="packing_main_category">Main Category</span>
+    <span data-key="packing_row_brand">Brand</span>
     <span data-key="packing_total_cartons">Total Cartons</span>
     <span data-key="packing_registration_section">Order registration and Proforma</span>
     <span data-key="packing_order_registration_number">8-digit Order Registration Number</span>
@@ -3678,6 +3733,65 @@
     const splitStorageKey = 'quickPackingSplitPercent';
     const defaultSplitPercent = 62;
     let packingTranslations = {};
+    // Each classifier is independent. Both use their own autocomplete
+    // values; never clear or filter one when the other changes.
+    const packingSuggestTimers = new WeakMap();
+    const packingSuggestVersions = new WeakMap();
+    let packingSuggestIndex = 0;
+
+    function packingSuggestionList(input) {
+        const previous = input.getAttribute('list');
+        if (previous && document.getElementById(previous)) {
+            return document.getElementById(previous);
+        }
+        const list = document.createElement('datalist');
+        list.id = 'pk-suggestions-' + (++packingSuggestIndex);
+        document.body.appendChild(list);
+        input.setAttribute('list', list.id);
+        return list;
+    }
+
+    async function loadPackingSuggestions(input) {
+        if (!input.isConnected || input.disabled) return;
+        const field = input.dataset.packingAutocomplete;
+        if (field !== 'category' && field !== 'main_category') return;
+        const current = (packingSuggestVersions.get(input) || 0) + 1;
+        packingSuggestVersions.set(input, current);
+        const list = packingSuggestionList(input);
+        const params = new URLSearchParams({
+            packing_autocomplete: field, q: input.value.trim()
+        });
+        try {
+            const response = await fetch(window.location.pathname + '?' + params.toString(), {
+                credentials: 'same-origin', headers: {'Accept': 'application/json'}
+            });
+            if (!response.ok) return;
+            const result = await response.json();
+            if (!input.isConnected || packingSuggestVersions.get(input) !== current) return;
+            const labels = Array.isArray(result.results) ? result.results : [];
+            const unique = [...new Set(labels.map(value => String(value).trim()))]
+                .filter(Boolean).slice(0, 30);
+            list.replaceChildren(...unique.map(value => {
+                const option = document.createElement('option');
+                option.value = value;
+                return option;
+            }));
+        } catch (_) {
+            // Free-text values remain usable even if suggestions are unavailable.
+        }
+    }
+
+    document.addEventListener('focusin', function (event) {
+        const input = event.target.closest?.('input[data-packing-autocomplete]');
+        if (input) loadPackingSuggestions(input);
+    });
+    document.addEventListener('input', function (event) {
+        const input = event.target.closest?.('input[data-packing-autocomplete]');
+        if (!input) return;
+        clearTimeout(packingSuggestTimers.get(input));
+        packingSuggestTimers.set(input, setTimeout(() => loadPackingSuggestions(input), 170));
+    });
+
     // Only the server can supply the proposed volume. No formula is guessed.
     const packingVolumeVersions = new WeakMap();
     const packingVolumeTimers = new WeakMap();
@@ -4240,6 +4354,9 @@
             packing_workflow_description_placeholder: 'توضیحات عملیات این مرحله',
             packing_workflow_create_placeholder: 'توضیحات ایجاد پکینگ',
             packing_carton_quantity: 'تعداد کارتن',
+            packing_category: 'دسته‌بندی',
+            packing_main_category: 'دسته‌بندی اصلی',
+            packing_row_brand: 'برند',
             packing_volume: 'حجم',
             packing_volume_test_hint: 'مقدار پیشنهادی آزمایشی است و هنوز از فرمول واقعی به‌دست نمی‌آید.',
             packing_volume_override_warning: 'حجم واردشده با مقدار محاسباتی متفاوت است. مقدار محاسباتی: {value}',
@@ -4262,6 +4379,9 @@
             packing_workflow_description_placeholder: 'Notes for this workflow action',
             packing_workflow_create_placeholder: 'Notes when creating Packing',
             packing_carton_quantity: 'Carton Count',
+            packing_category: 'Category',
+            packing_main_category: 'Main Category',
+            packing_row_brand: 'Brand',
             packing_volume: 'Volume',
             packing_volume_test_hint: 'The proposed value is for testing only; it is not calculated from a real formula yet.',
             packing_volume_override_warning: 'Entered volume differs from the calculated value. Calculated: {value}',
@@ -4754,6 +4874,7 @@
             unitWeight: toNumber(tr.querySelector('.unit-weight')?.textContent),
             finalPrice: toNumber(tr.querySelector('.final-price')?.textContent),
             currency: tr.querySelector('.currency-title')?.textContent?.trim() || '',
+            brand: tr.querySelector('.order-brand')?.textContent?.trim() || '',
         };
     }
 
@@ -4965,6 +5086,20 @@ ${canViewPrices ? `
                         <label class="pk-mini-label"><span data-key="packing_carton_number">${tr('packing_carton_number', 'Carton Number')}</span></label>
                         <input class="form-control" name="form-${index}-carton_number">
                     </div>
+                    <div>
+                        <label class="pk-mini-label" data-key="packing_category">${tr('packing_category', 'Category')}</label>
+                        <input type="text" class="form-control" maxlength="150" autocomplete="off"
+                               data-packing-autocomplete="category" name="form-${index}-category">
+                    </div>
+                    <div>
+                        <label class="pk-mini-label" data-key="packing_main_category">${tr('packing_main_category', 'Main Category')}</label>
+                        <input type="text" class="form-control" maxlength="150" autocomplete="off"
+                               data-packing-autocomplete="main_category" name="form-${index}-main_category">
+                    </div>
+                    <div>
+                        <label class="pk-mini-label" data-key="packing_row_brand">${tr('packing_row_brand', 'Brand')}</label>
+                        <input type="text" class="form-control" maxlength="150" name="form-${index}-brand">
+                    </div>
 
                     <div>
                         <label class="pk-mini-label"><span data-key="packing_carton_quantity">${tr('packing_carton_quantity', 'Carton Count')}</span></label>
@@ -5016,6 +5151,10 @@ ${canViewPrices ? `
 
         container.appendChild(row);
         applyDynamicTranslations(row);
+        // Populate from the Order's dedicated brand; never from Item.brand.
+        // Set through .value rather than interpolating untrusted text into HTML.
+        const newBrandInput = row.querySelector('input[name$="-brand"]');
+        if (newBrandInput) newBrandInput.value = data.brand || '';
         queuePackingVolumePreview(row);
 
         row.querySelector('.packing-quantity').addEventListener('input', function () {
