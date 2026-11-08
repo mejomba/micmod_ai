@@ -3788,6 +3788,214 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
     const splitStorageKey = 'quickPackingSplitPercent';
     const defaultSplitPercent = 62;
     let packingTranslations = {};
+
+    // Rate direction: 1 source unit = N units of the selected destination.
+    // This report is rebuilt in the browser and never persisted as an amount.
+    const fxRoot = document.getElementById('pk-currency-fx');
+    const fxCurrencySelect = document.getElementById('id_currency');
+    const fxRatesHost = document.getElementById('pk-fx-rate-rows');
+    const fxHidden = document.getElementById('id_currency_exchange_rates');
+    const fxEditable = fxRoot?.dataset.editable === 'true';
+    const fxCatalogNode = document.getElementById('pk-fx-catalog');
+    const fxSavedNode = document.getElementById('pk-fx-saved-config');
+    const fxCatalog = fxCatalogNode ? JSON.parse(fxCatalogNode.textContent) : [];
+    const fxSaved = fxSavedNode ? JSON.parse(fxSavedNode.textContent) : {};
+    const fxNames = new Map(fxCatalog.map(c => [
+        String(c.id), String(c.title_en || c.title || c.id)
+    ]));
+    function fxTarget() {
+        return fxCurrencySelect
+            ? String(fxCurrencySelect.value || '')
+            : String(fxRoot?.dataset.targetCurrencyId || '');
+    }
+    let fxActiveTarget = fxTarget();
+    let fxRates = fxSaved && String(fxSaved.target_currency_id || '') === fxActiveTarget
+        && fxSaved.rates && typeof fxSaved.rates === 'object'
+        ? {...fxSaved.rates} : {};
+    function fxText(key, fallback) {
+        return packingVolumePhrase(key, fallback);
+    }
+    function fxCurrencyName(id, fallback) {
+        return fxNames.get(String(id || '')) || fallback ||
+            (workflowUiLanguage() === 'fa' ? 'ارز نامشخص' : 'Unknown currency');
+    }
+    function fxMoney(amount) {
+        return Number(amount).toLocaleString('en-US', {
+            minimumFractionDigits: 0, maximumFractionDigits: 2
+        });
+    }
+    function fxSourceTotals() {
+        const totals = new Map();
+        function addRow(row, unitPrice, quantity) {
+            if (row.classList.contains('is-pending-delete')) return;
+            const id = String(row.dataset.currencyPk || '');
+            const code = fxCurrencyName(id, row.dataset.currency || '');
+            const key = id || 'unknown';
+            const amount = Number(unitPrice) * Number(quantity);
+            if (!Number.isFinite(amount)) return;
+            const existing = totals.get(key) || {id: id, title: code, amount: 0};
+            existing.amount += amount;
+            totals.set(key, existing);
+        }
+        document.querySelectorAll('.packing-existing-row').forEach(row => {
+            const quantityInput = row.querySelector('.packing-existing-quantity:not(:disabled)');
+            addRow(row, toNumber(row.dataset.unitPrice), quantityInput
+                ? toNumber(quantityInput.value) : toNumber(row.dataset.quantity));
+        });
+        container.querySelectorAll('.packing-selected-row').forEach(row => {
+            addRow(row, toNumber(row.dataset.finalPrice),
+                toNumber(row.querySelector('input[name$="-quantity"]')?.value));
+        });
+        return totals;
+    }
+    function fxRateFor(sourceId) {
+        if (String(sourceId) === fxTarget()) return 1;
+        const raw = fxRates[sourceId];
+        if (raw === undefined || raw === null || String(raw).trim() === '') return null;
+        const value = Number(raw);
+        return Number.isFinite(value) && value > 0 ? value : null;
+    }
+    function fxSyncHidden() {
+        if (!fxHidden || !fxEditable) return;
+        fxHidden.value = JSON.stringify(fxActiveTarget
+            ? {target_currency_id: fxActiveTarget, rates: {...fxRates}} : {});
+    }
+    function fxUpdateConvertedTotal(totals) {
+        const output = document.getElementById('packing-fx-converted-total');
+        const status = document.getElementById('packing-fx-status');
+        if (!output || !status) return;
+        const target = fxTarget();
+        output.textContent = '—';
+        status.classList.remove('is-incomplete');
+        if (!totals.size) {
+            status.textContent = fxText('packing_fx_no_rows', 'No Packing rows yet.');
+            return;
+        }
+        if (!target) {
+            status.textContent = fxText('packing_fx_select_target', 'Choose destination currency.');
+            return;
+        }
+        let sum = 0;
+        let unknown = false;
+        const missingRates = [];
+        totals.forEach(source => {
+            if (!source.id) {
+                unknown = true;
+                return;
+            }
+            const rate = fxRateFor(source.id);
+            if (rate === null) {
+                missingRates.push(source.title);
+            } else {
+                sum += source.amount * rate;
+            }
+        });
+        if (unknown || missingRates.length || !Number.isFinite(sum)) {
+            status.classList.add('is-incomplete');
+            const notices = [];
+            if (unknown) notices.push(fxText(
+                'packing_fx_currency_missing', 'Some row currencies are unknown.'
+            ));
+            if (missingRates.length) notices.push(fxText(
+                'packing_fx_rate_missing', 'Missing rates: {currencies}'
+            ).replace('{currencies}', missingRates.join(', ')));
+            if (!notices.length) notices.push('Invalid exchange calculation');
+            status.textContent = notices.join(' ');
+            return; // No misleading partial grand total.
+        }
+        output.textContent = fxMoney(sum) + ' ' + fxCurrencyName(target);
+        status.textContent = '';
+    }
+    function fxRenderRates(totals) {
+        if (!fxRatesHost) return;
+        fxRatesHost.replaceChildren();
+        const target = fxTarget();
+        const sources = [...totals.values()]
+            .filter(source => source.id && source.id !== target)
+            .sort((a,b) => a.title.localeCompare(b.title));
+        if (!target || !sources.length) {
+            const message = document.createElement('span');
+            message.className = 'pk-fx-placeholder';
+            message.textContent = !target
+                ? fxText('packing_fx_select_target', 'Choose a destination currency.')
+                : fxText('packing_fx_same_currency', 'Rate 1 is used for matching currencies.');
+            fxRatesHost.appendChild(message);
+            return;
+        }
+        sources.forEach(source => {
+            const card = document.createElement('div');
+            card.className = 'pk-fx-rate';
+            const label = document.createElement('label');
+            label.textContent = fxText('packing_fx_rate_label',
+                '1 {source} = how many {target}?')
+                .replace('{source}', source.title)
+                .replace('{target}', fxCurrencyName(target));
+            card.appendChild(label);
+            if (fxEditable) {
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = '0.00000001';
+                input.step = '0.00000001';
+                input.inputMode = 'decimal';
+                input.className = 'form-control';
+                input.value = String(fxRates[source.id] || '');
+                input.setAttribute('aria-label', label.textContent);
+                input.addEventListener('input', () => {
+                    if (input.value.trim()) fxRates[source.id] = input.value.trim();
+                    else delete fxRates[source.id];
+                    fxSyncHidden();
+                    fxUpdateConvertedTotal(totals);
+                });
+                card.appendChild(input);
+                const help = document.createElement('small');
+                help.textContent = fxText('packing_fx_rate_hint', 'Use a positive exchange rate.');
+                card.appendChild(help);
+            } else {
+                const value = document.createElement('strong');
+                value.textContent = fxRateFor(source.id) === null
+                    ? '—' : String(fxRates[source.id]);
+                card.appendChild(value);
+            }
+            fxRatesHost.appendChild(card);
+        });
+    }
+    function renderPackingCurrencySummary() {
+        if (!canViewPrices || !fxRoot) return;
+        const target = fxTarget();
+        if (target !== fxActiveTarget) {
+            // Old rates cannot be reused after changing destination currency.
+            fxActiveTarget = target;
+            fxRates = {};
+        }
+        const totals = fxSourceTotals();
+        const chips = document.getElementById('packing-currency-breakdown');
+        const title = document.getElementById('packing-total-value');
+        if (chips) {
+            chips.replaceChildren();
+            [...totals.values()].sort((a,b) => a.title.localeCompare(b.title))
+                .forEach(row => {
+                    const chip = document.createElement('span');
+                    chip.textContent = fxMoney(row.amount) + ' ' + row.title;
+                    chips.appendChild(chip);
+                });
+        }
+        if (title) {
+            if (totals.size === 1) {
+                const only = totals.values().next().value;
+                title.textContent = fxMoney(only.amount) + ' ' + only.title;
+            } else {
+                title.textContent = totals.size ? (
+                    totals.size + ' ' +
+                    (workflowUiLanguage() === 'fa' ? 'ارز' : 'currencies')
+                ) : '—';
+            }
+        }
+        fxRenderRates(totals);
+        fxSyncHidden();
+        fxUpdateConvertedTotal(totals);
+    }
+    fxCurrencySelect?.addEventListener('change', renderPackingCurrencySummary);
+
     // Carton Number identifies one outer carton; Size must agree across rows.
     function cartonNumberKey(value) {
         return String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
@@ -5047,6 +5255,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             unitWeight: toNumber(tr.querySelector('.unit-weight')?.textContent),
             finalPrice: toNumber(tr.querySelector('.final-price')?.textContent),
             currency: tr.querySelector('.currency-title')?.textContent?.trim() || '',
+            currencyPk: tr.querySelector('.currency-pk')?.textContent?.trim() || '',
             brand: tr.querySelector('.order-brand')?.textContent?.trim() || '',
         };
     }
@@ -5092,7 +5301,6 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
     function updateTotals() {
         let quantity = 0;
         let weight = 0;
-        let value = 0;
         let cartons = 0;
         let hasCartonData = false;
 
@@ -5108,7 +5316,6 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
 
             quantity += q;
             weight += totalWeight;
-            value += totalValue;
             const cartonInput = row.querySelector('input[name$="-carton_quantity"]:not(:disabled)');
             const cartonRaw = cartonInput ? cartonInput.value : row.dataset.cartonQuantity;
             if (String(cartonRaw ?? '').trim() !== '') {
@@ -5132,7 +5339,6 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
 
             quantity += q;
             weight += totalWeight;
-            value += totalValue;
             const cartonRaw = row.querySelector('input[name$="-carton_quantity"]')?.value;
             if (String(cartonRaw ?? '').trim() !== '') {
                 cartons += toNumber(cartonRaw);
@@ -5147,8 +5353,8 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
         document.getElementById('packing-total-quantity').textContent = fmt(quantity);
         document.getElementById('packing-total-cartons').textContent = hasCartonData ? fmt(cartons) : '—';
         document.getElementById('packing-total-weight').textContent = fmt(weight);
-        const totalValueElement = document.getElementById('packing-total-value');
-        if (totalValueElement) totalValueElement.textContent = fmtMoney(value);
+        // Each source currency is summed separately, then converted on screen.
+        renderPackingCurrencySummary();
 
         syncEmptyState();
     }
@@ -5189,6 +5395,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
         if (canViewPrices) {
             row.dataset.finalPrice = data.finalPrice;
             row.dataset.currency = data.currency;
+            row.dataset.currencyPk = data.currencyPk;
         }
 
         row.innerHTML = `
