@@ -52,6 +52,7 @@ from .packing_error_messages import packing_error_payload
 from .packing_change_history import build_packing_change_history
 from .packing_workflow_timeline import build_packing_workflow_timeline
 from .packing_volume import calculate_packing_volume, parse_packing_volume, resolve_packing_volume
+from .packing_inline_labels import normalize_packing_label, packing_label_suggestions
 from .form_perm import ORDER_FIELDS_BY_PERMISSION
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
     OrderPaymentItemForm, OrderPaymentItemFormSet, BazarBuyFactorForm, \
@@ -150,6 +151,11 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
         for s in allowed_show:
             if s not in show:
                 show.append(s)
+        if (
+            (self.state_index or 0) < 2
+            or getattr(self.request.user, 'base_group', None) != 'trade'
+        ):
+            edit = [field for field in edit if field != 'brand']
         return edit, hidden, show
 
     def get_success_url(self):
@@ -4057,10 +4063,21 @@ class QuickPackingView(LoginRequiredMixin, View):
                 ),
                 'size': request.POST.get(f'form-{row_index}-size'),
                 'description': request.POST.get(f'form-{row_index}-description'),
+                'category': normalize_packing_label(
+                    'category', request.POST.get(f'form-{row_index}-category'),
+                ),
+                'main_category': normalize_packing_label(
+                    'main_category', request.POST.get(f'form-{row_index}-main_category'),
+                ),
                 'volume': parse_packing_volume(
                     request.POST.get(f'form-{row_index}-volume'),
                 ),
             }
+            brand_key = f'form-{row_index}-brand'
+            if brand_key in request.POST:
+                row['brand'] = normalize_packing_label(
+                    'brand', request.POST.get(brand_key),
+                )
             if getattr(getattr(request, 'user', None), 'is_superuser', False) is True:
                 dest_key = f'form-{row_index}-wh_destination'
                 if dest_key in request.POST:
@@ -4142,6 +4159,12 @@ class QuickPackingView(LoginRequiredMixin, View):
                 'description': request.POST.get(f'existing-{item_id}-description'),
             }
             carton_key = f'existing-{item_id}-carton_quantity'
+            for field in ('category', 'main_category', 'brand'):
+                key = f'existing-{item_id}-{field}'
+                if key in request.POST and not delete_requested:
+                    row[field] = normalize_packing_label(
+                        field, request.POST.get(key),
+                    )
             volume_key = f'existing-{item_id}-volume'
             if volume_key in request.POST and not delete_requested:
                 row['volume'] = parse_packing_volume(request.POST.get(volume_key))
@@ -4257,6 +4280,9 @@ class QuickPackingView(LoginRequiredMixin, View):
                 or float(packing_item.gross_weight_kg or 0) != row['gross_weight_kg']
                 or (packing_item.carton_number or '') != (row['carton_number'] or '')
                 or ('carton_quantity' in row and packing_item.carton_quantity != row['carton_quantity'])
+                or ('category' in row and (packing_item.category or '') != (row['category'] or ''))
+                or ('main_category' in row and (packing_item.main_category or '') != (row['main_category'] or ''))
+                or ('brand' in row and (packing_item.brand or '') != (row['brand'] or ''))
                 or (
                     'volume' in row
                     and packing_item.volume != resolve_packing_volume(
@@ -4285,7 +4311,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                 # Later metadata edits must not silently reprice old items.
                 item = order.final_item
                 packing_item.price = float(order.final_price or 0)
-                packing_item.brand = str(item.brand) if item and item.brand else None
+                # A manually selected Packing brand is not overwritten from Item.brand.
             if first_stage or quantity_changed:
                 # Keep the previously recorded weight for metadata-only edits.
                 packing_item.net_weight_kg = (
@@ -4297,6 +4323,9 @@ class QuickPackingView(LoginRequiredMixin, View):
                 packing_item.carton_quantity = row['carton_quantity']
             packing_item.size = row['size']
             packing_item.description = row['description']
+            for field in ('category', 'main_category', 'brand'):
+                if field in row:
+                    setattr(packing_item, field, row[field])
             if 'volume' in row:
                 packing_item.volume = resolve_packing_volume(
                     row['volume'], quantity=row['quantity'],
@@ -4450,7 +4479,12 @@ class QuickPackingView(LoginRequiredMixin, View):
                             carton_number=row['carton_number'],
                             carton_quantity=row['carton_quantity'],
                             size=row['size'],
-                            brand=str(item.brand) if item and item.brand else None,
+                            brand=(
+                                row['brand'] if 'brand' in row
+                                else (order.brand.title if order.brand_id else None)
+                            ),
+                            category=row['category'],
+                            main_category=row['main_category'],
                             description=row['description'],
                             volume=resolve_packing_volume(
                                 row['volume'], quantity=row['quantity'],
@@ -4563,6 +4597,20 @@ class QuickPackingView(LoginRequiredMixin, View):
             )
             return JsonResponse({
                 'calculated_volume': str(proposed) if proposed is not None else None,
+            })
+
+        if request.GET.get('packing_autocomplete') is not None:
+            # Existing page, independent read-only suggestion endpoint.
+            if packing_obj:
+                if not packing_obj.user_has_workflow_access(request.user):
+                    raise PermissionDenied('Packing workflow access denied.')
+            else:
+                self._assert_create_access()
+            return JsonResponse({
+                'results': packing_label_suggestions(
+                    request.GET.get('packing_autocomplete'),
+                    request.GET.get('q'),
+                ),
             })
 
         if request.GET.get('audit_scope') is not None:
@@ -4772,6 +4820,14 @@ class QuickPackingDataTableListView(AjaxDatatableView):
             'className': 'order d-none',
         },
         {
+            'name': 'brand_title',
+            'title': 'brand_title',
+            'orderable': False,
+            'searchable': False,
+            'visible': True,
+            'className': 'order-brand d-none',
+        },
+        {
             'name': 'unit_weight',
             'title': 'unit_weight',
             'orderable': False,
@@ -4948,7 +5004,7 @@ class QuickPackingDataTableListView(AjaxDatatableView):
                 available_for_packing__gt=0,
             )
         )
-        return qs
+        return qs.select_related('brand')
 
     def customize_row(self, row, obj):
         row['sku'] = obj.effective_sku or ''
@@ -4957,6 +5013,7 @@ class QuickPackingDataTableListView(AjaxDatatableView):
         row['available_for_packing'] = obj.available_for_packing or 0
         row['remaining_quantity_in_order'] = obj.remaining_quantity_in_order or 0
         row['unit_weight'] = obj.effective_unit_weight or 0
+        row['brand_title'] = obj.brand.title if obj.brand_id else ''
         # Hiding a DataTables column does not hide its HTTP response data.
         row['final_price'] = (
             (obj.effective_unit_price or 0)
