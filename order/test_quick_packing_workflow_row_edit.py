@@ -29,6 +29,7 @@ class QuickPackingWorkflowRowEditTests(SimpleTestCase):
         self.item.order_id = 10
         self.item.quantity = 5
         self.item.price = 20
+        self.item.volume = None
         self.item.carton_number = 'Carton A'
         self.item.gross_weight_kg = 4
         self.item.size = 'M'
@@ -62,6 +63,36 @@ class QuickPackingWorkflowRowEditTests(SimpleTestCase):
         # Later-stage edits must not reprice existing PackingItems.
         self.assertEqual(self.item.price, 20)
         self.order.validate_for_packing.assert_not_called()
+
+
+    def test_volume_only_edit_in_later_stage_does_not_reprice(self):
+        from decimal import Decimal
+        self.item.carton_number = self.row['carton_number']
+        self.item.description = self.row['description']
+        self.row['volume'] = Decimal('1.250000')
+        self.edit()
+        self.assertEqual(self.item.volume, Decimal('1.250000'))
+        self.item.save.assert_called_once_with()
+        self.order.validate_for_packing.assert_not_called()
+
+    def test_blank_volume_clears_existing_manual_volume(self):
+        from decimal import Decimal
+        self.item.carton_number = self.row['carton_number']
+        self.item.description = self.row['description']
+        self.item.volume = Decimal('0.125000')
+        self.row['volume'] = None
+        self.edit()
+        self.assertIsNone(self.item.volume)
+        self.item.save.assert_called_once_with()
+
+    def test_volume_cannot_change_without_workflow_access(self):
+        from decimal import Decimal
+        self.row['volume'] = Decimal('3.500000')
+        self.packing.user_has_workflow_access.return_value = False
+        with patch.object(self.view, '_parse_existing_rows', return_value=[self.row]):
+            with self.assertRaises(PermissionDenied):
+                self.view._update_existing_rows(self.request, self.packing)
+        self.item.save.assert_not_called()
 
     def test_changing_only_carton_count_persists_in_later_stage(self):
         self.item.carton_number = self.row['carton_number']

@@ -1,5 +1,8 @@
 """Tests for the inline PackingItem volume field and its future formula hook."""
 from decimal import Decimal
+from pathlib import Path
+
+from django.conf import settings
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
@@ -68,3 +71,19 @@ class QuickPackingVolumeTests(SimpleTestCase):
             'existing-101-id': '101', 'existing-101-volume': '3.5',
         }), warehouse_stage=True)[0]
         self.assertNotIn('volume', row)
+
+
+class PackingVolumeTemplateTests(SimpleTestCase):
+    def test_volume_and_warning_live_on_existing_packing_page(self):
+        html = (
+            Path(settings.BASE_DIR)
+            / 'order/templates/order/packing/quick_packing_create.html'
+        ).read_text(encoding='utf-8')
+        self.assertIn('name="form-${index}-volume"', html)
+        self.assertIn('name="existing-{{ packing_item.pk }}-volume"', html)
+        self.assertIn('data-packing-volume', html)
+        self.assertIn('pk-volume-warning', html)
+        self.assertIn('packing_volume_override_warning', html)
+        self.assertIn('volume_preview', html)
+        self.assertIn('body.calculated_volume', html)
+        self.assertIn('Math.abs(entered - calculated)', html)
