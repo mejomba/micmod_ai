@@ -43,6 +43,7 @@ from extra_data.models import ItemWeight
 from factor.services.supply import SupplyLocationService
 from inquiry.models import Supplier
 from micmod_base.models import QuotationItem, SupplyStatus
+from micmod_base.base import Currency
 from payment.models import PaymentOrder, Payment
 from sepidar.api_call import SepidarApiCall
 from sepidar.models import Dl
@@ -4731,10 +4732,12 @@ class QuickPackingView(LoginRequiredMixin, View):
             if packing_obj and state_index > 0 else False
         )
 
+        price_access = Packing.user_can_view_prices(request.user)
+        form = self._build_form(packing_obj=packing_obj)
         context = {
             'workflow_stages': timeline['stages'],
             'workflow_history': timeline['history'],
-            'form': self._build_form(packing_obj=packing_obj),
+            'form': form,
             'formset': PackingItemFormSet(),
             'packings': packing_items,
             'packing_object': packing_obj,
@@ -4744,7 +4747,20 @@ class QuickPackingView(LoginRequiredMixin, View):
             'current_state': states[state_index] if states else None,
             'wf_access': wf_access,
             'is_read_only_view': bool(packing_obj and not wf_access),
-            'can_view_prices': Packing.user_can_view_prices(request.user),
+            'can_view_prices': price_access,
+            'fx_currency_catalog': (
+                list(Currency.objects.order_by('title_en', 'pk').values(
+                    'id', 'title', 'title_en',
+                )) if price_access else []
+            ),
+            'fx_saved_config': (
+                packing_obj.currency_exchange_rates if price_access and packing_obj else {}
+            ) or {},
+            'fx_can_edit': bool(
+                price_access
+                and 'currency' in form.fields
+                and 'currency_exchange_rates' in form.fields
+            ),
             'can_add_items': can_add_items,
             'can_edit_items': can_edit_items,
             'is_superuser': getattr(request.user, 'is_superuser', False) is True,
@@ -4913,6 +4929,14 @@ class QuickPackingDataTableListView(AjaxDatatableView):
             'className': 'currency-title d-none',
         },
         {
+            'name': 'currency_pk',
+            'title': 'currency_pk',
+            'orderable': False,
+            'searchable': False,
+            'visible': True,
+            'className': 'currency-pk d-none',
+        },
+        {
             'name': 'show_order_str',
             'title': 'show_order_str',
             'orderable': False,
@@ -5013,6 +5037,9 @@ class QuickPackingDataTableListView(AjaxDatatableView):
                     Value(''),
                     output_field=CharField(),
                 ),
+                # Use an annotation rather than deferred FK traversal:
+                # ajax_datatable can defer Order.currency in pagination.
+                effective_currency_pk=F('currency_id'),
                 # Annotate the brand title instead of select_related('brand'):
                 # ajax_datatable uses a deferred-field queryset for paging.
                 # Joining a deferred relation via select_related raises
@@ -5090,6 +5117,10 @@ class QuickPackingDataTableListView(AjaxDatatableView):
             if Packing.user_can_view_prices(self.request.user) else ''
         )
         row['currency_title'] = obj.effective_currency_title or ''
+        row['currency_pk'] = (
+            str(obj.effective_currency_pk or '')
+            if Packing.user_can_view_prices(self.request.user) else ''
+        )
         row['show_order_str'] = mark_safe(
             '<div class="d-flex gap-3">'
             f'<span>{obj.order_number or obj.pk}</span>'
