@@ -3143,6 +3143,14 @@
                                                                 <label class="pk-mini-label" data-key="packing_gross_weight">Gross Weight</label>
                                                                 <input type="number" step="any" class="form-control" name="existing-{{ packing_item.pk }}-gross_weight_kg" value="{{ packing_item.gross_weight_kg|default_if_none:'' }}">
                                                             </div>
+                                                            <div class="pk-volume-field">
+                                                                <label class="pk-mini-label" data-key="packing_volume">Volume</label>
+                                                                <input type="number" min="0" step="0.000001" inputmode="decimal" class="form-control"
+                                                                       name="existing-{{ packing_item.pk }}-volume"
+                                                                       data-packing-volume data-calculated-volume="{{ packing_item.calculated_volume|default_if_none:'' }}"
+                                                                       value="{{ packing_item.volume|default_if_none:'' }}">
+                                                                <div class="pk-volume-warning text-warning mt-1" role="status" aria-live="polite" hidden></div>
+                                                            </div>
                                                             <div>
                                                                 <label class="pk-mini-label" data-key="packing_size">Size</label>
                                                                 <input class="form-control" name="existing-{{ packing_item.pk }}-size" value="{{ packing_item.size|default_if_none:'' }}">
@@ -3195,6 +3203,10 @@
                                                         <div class="pk-stat">
                                                             <span class="pk-mini-label" data-key="packing_gross_weight">Gross Weight</span>
                                                             <strong>{{ packing_item.gross_weight_kg|default_if_none:"-"|floatformat:"-4g" }}</strong>
+                                                        </div>
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_volume">Volume</span>
+                                                            <strong>{{ packing_item.volume|default_if_none:"—" }}</strong>
                                                         </div>
 
                                                         {% if is_warehouse_stage %}
@@ -3324,6 +3336,14 @@
                                                             <input type="number" step="any" class="form-control"
                                                                    name="existing-{{ packing_item.pk }}-gross_weight_kg"
                                                                    value="{{ packing_item.gross_weight_kg|default_if_none:'' }}" disabled>
+                                                        </div>
+                                                        <div class="pk-volume-field">
+                                                            <label class="pk-mini-label" data-key="packing_volume">Volume</label>
+                                                            <input type="number" min="0" step="0.000001" inputmode="decimal" class="form-control"
+                                                                   name="existing-{{ packing_item.pk }}-volume"
+                                                                   data-packing-volume data-calculated-volume="{{ packing_item.calculated_volume|default_if_none:'' }}"
+                                                                   value="{{ packing_item.volume|default_if_none:'' }}" disabled>
+                                                            <div class="pk-volume-warning text-warning mt-1" role="status" aria-live="polite" hidden></div>
                                                         </div>
                                                         <div>
                                                             <label class="pk-mini-label" data-key="packing_size">Size</label>
@@ -3566,6 +3586,7 @@
     <span data-key="packing_proforma_pi_number">Proforma PI Number</span>
     <span data-key="packing_commercial_card">Commercial Card</span>
     <span data-key="packing_gross_weight">Gross Weight</span>
+    <span data-key="packing_volume">Volume</span>
     <span data-key="packing_size">Size</span>
     <span data-key="packing_description">Description</span>
     <span data-key="packing_search_orders">Search orders...</span>
@@ -3655,6 +3676,96 @@
     const splitStorageKey = 'quickPackingSplitPercent';
     const defaultSplitPercent = 62;
     let packingTranslations = {};
+    // Only the server can supply the proposed volume. No formula is guessed.
+    const packingVolumeVersions = new WeakMap();
+    const packingVolumeTimers = new WeakMap();
+
+    function packingVolumePhrase(key, fallback) {
+        return packingTranslations[key]
+            || packingPageLabels[workflowUiLanguage()]?.[key]
+            || fallback;
+    }
+
+    function showPackingVolumeWarning(input) {
+        const warning = input.closest('.pk-volume-field')?.querySelector('.pk-volume-warning');
+        if (!warning) return;
+        const raw = input.value.trim();
+        const proposed = input.dataset.calculatedVolume || '';
+        const entered = Number(raw);
+        const calculated = Number(proposed);
+        const differs = raw !== '' && proposed !== ''
+            && Number.isFinite(entered) && Number.isFinite(calculated)
+            && Math.abs(entered - calculated) > 0.0000005;
+        warning.hidden = !differs;
+        warning.textContent = differs
+            ? packingVolumePhrase(
+                'packing_volume_override_warning',
+                'Entered volume differs from the calculated value. Calculated: {value}'
+              ).replace('{value}', proposed)
+            : '';
+    }
+
+    async function previewPackingRowVolume(row) {
+        const input = row?.querySelector('input[data-packing-volume]');
+        if (!input || input.disabled || !row.isConnected) return;
+        const version = (packingVolumeVersions.get(input) || 0) + 1;
+        packingVolumeVersions.set(input, version);
+        const quantityInput = row.querySelector('input[name$="-quantity"]');
+        const sizeInput = row.querySelector('input[name$="-size"]');
+        const cartonInput = row.querySelector('input[name$="-carton_quantity"]');
+        const params = new URLSearchParams({
+            volume_preview: '1',
+            quantity: quantityInput?.value || row.dataset.quantity || '',
+            size: sizeInput?.value || '',
+            carton_quantity: cartonInput?.value || ''
+        });
+        try {
+            const response = await fetch(window.location.pathname + '?' + params, {
+                credentials: 'same-origin', headers: {'Accept': 'application/json'}
+            });
+            if (!response.ok) return;
+            const body = await response.json();
+            if (!input.isConnected || packingVolumeVersions.get(input) !== version) return;
+            const computed = body.calculated_volume;
+            const proposal = computed === null || computed === undefined ? '' : String(computed);
+            input.dataset.calculatedVolume = proposal;
+            // Keep previously saved values and manual overrides unchanged.
+            if (proposal && input.dataset.volumeEdited !== '1'
+                && (!input.value.trim() || input.dataset.volumeAuto === '1')) {
+                input.value = proposal;
+                input.dataset.volumeAuto = '1';
+            }
+            showPackingVolumeWarning(input);
+        } catch (_) {
+            // Manual volume editing and saving remain available.
+        }
+    }
+
+    function queuePackingVolumePreview(row) {
+        const input = row?.querySelector('input[data-packing-volume]');
+        if (!input || input.disabled) return;
+        clearTimeout(packingVolumeTimers.get(input));
+        packingVolumeTimers.set(input, setTimeout(() => previewPackingRowVolume(row), 220));
+    }
+
+    document.addEventListener('input', function (event) {
+        const input = event.target;
+        if (!(input instanceof HTMLInputElement)) return;
+        if (input.matches('input[data-packing-volume]')) {
+            input.dataset.volumeEdited = '1';
+            input.dataset.volumeAuto = '0';
+            showPackingVolumeWarning(input);
+        } else if (input.matches('input[name$="-quantity"], input[name$="-size"], input[name$="-carton_quantity"]')) {
+            queuePackingVolumePreview(input.closest('.packing-selected-row'));
+        }
+    });
+
+    document.addEventListener('focusin', function (event) {
+        if (event.target.matches?.('input[data-packing-volume]')) {
+            queuePackingVolumePreview(event.target.closest('.packing-selected-row'));
+        }
+    });
+
 
     function currentLanguage() {
         // Preserve all supported site locales for their existing JSON file.
@@ -4126,6 +4237,8 @@
             packing_workflow_description_placeholder: 'توضیحات عملیات این مرحله',
             packing_workflow_create_placeholder: 'توضیحات ایجاد پکینگ',
             packing_carton_quantity: 'تعداد کارتن',
+            packing_volume: 'حجم',
+            packing_volume_override_warning: 'حجم واردشده با مقدار محاسباتی متفاوت است. مقدار محاسباتی: {value}',
             packing_total_cartons: 'جمع کارتن‌ها',
             packing_registration_section: 'اطلاعات ثبت سفارش و پرفورما',
             packing_order_registration_number: 'شماره ۸ رقمی ثبت سفارش',
@@ -4145,6 +4258,8 @@
             packing_workflow_description_placeholder: 'Notes for this workflow action',
             packing_workflow_create_placeholder: 'Notes when creating Packing',
             packing_carton_quantity: 'Carton Count',
+            packing_volume: 'Volume',
+            packing_volume_override_warning: 'Entered volume differs from the calculated value. Calculated: {value}',
             packing_total_cartons: 'Total Cartons',
             packing_registration_section: 'Order Registration and Proforma',
             packing_order_registration_number: '8-digit Order Registration Number',
@@ -4365,6 +4480,8 @@
             const key = element.dataset.key;
             if (packingTranslations[key] !== undefined) {
                 element.textContent = packingTranslations[key];
+            } else if (packingPageLabels[workflowUiLanguage()]?.[key] !== undefined) {
+                element.textContent = packingPageLabels[workflowUiLanguage()][key];
             }
         });
         // Localize the read-only shipment choice along with other labels.
@@ -4853,6 +4970,12 @@ ${canViewPrices ? `
                         <label class="pk-mini-label"><span data-key="packing_gross_weight">${tr('packing_gross_weight', 'Gross Weight')}</span></label>
                         <input type="number" step="any" class="form-control" name="form-${index}-gross_weight_kg">
                     </div>
+                    <div class="pk-volume-field">
+                        <label class="pk-mini-label" data-key="packing_volume">${tr('packing_volume', 'Volume')}</label>
+                        <input type="number" min="0" step="0.000001" inputmode="decimal" class="form-control"
+                               name="form-${index}-volume" data-packing-volume data-calculated-volume="">
+                        <div class="pk-volume-warning text-warning mt-1" role="status" aria-live="polite" hidden></div>
+                    </div>
 
                     <div>
                         <label class="pk-mini-label"><span data-key="packing_size">${tr('packing_size', 'Size')}</span></label>
@@ -4887,6 +5010,7 @@ ${canViewPrices ? `
 
         container.appendChild(row);
         applyDynamicTranslations(row);
+        queuePackingVolumePreview(row);
 
         row.querySelector('.packing-quantity').addEventListener('input', function () {
             const current = toNumber(this.value);
@@ -4996,6 +5120,13 @@ ${canViewPrices ? `
                 editor.hidden = true;
                 row.classList.remove('is-editing');
                 if (editButton) {
+                const volumeInput = editor.querySelector('input[data-packing-volume]');
+                if (volumeInput) {
+                    delete volumeInput.dataset.volumeEdited;
+                    delete volumeInput.dataset.volumeAuto;
+                    showPackingVolumeWarning(volumeInput);
+                }
+                if (editButton) {
                     editButton.disabled = false;
                     editButton.setAttribute('aria-expanded', 'false');
                 }
@@ -5042,6 +5173,10 @@ ${canViewPrices ? `
 
         syncEmptyState();
         updateTotals();
+    });
+    document.querySelectorAll('input[data-packing-volume]').forEach(input => {
+        showPackingVolumeWarning(input);
+        if (!input.disabled) queuePackingVolumePreview(input.closest('.packing-selected-row'));
     });
 
     // Calendar is a display preference: it never changes stored timestamps.
