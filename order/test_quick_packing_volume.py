@@ -35,17 +35,35 @@ class QuickPackingVolumeTests(SimpleTestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 parse_packing_volume(value)
 
-    def test_formula_not_guessed_and_manual_value_wins(self):
-        self.assertIsNone(calculate_packing_volume(quantity=10, size='30x30x30'))
-        self.assertIsNone(PackingItem(quantity=10).calculated_volume)
-        self.assertIsNone(resolve_packing_volume(None, quantity=10))
-        with patch('order.packing_volume.calculate_packing_volume',
-                   return_value=Decimal('1.234567')):
-            self.assertEqual(resolve_packing_volume(None, quantity=10), Decimal('1.234567'))
-            self.assertEqual(
-                resolve_packing_volume(Decimal('2.000000'), quantity=10),
-                Decimal('2.000000'),
-            )
+    def test_temporary_proposal_is_stable_and_manual_value_wins(self):
+        params = dict(quantity=10, size='30x30x30', carton_quantity=2, order_id=17)
+        preview = calculate_packing_volume(**params)
+        self.assertIsInstance(preview, Decimal)
+        self.assertGreaterEqual(preview, Decimal('0.100000'))
+        self.assertLessEqual(preview, Decimal('1.000000'))
+        self.assertEqual(preview, calculate_packing_volume(**params))
+        # Browser posts strings; DB stores float/integer. They need same seed.
+        self.assertEqual(
+            preview,
+            calculate_packing_volume(
+                quantity='10.0', size='30x30x30',
+                carton_quantity='2.0', order_id='17',
+            ),
+        )
+        self.assertEqual(preview, resolve_packing_volume(None, **params))
+        self.assertEqual(
+            resolve_packing_volume(Decimal('2.000000'), **params),
+            Decimal('2.000000'),
+        )
+        item = PackingItem(quantity=10, size='30x30x30',
+                           carton_quantity=2, order_id=17)
+        self.assertEqual(item.calculated_volume, preview)
+
+    def test_random_proposals_distinguish_orders(self):
+        args = dict(quantity=10, size='30x30x30', carton_quantity=2)
+        first = calculate_packing_volume(order_id=17, **args)
+        second = calculate_packing_volume(order_id=18, **args)
+        self.assertNotEqual(first, second)
 
     def test_new_row_parses_volume(self):
         view = QuickPackingView()
@@ -87,6 +105,8 @@ class PackingVolumeTemplateTests(SimpleTestCase):
         self.assertIn('packing_volume_override_warning', html)
         self.assertIn('volume_preview', html)
         self.assertIn('body.calculated_volume', html)
+        self.assertIn('packing_volume_test_hint', html)
+        self.assertIn("order_id: row.dataset.orderId", html)
         self.assertIn('Math.abs(entered - calculated)', html)
 
 
@@ -108,7 +128,7 @@ class PackingVolumePermissionTests(SimpleTestCase):
             with self.assertRaises(PermissionDenied):
                 view.get(request)
 
-    def test_preview_returns_null_until_formula_provided(self):
+    def test_preview_returns_temporary_test_value(self):
         import json
         view = QuickPackingView()
         request = SimpleNamespace(
@@ -117,4 +137,6 @@ class PackingVolumePermissionTests(SimpleTestCase):
         with patch.object(view, '_assert_create_access'):
             response = view.get(request)
         self.assertEqual(response.status_code, 200)
-        self.assertIsNone(json.loads(response.content)['calculated_volume'])
+        result = Decimal(json.loads(response.content)['calculated_volume'])
+        self.assertGreaterEqual(result, Decimal('0.100000'))
+        self.assertLessEqual(result, Decimal('1.000000'))

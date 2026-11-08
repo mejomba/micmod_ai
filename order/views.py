@@ -4262,6 +4262,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                     and packing_item.volume != resolve_packing_volume(
                         row['volume'], quantity=row['quantity'], size=row['size'],
                         carton_quantity=row.get('carton_quantity', packing_item.carton_quantity),
+                        order_id=packing_item.order_id,
                     )
                 )
                 or (packing_item.size or '') != (row['size'] or '')
@@ -4300,6 +4301,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                 packing_item.volume = resolve_packing_volume(
                     row['volume'], quantity=row['quantity'],
                     size=row['size'], carton_quantity=packing_item.carton_quantity,
+                    order_id=packing_item.order_id,
                 )
             for attr, value in receipt_updates.items():
                 setattr(packing_item, attr, value)
@@ -4453,6 +4455,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                             volume=resolve_packing_volume(
                                 row['volume'], quantity=row['quantity'],
                                 size=row['size'], carton_quantity=row['carton_quantity'],
+                                order_id=row['order_id'],
                             ),
                             wh_receipt_quantity=row.get('wh_receipt_quantity'),
                             ruined_quantity=row.get('ruined_quantity'),
@@ -4556,6 +4559,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                 quantity=request.GET.get('quantity'),
                 size=request.GET.get('size'),
                 carton_quantity=request.GET.get('carton_quantity'),
+                order_id=request.GET.get('order_id'),
             )
             return JsonResponse({
                 'calculated_volume': str(proposed) if proposed is not None else None,

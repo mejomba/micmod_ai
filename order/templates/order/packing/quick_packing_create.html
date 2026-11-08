@@ -3149,7 +3149,8 @@
                                                                        name="existing-{{ packing_item.pk }}-volume"
                                                                        data-packing-volume data-calculated-volume="{{ packing_item.calculated_volume|default_if_none:'' }}"
                                                                        value="{{ packing_item.volume|default_if_none:'' }}">
-                                                                <div class="pk-volume-warning text-warning mt-1" role="status" aria-live="polite" hidden></div>
+                                                                <small class="text-muted d-block mt-1" data-key="packing_volume_test_hint">The proposed value is for testing only; it is not calculated from a real formula yet.</small>
+                        <div class="pk-volume-warning text-warning mt-1" role="status" aria-live="polite" hidden></div>
                                                             </div>
                                                             <div>
                                                                 <label class="pk-mini-label" data-key="packing_size">Size</label>
@@ -3343,7 +3344,8 @@
                                                                    name="existing-{{ packing_item.pk }}-volume"
                                                                    data-packing-volume data-calculated-volume="{{ packing_item.calculated_volume|default_if_none:'' }}"
                                                                    value="{{ packing_item.volume|default_if_none:'' }}" disabled>
-                                                            <div class="pk-volume-warning text-warning mt-1" role="status" aria-live="polite" hidden></div>
+                                                            <small class="text-muted d-block mt-1" data-key="packing_volume_test_hint">The proposed value is for testing only; it is not calculated from a real formula yet.</small>
+                        <div class="pk-volume-warning text-warning mt-1" role="status" aria-live="polite" hidden></div>
                                                         </div>
                                                         <div>
                                                             <label class="pk-mini-label" data-key="packing_size">Size</label>
@@ -3715,6 +3717,7 @@
         const cartonInput = row.querySelector('input[name$="-carton_quantity"]');
         const params = new URLSearchParams({
             volume_preview: '1',
+            order_id: row.dataset.orderId || '',
             quantity: quantityInput?.value || row.dataset.quantity || '',
             size: sizeInput?.value || '',
             carton_quantity: cartonInput?.value || ''
@@ -4238,6 +4241,7 @@
             packing_workflow_create_placeholder: 'توضیحات ایجاد پکینگ',
             packing_carton_quantity: 'تعداد کارتن',
             packing_volume: 'حجم',
+            packing_volume_test_hint: 'مقدار پیشنهادی آزمایشی است و هنوز از فرمول واقعی به‌دست نمی‌آید.',
             packing_volume_override_warning: 'حجم واردشده با مقدار محاسباتی متفاوت است. مقدار محاسباتی: {value}',
             packing_total_cartons: 'جمع کارتن‌ها',
             packing_registration_section: 'اطلاعات ثبت سفارش و پرفورما',
@@ -4259,6 +4263,7 @@
             packing_workflow_create_placeholder: 'Notes when creating Packing',
             packing_carton_quantity: 'Carton Count',
             packing_volume: 'Volume',
+            packing_volume_test_hint: 'The proposed value is for testing only; it is not calculated from a real formula yet.',
             packing_volume_override_warning: 'Entered volume differs from the calculated value. Calculated: {value}',
             packing_total_cartons: 'Total Cartons',
             packing_registration_section: 'Order Registration and Proforma',
@@ -4974,6 +4979,7 @@ ${canViewPrices ? `
                         <label class="pk-mini-label" data-key="packing_volume">${tr('packing_volume', 'Volume')}</label>
                         <input type="number" min="0" step="0.000001" inputmode="decimal" class="form-control"
                                name="form-${index}-volume" data-packing-volume data-calculated-volume="">
+                        <small class="text-muted d-block mt-1" data-key="packing_volume_test_hint">The proposed value is for testing only; it is not calculated from a real formula yet.</small>
                         <div class="pk-volume-warning text-warning mt-1" role="status" aria-live="polite" hidden></div>
                     </div>
 
@@ -5119,7 +5125,6 @@ ${canViewPrices ? `
                 });
                 editor.hidden = true;
                 row.classList.remove('is-editing');
-                if (editButton) {
                 const volumeInput = editor.querySelector('input[data-packing-volume]');
                 if (volumeInput) {
                     delete volumeInput.dataset.volumeEdited;

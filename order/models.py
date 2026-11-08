@@ -1401,11 +1401,12 @@ class PackingItem(BaseModeWF):
 
     @property
     def calculated_volume(self):
-        """None until the Packing volume business formula is provided."""
+        """Temporary test proposal until the real volume formula is provided."""
         from .packing_volume import calculate_packing_volume
         return calculate_packing_volume(
             quantity=self.quantity, size=self.size,
             carton_quantity=self.carton_quantity,
+            order_id=self.order_id,
         )
 
     @property

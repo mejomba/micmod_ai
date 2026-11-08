@@ -1,10 +1,12 @@
-"""Central calculation hook for the editable Packing row volume.
+"""Temporary stable pseudo-random proposal for editable Packing row volume.
 
-The business formula has not been provided. Return None, not zero.
-When the formula is supplied, implement it once here for both the AJAX
-preview and the persisted default. A manually entered value takes priority.
+IMPORTANT: THIS IS TEST DATA, NOT A VOLUME CALCULATION.
+Replace calculate_packing_volume when the business formula is supplied.
+The same inputs always return the same proposed volume, so the inline
+manual-override warning doesn't change unpredictably on each request.
 """
 from decimal import Decimal, InvalidOperation
+from hashlib import sha256
 
 
 MAX_VOLUME = Decimal('1000000000000')
@@ -27,15 +29,43 @@ def parse_packing_volume(value):
     return quantized
 
 
-def calculate_packing_volume(*, quantity=None, size=None, carton_quantity=None):
-    """Future calculation rule. None signals that no formula exists yet."""
-    return None
+def _normalize_numeric_seed(value):
+    if value is None or str(value).strip() == '':
+        return ''
+    try:
+        return format(Decimal(str(value)).normalize(), 'f')
+    except (InvalidOperation, TypeError, ValueError):
+        return str(value).strip()
 
 
-def resolve_packing_volume(entered, *, quantity=None, size=None, carton_quantity=None):
-    """Preserve a manual override, otherwise use the computed proposal."""
+def calculate_packing_volume(
+    *, quantity=None, size=None, carton_quantity=None, order_id=None,
+):
+    """TEST ONLY: deterministic random-looking Decimal, not a real formula.
+
+    The order identifier differentiates rows with otherwise identical inputs.
+    Using a stable hash (rather than random.random) keeps the proposed value
+    reproducible across refresh, edit, preview and save. Range: 0.1 to 1.0.
+    """
+    seed = '|'.join((
+        'temporary-packing-volume-v1',
+        str(order_id or ''),
+        _normalize_numeric_seed(quantity),
+        str(size or '').strip(),
+        _normalize_numeric_seed(carton_quantity),
+    ))
+    digest = sha256(seed.encode('utf-8')).digest()
+    scaled = 100000 + int.from_bytes(digest[:8], 'big') % 900001
+    return Decimal(scaled).scaleb(-6)
+
+
+def resolve_packing_volume(
+    entered, *, quantity=None, size=None, carton_quantity=None, order_id=None,
+):
+    """Preserve a manual override, otherwise use the temporary proposal."""
     if entered is not None:
         return entered
     return calculate_packing_volume(
         quantity=quantity, size=size, carton_quantity=carton_quantity,
+        order_id=order_id,
     )
