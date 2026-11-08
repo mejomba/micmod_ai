@@ -4953,6 +4953,15 @@ class QuickPackingDataTableListView(AjaxDatatableView):
                     Value(''),
                     output_field=CharField(),
                 ),
+                # Annotate the brand title instead of select_related('brand'):
+                # ajax_datatable uses a deferred-field queryset for paging.
+                # Joining a deferred relation via select_related raises
+                # FieldError: brand cannot be deferred and traversed.
+                effective_brand_title=Coalesce(
+                    F('brand__title'),
+                    Value(''),
+                    output_field=CharField(),
+                ),
                 quantity_in_gio=Coalesce(
                     Subquery(
                         gio_quantity_subquery,
@@ -5005,7 +5014,7 @@ class QuickPackingDataTableListView(AjaxDatatableView):
                 available_for_packing__gt=0,
             )
         )
-        return qs.select_related('brand')
+        return qs
 
     def customize_row(self, row, obj):
         row['sku'] = obj.effective_sku or ''
@@ -5014,7 +5023,7 @@ class QuickPackingDataTableListView(AjaxDatatableView):
         row['available_for_packing'] = obj.available_for_packing or 0
         row['remaining_quantity_in_order'] = obj.remaining_quantity_in_order or 0
         row['unit_weight'] = obj.effective_unit_weight or 0
-        row['brand_title'] = escape(obj.brand.title) if obj.brand_id else ''
+        row['brand_title'] = escape(obj.effective_brand_title or '')
         # Hiding a DataTables column does not hide its HTTP response data.
         row['final_price'] = (
             (obj.effective_unit_price or 0)
