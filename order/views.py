@@ -56,6 +56,7 @@ from .packing_workflow_timeline import build_packing_workflow_timeline
 from .packing_volume import calculate_packing_volume, parse_packing_volume, resolve_packing_volume
 from .packing_inline_labels import normalize_packing_label, packing_label_suggestions
 from .packing_carton_size import reconcile_carton_sizes
+from .xe_currency_rates import XeRateError, xe_configured, xe_iso_code, _get_xe_quotes
 from .form_perm import ORDER_FIELDS_BY_PERMISSION
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
     OrderPaymentItemForm, OrderPaymentItemFormSet, BazarBuyFactorForm, \
@@ -4659,6 +4660,89 @@ class QuickPackingView(LoginRequiredMixin, View):
             # to users outside the current workflow stage and viewer group.
             raise PermissionDenied('Packing document view access denied.')
 
+        # A provider rate request is separate from saving manual Packing rates.
+        # Permission checks happen *before* any paid XE API lookup.
+        if request.GET.get('xe_rates') is not None:
+            if packing_obj:
+                if not packing_obj.user_has_workflow_access(request.user):
+                    raise PermissionDenied('Packing workflow access denied.')
+            else:
+                self._assert_create_access()
+            if not Packing.user_can_view_prices(request.user):
+                raise PermissionDenied('Packing financial access denied.')
+            form = self._build_form(packing_obj=packing_obj)
+            if 'currency' not in form.fields or 'currency_exchange_rates' not in form.fields:
+                raise PermissionDenied('Packing FX editing access denied.')
+
+            target_id = str(request.GET.get('target') or '').strip()
+            source_ids = [
+                part.strip() for part in str(request.GET.get('sources') or '').split(',')
+                if part.strip()
+            ]
+            identifiers = [target_id] + source_ids
+            if (
+                not target_id or not source_ids or len(source_ids) > 20
+                or len(set(source_ids)) != len(source_ids)
+                or any(
+                    not value.isascii() or not value.isdecimal()
+                    or len(value) > 12 or int(value) <= 0
+                    for value in identifiers
+                )
+            ):
+                return JsonResponse(
+                    {'error': 'ارز مقصد یا ارزهای مبدا نامعتبر هستند.', 'code': 'invalid_currency_ids'},
+                    status=400,
+                )
+            catalog = Currency.objects.in_bulk([int(value) for value in identifiers])
+            if len(catalog) != len(set(int(v) for v in identifiers)):
+                return JsonResponse(
+                    {'error': 'یکی از ارزهای انتخاب‌شده معتبر نیست.', 'code': 'invalid_currency_ids'},
+                    status=400,
+                )
+            base_code = xe_iso_code(catalog[int(target_id)].title_en)
+            if not base_code:
+                return JsonResponse(
+                    {'error': 'ارز مقصد کد استاندارد قابل استعلام از XE ندارد؛ نرخ دستی وارد کنید.',
+                     'code': 'unsupported_destination'},
+                    status=422,
+                )
+            currencies = {}
+            unsupported = []
+            for sid in source_ids:
+                if sid == target_id:
+                    continue  # The same-currency rate is always 1.
+                code = xe_iso_code(catalog[int(sid)].title_en)
+                if code and code != base_code:
+                    currencies[sid] = code
+                elif code != base_code:
+                    unsupported.append(sid)
+
+            try:
+                if not xe_configured():
+                    raise XeRateError(
+                        'کلید سرویس XE تنظیم نشده است؛ ورود نرخ دستی همچنان امکان‌پذیر است.',
+                        status_code=503, code='not_configured',
+                    )
+                quotes = _get_xe_quotes(base_code, currencies.values())
+            except XeRateError as error:
+                return JsonResponse(
+                    {'error': str(error), 'code': error.code}, status=error.status_code,
+                )
+            rates = {
+                sid: quotes['rates'][code] for sid, code in currencies.items()
+                if code in quotes['rates']
+            }
+            missing = [sid for sid in currencies if sid not in rates]
+            return JsonResponse({
+                'source': 'XE',
+                'rate_type': 'mid-market',
+                'timestamp': quotes['timestamp'],
+                'cached': quotes['cached'],
+                'rates': rates,
+                'unsupported': unsupported,
+                'missing': missing,
+            })
+
         # Same-page, read-only preview. No new form or page is created.
         if request.GET.get('volume_preview') is not None:
             if packing_obj:
@@ -4776,6 +4860,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                 and 'currency' in form.fields
                 and 'currency_exchange_rates' in form.fields
             ),
+            'fx_xe_configured': xe_configured() if price_access else False,
             'can_add_items': can_add_items,
             'can_edit_items': can_edit_items,
             'is_superuser': getattr(request.user, 'is_superuser', False) is True,
