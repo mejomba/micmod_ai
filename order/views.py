@@ -53,7 +53,10 @@ from changelog.models import ChangeLog
 from .packing_error_messages import packing_error_payload
 from .packing_change_history import build_packing_change_history
 from .packing_workflow_timeline import build_packing_workflow_timeline
-from .packing_volume import calculate_packing_volume, parse_packing_volume, resolve_packing_volume
+from .packing_volume import (
+    calculate_packing_volume, parse_packing_volume, resolve_packing_volume,
+    is_confirmed_packing_volume,
+)
 from .packing_inline_labels import normalize_packing_label, packing_label_suggestions
 from .packing_carton_size import reconcile_carton_sizes
 from .form_perm import ORDER_FIELDS_BY_PERMISSION
@@ -4109,6 +4112,9 @@ class QuickPackingView(LoginRequiredMixin, View):
                 'volume': parse_packing_volume(
                     request.POST.get(f'form-{row_index}-volume'),
                 ),
+                'volume_confirm': str(
+                    request.POST.get(f'form-{row_index}-volume_confirm', '')
+                ).lower() in ('1', 'true', 'on', 'yes'),
             }
             brand_key = f'form-{row_index}-brand'
             if brand_key in request.POST:
@@ -4206,6 +4212,9 @@ class QuickPackingView(LoginRequiredMixin, View):
             volume_key = f'existing-{item_id}-volume'
             if volume_key in request.POST and not delete_requested:
                 row['volume'] = parse_packing_volume(request.POST.get(volume_key))
+                row['volume_confirm'] = str(
+                    request.POST.get(f'existing-{item_id}-volume_confirm', '')
+                ).lower() in ('1', 'true', 'on', 'yes')
             if carton_key in request.POST and not delete_requested:
                 row['carton_quantity'] = self._parse_carton_quantity(
                     request.POST.get(carton_key),
@@ -4357,6 +4366,17 @@ class QuickPackingView(LoginRequiredMixin, View):
                         order_id=packing_item.order_id,
                     )
                 )
+                or (
+                    'volume' in row
+                    and packing_item.volume_is_confirmed != is_confirmed_packing_volume(
+                        row['volume'], row.get('volume_confirm', False),
+                        generated=calculate_packing_volume(
+                            quantity=row['quantity'], size=row['size'],
+                            carton_quantity=row.get('carton_quantity', packing_item.carton_quantity),
+                            order_id=packing_item.order_id,
+                        ),
+                    )
+                )
                 or (packing_item.size or '') != (row['size'] or '')
                 or (packing_item.description or '') != (row['description'] or '')
                 or bool(receipt_updates)
@@ -4398,6 +4418,14 @@ class QuickPackingView(LoginRequiredMixin, View):
                     row['volume'], quantity=row['quantity'],
                     size=row['size'], carton_quantity=packing_item.carton_quantity,
                     order_id=packing_item.order_id,
+                )
+                packing_item.volume_is_confirmed = is_confirmed_packing_volume(
+                    row['volume'], row.get('volume_confirm', False),
+                    generated=calculate_packing_volume(
+                        quantity=row['quantity'], size=row['size'],
+                        carton_quantity=packing_item.carton_quantity,
+                        order_id=packing_item.order_id,
+                    ),
                 )
             for attr, value in receipt_updates.items():
                 setattr(packing_item, attr, value)
@@ -4567,6 +4595,14 @@ class QuickPackingView(LoginRequiredMixin, View):
                                 row['volume'], quantity=row['quantity'],
                                 size=row['size'], carton_quantity=row['carton_quantity'],
                                 order_id=row['order_id'],
+                            ),
+                            volume_is_confirmed=is_confirmed_packing_volume(
+                                row['volume'], row.get('volume_confirm', False),
+                                generated=calculate_packing_volume(
+                                    quantity=row['quantity'], size=row['size'],
+                                    carton_quantity=row['carton_quantity'],
+                                    order_id=row['order_id'],
+                                ),
                             ),
                             wh_receipt_quantity=row.get('wh_receipt_quantity'),
                             ruined_quantity=row.get('ruined_quantity'),
