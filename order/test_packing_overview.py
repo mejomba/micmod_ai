@@ -241,6 +241,21 @@ class PackingOverviewTemplateTests(SimpleTestCase):
             with self.subTest(expected=expected):
                 self.assertIn(expected, self.html)
 
+    def test_category_charts_show_percentage_of_total(self):
+        percentage_features = (
+            'function ovPercent(value)',
+            'values.value*100/totalValue',
+            "bar.style.width=share+'%'",
+            "percent.textContent=ovPercent(share)+'%'",
+            'id="pk-ov-donut-labels"',
+            'values.quantity*100/quantity',
+            'share >= 6',
+            "right.textContent=ovCount(values.quantity)+' · '+ovPercent(share)+'%'",
+        )
+        for expected in percentage_features:
+            with self.subTest(expected=expected):
+                self.assertIn(expected, self.html)
+
     def test_labels_exist_in_both_languages(self):
         for key in (
             'packing_overview_missing_volume:',
