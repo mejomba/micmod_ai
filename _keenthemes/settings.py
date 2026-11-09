@@ -20,13 +20,6 @@ from django.contrib.messages import constants as messages
 from django.conf.global_settings import TEMPLATES
 load_dotenv()
 
-# Xe Currency Data API credentials stay server-side in environment/.env.
-# Xe mid-market rates are a suggestion; a user may override each rate.
-XE_CURRENCY_API_KEY = os.environ.get('XE_CURRENCY_API_KEY', '').strip()
-XE_CURRENCY_USERNAME = os.environ.get('XE_CURRENCY_USERNAME', '').strip()
-XE_CURRENCY_PASSWORD = os.environ.get('XE_CURRENCY_PASSWORD', '').strip()
-XE_RATES_CACHE_SECONDS = os.environ.get('XE_RATES_CACHE_SECONDS', '300')
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 

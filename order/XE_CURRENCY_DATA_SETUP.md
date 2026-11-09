@@ -1,44 +1,31 @@
-# Xe Currency Data integration — Quick Packing
+# XE reference workflow (no XE API or page scraping)
 
-This integration uses the **official [Xe Currency Data API](https://developers.xe.com/docs/currency-data-api/getting-started)**, not scraping `xe.com`.
+The current Quick Packing UI offers **manual entry of an exchange rate** with
+a direct link to the corresponding pair on [Xe's currency converter](https://www.xe.com/currencyconverter/).
+Opening that link is a user action; the portal **does not fetch or parse XE's
+currency website or its API**, and no credentials or XE subscription are required.
 
-## Configure
+Xe's [Terms of Use](https://www.xe.com/legal/) prohibit automated extraction
+of its rate data (including screen scraping), as well as certain other uses of
+its data. Confirm that your intended use is permitted by your applicable terms.
 
-In your deployment's **private** `.env` / environment variables:
+## Steps
 
-```ini
-XE_CURRENCY_API_KEY=your_xe_api_key
-XE_RATES_CACHE_SECONDS=300
-```
+1. In the financial overview on Quick Packing, select the destination
+   currency (for example USD).
+2. Next to each source currency (such as EUR), click **View rate on XE**.
+   The user sees the relevant 1 EUR -> USD XE converter in a new tab.
+3. Enter the desired rate into the corresponding editable rate field.
+   In Quick Packing, 1 source currency unit = N destination currency units.
+4. Save the Packing. Only the target and manually entered rates are stored;
+   the calculated total is always calculated in the browser.
+5. The link is offered for supported 3-letter ISO currency codes. Internal
+   `RMB` maps to `CNY`. Other/custom currencies remain manual without an
+   XE link.
 
-Alternatively for an existing Xe Data account, set both
-`XE_CURRENCY_USERNAME` and `XE_CURRENCY_PASSWORD` (HTTP Basic auth). An
-API key takes precedence when supplied. Do not check actual credentials into Git.
+The page never automatically changes manual rates, and the rate shown on XE
+should be verified by the user at the time of entry.
 
-Xe's API requires an account/trial and subscription/allowance for live
-or daily mid-market rates. A trial may return sample rates rather than real
-market prices; confirm your entitlement with Xe. No Xe rate is generated
-locally or guessed when access is unavailable.
-
-## What users see
-
-- Currency source/target: existing `Order.currency` and `Packing.currency`.
-- On the header FX card, use **دریافت نرخ از XE** to fetch suggested rates
-  for all applicable ISO currencies (single batched request).
-- Missing rates can be filled automatically from the Xe suggestion. Saved
-  rates and manual overrides stay untouched until the user explicitly chooses
-  **استفاده از نرخ XE** beside a particular currency.
-- The rate input remains editable at all times, including during Xe outages.
-- XE returns mid-market quotes. For efficiency the server queries **target ->
-  source** and inverts them before displaying **1 source -> target**.
-- XE timestamp and data source are displayed. A fresh fetch can replace
-  suggestions; the user must still save the Packing to persist adopted rates.
-- Only the target and edited rates are stored in `currency_exchange_rates`.
-  Calculated totals are computed client-side and never saved.
-- The provider API credential is never sent to a browser.
-
-**Limitations:** Only ISO three-letter currency codes supported by the Xe
-subscription can be quoted. `RMB` is mapped to ISO `CNY`. Custom,
-non-ISO currency labels remain manual. Rate quotes are cached briefly to
-reduce API usage, subject to your Xe licensing conditions. XE plans can
-limit the number and frequency of quotes.
+To obtain automatic quotes for an ERP without the XE API, use an alternative
+source whose license permits automated ingestion; do not scrape XE's site
+without written authorization.
