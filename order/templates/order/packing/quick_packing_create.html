@@ -4660,6 +4660,18 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             }
         }
 
+        // Assign each Category one deterministic color. Both visualizations
+        // use this same map, even though each is sorted by a different metric.
+        const categoryColors = new Map(
+            [...groups.keys()].sort((a,b)=>a.localeCompare(b))
+                .map((name,index)=>[
+                    name,
+                    index < ovPalette.length
+                        ? ovPalette[index]
+                        : 'hsl(' + Math.round((index * 137.508) % 360) + ' 35% 65%)'
+                ])
+        );
+
         const bars = document.getElementById('pk-ov-bars');
         if (bars) {
             bars.replaceChildren();
@@ -4678,7 +4690,9 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                     const val=document.createElement('b');val.textContent=fxMoney(values.value)+' '+fxCurrencyName(target);
                     head.append(cat,val);
                     const track=document.createElement('div');track.className='pk-ov-track';
-                    const bar=document.createElement('div');bar.style.width=Math.max(0,Math.min(100,values.value*100/max))+'%';
+                    const bar=document.createElement('div');
+                    bar.style.width=Math.max(0,Math.min(100,values.value*100/max))+'%';
+                    bar.style.backgroundColor=categoryColors.get(name) || ovPalette[0];
                     track.appendChild(bar);group.append(head,track);bars.appendChild(group);
                 });
             }
@@ -4693,7 +4707,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             let offset=0;
             const stops=[];
             [...groups.entries()].sort((a,b)=>b[1].quantity-a[1].quantity).forEach(([name,values],index)=>{
-                const hue=ovPalette[index%ovPalette.length];
+                const hue=categoryColors.get(name) || ovPalette[0];
                 const end=offset+100*values.quantity/quantity;
                 stops.push(hue+' '+offset+'% '+end+'%');
                 offset=end;

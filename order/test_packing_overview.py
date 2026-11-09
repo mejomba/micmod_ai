@@ -230,6 +230,17 @@ class PackingOverviewTemplateTests(SimpleTestCase):
             with self.subTest(expected=expected):
                 self.assertIn(expected, self.html)
 
+    def test_category_colors_match_between_value_and_quantity_charts(self):
+        color_map = (
+            'const categoryColors = new Map(',
+            '[...groups.keys()].sort((a,b)=>a.localeCompare(b))',
+            'bar.style.backgroundColor=categoryColors.get(name) || ovPalette[0]',
+            'const hue=categoryColors.get(name) || ovPalette[0]',
+        )
+        for expected in color_map:
+            with self.subTest(expected=expected):
+                self.assertIn(expected, self.html)
+
     def test_labels_exist_in_both_languages(self):
         for key in (
             'packing_overview_missing_volume:',
