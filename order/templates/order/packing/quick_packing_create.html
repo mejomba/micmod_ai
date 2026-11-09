@@ -4405,7 +4405,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
         return Number(value).toLocaleString('en-US', {maximumFractionDigits: 8});
     }
     function ovPercent(value) {
-        return Number(value).toLocaleString('en-US', {maximumFractionDigits: 2});
+        return Number(value).toLocaleString('en-US', {maximumFractionDigits: 1});
     }
     function ovNumber(raw) {
         if (raw === null || raw === undefined || String(raw).trim() === '') return null;

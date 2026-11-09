@@ -242,6 +242,10 @@ class PackingOverviewTemplateTests(SimpleTestCase):
                 self.assertIn(expected, self.html)
 
     def test_category_charts_show_percentage_of_total(self):
+        self.assertIn(
+            "function ovPercent(value) {\n        return Number(value).toLocaleString('en-US', {maximumFractionDigits: 1});\n    }",
+            self.html,
+        )
         percentage_features = (
             'function ovPercent(value)',
             'values.value*100/totalValue',
