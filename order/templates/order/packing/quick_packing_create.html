@@ -2556,6 +2556,10 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
 .pk-ov-extra-item strong{display:block;font-size:17px;margin-top:7px;color:#315468;font-variant-numeric:tabular-nums}
 .pk-ov-issues{border:1px solid #f0dfc0;background:#fffaf1;color:#8c6b41;border-radius:12px;padding:12px 15px;font-size:12px;line-height:2}
 .pk-ov-issues:empty{display:none}
+.pk-ov-issue-group + .pk-ov-issue-group{margin-top:8px;padding-top:7px;border-top:1px solid rgba(140,107,65,.16)}
+.pk-ov-issue-summary{font-weight:700}
+.pk-ov-issue-list{margin:2px 0 0;padding-inline-start:22px;display:grid;gap:1px}
+.pk-ov-issue-list li{padding-inline-start:2px;overflow-wrap:anywhere}
 @media(max-width:1050px){.pk-ov-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.pk-ov-grid{grid-template-columns:1fr}}
 @media(max-width:650px){.pk-ov-tabs{width:100%}.pk-ov-tab{flex:1;padding:9px}.pk-ov-kpis{gap:8px}.pk-ov-kpi{padding:12px}.pk-ov-kpi strong{font-size:19px}.pk-ov-extra{grid-template-columns:1fr}}
 
@@ -4421,6 +4425,9 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             const partNumber = String(
                 (isSaved ? row.dataset.overviewPartNumber : row.dataset.partNumber) || ''
             ).trim();
+            const sku = String(
+                row.querySelector('.pk-row-part span:first-child b')?.textContent || ''
+            ).trim();
             const originalQty = ovNumber(row.dataset.quantity);
             const originalNet = ovNumber(row.dataset.overviewNet);
             const unitWeight = ovNumber(row.dataset.unitWeight);
@@ -4439,7 +4446,8 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             const currencyId = canViewPrices ? String(row.dataset.currencyPk || '') : '';
             const unitPrice = canViewPrices ? ovNumber(isSaved
                 ? row.dataset.overviewPrice : row.dataset.finalPrice) : null;
-            rows.push({qty,carton,category,gross,innerCartonCount,net,received,damaged,orderId,partNumber,
+            rows.push({rowNumber:rows.length+1,qty,carton,category,gross,innerCartonCount,
+                net,received,damaged,orderId,partNumber,sku,
                 volume: volume !== null && volume > 0 ? volume : null,
                 currencyId,unitPrice});
         }
@@ -4706,7 +4714,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             if (!rows.length) {
                 issues.textContent=ovText('packing_overview_no_items','No items in this Packing yet.');
             } else {
-                for (const [field,key] of [
+                const issueDefinitions = [
                     ['volume','packing_overview_missing_volume'],
                     ['net','packing_overview_missing_weight'],
                     ['gross','packing_overview_missing_gross'],
@@ -4718,17 +4726,63 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                         ['price','packing_overview_missing_price'],
                         ['rate','packing_overview_missing_rates']
                     ]:[]),
-                    ...(receiptStarted?[['receipt','packing_overview_missing_receipt']]:[])
-                ]) {
+                    ...(receiptStarted?[['receipt','packing_overview_missing_receipt']]:[]),
+                    ['qty','packing_overview_missing_quantity'],
+                    ['order','packing_overview_missing_order']
+                ];
+                const hasIssue = (r,field) => {
+                    if (field === 'volume') return r.volume === null;
+                    if (field === 'net') return r.net === null || r.net <= 0;
+                    if (field === 'gross') return r.gross === null || r.gross <= 0;
+                    if (field === 'innerCartons') return r.innerCartonCount === null;
+                    if (field === 'carton') return !r.carton;
+                    if (field === 'category') return !r.category;
+                    if (field === 'part') return !r.partNumber;
+                    if (field === 'qty') return r.qty === null || r.qty <= 0;
+                    if (field === 'order') return !r.orderId;
+                    if (field === 'price') {
+                        if (!r.currencyId || r.unitPrice === null || r.qty === null || r.qty <= 0) return true;
+                        return !Number.isFinite(r.unitPrice * r.qty);
+                    }
+                    if (field === 'rate') {
+                        if (!r.currencyId || r.unitPrice === null || r.qty === null || r.qty <= 0) return false;
+                        const sourceAmount = r.unitPrice * r.qty;
+                        if (!Number.isFinite(sourceAmount)) return false;
+                        const rate = target ? fxRateFor(r.currencyId) : null;
+                        return rate === null || !Number.isFinite(sourceAmount * rate);
+                    }
+                    if (field === 'receipt') {
+                        return r.received === null || r.damaged === null || r.qty === null
+                            || r.received > r.qty || r.damaged > r.received;
+                    }
+                    return false;
+                };
+                for (const [field,key] of issueDefinitions) {
                     if (!incomplete[field]) continue;
+                    const affectedRows = rows.filter(row => hasIssue(row,field));
+                    const group = document.createElement('div');
+                    group.className='pk-ov-issue-group';
                     const line=document.createElement('div');
+                    line.className='pk-ov-issue-summary';
                     line.textContent=ovText(key,key).replace('{n}',ovCount(incomplete[field]));
-                    issues.appendChild(line);
-                }
-                if (incomplete.qty) {
-                    const line=document.createElement('div');
-                    line.textContent=ovText('packing_overview_missing','Incomplete data')+': '+ovCount(incomplete.qty);
-                    issues.appendChild(line);
+                    group.appendChild(line);
+                    if (affectedRows.length) {
+                        const list=document.createElement('ul');
+                        list.className='pk-ov-issue-list';
+                        affectedRows.forEach(row => {
+                            const item=document.createElement('li');
+                            const itemLabel = row.partNumber
+                                || (row.sku ? 'SKU: '+row.sku : '')
+                                || (row.orderId ? 'Order #'+row.orderId : '')
+                                || ovText('packing_overview_unknown_item','Unknown item');
+                            item.textContent=ovText(
+                                'packing_overview_row_item','Row {row} — Item: {item}'
+                            ).replace('{row}',ovCount(row.rowNumber)).replace('{item}',itemLabel);
+                            list.appendChild(item);
+                        });
+                        group.appendChild(list);
+                    }
+                    issues.appendChild(group);
                 }
             }
         }
@@ -5509,6 +5563,10 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_overview_gross: 'وزن ناخالص ردیف‌ها (kg)',
             packing_overview_mixed: 'کارتن‌های چند Category',
             packing_overview_missing: 'اطلاعات ناقص',
+            packing_overview_missing_quantity: 'تعداد کالا برای {n} ردیف مشخص نیست یا معتبر نیست.',
+            packing_overview_missing_order: 'سفارش مربوط به {n} ردیف مشخص نیست.',
+            packing_overview_row_item: 'ردیف {row} — کالا: {item}',
+            packing_overview_unknown_item: 'کالای نامشخص',
             packing_overview_no_items: 'در این پکینگ هنوز ردیفی وجود ندارد.',
             packing_overview_missing_volume: 'حجم {n} ردیف ثبت نشده یا معتبر نیست.',
             packing_overview_missing_weight: 'وزن {n} ردیف کامل نیست.',
@@ -5627,6 +5685,10 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_overview_gross: 'Row gross weight (kg)',
             packing_overview_mixed: 'Mixed-category cartons',
             packing_overview_missing: 'Incomplete data',
+            packing_overview_missing_quantity: 'Quantity is missing or invalid for {n} rows.',
+            packing_overview_missing_order: 'Order is missing for {n} rows.',
+            packing_overview_row_item: 'Row {row} — Item: {item}',
+            packing_overview_unknown_item: 'Unknown item',
             packing_overview_no_items: 'No items in this Packing yet.',
             packing_overview_missing_volume: 'Volume is missing or invalid for {n} rows.',
             packing_overview_missing_weight: 'Net weight incomplete for {n} rows.',

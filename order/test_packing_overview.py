@@ -215,6 +215,21 @@ class PackingOverviewTemplateTests(SimpleTestCase):
             with self.subTest(expected=expected):
                 self.assertIn(expected, self.html)
 
+    def test_overview_issues_identify_affected_row_and_item(self):
+        for expected in (
+            'row.querySelector(\'.pk-row-part span:first-child b\')',
+            'rows.push({rowNumber:rows.length+1',
+            'const sku = String(',
+            'const affectedRows = rows.filter(row => hasIssue(row,field))',
+            "item.className='pk-ov-issue-list'",
+            "'Row {row} — Item: {item}'",
+            "'ردیف {row} — کالا: {item}'",
+            "['qty','packing_overview_missing_quantity']",
+            "['order','packing_overview_missing_order']",
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, self.html)
+
     def test_labels_exist_in_both_languages(self):
         for key in (
             'packing_overview_missing_volume:',
@@ -228,6 +243,10 @@ class PackingOverviewTemplateTests(SimpleTestCase):
             'packing_overview_inner_cartons:',
             'packing_overview_rate_direction:',
             'packing_overview_missing_inner_cartons:',
+            'packing_overview_missing_quantity:',
+            'packing_overview_missing_order:',
+            'packing_overview_row_item:',
+            'packing_overview_unknown_item:',
         ):
             with self.subTest(key=key):
                 self.assertEqual(self.html.count(key), 2)
