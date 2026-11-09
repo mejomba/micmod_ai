@@ -165,3 +165,61 @@ class PackingExchangePageContractTests(SimpleTestCase):
         self.assertIn('currency_id', sql)
         self.assertIn('effective_currency_pk', queryset.query.annotations)
         self.assertFalse(queryset.query.select_related)
+
+class PackingUnifiedFXLayoutTests(SimpleTestCase):
+    """Regression checks for a single cohesive FX card in the header."""
+
+    @staticmethod
+    def template():
+        return (
+            Path(settings.BASE_DIR) /
+            'order/templates/order/packing/quick_packing_create.html'
+        ).read_text(encoding='utf-8')
+
+    def test_target_rates_and_live_result_share_one_header_card(self):
+        html = self.template()
+        start = html.index('<section id="pk-currency-fx"')
+        end = html.index('</section>', start)
+        panel = html[start:end]
+        self.assertLess(panel.index("render_field_by_order form form.currency"),
+                        panel.index('id="pk-fx-rate-rows"'))
+        self.assertLess(panel.index('id="pk-fx-rate-rows"'),
+                        panel.index('id="packing-fx-header-total"'))
+        for control in ('pk-fx-workspace', 'pk-fx-settings', 'pk-fx-preview',
+                        'packing-fx-header-status', 'packing-fx-header-breakdown'):
+            self.assertIn(control, panel)
+        # A second destination selector in the old header grid is confusing.
+        self.assertEqual(html.count('render_field_by_order form form.currency'), 1)
+        self.assertNotIn('form.packing_number form.currency', html)
+
+    def test_readonly_viewers_see_target_without_edit_access(self):
+        html = self.template()
+        panel = html[
+            html.index('<section id="pk-currency-fx"'):
+            html.index('</section>', html.index('<section id="pk-currency-fx"'))
+        ]
+        self.assertIn('{% if form.currency %}', panel)
+        self.assertIn('{{ packing_object.currency|default:"—" }}', panel)
+        self.assertIn('{% if fx_can_edit %}', panel)
+        self.assertIn('{{ form.currency_exchange_rates }}', panel)
+        self.assertIn('{% if can_view_prices %}', html[:html.index('<section id="pk-currency-fx"')])
+
+    def test_single_calculation_updates_both_header_and_footer(self):
+        html = self.template()
+        for key in ('packing-fx-header-total', 'packing-fx-converted-total',
+                    'packing-fx-header-status', 'packing-fx-status',
+                    'packing-fx-header-breakdown', 'packing-currency-breakdown'):
+            self.assertIn("document.getElementById('" + key + "')", html)
+        self.assertIn("setPreview('—', notices.join(' '), true)", html)
+        self.assertIn('fxMoney(source.amount)', html)
+        self.assertIn('fxUpdateConvertedTotal(totals)', html)
+        self.assertNotIn('name="converted_total"', html)
+
+    def test_responsive_fa_en_workspace(self):
+        html = self.template()
+        self.assertIn('grid-template-columns:minmax(0,1.55fr)', html)
+        self.assertIn('@media(max-width:1050px)', html)
+        self.assertIn('@media(max-width:700px)', html)
+        for key in ('packing_fx_unified_help', 'packing_fx_rates_title',
+                    'packing_fx_preview_title', 'packing_fx_live'):
+            self.assertGreaterEqual(html.count(key + ':'), 2)
