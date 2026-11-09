@@ -2502,18 +2502,12 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
 .pk-fx-rate label{display:block;font-size:12px;font-weight:750;margin-bottom:8px;color:#385574}
 .pk-fx-rate .form-control{min-height:40px}
 .pk-fx-rate small{display:block;font-size:11px;color:#6d8198;margin-top:6px}
-.pk-fx-xe-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 3px}
-.pk-fx-xe-toolbar button[disabled]{opacity:.58;cursor:not-allowed}
-.pk-fx-xe-provider{display:inline-flex;gap:5px;font-size:11px;color:#65798d;align-items:center}
-.pk-fx-xe-provider a{font-weight:800;text-decoration:none;color:#225f95}
-.pk-fx-xe-status{font-size:12px;line-height:1.65;color:#57748d;margin:6px 0}
-.pk-fx-xe-status.is-error{color:#b65132}
-.pk-fx-xe-rate-note{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:#416c8d}
-.pk-fx-xe-rate-note strong{color:#245e8e}
-.pk-fx-xe-apply{border:1px solid #b9d5eb;border-radius:7px;padding:4px 8px;background:#f1f8ff;color:#235d90;font-size:11px;cursor:pointer;font-weight:700}
-.pk-fx-xe-apply:hover{background:#e3f2ff}
-.pk-fx-xe-apply:focus-visible{outline:2px solid #1a72ab;outline-offset:2px}
-
+.pk-fx-external-guide{font-size:12px;color:#6e7d91;line-height:1.7}
+.pk-fx-xe-reference{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:9px}
+.pk-fx-xe-link{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;border-radius:7px;border:1px solid #b9d5eb;background:#f1f8ff;color:#1f5d91;font-size:11px;font-weight:750;text-decoration:none}
+.pk-fx-xe-link:hover{background:#e4f2ff;color:#124e81;text-decoration:none}
+.pk-fx-xe-link:focus-visible{outline:2px solid #1a72ab;outline-offset:2px}
+.pk-fx-xe-unsupported{font-size:11px;color:#8c6c4b}
 .pk-fx-source-amount{display:block;color:#5b7189;font-size:12px;margin:0 0 8px}
 .pk-fx-placeholder{font-size:12px;color:#75869a;padding:10px;border:1px dashed #d7e2ef;border-radius:8px;background:#f9fbfe}
 .pk-fx-preview{padding:20px;background:#f5f9fe;border-right:1px solid #dfe9f5;min-width:0}
@@ -2880,7 +2874,6 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                 <section id="pk-currency-fx" class="pk-fx-header"
                                          data-target-currency-id="{{ packing_object.currency_id|default_if_none:'' }}"
                                          data-editable="{{ fx_can_edit|yesno:'true,false' }}"
-                                         data-xe-configured="{{ fx_xe_configured|yesno:'true,false' }}"
                                          aria-label="ارز مقصد، نرخ‌های تبدیل و ارزش محاسباتی پکینگ">
                                     <details class="pk-fx-fold" id="pk-fx-fold" {% if not packing_object %}open{% endif %}>
                                         <summary class="pk-fx-collapse-head">
@@ -2930,21 +2923,8 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                                 <p class="pk-fx-hint mb-2" data-key="packing_fx_direction">هر ۱ واحد ارز مبدا معادل چند واحد ارز مقصد است؟</p>
                                                 {% if fx_can_edit %}
                                                     {{ form.currency_exchange_rates }}
-                                                    <div class="pk-fx-xe-toolbar">
-                                                        <button id="pk-fx-xe-fetch" type="button"
-                                                                class="btn btn-sm btn-light-primary"
-                                                                {% if not fx_xe_configured %}disabled{% endif %}>
-                                                            <span aria-hidden="true">↻</span>
-                                                            <span data-key="packing_fx_xe_fetch">دریافت نرخ پیشنهادی از XE</span>
-                                                        </button>
-                                                        <span class="pk-fx-xe-provider">
-                                                            <a href="https://www.xe.com/" target="_blank" rel="noopener noreferrer">XE</a>
-                                                            <span data-key="packing_fx_xe_mid_market">نرخ میانه بازار</span>
-                                                        </span>
-                                                    </div>
-                                                    <p id="pk-fx-xe-status" class="pk-fx-xe-status"
-                                                       role="status" aria-live="polite">
-                                                        {% if not fx_xe_configured %}<span data-key="packing_fx_xe_unconfigured">اتصال XE به API Key نیاز دارد؛ نرخ‌ها را می‌توانید دستی وارد کنید.</span>{% endif %}
+                                                    <p class="pk-fx-external-guide mb-2" data-key="packing_fx_xe_manual_help">
+                                                        برای مشاهده نرخ، صفحه همان جفت‌ارز را در XE باز کنید و مقدار را در فیلد مقابل وارد کنید.
                                                     </p>
                                                 {% endif %}
                                                 <div id="pk-fx-rate-rows" class="pk-fx-rates"></div>
@@ -3800,10 +3780,8 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
     <span data-key="packing_fx_preview_title">Live result</span>
     <span data-key="packing_fx_show_details">Show details</span>
     <span data-key="packing_fx_hide_details">Hide details</span>
-    <span data-key="packing_fx_xe_fetch">Get suggested rates from XE</span>
-    <span data-key="packing_fx_xe_mid_market">Mid-market rate</span>
-    <span data-key="packing_fx_xe_unconfigured">Xe API key not configured; manual entry is still available.</span>
-    <span data-key="packing_fx_xe_apply">Use XE rate</span>
+    <span data-key="packing_fx_xe_open">View rate on XE</span>
+    <span data-key="packing_fx_xe_manual_help">Open XE to view the rate, then enter it manually.</span>
 
     <span data-key="packing_fx_header">Destination currency &amp; exchange rates</span>
     <span data-key="packing_fx_direction">1 unit of source currency = N destination units</span>
@@ -3937,13 +3915,6 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
     const fxRatesHost = document.getElementById('pk-fx-rate-rows');
     const fxHidden = document.getElementById('id_currency_exchange_rates');
     const fxEditable = fxRoot?.dataset.editable === 'true';
-    const fxXeConfigured = fxRoot?.dataset.xeConfigured === 'true';
-    const fxXeFetchButton = document.getElementById('pk-fx-xe-fetch');
-    const fxXeStatus = document.getElementById('pk-fx-xe-status');
-    const fxXeQuotes = new Map();
-    let fxXeRequestSerial = 0;
-    let fxXeAutoAttempted = false;
-    let fxXeFetching = false;
     const fxCatalogNode = document.getElementById('pk-fx-catalog');
     const fxSavedNode = document.getElementById('pk-fx-saved-config');
     const fxCatalog = fxCatalogNode ? JSON.parse(fxCatalogNode.textContent) : [];
@@ -3951,6 +3922,22 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
     const fxNames = new Map(fxCatalog.map(c => [
         String(c.id), String(c.title_en || c.title || c.id)
     ]));
+    const fxCodes = new Map(fxCatalog.map(c => [
+        String(c.id), String(c.title_en || '').trim().toUpperCase()
+    ]));
+    function fxXeCode(currencyId) {
+        const code = fxCodes.get(String(currencyId || '')) || '';
+        const normalized = code === 'RMB' ? 'CNY' : code;
+        return /^[A-Z]{3}$/.test(normalized) ? normalized : null;
+    }
+    function fxXePage(sourceId, targetId) {
+        const from = fxXeCode(sourceId);
+        const to = fxXeCode(targetId);
+        return from && to
+            ? 'https://www.xe.com/currencyconverter/convert/?Amount=1&From='
+                + encodeURIComponent(from) + '&To=' + encodeURIComponent(to)
+            : null;
+    }
     function fxTarget() {
         return fxCurrencySelect
             ? String(fxCurrencySelect.value || '')
@@ -4120,115 +4107,34 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                 const help = document.createElement('small');
                 help.textContent = fxText('packing_fx_rate_hint', 'Use a positive exchange rate.');
                 card.appendChild(help);
-                const suggested = fxXeQuotes.get(source.id);
-                if (suggested) {
-                    const note = document.createElement('div');
-                    note.className = 'pk-fx-xe-rate-note';
-                    const quoted = document.createElement('strong');
-                    quoted.textContent = 'XE: ' + suggested.rate;
-                    note.appendChild(quoted);
-                    if (String(fxRates[source.id] || '') !== suggested.rate) {
-                        const apply = document.createElement('button');
-                        apply.type = 'button';
-                        apply.className = 'pk-fx-xe-apply';
-                        apply.textContent = fxText('packing_fx_xe_apply', 'Use XE rate');
-                        apply.addEventListener('click', () => {
-                            fxRates[source.id] = suggested.rate;
-                            input.value = suggested.rate;
-                            fxSyncHidden();
-                            fxUpdateConvertedTotal(fxSourceTotals());
-                            apply.remove();
-                            fxSetXeStatus(fxText('packing_fx_xe_applied',
-                                'XE rate applied. Save Packing to persist.'));
-                        });
-                        note.appendChild(apply);
-                    }
-                    card.appendChild(note);
-                }
             } else {
                 const value = document.createElement('strong');
                 value.textContent = fxRateFor(source.id) === null
                     ? '—' : String(fxRates[source.id]);
                 card.appendChild(value);
             }
+            const xeLink = fxXePage(source.id, target);
+            const reference = document.createElement('div');
+            reference.className = 'pk-fx-xe-reference';
+            if (xeLink) {
+                const link = document.createElement('a');
+                link.className = 'pk-fx-xe-link';
+                link.href = xeLink;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.textContent = fxText('packing_fx_xe_open', 'View rate on XE');
+                reference.appendChild(link);
+            } else {
+                const message = document.createElement('span');
+                message.className = 'pk-fx-xe-unsupported';
+                message.textContent = fxText('packing_fx_xe_unsupported',
+                    'No standard XE link for this currency. Enter the rate manually.');
+                reference.appendChild(message);
+            }
+            card.appendChild(reference);
             fxRatesHost.appendChild(card);
         });
     }
-    function fxSetXeStatus(message, isError = false) {
-        if (!fxXeStatus) return;
-        fxXeStatus.textContent = message;
-        fxXeStatus.classList.toggle('is-error', isError);
-    }
-    async function fxFetchXeRates({automatic = false} = {}) {
-        if (!fxXeConfigured || !fxEditable || fxXeFetching) return;
-        const target = fxTarget();
-        const sources = [...fxSourceTotals().values()]
-            .filter(row => row.id && row.id !== target)
-            // Auto-lookup requests only the missing pairs to conserve XE quota.
-            // Manual refresh can ask for every pair, including overridden ones.
-            .filter(row => !automatic || !String(fxRates[row.id] || '').trim())
-            .map(row => row.id).sort();
-        if (!target || !sources.length) {
-            if (!automatic) {
-                fxSetXeStatus(fxText('packing_fx_xe_empty',
-                    'Choose a destination and priced rows first.'), true);
-            }
-            return;
-        }
-        fxXeFetching = true;
-        const serial = ++fxXeRequestSerial;
-        if (fxXeFetchButton) fxXeFetchButton.disabled = true;
-        fxSetXeStatus(fxText('packing_fx_xe_fetching', 'Fetching XE rates...'));
-        const params = new URLSearchParams({
-            xe_rates: '1', target: target, sources: sources.join(',')
-        });
-        try {
-            const response = await fetch(window.location.pathname + '?' + params.toString(), {
-                method: 'GET', credentials: 'same-origin', cache: 'no-store',
-                headers: {'Accept': 'application/json'}
-            });
-            const payload = await response.json();
-            if (serial !== fxXeRequestSerial || fxTarget() !== target) return;
-            if (!response.ok) {
-                throw new Error(payload.error || 'XE is temporarily unavailable.');
-            }
-            Object.entries(payload.rates || {}).forEach(([sourceId, value]) => {
-                if (!sources.includes(sourceId)) return;
-                const quote = String(value);
-                fxXeQuotes.set(sourceId, {rate: quote, timestamp: payload.timestamp || ''});
-                // XE provides a suggestion, not authority over a saved or
-                // manually modified rate: only blank inputs are autofilled.
-                if (!String(fxRates[sourceId] || '').trim()) {
-                    fxRates[sourceId] = quote;
-                }
-            });
-            fxSyncHidden();
-            fxRenderRates(fxSourceTotals());
-            fxUpdateConvertedTotal(fxSourceTotals());
-            const stamp = payload.timestamp
-                ? ' ' + fxText('packing_fx_xe_timestamp', 'XE quote time: {date}')
-                    .replace('{date}', String(payload.timestamp).replace('T', ' '))
-                : '';
-            const unsupported = (payload.unsupported || []).length
-                + (payload.missing || []).length;
-            fxSetXeStatus(
-                fxText('packing_fx_xe_success', 'XE suggested rates loaded; manual rates preserved.')
-                + stamp + (unsupported ? ' ' + fxText('packing_fx_xe_missing',
-                    'Some currencies require manual entry.') : '')
-            );
-        } catch (error) {
-            if (serial === fxXeRequestSerial && fxTarget() === target) {
-                fxSetXeStatus(error.message || 'XE is unavailable.', true);
-            }
-        } finally {
-            if (serial === fxXeRequestSerial) {
-                fxXeFetching = false;
-                if (fxXeFetchButton) fxXeFetchButton.disabled = !fxXeConfigured;
-            }
-        }
-    }
-    fxXeFetchButton?.addEventListener('click', () => fxFetchXeRates());
-
     function renderPackingCurrencySummary() {
         if (!canViewPrices || !fxRoot) return;
         const target = fxTarget();
@@ -4236,12 +4142,6 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             // Old rates cannot be reused after changing destination currency.
             fxActiveTarget = target;
             fxRates = {};
-            fxXeQuotes.clear();
-            fxXeAutoAttempted = false;
-            fxXeRequestSerial += 1; // Ignore stale quotes for the old target.
-            fxXeFetching = false;
-            if (fxXeFetchButton) fxXeFetchButton.disabled = !fxXeConfigured;
-            if (fxXeStatus) fxSetXeStatus('');
         }
         const compactTarget = document.getElementById('packing-fx-collapsed-target');
         if (compactTarget) compactTarget.textContent = target
@@ -4276,17 +4176,6 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
         fxRenderRates(totals);
         fxSyncHidden();
         fxUpdateConvertedTotal(totals);
-        // On first eligible load, populate missing rates from XE only.
-        // Do not issue requests while a user has already supplied all rates.
-        if (!fxXeAutoAttempted && fxXeConfigured && fxEditable && target) {
-            const needsQuote = [...totals.values()].some(row =>
-                row.id && row.id !== target && !String(fxRates[row.id] || '').trim()
-            );
-            if (needsQuote) {
-                fxXeAutoAttempted = true;
-                Promise.resolve().then(() => fxFetchXeRates({automatic: true}));
-            }
-        }
     }
     fxCurrencySelect?.addEventListener('change', renderPackingCurrencySummary);
 
@@ -5015,16 +4904,9 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_fx_preview_title: 'نتیجه همین لحظه',
             packing_fx_show_details: 'نمایش جزئیات',
             packing_fx_hide_details: 'بستن جزئیات',
-            packing_fx_xe_fetch: 'دریافت نرخ از XE',
-            packing_fx_xe_mid_market: 'نرخ میانه بازار',
-            packing_fx_xe_unconfigured: 'اتصال XE به API Key نیاز دارد؛ ورود نرخ دستی همچنان ممکن است.',
-            packing_fx_xe_apply: 'استفاده از نرخ XE',
-            packing_fx_xe_fetching: 'در حال دریافت نرخ‌های XE...',
-            packing_fx_xe_success: 'پیشنهاد XE دریافت شد. نرخ‌های دستی قبلی تغییر نکرده‌اند.',
-            packing_fx_xe_applied: 'نرخ پیشنهادی XE اعمال شد؛ برای ذخیره دائمی، پکینگ را ثبت کنید.',
-            packing_fx_xe_empty: 'برای دریافت نرخ، ابتدا ارز مقصد و ردیف‌های دارای ارز را مشخص کنید.',
-            packing_fx_xe_timestamp: 'زمان نرخ XE: {date}',
-            packing_fx_xe_missing: 'برای برخی ارزها نرخ XE در دسترس نیست. می‌توانید دستی وارد کنید.',
+            packing_fx_xe_open: 'مشاهده نرخ در XE',
+            packing_fx_xe_manual_help: 'برای مشاهده نرخ هر ارز، لینک XE همان جفت‌ارز را باز کنید و مقدار را دستی وارد کنید.',
+            packing_fx_xe_unsupported: 'برای این ارز لینک استاندارد XE موجود نیست؛ نرخ را دستی وارد کنید.',
 
             packing_fx_header: 'ارز مقصد و نرخ تبدیل ارزها',
             packing_fx_direction: 'هر ۱ واحد ارز مبدا معادل چند واحد ارز مقصد است؟',
@@ -5074,16 +4956,9 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_fx_preview_title: 'Live result',
             packing_fx_show_details: 'Show details',
             packing_fx_hide_details: 'Hide details',
-            packing_fx_xe_fetch: 'Get rates from XE',
-            packing_fx_xe_mid_market: 'Mid-market rate',
-            packing_fx_xe_unconfigured: 'XE API key is not configured; you can still enter rates manually.',
-            packing_fx_xe_apply: 'Use XE rate',
-            packing_fx_xe_fetching: 'Fetching XE rates...',
-            packing_fx_xe_success: 'XE suggestions loaded; existing manual rates were preserved.',
-            packing_fx_xe_applied: 'XE suggestion applied. Save Packing to persist this rate.',
-            packing_fx_xe_empty: 'Choose a destination currency and add priced rows first.',
-            packing_fx_xe_timestamp: 'XE quote time: {date}',
-            packing_fx_xe_missing: 'XE quotes are missing for some currencies; manual entry is available.',
+            packing_fx_xe_open: 'View rate on XE',
+            packing_fx_xe_manual_help: 'Open the XE converter for each currency pair and enter the rate manually.',
+            packing_fx_xe_unsupported: 'This currency has no standard XE pair link; enter the rate manually.',
 
             packing_fx_header: 'Destination currency and exchange rates',
             packing_fx_direction: 'How many destination units equal 1 source currency unit?',
