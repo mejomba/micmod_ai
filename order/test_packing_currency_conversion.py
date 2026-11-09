@@ -223,3 +223,44 @@ class PackingUnifiedFXLayoutTests(SimpleTestCase):
         for key in ('packing_fx_unified_help', 'packing_fx_rates_title',
                     'packing_fx_preview_title', 'packing_fx_live'):
             self.assertGreaterEqual(html.count(key + ':'), 2)
+
+    def test_financial_summary_collapses_with_visible_live_information(self):
+        html = self.template()
+        start = html.index('<section id="pk-currency-fx"')
+        end = html.index('</section>', start)
+        section = html[start:end]
+        self.assertIn('<details class="pk-fx-fold" id="pk-fx-fold"', section)
+        self.assertIn('<summary class="pk-fx-collapse-head">', section)
+        self.assertIn('{% if not packing_object %}open{% endif %}', section)
+        self.assertIn('id="packing-fx-collapsed-target"', section)
+        self.assertIn('id="packing-fx-collapsed-total"', section)
+        self.assertIn('id="packing-fx-collapsed-status"', section)
+        self.assertIn('id="packing-fx-collapsed-breakdown"', section)
+        self.assertIn('id="pk-fx-rate-rows"', section)
+        self.assertIn('form form.currency label=\'on-border\'', section)
+        self.assertIn('pk-fx-show-label', section)
+        self.assertIn('pk-fx-hide-label', section)
+        self.assertIn('pk-fx-fold[open]', html)
+
+    def test_collapsed_summary_uses_same_fx_data_as_expanded_and_footer(self):
+        html = self.template()
+        for marker in ('packing-fx-collapsed-total',
+                       'packing-fx-header-total', 'packing-fx-converted-total',
+                       'packing-fx-collapsed-status',
+                       'packing-fx-header-status', 'packing-fx-status',
+                       'packing-fx-collapsed-breakdown',
+                       'packing-fx-header-breakdown', 'packing-currency-breakdown'):
+            self.assertIn("document.getElementById('" + marker + "')", html)
+        self.assertIn('compactTarget.textContent = target', html)
+        self.assertIn("setPreview('—', notices.join(' '), true)", html)
+        self.assertIn('fxSyncHidden();', html)
+        self.assertNotIn('name="converted_total"', html)
+
+    def test_details_labels_translated_for_fa_and_en(self):
+        html = self.template()
+        self.assertGreaterEqual(html.count('packing_fx_show_details:'), 2)
+        self.assertGreaterEqual(html.count('packing_fx_hide_details:'), 2)
+        self.assertIn('نمایش جزئیات', html)
+        self.assertIn('بستن جزئیات', html)
+        self.assertIn('Show details', html)
+        self.assertIn('Hide details', html)

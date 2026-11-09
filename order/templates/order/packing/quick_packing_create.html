@@ -2456,6 +2456,32 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
 
 /* Single financial workspace: destination, rate inputs, and live result. */
 .pk-fx-header{margin-top:16px;border:1px solid #cfdfee;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 3px 14px rgba(32,65,105,.06)}
+
+/* Compact state remains visible; form fields remain mounted inside <details>. */
+.pk-fx-fold>summary{list-style:none}
+.pk-fx-fold>summary::-webkit-details-marker{display:none}
+.pk-fx-fold>summary::marker{content:''}
+.pk-fx-collapse-head{display:grid;grid-template-columns:minmax(165px,1fr) minmax(210px,1.35fr) auto;align-items:center;gap:18px;padding:14px 18px;cursor:pointer;background:linear-gradient(108deg,#eef5ff,#f9fcff);min-height:82px}
+.pk-fx-collapse-head:hover{background:#eaf3ff}
+.pk-fx-collapse-head:focus-visible{outline:2px solid #3980bd;outline-offset:-3px}
+.pk-fx-collapse-identity,.pk-fx-collapse-figures{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.pk-fx-collapse-title{font-size:14px;color:#294b6c;line-height:1.55;margin-top:2px}
+.pk-fx-collapsed-meta{font-size:12px;color:#62758a;margin-top:5px}
+.pk-fx-collapsed-meta b{color:#2b557a;font-weight:800}
+.pk-fx-collapse-value-label{font-size:11px;color:#647b94;margin-bottom:2px}
+.pk-fx-collapse-value{font-size:18px;color:#17528b;font-weight:850;direction:ltr;text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.pk-fx-collapse-figures .pk-fx-status{margin:2px 0 0;font-size:11px}
+.pk-fx-collapse-figures .pk-fx-breakdown{margin-top:5px;gap:5px}
+.pk-fx-collapse-figures .pk-fx-breakdown span{font-size:10px;padding:2px 6px}
+.pk-fx-collapse-action{display:inline-flex;align-items:center;justify-content:flex-end;gap:8px;white-space:nowrap;color:#2d6294;font-weight:750;font-size:12px;align-self:center}
+.pk-fx-collapse-chevron{display:inline-block;transition:transform .18s ease;font-size:19px;line-height:1}
+.pk-fx-fold[open] .pk-fx-collapse-chevron{transform:rotate(180deg)}
+.pk-fx-hide-label{display:none}
+.pk-fx-fold[open] .pk-fx-show-label{display:none}
+.pk-fx-fold[open] .pk-fx-hide-label{display:inline}
+.pk-fx-fold[open] .pk-fx-collapse-figures,.pk-fx-fold[open] .pk-fx-collapsed-meta{display:none}
+.pk-fx-fold[open] .pk-fx-collapse-head{grid-template-columns:minmax(0,1fr) auto;border-bottom:1px solid #dce7f5;min-height:62px}
+@media(max-width:760px){.pk-fx-collapse-head{grid-template-columns:minmax(0,1fr) auto;gap:9px;padding:12px}.pk-fx-collapse-figures{grid-column:1/-1;grid-row:2}.pk-fx-collapse-action{grid-column:2;grid-row:1}.pk-fx-collapse-value{font-size:17px}.pk-fx-fold[open] .pk-fx-collapse-head{grid-template-columns:minmax(0,1fr) auto}}
 .pk-fx-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:17px 19px;background:linear-gradient(108deg,#eef5ff 0%,#f7fbff 100%);border-bottom:1px solid #dce7f5}
 .pk-fx-heading h3{font-size:15px;font-weight:800;margin:3px 0 5px;color:#203c5b}
 .pk-fx-eyebrow{font-size:11px;font-weight:800;letter-spacing:.3px;color:#3573a5}
@@ -2843,10 +2869,31 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                          data-target-currency-id="{{ packing_object.currency_id|default_if_none:'' }}"
                                          data-editable="{{ fx_can_edit|yesno:'true,false' }}"
                                          aria-label="ارز مقصد، نرخ‌های تبدیل و ارزش محاسباتی پکینگ">
+                                    <details class="pk-fx-fold" id="pk-fx-fold" {% if not packing_object %}open{% endif %}>
+                                        <summary class="pk-fx-collapse-head">
+                                            <span class="pk-fx-collapse-identity">
+                                                <span class="pk-fx-eyebrow" data-key="packing_fx_eyebrow">خلاصه مالی پکینگ</span>
+                                                <strong class="pk-fx-collapse-title" data-key="packing_fx_header">ارز مقصد و نرخ تبدیل ارزها</strong>
+                                                <span class="pk-fx-collapsed-meta">
+                                                    <span data-key="packing_currency_label">ارز مقصد</span>:
+                                                    <b id="packing-fx-collapsed-target">—</b>
+                                                </span>
+                                            </span>
+                                            <span class="pk-fx-collapse-figures">
+                                                <span class="pk-fx-collapse-value-label" data-key="packing_fx_converted_total">ارزش تبدیل‌شده به ارز مقصد</span>
+                                                <strong id="packing-fx-collapsed-total" class="pk-fx-collapse-value">—</strong>
+                                                <span id="packing-fx-collapsed-status" class="pk-fx-status" role="status" aria-live="polite"></span>
+                                                <span id="packing-fx-collapsed-breakdown" class="pk-fx-breakdown" aria-label="مبالغ ارزهای اصلی"></span>
+                                            </span>
+                                            <span class="pk-fx-collapse-action">
+                                                <span data-key="packing_fx_show_details" class="pk-fx-show-label">نمایش جزئیات</span>
+                                                <span data-key="packing_fx_hide_details" class="pk-fx-hide-label">بستن جزئیات</span>
+                                                <span class="pk-fx-collapse-chevron" aria-hidden="true">⌄</span>
+                                            </span>
+                                        </summary>
+                                        <div class="pk-fx-fold-body">
                                     <div class="pk-fx-head">
                                         <div class="pk-fx-heading">
-                                            <span class="pk-fx-eyebrow" data-key="packing_fx_eyebrow">خلاصه مالی پکینگ</span>
-                                            <h3 data-key="packing_fx_header">ارز مقصد و نرخ تبدیل ارزها</h3>
                                             <p class="pk-fx-hint mb-0" data-key="packing_fx_unified_help">
                                                 انتخاب ارز مقصد، ثبت نرخ‌ها و نتیجه محاسبه در همین بخش انجام می‌شود.
                                             </p>
@@ -2887,6 +2934,8 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                     <p class="pk-fx-hint pk-fx-footer-note mb-0" data-key="packing_fx_saved_hint">
                                         ارز مقصد و نرخ‌ها با ذخیره پکینگ ثبت می‌شوند؛ ارزش محاسباتی ذخیره نمی‌شود.
                                     </p>
+                                        </div>
+                                    </details>
                                 </section>
                                 {{ fx_currency_catalog|json_script:"pk-fx-catalog" }}
                                 {{ fx_saved_config|json_script:"pk-fx-saved-config" }}
@@ -3720,6 +3769,8 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
     <span data-key="packing_fx_unified_help">Choose a destination, enter rates and see the result here.</span>
     <span data-key="packing_fx_rates_title">Rates for currencies in the Packing</span>
     <span data-key="packing_fx_preview_title">Live result</span>
+    <span data-key="packing_fx_show_details">Show details</span>
+    <span data-key="packing_fx_hide_details">Hide details</span>
     <span data-key="packing_fx_header">Destination currency &amp; exchange rates</span>
     <span data-key="packing_fx_direction">1 unit of source currency = N destination units</span>
     <span data-key="packing_fx_saved_hint">Only target currency and FX rates are saved.</span>
@@ -3924,10 +3975,12 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
         // Keep the header preview and footer report synchronized from a single
         // calculation, including incomplete states and missing rates.
         const outputs = [
+            document.getElementById('packing-fx-collapsed-total'),
             document.getElementById('packing-fx-header-total'),
             document.getElementById('packing-fx-converted-total')
         ].filter(Boolean);
         const statuses = [
+            document.getElementById('packing-fx-collapsed-status'),
             document.getElementById('packing-fx-header-status'),
             document.getElementById('packing-fx-status')
         ].filter(Boolean);
@@ -4043,8 +4096,12 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             fxActiveTarget = target;
             fxRates = {};
         }
+        const compactTarget = document.getElementById('packing-fx-collapsed-target');
+        if (compactTarget) compactTarget.textContent = target
+            ? fxCurrencyName(target) : '—';
         const totals = fxSourceTotals();
         const chipHosts = [
+            document.getElementById('packing-fx-collapsed-breakdown'),
             document.getElementById('packing-fx-header-breakdown'),
             document.getElementById('packing-currency-breakdown')
         ].filter(Boolean);
@@ -4798,6 +4855,8 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_fx_unified_help: 'ارز مقصد، نرخ‌های تبدیل و نتیجه در یک بخش نمایش داده می‌شوند.',
             packing_fx_rates_title: 'نرخ تبدیل ارزهای موجود',
             packing_fx_preview_title: 'نتیجه همین لحظه',
+            packing_fx_show_details: 'نمایش جزئیات',
+            packing_fx_hide_details: 'بستن جزئیات',
             packing_fx_header: 'ارز مقصد و نرخ تبدیل ارزها',
             packing_fx_direction: 'هر ۱ واحد ارز مبدا معادل چند واحد ارز مقصد است؟',
             packing_fx_saved_hint: 'فقط ارز مقصد و نرخ‌های تبدیل ذخیره می‌شوند؛ مجموع تبدیل‌شده در همین صفحه محاسبه می‌شود.',
@@ -4844,6 +4903,8 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_fx_unified_help: 'Choose the destination currency, enter rates and see the result together.',
             packing_fx_rates_title: 'Rates for currencies in this Packing',
             packing_fx_preview_title: 'Live result',
+            packing_fx_show_details: 'Show details',
+            packing_fx_hide_details: 'Hide details',
             packing_fx_header: 'Destination currency and exchange rates',
             packing_fx_direction: 'How many destination units equal 1 source currency unit?',
             packing_fx_saved_hint: 'Only the destination and rates are saved, not the converted total.',
