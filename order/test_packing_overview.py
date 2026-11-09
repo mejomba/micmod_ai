@@ -147,8 +147,88 @@ class PackingOverviewTemplateTests(SimpleTestCase):
             self.html,
         )
 
+    def test_overview_includes_general_packing_and_shipment_metadata(self):
+        for expected in (
+            'packing_object.packing_number',
+            'packing_object.shipment_type',
+            'packing_object.bl_number',
+            'packing_object.bl_date',
+            'packing_object.transportation_company',
+            'packing_object.origin',
+            'packing_object.destination',
+            'packing_object.departure_date',
+            'packing_object.arrival_date',
+            'packing_object.estimated_shipping_start_date',
+            'packing_object.estimated_arrive_to_wh_date',
+            'packing_object.order_registration_number',
+            'packing_object.proforma_pi_number',
+            'packing_object.commercial_card',
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, self.html)
+
+    def test_financial_breakdown_uses_existing_currency_permission_and_rates(self):
+        self.assertIn(
+            '{% if can_view_prices %}\\n                <article class="pk-ov-card pk-ov-finance-card">',
+            self.html,
+        )
+        for expected in (
+            'id="pk-ov-target-currency"',
+            'id="pk-ov-source-totals"',
+            'id="pk-ov-finance-status"',
+            'data-overview-price="{{ packing_item.price|default_if_none:',
+            'const allMoney = allSourceMoney && incomplete.rate === 0;',
+            'const rate = target ? fxRateFor(source.id) : null;',
+            'fxMoney(source.amount*rate)',
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, self.html)
+
+    def test_row_level_price_data_is_guarded_by_finance_permission(self):
+        row_start = self.html.index('class="packing-selected-row packing-existing-row"')
+        permission_start = self.html.index('{% if can_view_prices %}', row_start)
+        price_attribute = self.html.index('data-overview-price=', row_start)
+        permission_end = self.html.index('{% endif %}', permission_start)
+        self.assertLess(permission_start, price_attribute)
+        self.assertLess(price_attribute, permission_end)
+
+    def test_aggregated_order_part_category_and_warehouse_values(self):
+        for expected in (
+            'id="pk-ov-row-count"',
+            'id="pk-ov-order-count"',
+            'id="pk-ov-part-count"',
+            'id="pk-ov-category-count"',
+            'id="pk-ov-inner-cartons"',
+            'innerCartonCount',
+            'innerCartons += r.innerCartonCount',
+            'id="pk-ov-received"',
+            'id="pk-ov-good"',
+            'id="pk-ov-damaged"',
+            'id="pk-ov-remaining"',
+            'data-overview-part-number="{{ packing_item.part_number',
+            'data-overview-received="{{ packing_item.wh_receipt_quantity',
+            'data-overview-damaged="{{ packing_item.ruined_quantity',
+            'goodTotal += r.received - r.damaged',
+            'remainingTotal += r.qty - r.received',
+            "put('pk-ov-order-count',allOrders?ovCount(orders.size):'—')",
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, self.html)
+
     def test_labels_exist_in_both_languages(self):
-        self.assertEqual(self.html.count('packing_overview_missing_volume:'), 2)
-        self.assertEqual(self.html.count('packing_overview_value_categories:'), 2)
-        self.assertEqual(self.html.count('packing_overview_note:'), 2)
+        for key in (
+            'packing_overview_missing_volume:',
+            'packing_overview_value_categories:',
+            'packing_overview_note:',
+            'packing_overview_meta:',
+            'packing_overview_finance:',
+            'packing_overview_received:',
+            'packing_overview_missing_receipt:',
+            'packing_overview_missing_price:',
+            'packing_overview_inner_cartons:',
+            'packing_overview_rate_direction:',
+            'packing_overview_missing_inner_cartons:',
+        ):
+            with self.subTest(key=key):
+                self.assertEqual(self.html.count(key), 2)
         self.assertNotIn('packing_volume_manual_confirm:', self.html)

@@ -2559,6 +2559,32 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
 @media(max-width:1050px){.pk-ov-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.pk-ov-grid{grid-template-columns:1fr}}
 @media(max-width:650px){.pk-ov-tabs{width:100%}.pk-ov-tab{flex:1;padding:9px}.pk-ov-kpis{gap:8px}.pk-ov-kpi{padding:12px}.pk-ov-kpi strong{font-size:19px}.pk-ov-extra{grid-template-columns:1fr}}
 
+
+/* Overview: document metadata, financial breakdown and operational aggregates. */
+.pk-ov-section{margin-bottom:15px}
+.pk-ov-meta-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.pk-ov-meta-item{min-width:0;border:1px solid #edf1f4;background:#f8fafc;border-radius:10px;padding:11px 12px}
+.pk-ov-meta-item span{display:block;color:#8091a0;font-size:11px;margin-bottom:5px}
+.pk-ov-meta-item strong{display:block;color:#355267;font-size:13px;line-height:1.7;overflow-wrap:anywhere}
+.pk-ov-finance-card{margin-bottom:15px}
+.pk-ov-finance-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:13px}
+.pk-ov-target{display:flex;align-items:center;gap:8px;border:1px solid #dfe9ef;background:#f7fafb;border-radius:9px;padding:7px 11px;font-size:12px}
+.pk-ov-target span{color:#8293a2}
+.pk-ov-target strong{color:#31596a;direction:ltr}
+.pk-ov-finance-table{display:grid;gap:7px}
+.pk-ov-finance-row{display:grid;grid-template-columns:minmax(110px,1.1fr) repeat(3,minmax(0,1fr));align-items:center;gap:10px;padding:10px 12px;border:1px solid #edf1f4;border-radius:9px;font-size:12px;color:#526d80}
+.pk-ov-finance-row>*{min-width:0;overflow-wrap:anywhere}
+.pk-ov-finance-row strong{color:#355267;direction:ltr;text-align:right;font-variant-numeric:tabular-nums}
+.pk-ov-finance-row.is-head{border:0;background:#f4f7f9;color:#8192a0;font-size:11px;font-weight:700}
+.pk-ov-finance-status{font-size:11px;color:#8293a2;margin-top:10px;line-height:1.8}
+.pk-ov-aggregate-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:15px}
+.pk-ov-aggregate-item{min-width:0;border:1px solid #e2e9ef;border-radius:12px;background:#fff;padding:13px 15px}
+.pk-ov-aggregate-item span{display:block;color:#7d8fa0;font-size:11px}
+.pk-ov-aggregate-item strong{display:block;color:#315468;font-size:18px;margin-top:8px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.pk-ov-aggregate-item small{display:block;color:#8a9ba7;font-size:10px;margin-top:3px}
+@media(max-width:1050px){.pk-ov-meta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pk-ov-aggregate-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.pk-ov-meta-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.pk-ov-meta-item{padding:9px}.pk-ov-finance-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.pk-ov-finance-row.is-head{display:none}.pk-ov-aggregate-grid{gap:7px}.pk-ov-aggregate-item{padding:11px}.pk-ov-aggregate-item strong{font-size:16px}}
+
 </style>
 {% endblock %}
 
@@ -2612,14 +2638,54 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                     <button type="button" class="btn btn-sm btn-light-primary" id="pk-ov-edit"
                             data-key="packing_overview_edit">بازگشت به جزئیات</button>
                 </div>
+
+                <article class="pk-ov-card pk-ov-section">
+                    <h3 data-key="packing_overview_meta">اطلاعات عمومی و حمل</h3>
+                    <div class="pk-ov-meta-grid">
+                        <div class="pk-ov-meta-item"><span data-key="packing_overview_packing_number">شماره پکینگ</span><strong>{{ packing_object.packing_number|default:"—" }}</strong></div>
+                        <div class="pk-ov-meta-item"><span data-key="packing_overview_shipment_type">نوع حمل</span><strong>{{ packing_object.get_shipment_type_display|default:packing_object.shipment_type|default:"—" }}</strong></div>
+                        <div class="pk-ov-meta-item"><span data-key="packing_overview_bl_number">شماره بارنامه</span><strong>{{ packing_object.bl_number|default:"—" }}</strong></div>
+                        <div class="pk-ov-meta-item"><span data-key="packing_overview_bl_date">تاریخ بارنامه</span><strong>{{ packing_object.bl_date|date:"Y-m-d"|default:"—" }}</strong></div>
+                        <div class="pk-ov-meta-item"><span data-key="packing_overview_carrier">شرکت حمل</span><strong>{{ packing_object.transportation_company|default:"—" }}</strong></div>
+                        <div class="pk-ov-meta-item"><span data-key="packing_overview_origin">مبدأ</span><strong>{{ packing_object.origin|default:"—" }}</strong></div>
+                        <div class="pk-ov-meta-item"><span data-key="packing_overview_destination">مقصد</span><strong>{{ packing_object.destination|default:"—" }}</strong></div>
+                        <div class="pk-ov-meta-item"><span data-key="packing_overview_departure">تاریخ شروع حمل</span><strong>{{ packing_object.departure_date|date:"Y-m-d"|default:"—" }}</strong></div>
+                        <div class="pk-ov-meta-item"><span data-key="packing_overview_arrival">تاریخ رسیدن</span><strong>{{ packing_object.arrival_date|date:"Y-m-d"|default:"—" }}</strong></div>
+                        <div class="pk-ov-meta-item"><span data-key="packing_overview_estimated_departure">پیش‌بینی شروع حمل</span><strong>{{ packing_object.estimated_shipping_start_date|date:"Y-m-d"|default:"—" }}</strong></div>
+                        <div class="pk-ov-meta-item"><span data-key="packing_overview_estimated_arrival">پیش‌بینی رسیدن به انبار</span><strong>{{ packing_object.estimated_arrive_to_wh_date|date:"Y-m-d"|default:"—" }}</strong></div>
+                        <div class="pk-ov-meta-item"><span data-key="packing_overview_registration">شماره ثبت سفارش</span><strong>{{ packing_object.order_registration_number|default:"—" }}</strong></div>
+                        <div class="pk-ov-meta-item"><span data-key="packing_overview_pi">شماره پرفورما (PI)</span><strong>{{ packing_object.proforma_pi_number|default:"—" }}</strong></div>
+                        <div class="pk-ov-meta-item"><span data-key="packing_overview_commercial_card">کارت بازرگانی</span><strong>{{ packing_object.get_commercial_card_display|default:packing_object.commercial_card|default:"—" }}</strong></div>
+                    </div>
+                </article>
                 <div class="pk-ov-kpis">
                     <div class="pk-ov-kpi"><span data-key="packing_overview_cartons">تعداد کارتن یکتا</span><strong id="pk-ov-cartons">—</strong></div>
                     <div class="pk-ov-kpi"><span data-key="packing_overview_quantity">مجموع تعداد قطعات</span><strong id="pk-ov-quantity">—</strong></div>
                     {% if can_view_prices %}
-                    <div class="pk-ov-kpi"><span data-key="packing_overview_value">ارزش محموله</span><strong id="pk-ov-value">—</strong></div>
+                    <div class="pk-ov-kpi"><span data-key="packing_overview_value">ارزش کل در ارز مقصد</span><strong id="pk-ov-value">—</strong></div>
                     {% endif %}
                     <div class="pk-ov-kpi"><span data-key="packing_overview_cbm">حجم ثبت‌شده (CBM)</span><strong id="pk-ov-cbm">—</strong></div>
                 </div>
+
+                {% if can_view_prices %}
+                <article class="pk-ov-card pk-ov-finance-card">
+                    <div class="pk-ov-finance-top">
+                        <h3 data-key="packing_overview_finance">خلاصه مالی به تفکیک ارز</h3>
+                        <div class="pk-ov-target"><span data-key="packing_overview_target_currency">ارز مقصد</span><strong id="pk-ov-target-currency">—</strong></div>
+                    </div>
+                    <p class="pk-ov-muted" data-key="packing_overview_rate_direction">نرخ تبدیل نشان می‌دهد هر ۱ واحد ارز مبدأ معادل چند واحد ارز مقصد است.</p>
+                    <div class="pk-ov-finance-table">
+                        <div class="pk-ov-finance-row is-head">
+                            <span data-key="packing_overview_source_currency">ارز مبدأ</span>
+                            <span data-key="packing_overview_source_amount">مبلغ به ارز مبدأ</span>
+                            <span data-key="packing_overview_exchange_rate">نرخ تبدیل</span>
+                            <span data-key="packing_overview_converted_amount">معادل ارز مقصد</span>
+                        </div>
+                        <div id="pk-ov-source-totals" class="pk-ov-finance-table" aria-live="polite"></div>
+                    </div>
+                    <div id="pk-ov-finance-status" class="pk-ov-finance-status" role="status"></div>
+                </article>
+                {% endif %}
                 <div class="pk-ov-grid">
                     {% if can_view_prices %}
                     <article class="pk-ov-card">
@@ -2637,6 +2703,27 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                         </div>
                     </article>
                 </div>
+
+                <div class="pk-ov-section">
+                    <h3 data-key="packing_overview_aggregates">مقادیر تجمیعی</h3>
+                    <div class="pk-ov-aggregate-grid">
+                        <div class="pk-ov-aggregate-item"><span data-key="packing_overview_rows">تعداد ردیف کالا</span><strong id="pk-ov-row-count">—</strong></div>
+                        <div class="pk-ov-aggregate-item"><span data-key="packing_overview_orders">تعداد سفارش یکتا</span><strong id="pk-ov-order-count">—</strong></div>
+                        <div class="pk-ov-aggregate-item"><span data-key="packing_overview_parts">تعداد کد کالای یکتا</span><strong id="pk-ov-part-count">—</strong></div>
+                        <div class="pk-ov-aggregate-item"><span data-key="packing_overview_categories">تعداد Category</span><strong id="pk-ov-category-count">—</strong></div>
+                        <div class="pk-ov-aggregate-item"><span data-key="packing_overview_inner_cartons">تعداد کارتن داخلی</span><strong id="pk-ov-inner-cartons">—</strong></div>
+                    </div>
+                </div>
+                <div class="pk-ov-section">
+                    <h3 data-key="packing_overview_warehouse">خلاصه دریافت انبار</h3>
+                    <div class="pk-ov-aggregate-grid">
+                        <div class="pk-ov-aggregate-item"><span data-key="packing_overview_received">تعداد کل دریافتی</span><strong id="pk-ov-received">—</strong></div>
+                        <div class="pk-ov-aggregate-item"><span data-key="packing_overview_good">تعداد سالم</span><strong id="pk-ov-good">—</strong></div>
+                        <div class="pk-ov-aggregate-item"><span data-key="packing_overview_damaged">تعداد معیوب</span><strong id="pk-ov-damaged">—</strong></div>
+                        <div class="pk-ov-aggregate-item"><span data-key="packing_overview_remaining">تعداد باقی‌مانده</span><strong id="pk-ov-remaining">—</strong></div>
+                    </div>
+                </div>
+                <h3 data-key="packing_overview_weight_carton">وزن و کارتن</h3>
                 <div class="pk-ov-extra">
                     <div class="pk-ov-extra-item"><span data-key="packing_overview_net">وزن خالص (kg)</span><strong id="pk-ov-net">—</strong></div>
                     <div class="pk-ov-extra-item"><span data-key="packing_overview_gross">وزن ناخالص ردیف‌ها (kg)</span><strong id="pk-ov-gross">—</strong></div>
@@ -3237,12 +3324,16 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                             data-unit-price="{{ packing_item.price|default_if_none:0 }}"
                                             data-currency="{{ packing_item.order.currency.title_en|default_if_none:'' }}"
                                             data-currency-pk="{{ packing_item.order.currency_id|default_if_none:'' }}"
+                                            data-overview-price="{{ packing_item.price|default_if_none:'' }}"
                                             {% endif %}
                                             data-unit-weight="{{ packing_item.order.final_weight|default_if_none:0 }}"
                                             data-overview-category="{{ packing_item.category|default_if_none:'' }}"
                                             data-overview-net="{{ packing_item.net_weight_kg|default_if_none:'' }}"
                                             data-overview-gross="{{ packing_item.gross_weight_kg|default_if_none:'' }}"
                                             data-overview-volume="{{ packing_item.volume|default_if_none:'' }}"
+                                            data-overview-part-number="{{ packing_item.part_number|default_if_none:'' }}"
+                                            data-overview-received="{{ packing_item.wh_receipt_quantity|default_if_none:'' }}"
+                                            data-overview-damaged="{{ packing_item.ruined_quantity|default_if_none:'' }}"
                                         >
                                             {% if can_add_items %}
                                                 <input type="hidden" name="existing-{{ packing_item.pk }}-id" value="{{ packing_item.pk }}">
@@ -4301,6 +4392,9 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
     function ovCbm(value) {
         return Number(value).toLocaleString('en-US', {maximumFractionDigits: 6});
     }
+    function ovRate(value) {
+        return Number(value).toLocaleString('en-US', {maximumFractionDigits: 8});
+    }
     function ovNumber(raw) {
         if (raw === null || raw === undefined || String(raw).trim() === '') return null;
         const n = Number(raw);
@@ -4320,6 +4414,13 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             const carton = String(ovField(row, 'carton_number', isSaved ? row.dataset.cartonNumber : '') || '').trim();
             const category = String(ovField(row, 'category', isSaved ? row.dataset.overviewCategory : '') || '').trim();
             const gross = ovNumber(ovField(row, 'gross_weight_kg', isSaved ? row.dataset.overviewGross : ''));
+            const innerCartonCount = ovNumber(ovField(row, 'carton_quantity', isSaved ? row.dataset.cartonQuantity : ''));
+            const received = ovNumber(ovField(row, 'wh_receipt_quantity', isSaved ? row.dataset.overviewReceived : ''));
+            const damaged = ovNumber(ovField(row, 'ruined_quantity', isSaved ? row.dataset.overviewDamaged : ''));
+            const orderId = String(row.dataset.orderId || '').trim();
+            const partNumber = String(
+                (isSaved ? row.dataset.overviewPartNumber : row.dataset.partNumber) || ''
+            ).trim();
             const originalQty = ovNumber(row.dataset.quantity);
             const originalNet = ovNumber(row.dataset.overviewNet);
             const unitWeight = ovNumber(row.dataset.unitWeight);
@@ -4337,8 +4438,8 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             const volume = isSaved ? ovNumber(row.dataset.overviewVolume) : null;
             const currencyId = canViewPrices ? String(row.dataset.currencyPk || '') : '';
             const unitPrice = canViewPrices ? ovNumber(isSaved
-                ? row.dataset.unitPrice : row.dataset.finalPrice) : null;
-            rows.push({qty,carton,category,gross,net,
+                ? row.dataset.overviewPrice : row.dataset.finalPrice) : null;
+            rows.push({qty,carton,category,gross,innerCartonCount,net,received,damaged,orderId,partNumber,
                 volume: volume !== null && volume > 0 ? volume : null,
                 currencyId,unitPrice});
         }
@@ -4374,13 +4475,24 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
     function ovRender() {
         if (!ovRoot || ovRoot.hidden) return;
         const rows = ovRows();
-        const groups = new Map(), cartons = new Map();
-        const incomplete = {volume:0,net:0,gross:0,carton:0,category:0,rate:0,qty:0};
-        let quantity = 0,net = 0,gross = 0,volume = 0,totalValue = 0;
+        const groups = new Map(), cartons = new Map(), sourceTotals = new Map();
+        const orders = new Set(), parts = new Set(), categories = new Set();
+        const incomplete = {
+            volume:0,net:0,gross:0,carton:0,category:0,innerCartons:0,price:0,rate:0,
+            qty:0,part:0,order:0,receipt:0
+        };
+        let quantity = 0,net = 0,gross = 0,volume = 0,innerCartons = 0,totalValue = 0;
+        let receiptStarted = false,receivedTotal = 0,damagedTotal = 0;
+        let goodTotal = 0,remainingTotal = 0;
         const target = canViewPrices ? fxTarget() : '';
         rows.forEach(r => {
             if (r.qty === null || r.qty <= 0) incomplete.qty++;
             else quantity += r.qty;
+            if (r.orderId) orders.add(r.orderId);
+            else incomplete.order++;
+            if (r.partNumber) parts.add(r.partNumber.replace(/\s+/g,' ').toLocaleLowerCase());
+            else incomplete.part++;
+            if (r.category) categories.add(r.category);
             if (!r.carton) incomplete.carton++;
             else {
                 const key = r.carton.replace(/\s+/g,' ').toLocaleLowerCase();
@@ -4396,32 +4508,150 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             else net += r.net;
             if (r.gross === null || r.gross <= 0) incomplete.gross++;
             else gross += r.gross;
+            if (r.innerCartonCount === null) incomplete.innerCartons++;
+            else innerCartons += r.innerCartonCount;
             if (r.volume === null) incomplete.volume++;
             else volume += r.volume;
+
+            if (r.received !== null || r.damaged !== null) receiptStarted = true;
+
             if (canViewPrices) {
-                const rate = r.currencyId && target ? fxRateFor(r.currencyId) : null;
-                if (rate === null || r.unitPrice === null || r.qty === null || r.qty <= 0) incomplete.rate++;
-                else {
-                    const converted = r.qty * r.unitPrice * rate;
-                    group.value += converted;
-                    totalValue += converted;
+                if (!r.currencyId || r.unitPrice === null || r.qty === null || r.qty <= 0) {
+                    incomplete.price++;
+                } else {
+                    const sourceAmount = r.unitPrice * r.qty;
+                    if (!Number.isFinite(sourceAmount)) {
+                        incomplete.price++;
+                    } else {
+                        const sourceKey = String(r.currencyId);
+                        const source = sourceTotals.get(sourceKey) || {
+                            id:sourceKey,title:fxCurrencyName(sourceKey),amount:0
+                        };
+                        source.amount += sourceAmount;
+                        sourceTotals.set(sourceKey,source);
+                        const rate = target ? fxRateFor(sourceKey) : null;
+                        if (rate === null) {
+                            incomplete.rate++;
+                        } else {
+                            const converted = sourceAmount * rate;
+                            if (!Number.isFinite(converted)) {
+                                incomplete.rate++;
+                            } else {
+                                group.value += converted;
+                                totalValue += converted;
+                            }
+                        }
+                    }
                 }
             }
         });
+
+        // Receipt quantity means all received pieces (good + damaged).
+        // A receipt summary is shown only after receipt data has started, and
+        // all rows must then contain both received and damaged quantities.
+        if (receiptStarted) {
+            rows.forEach(r => {
+                if (r.received === null || r.damaged === null || r.qty === null
+                    || r.received > r.qty || r.damaged > r.received) {
+                    incomplete.receipt++;
+                    return;
+                }
+                receivedTotal += r.received;
+                damagedTotal += r.damaged;
+                goodTotal += r.received - r.damaged;
+                remainingTotal += r.qty - r.received;
+            });
+        }
+
         const allQty = rows.length > 0 && incomplete.qty === 0;
         const allCartons = rows.length > 0 && incomplete.carton === 0;
         const allNet = rows.length > 0 && incomplete.net === 0;
         const allGross = rows.length > 0 && incomplete.gross === 0;
         const allVolume = rows.length > 0 && incomplete.volume === 0;
-        const allMoney = canViewPrices && rows.length > 0 && incomplete.rate === 0;
-        const put = (id,value) => {const node = document.getElementById(id);if(node) node.textContent=value;};
+        const allInnerCartons = rows.length > 0 && incomplete.innerCartons === 0;
+        const allParts = rows.length > 0 && incomplete.part === 0;
+        const allOrders = rows.length > 0 && incomplete.order === 0;
+        const allCategories = rows.length > 0 && incomplete.category === 0;
+        const allSourceMoney = canViewPrices && rows.length > 0 && incomplete.price === 0;
+        const allMoney = allSourceMoney && incomplete.rate === 0;
+        const allReceipt = receiptStarted && rows.length > 0 && incomplete.receipt === 0;
+        const notRecorded = ovText('packing_overview_not_recorded','Not recorded');
+        const put = (id,value) => {
+            const node = document.getElementById(id);
+            if (node) node.textContent = value;
+        };
+
+        // Main KPIs.
         put('pk-ov-quantity',allQty?ovCount(quantity):'—');
         put('pk-ov-cartons',allCartons?ovCount(cartons.size):'—');
         put('pk-ov-net',allNet?ovWeight(net):'—');
         put('pk-ov-gross',allGross?ovWeight(gross):'—');
         put('pk-ov-cbm',allVolume?ovCbm(volume):'—');
-        put('pk-ov-mixed',allCartons?ovCount([...cartons.values()].filter(categories => categories.size > 1).length):'—');
+        put('pk-ov-mixed',allCartons?ovCount([...cartons.values()].filter(items => items.size > 1).length):'—');
         put('pk-ov-value',allMoney?fxMoney(totalValue)+' '+fxCurrencyName(target):'—');
+
+        // Document-level aggregate counts.
+        put('pk-ov-row-count',ovCount(rows.length));
+        put('pk-ov-order-count',allOrders?ovCount(orders.size):'—');
+        put('pk-ov-part-count',allParts?ovCount(parts.size):'—');
+        put('pk-ov-category-count',allCategories?ovCount(categories.size):'—');
+        put('pk-ov-inner-cartons',allInnerCartons?ovCount(innerCartons):'—');
+
+        // Warehouse receipt aggregates. Do not show invented zeroes before
+        // receipt entry, and do not show partial totals as if they were final.
+        const receiptDisplay = allReceipt ? null : (receiptStarted ? '—' : notRecorded);
+        put('pk-ov-received',allReceipt?ovCount(receivedTotal):receiptDisplay);
+        put('pk-ov-good',allReceipt?ovCount(goodTotal):receiptDisplay);
+        put('pk-ov-damaged',allReceipt?ovCount(damagedTotal):receiptDisplay);
+        put('pk-ov-remaining',allReceipt?ovCount(remainingTotal):receiptDisplay);
+
+        // Financial breakdown by original currency, using the existing
+        // destination currency and saved FX rates. Raw source totals remain
+        // visible when a conversion rate is missing; the grand total does not.
+        if (canViewPrices) {
+            put('pk-ov-target-currency',target?fxCurrencyName(target):'—');
+            const sourceHost = document.getElementById('pk-ov-source-totals');
+            const financeStatus = document.getElementById('pk-ov-finance-status');
+            if (sourceHost) sourceHost.replaceChildren();
+            if (!allSourceMoney) {
+                if (sourceHost) {
+                    const notice = document.createElement('p');
+                    notice.className='pk-ov-muted';
+                    notice.textContent=ovText(
+                        'packing_overview_finance_missing_prices',
+                        'Financial breakdown is incomplete.'
+                    );
+                    sourceHost.appendChild(notice);
+                }
+                if (financeStatus) financeStatus.textContent='';
+            } else {
+                [...sourceTotals.values()]
+                    .sort((a,b)=>a.title.localeCompare(b.title))
+                    .forEach(source => {
+                        const rate = target ? fxRateFor(source.id) : null;
+                        const line = document.createElement('div');
+                        line.className='pk-ov-finance-row';
+                        const name = document.createElement('span');
+                        name.textContent=source.title;
+                        const amount = document.createElement('strong');
+                        amount.textContent=fxMoney(source.amount)+' '+source.title;
+                        const rateCell = document.createElement('strong');
+                        rateCell.textContent=rate===null?'—':ovRate(rate);
+                        const converted = document.createElement('strong');
+                        converted.textContent=rate===null?'—':
+                            fxMoney(source.amount*rate)+' '+fxCurrencyName(target);
+                        line.append(name,amount,rateCell,converted);
+                        sourceHost?.appendChild(line);
+                    });
+                if (financeStatus) {
+                    financeStatus.textContent = allMoney ? '' : ovText(
+                        'packing_overview_finance_missing_rates',
+                        'Some exchange rates are missing.'
+                    );
+                }
+            }
+        }
+
         const bars = document.getElementById('pk-ov-bars');
         if (bars) {
             bars.replaceChildren();
@@ -4445,6 +4675,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                 });
             }
         }
+
         const donut=document.getElementById('pk-ov-donut');
         const legend=document.getElementById('pk-ov-legend');
         put('pk-ov-donut-total',allQty?ovCount(quantity):'—');
@@ -4468,6 +4699,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             });
             if (donut && stops.length) donut.style.background='conic-gradient('+stops.join(',')+')';
         }
+
         const issues=document.getElementById('pk-ov-issues');
         if (issues) {
             issues.replaceChildren();
@@ -4478,9 +4710,15 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                     ['volume','packing_overview_missing_volume'],
                     ['net','packing_overview_missing_weight'],
                     ['gross','packing_overview_missing_gross'],
+                    ['innerCartons','packing_overview_missing_inner_cartons'],
                     ['carton','packing_overview_missing_carton'],
                     ['category','packing_overview_missing_category'],
-                    ...(canViewPrices?[['rate','packing_overview_missing_rates']]:[])
+                    ['part','packing_overview_missing_part'],
+                    ...(canViewPrices?[
+                        ['price','packing_overview_missing_price'],
+                        ['rate','packing_overview_missing_rates']
+                    ]:[]),
+                    ...(receiptStarted?[['receipt','packing_overview_missing_receipt']]:[])
                 ]) {
                     if (!incomplete[field]) continue;
                     const line=document.createElement('div');
@@ -4495,7 +4733,6 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             }
         }
     }
-
 
     // Carton Number identifies one outer carton; Size must agree across rows.
     function cartonNumberKey(value) {
@@ -5214,6 +5451,48 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_volume_test_hint: 'مقدار پیشنهادی آزمایشی است و هنوز از فرمول واقعی به‌دست نمی‌آید.',
             packing_volume_override_warning: 'حجم واردشده با مقدار محاسباتی متفاوت است. مقدار محاسباتی: {value}',
             packing_total_cartons: 'جمع کارتن‌ها',
+
+            packing_overview_meta: 'اطلاعات عمومی و حمل',
+            packing_overview_packing_number: 'شماره پکینگ',
+            packing_overview_shipment_type: 'نوع حمل',
+            packing_overview_bl_number: 'شماره بارنامه',
+            packing_overview_bl_date: 'تاریخ بارنامه',
+            packing_overview_carrier: 'شرکت حمل',
+            packing_overview_origin: 'مبدأ',
+            packing_overview_destination: 'مقصد',
+            packing_overview_departure: 'تاریخ شروع حمل',
+            packing_overview_arrival: 'تاریخ رسیدن',
+            packing_overview_estimated_departure: 'پیش‌بینی شروع حمل',
+            packing_overview_estimated_arrival: 'پیش‌بینی رسیدن به انبار',
+            packing_overview_registration: 'شماره ثبت سفارش',
+            packing_overview_pi: 'شماره پرفورما (PI)',
+            packing_overview_commercial_card: 'کارت بازرگانی',
+            packing_overview_finance: 'خلاصه مالی به تفکیک ارز',
+            packing_overview_target_currency: 'ارز مقصد',
+            packing_overview_source_currency: 'ارز مبدأ',
+            packing_overview_source_amount: 'مبلغ به ارز مبدأ',
+            packing_overview_exchange_rate: 'نرخ تبدیل',
+            packing_overview_converted_amount: 'معادل ارز مقصد',
+            packing_overview_finance_missing_prices: 'به دلیل نقص مبلغ یا ارز مبدأ، تفکیک مالی کامل نیست.',
+            packing_overview_finance_missing_rates: 'نرخ تبدیل برخی ارزها مشخص نیست؛ مبلغ تبدیل‌شده کامل نمایش داده نمی‌شود.',
+            packing_overview_aggregates: 'مقادیر تجمیعی',
+            packing_overview_rows: 'تعداد ردیف کالا',
+            packing_overview_orders: 'تعداد سفارش یکتا',
+            packing_overview_parts: 'تعداد کد کالای یکتا',
+            packing_overview_categories: 'تعداد Category',
+            packing_overview_warehouse: 'خلاصه دریافت انبار',
+            packing_overview_received: 'تعداد کل دریافتی',
+            packing_overview_good: 'تعداد سالم',
+            packing_overview_damaged: 'تعداد معیوب',
+            packing_overview_remaining: 'تعداد باقی‌مانده',
+            packing_overview_not_recorded: 'ثبت نشده',
+            packing_overview_missing_receipt: 'اطلاعات دریافت انبار برای {n} ردیف کامل نیست.',
+            packing_overview_missing_part: 'کد کالا برای {n} ردیف مشخص نیست.',
+            packing_overview_missing_price: 'مبلغ یا ارز مبدأ برای {n} ردیف مشخص نیست.',
+            packing_overview_missing_inner_cartons: 'تعداد کارتن داخلی برای {n} ردیف مشخص نیست.',
+            packing_overview_rate_direction: 'نرخ تبدیل نشان می‌دهد هر ۱ واحد ارز مبدأ معادل چند واحد ارز مقصد است.',
+            packing_overview_inner_cartons: 'تعداد کارتن داخلی',
+            packing_overview_weight_carton: 'وزن و کارتن',
             packing_overview_details: 'جزئیات پکینگ',
             packing_overview_tab: 'نمای کلی',
             packing_overview_title: 'نمای کلی محموله',
@@ -5221,7 +5500,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_overview_edit: 'بازگشت به جزئیات',
             packing_overview_cartons: 'تعداد کارتن یکتا',
             packing_overview_quantity: 'تعداد قطعات',
-            packing_overview_value: 'ارزش محموله',
+            packing_overview_value: 'ارزش کل در ارز مقصد',
             packing_overview_cbm: 'حجم ثبت‌شده (CBM)',
             packing_overview_value_categories: 'ارزش محموله بر اساس Category',
             packing_overview_quantity_categories: 'ترکیب تعداد قطعات',
@@ -5236,7 +5515,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_overview_missing_gross: 'وزن ناخالص {n} ردیف کامل نیست.',
             packing_overview_missing_carton: 'شماره کارتن {n} ردیف مشخص نیست.',
             packing_overview_missing_category: 'دسته‌بندی {n} ردیف مشخص نیست.',
-            packing_overview_missing_rates: 'نرخ تبدیل یا ارز مبدأ {n} ردیف مشخص نیست.',
+            packing_overview_missing_rates: 'نرخ تبدیل برای {n} ردیف مشخص نیست.',
             packing_overview_no_category: 'بدون دسته‌بندی',
             packing_currency_label: 'ارز مقصد',
             packing_fx_eyebrow: 'خلاصه مالی پکینگ',
@@ -5290,6 +5569,48 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_volume_test_hint: 'The proposed value is for testing only; it is not calculated from a real formula yet.',
             packing_volume_override_warning: 'Entered volume differs from the calculated value. Calculated: {value}',
             packing_total_cartons: 'Total Cartons',
+
+            packing_overview_meta: 'Shipment and Packing details',
+            packing_overview_packing_number: 'Packing number',
+            packing_overview_shipment_type: 'Shipment type',
+            packing_overview_bl_number: 'Bill of lading number',
+            packing_overview_bl_date: 'Bill of lading date',
+            packing_overview_carrier: 'Carrier',
+            packing_overview_origin: 'Origin',
+            packing_overview_destination: 'Destination',
+            packing_overview_departure: 'Departure date',
+            packing_overview_arrival: 'Arrival date',
+            packing_overview_estimated_departure: 'Estimated shipment start',
+            packing_overview_estimated_arrival: 'Estimated arrival at warehouse',
+            packing_overview_registration: 'Order registration number',
+            packing_overview_pi: 'Proforma number (PI)',
+            packing_overview_commercial_card: 'Commercial card',
+            packing_overview_finance: 'Financial summary by currency',
+            packing_overview_target_currency: 'Destination currency',
+            packing_overview_source_currency: 'Source currency',
+            packing_overview_source_amount: 'Amount in source currency',
+            packing_overview_exchange_rate: 'Exchange rate',
+            packing_overview_converted_amount: 'Destination-currency equivalent',
+            packing_overview_finance_missing_prices: 'The financial breakdown is incomplete because some rows have no price or source currency.',
+            packing_overview_finance_missing_rates: 'Some exchange rates are missing; the converted total is not complete.',
+            packing_overview_aggregates: 'Aggregated quantities',
+            packing_overview_rows: 'Item rows',
+            packing_overview_orders: 'Unique orders',
+            packing_overview_parts: 'Unique part numbers',
+            packing_overview_categories: 'Categories',
+            packing_overview_warehouse: 'Warehouse receipt summary',
+            packing_overview_received: 'Total received',
+            packing_overview_good: 'Good quantity',
+            packing_overview_damaged: 'Damaged quantity',
+            packing_overview_remaining: 'Remaining quantity',
+            packing_overview_not_recorded: 'Not recorded',
+            packing_overview_missing_receipt: 'Warehouse receipt data is incomplete for {n} rows.',
+            packing_overview_missing_part: 'Part number is missing for {n} rows.',
+            packing_overview_missing_price: 'Price or source currency is missing for {n} rows.',
+            packing_overview_missing_inner_cartons: 'Inner carton count is missing for {n} rows.',
+            packing_overview_rate_direction: 'The rate shows how many destination-currency units equal one unit of the source currency.',
+            packing_overview_inner_cartons: 'Inner cartons',
+            packing_overview_weight_carton: 'Weights and cartons',
             packing_overview_details: 'Packing details',
             packing_overview_tab: 'Overview',
             packing_overview_title: 'Shipment overview',
@@ -5297,7 +5618,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_overview_edit: 'Back to details',
             packing_overview_cartons: 'Unique outer cartons',
             packing_overview_quantity: 'Total pieces',
-            packing_overview_value: 'Cargo value',
+            packing_overview_value: 'Total value in destination currency',
             packing_overview_cbm: 'Recorded volume (CBM)',
             packing_overview_value_categories: 'Cargo value by Category',
             packing_overview_quantity_categories: 'Quantity by Category',
@@ -5312,7 +5633,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_overview_missing_gross: 'Gross weight incomplete for {n} rows.',
             packing_overview_missing_carton: 'Carton number missing for {n} rows.',
             packing_overview_missing_category: 'Category missing for {n} rows.',
-            packing_overview_missing_rates: 'Exchange rate or source currency missing for {n} rows.',
+            packing_overview_missing_rates: 'Exchange rate is missing for {n} rows.',
             packing_overview_no_category: 'Uncategorized',
             packing_currency_label: 'Destination currency',
             packing_fx_eyebrow: 'Packing financial overview',
@@ -5966,6 +6287,8 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
         const row = document.createElement('div');
         row.className = 'packing-selected-row';
         row.dataset.orderId = data.orderId;
+        row.dataset.partNumber = data.partNumber || '';
+        row.dataset.orderNumber = data.orderNumber || '';
         row.dataset.unitWeight = data.unitWeight;
         if (canViewPrices) {
             row.dataset.finalPrice = data.finalPrice;
