@@ -69,25 +69,3 @@ def resolve_packing_volume(
         quantity=quantity, size=size, carton_quantity=carton_quantity,
         order_id=order_id,
     )
-
-
-def is_confirmed_packing_volume(value, checked, *, generated=None):
-    """Only a positive, explicitly confirmed *manual* value is reportable.
-
-    This is independent of the temporary value returned by
-    resolve_packing_volume(). Unconfirmed legacy rows remain untrusted until
-    the user checks the confirmation control and saves the Packing again.
-    """
-    if not checked:
-        return False
-    try:
-        parsed = parse_packing_volume(value)
-    except ValueError:
-        return False
-    if parsed is None or parsed <= 0:
-        return False
-    # A generated test suggestion must never be marked as real volume even
-    # when an unmodified preview checkbox is submitted.
-    if generated is not None and parsed == generated:
-        return False
-    return True

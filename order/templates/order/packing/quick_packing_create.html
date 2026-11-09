@@ -2556,8 +2556,6 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
 .pk-ov-extra-item strong{display:block;font-size:17px;margin-top:7px;color:#315468;font-variant-numeric:tabular-nums}
 .pk-ov-issues{border:1px solid #f0dfc0;background:#fffaf1;color:#8c6b41;border-radius:12px;padding:12px 15px;font-size:12px;line-height:2}
 .pk-ov-issues:empty{display:none}
-.pk-volume-confirm{display:flex;align-items:center;gap:6px;margin-top:7px;font-size:11px;color:#486d5c;cursor:pointer}
-.pk-volume-confirm input{width:15px;height:15px;flex-shrink:0}
 @media(max-width:1050px){.pk-ov-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.pk-ov-grid{grid-template-columns:1fr}}
 @media(max-width:650px){.pk-ov-tabs{width:100%}.pk-ov-tab{flex:1;padding:9px}.pk-ov-kpis{gap:8px}.pk-ov-kpi{padding:12px}.pk-ov-kpi strong{font-size:19px}.pk-ov-extra{grid-template-columns:1fr}}
 
@@ -2609,7 +2607,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                 <div class="pk-ov-intro">
                     <div>
                         <strong data-key="packing_overview_title">نمای کلی محموله</strong>
-                        <p data-key="packing_overview_note">شاخص‌های این پکینگ از ردیف‌های فعلی محاسبه می‌شوند. حجم فقط پس از تأیید و ذخیره دستی معتبر است.</p>
+                        <p data-key="packing_overview_note">حجم‌های مثبت ثبت‌شده، چه دستی و چه محاسباتی، بدون تأیید جداگانه در جمع CBM محاسبه می‌شوند. فرمول پیشنهادی فعلی آزمایشی است.</p>
                     </div>
                     <button type="button" class="btn btn-sm btn-light-primary" id="pk-ov-edit"
                             data-key="packing_overview_edit">بازگشت به جزئیات</button>
@@ -2620,7 +2618,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                     {% if can_view_prices %}
                     <div class="pk-ov-kpi"><span data-key="packing_overview_value">ارزش محموله</span><strong id="pk-ov-value">—</strong></div>
                     {% endif %}
-                    <div class="pk-ov-kpi"><span data-key="packing_overview_cbm">حجم تأییدشده (CBM)</span><strong id="pk-ov-cbm">—</strong></div>
+                    <div class="pk-ov-kpi"><span data-key="packing_overview_cbm">حجم ثبت‌شده (CBM)</span><strong id="pk-ov-cbm">—</strong></div>
                 </div>
                 <div class="pk-ov-grid">
                     {% if can_view_prices %}
@@ -3245,7 +3243,6 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                             data-overview-net="{{ packing_item.net_weight_kg|default_if_none:'' }}"
                                             data-overview-gross="{{ packing_item.gross_weight_kg|default_if_none:'' }}"
                                             data-overview-volume="{{ packing_item.volume|default_if_none:'' }}"
-                                            data-overview-volume-confirmed="{{ packing_item.volume_is_confirmed|yesno:'true,false' }}"
                                         >
                                             {% if can_add_items %}
                                                 <input type="hidden" name="existing-{{ packing_item.pk }}-id" value="{{ packing_item.pk }}">
@@ -3419,7 +3416,6 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                                                        value="{{ packing_item.volume|default_if_none:'' }}">
                                                                 <small class="text-muted d-block mt-1" data-key="packing_volume_test_hint">The proposed value is for testing only; it is not calculated from a real formula yet.</small>
                         <div class="pk-volume-warning text-warning mt-1" role="status" aria-live="polite" hidden></div>
-                                                                <label class="pk-volume-confirm"><input type="checkbox" name="existing-{{ packing_item.pk }}-volume_confirm" value="1" {% if packing_item.volume_is_confirmed %}checked{% endif %}><span data-key="packing_volume_manual_confirm">تأیید حجم واقعی پس از بررسی</span></label>
                                                             </div>
                                                             <div>
                                                                 <label class="pk-mini-label" data-key="packing_size">Size</label>
@@ -3648,7 +3644,6 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                                                    value="{{ packing_item.volume|default_if_none:'' }}" disabled>
                                                             <small class="text-muted d-block mt-1" data-key="packing_volume_test_hint">The proposed value is for testing only; it is not calculated from a real formula yet.</small>
                         <div class="pk-volume-warning text-warning mt-1" role="status" aria-live="polite" hidden></div>
-                                                            <label class="pk-volume-confirm"><input type="checkbox" name="existing-{{ packing_item.pk }}-volume_confirm" value="1" {% if packing_item.volume_is_confirmed %}checked{% endif %} disabled><span data-key="packing_volume_manual_confirm">تأیید حجم واقعی پس از بررسی</span></label>
                                                         </div>
                                                         <div>
                                                             <label class="pk-mini-label" data-key="packing_size">Size</label>
@@ -4337,8 +4332,9 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                     net = unitWeight * qty;
                 }
             }
-            const volume = isSaved && row.dataset.overviewVolumeConfirmed === 'true'
-                ? ovNumber(row.dataset.overviewVolume) : null;
+            // Every positive saved volume counts, including calculated proposals.
+            // Unsaved added rows are excluded until the Packing has been saved.
+            const volume = isSaved ? ovNumber(row.dataset.overviewVolume) : null;
             const currencyId = canViewPrices ? String(row.dataset.currencyPk || '') : '';
             const unitPrice = canViewPrices ? ovNumber(isSaved
                 ? row.dataset.unitPrice : row.dataset.finalPrice) : null;
@@ -5221,22 +5217,21 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_overview_details: 'جزئیات پکینگ',
             packing_overview_tab: 'نمای کلی',
             packing_overview_title: 'نمای کلی محموله',
-            packing_overview_note: 'ارقام از ردیف‌های فعلی محاسبه می‌شوند. حجم فقط پس از تأیید و ذخیره دستی معتبر است.',
+            packing_overview_note: 'حجم‌های مثبت ثبت‌شده (دستی یا محاسباتی) بدون تیک جداگانه لحاظ می‌شوند. محاسبه پیشنهادی فعلی آزمایشی است.',
             packing_overview_edit: 'بازگشت به جزئیات',
             packing_overview_cartons: 'تعداد کارتن یکتا',
             packing_overview_quantity: 'تعداد قطعات',
             packing_overview_value: 'ارزش محموله',
-            packing_overview_cbm: 'حجم تأییدشده (CBM)',
+            packing_overview_cbm: 'حجم ثبت‌شده (CBM)',
             packing_overview_value_categories: 'ارزش محموله بر اساس Category',
             packing_overview_quantity_categories: 'ترکیب تعداد قطعات',
             packing_overview_pieces: 'قطعه',
             packing_overview_net: 'وزن خالص (kg)',
             packing_overview_gross: 'وزن ناخالص ردیف‌ها (kg)',
             packing_overview_mixed: 'کارتن‌های چند Category',
-            packing_volume_manual_confirm: 'حجم واقعی بررسی شده و برای گزارش تأیید می‌شود',
             packing_overview_missing: 'اطلاعات ناقص',
             packing_overview_no_items: 'در این پکینگ هنوز ردیفی وجود ندارد.',
-            packing_overview_missing_volume: 'حجم {n} ردیف تأیید و ذخیره نشده است.',
+            packing_overview_missing_volume: 'حجم {n} ردیف ثبت نشده یا معتبر نیست.',
             packing_overview_missing_weight: 'وزن {n} ردیف کامل نیست.',
             packing_overview_missing_gross: 'وزن ناخالص {n} ردیف کامل نیست.',
             packing_overview_missing_carton: 'شماره کارتن {n} ردیف مشخص نیست.',
@@ -5298,22 +5293,21 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_overview_details: 'Packing details',
             packing_overview_tab: 'Overview',
             packing_overview_title: 'Shipment overview',
-            packing_overview_note: 'Figures use current Packing rows. Only explicitly confirmed and saved volume is reportable.',
+            packing_overview_note: 'All positive saved volumes count, including calculated proposals, without extra approval. The current proposal formula is experimental.',
             packing_overview_edit: 'Back to details',
             packing_overview_cartons: 'Unique outer cartons',
             packing_overview_quantity: 'Total pieces',
             packing_overview_value: 'Cargo value',
-            packing_overview_cbm: 'Confirmed volume (CBM)',
+            packing_overview_cbm: 'Recorded volume (CBM)',
             packing_overview_value_categories: 'Cargo value by Category',
             packing_overview_quantity_categories: 'Quantity by Category',
             packing_overview_pieces: 'pieces',
             packing_overview_net: 'Net weight (kg)',
             packing_overview_gross: 'Row gross weight (kg)',
             packing_overview_mixed: 'Mixed-category cartons',
-            packing_volume_manual_confirm: 'I have checked this actual volume for reporting',
             packing_overview_missing: 'Incomplete data',
             packing_overview_no_items: 'No items in this Packing yet.',
-            packing_overview_missing_volume: 'Volume not confirmed and saved for {n} rows.',
+            packing_overview_missing_volume: 'Volume is missing or invalid for {n} rows.',
             packing_overview_missing_weight: 'Net weight incomplete for {n} rows.',
             packing_overview_missing_gross: 'Gross weight incomplete for {n} rows.',
             packing_overview_missing_carton: 'Carton number missing for {n} rows.',
@@ -6077,7 +6071,6 @@ ${canViewPrices ? `
                                name="form-${index}-volume" data-packing-volume data-calculated-volume="">
                         <small class="text-muted d-block mt-1" data-key="packing_volume_test_hint">The proposed value is for testing only; it is not calculated from a real formula yet.</small>
                         <div class="pk-volume-warning text-warning mt-1" role="status" aria-live="polite" hidden></div>
-                        <label class="pk-volume-confirm"><input type="checkbox" name="form-${index}-volume_confirm" value="1"><span data-key="packing_volume_manual_confirm">تأیید حجم واقعی پس از بررسی</span></label>
                     </div>
 
                     <div>

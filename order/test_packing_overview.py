@@ -1,4 +1,8 @@
-"""The per-Packing Overview must not report synthetic volumes or leak money."""
+"""Regression coverage for read-only per-Packing Overview calculations.
+
+Saved positive volume participates in CBM regardless of how it was obtained.
+The legacy confirmation marker is deliberately not consulted by Overview.
+"""
 from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
@@ -7,34 +11,48 @@ from django.conf import settings
 from django.http import QueryDict
 from django.test import SimpleTestCase
 
-from order.models import PackingItem
-from order.packing_volume import is_confirmed_packing_volume
+from order.packing_volume import (
+    calculate_packing_volume,
+    parse_packing_volume,
+    resolve_packing_volume,
+)
 from order.views import QuickPackingView
 
 
-class ConfirmedVolumeTests(SimpleTestCase):
-    def test_legacy_packing_volume_is_unverified_by_default(self):
-        field = PackingItem._meta.get_field('volume_is_confirmed')
-        self.assertEqual(field.get_internal_type(), 'BooleanField')
-        self.assertIs(field.default, False)
+class PackingOverviewVolumeTests(SimpleTestCase):
+    def test_calculated_volume_is_accepted_without_confirmation(self):
+        generated = calculate_packing_volume(
+            quantity=10, size='40x30x20', carton_quantity=5, order_id=24,
+        )
+        self.assertGreater(generated, Decimal('0'))
+        self.assertEqual(
+            resolve_packing_volume(
+                None, quantity=10, size='40x30x20',
+                carton_quantity=5, order_id=24,
+            ),
+            generated,
+        )
+        self.assertEqual(parse_packing_volume(str(generated)), generated)
 
-    def test_only_positive_explicitly_approved_volume_is_reportable(self):
-        self.assertTrue(is_confirmed_packing_volume(Decimal('0.123456'), True))
-        self.assertFalse(is_confirmed_packing_volume(
-            Decimal('0.123456'), True, generated=Decimal('0.123456'),
-        ))
-        self.assertTrue(is_confirmed_packing_volume(
-            Decimal('0.123457'), True, generated=Decimal('0.123456'),
-        ))
-        for value, approved in (
-            (Decimal('0.123456'), False),
-            (None, True), ('', True), ('0', True), ('-1', True),
-            ('NaN', True), ('Infinity', True), ('1.0000001', True),
-        ):
-            with self.subTest(value=value, approved=approved):
-                self.assertFalse(is_confirmed_packing_volume(value, approved))
+    def test_manual_volume_remains_authoritative(self):
+        entered = Decimal('0.123456')
+        self.assertEqual(
+            resolve_packing_volume(
+                entered, quantity=10, size='40x30x20',
+                carton_quantity=5, order_id=24,
+            ),
+            entered,
+        )
 
-    def test_new_row_needs_explicit_volume_confirmation(self):
+    def test_missing_or_invalid_volume(self):
+        self.assertIsNone(parse_packing_volume(''))
+        self.assertIsNone(parse_packing_volume(None))
+        for value in ('-1', 'NaN', 'Infinity', '1.1234567'):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    parse_packing_volume(value)
+
+    def test_new_row_needs_no_checkbox_for_manual_volume(self):
         post = QueryDict(mutable=True)
         post.update({
             'form-TOTAL_FORMS': '2',
@@ -43,12 +61,14 @@ class ConfirmedVolumeTests(SimpleTestCase):
             'form-1-volume': '0.321',
         })
         view = QuickPackingView()
-        request = SimpleNamespace(POST=post, user=SimpleNamespace(is_superuser=False))
-        self.assertFalse(view._parse_rows(request)[0]['volume_confirm'])
-        post['form-1-volume_confirm'] = '1'
-        self.assertTrue(view._parse_rows(request)[0]['volume_confirm'])
+        request = SimpleNamespace(
+            POST=post, user=SimpleNamespace(is_superuser=False),
+        )
+        row = view._parse_rows(request)[0]
+        self.assertEqual(row['volume'], Decimal('0.321000'))
+        self.assertNotIn('volume_confirm', row)
 
-    def test_existing_row_supports_confirming_legacy_manual_volume(self):
+    def test_existing_row_needs_no_checkbox_for_manual_volume(self):
         post = QueryDict(mutable=True)
         post.update({
             'existing-17-id': '17',
@@ -57,15 +77,11 @@ class ConfirmedVolumeTests(SimpleTestCase):
         })
         view = QuickPackingView()
         request = SimpleNamespace(POST=post)
-        self.assertFalse(view._parse_existing_rows(request)[0]['volume_confirm'])
-        post['existing-17-volume_confirm'] = '1'
-        self.assertTrue(view._parse_existing_rows(request)[0]['volume_confirm'])
+        row = view._parse_existing_rows(request)[0]
+        self.assertEqual(row['volume'], Decimal('0.123000'))
+        self.assertNotIn('volume_confirm', row)
         post['existing-17-volume'] = ''
         self.assertIsNone(view._parse_existing_rows(request)[0]['volume'])
-        self.assertFalse(is_confirmed_packing_volume(
-            view._parse_existing_rows(request)[0]['volume'],
-            view._parse_existing_rows(request)[0]['volume_confirm'],
-        ))
 
 
 class PackingOverviewTemplateTests(SimpleTestCase):
@@ -100,33 +116,39 @@ class PackingOverviewTemplateTests(SimpleTestCase):
         self.assertIn('const unitPrice = canViewPrices ?', self.html)
         self.assertIn('const target = canViewPrices ?', self.html)
 
-    def test_volume_comes_from_confirmed_saved_values_not_generated_proposal(self):
+    def test_saved_volume_counts_without_checkbox_or_legacy_marker(self):
+        self.assertIn('data-overview-volume="{{ packing_item.volume', self.html)
         self.assertIn(
-            'data-overview-volume-confirmed="{{ packing_item.volume_is_confirmed',
+            'const volume = isSaved ? ovNumber(row.dataset.overviewVolume) : null;',
+            self.html,
+        )
+        self.assertNotIn('overviewVolumeConfirmed', self.html)
+        self.assertNotIn('volume_confirm', self.html)
+        self.assertNotIn('pk-volume-confirm', self.html)
+        self.assertIn(
+            'const allVolume = rows.length > 0 && incomplete.volume === 0',
             self.html,
         )
         self.assertIn(
-            "row.dataset.overviewVolumeConfirmed === 'true'",
+            "put('pk-ov-cbm',allVolume?ovCbm(volume):'—')",
             self.html,
         )
-        self.assertIn(
-            'ovNumber(row.dataset.overviewVolume)',
-            self.html,
-        )
-        self.assertIn(
-            'name="existing-{{ packing_item.pk }}-volume_confirm"',
-            self.html,
-        )
-        self.assertIn('name="form-${index}-volume_confirm"', self.html)
-        self.assertIn("const allVolume = rows.length > 0 && incomplete.volume === 0", self.html)
+
+    def test_missing_volume_is_visible_not_invented(self):
+        self.assertIn("if (r.volume === null) incomplete.volume++", self.html)
         self.assertIn("put('pk-ov-cbm',allVolume?ovCbm(volume):'—')", self.html)
+        self.assertIn('Volume is missing or invalid', self.html)
 
     def test_duplicate_outer_cartons_are_counted_once(self):
-        self.assertIn("const groups = new Map(), cartons = new Map()", self.html)
+        self.assertIn('const groups = new Map(), cartons = new Map()', self.html)
         self.assertIn('if (!cartons.has(key)) cartons.set(key,new Set())', self.html)
-        self.assertIn("put('pk-ov-cartons',allCartons?ovCount(cartons.size):'—')", self.html)
+        self.assertIn(
+            "put('pk-ov-cartons',allCartons?ovCount(cartons.size):'—')",
+            self.html,
+        )
 
     def test_labels_exist_in_both_languages(self):
-        self.assertEqual(self.html.count("packing_overview_missing_volume:"), 2)
-        self.assertEqual(self.html.count("packing_overview_value_categories:"), 2)
-        self.assertEqual(self.html.count("packing_volume_manual_confirm:"), 2)
+        self.assertEqual(self.html.count('packing_overview_missing_volume:'), 2)
+        self.assertEqual(self.html.count('packing_overview_value_categories:'), 2)
+        self.assertEqual(self.html.count('packing_overview_note:'), 2)
+        self.assertNotIn('packing_volume_manual_confirm:', self.html)

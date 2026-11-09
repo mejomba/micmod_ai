@@ -1378,8 +1378,8 @@ class PackingItem(BaseModeWF):
         validators=[MinValueValidator(0)],
     )
     size = models.CharField(_('size'), max_length=128, null=True, blank=True)
-    # Legacy volume values can be automatically generated test proposals.
-    # Only explicitly confirmed, saved volumes may appear in Overview CBM.
+    # Retained for migration compatibility; Overview no longer requires volume
+    # confirmation and reports any positive saved volume (manual or proposed).
     volume_is_confirmed = models.BooleanField(
         'حجم واقعی تأییدشده', default=False,
     )
