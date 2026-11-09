@@ -19,9 +19,17 @@ its data. Confirm that your intended use is permitted by your applicable terms.
    In Quick Packing, 1 source currency unit = N destination currency units.
 4. Save the Packing. Only the target and manually entered rates are stored;
    the calculated total is always calculated in the browser.
-5. The link is offered for supported 3-letter ISO currency codes. Internal
-   `RMB` maps to `CNY`. Other/custom currencies remain manual without an
-   XE link.
+5. Besides standard ISO codes, the following internal Currency.title_en values
+   map to XE three-letter ISO codes (case-insensitive; whitespace-normalized):
+
+   | Currency.title_en | XE ISO code |
+   | --- | --- |
+   | `ero` | `EUR` |
+   | `rmb` | `CNY` |
+   | `Dollar` | `USD` |
+   | `Emirates Dirham` | `AED` |
+
+   Other/custom currencies remain manual without an XE link.
 
 The page never automatically changes manual rates, and the rate shown on XE
 should be verified by the user at the time of entry.

@@ -30,7 +30,14 @@ class QuickPackingXeManualReferenceTests(SimpleTestCase):
         self.assertIn("encodeURIComponent(to)", html)
         self.assertIn("const from = fxXeCode(sourceId)", html)
         self.assertIn("const to = fxXeCode(targetId)", html)
-        self.assertIn("const normalized = code === 'RMB' ? 'CNY' : code", html)
+        self.assertIn("const normalized = fxXeAliases[code] || code", html)
+        for original, iso in (
+            ("'ERO'", "'EUR'"),
+            ("'RMB'", "'CNY'"),
+            ("'DOLLAR'", "'USD'"),
+            ("'EMIRATES DIRHAM'", "'AED'"),
+        ):
+            self.assertIn(original + ': ' + iso, html)
         self.assertIn("return /^[A-Z]{3}$/.test(normalized)", html)
         self.assertIn("link.target = '_blank'", html)
         self.assertIn("link.rel = 'noopener noreferrer'", html)

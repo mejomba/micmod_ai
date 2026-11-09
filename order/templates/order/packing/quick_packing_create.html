@@ -3923,11 +3923,19 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
         String(c.id), String(c.title_en || c.title || c.id)
     ]));
     const fxCodes = new Map(fxCatalog.map(c => [
-        String(c.id), String(c.title_en || '').trim().toUpperCase()
+        String(c.id),
+        String(c.title_en || '').trim().replace(/\s+/g, ' ').toUpperCase()
     ]));
+    // Currency.title_en may be an internal label rather than an ISO 4217 code.
+    const fxXeAliases = {
+        'ERO': 'EUR',
+        'RMB': 'CNY',
+        'DOLLAR': 'USD',
+        'EMIRATES DIRHAM': 'AED'
+    };
     function fxXeCode(currencyId) {
         const code = fxCodes.get(String(currencyId || '')) || '';
-        const normalized = code === 'RMB' ? 'CNY' : code;
+        const normalized = fxXeAliases[code] || code;
         return /^[A-Z]{3}$/.test(normalized) ? normalized : null;
     }
     function fxXePage(sourceId, targetId) {
