@@ -169,7 +169,7 @@ class PackingOverviewTemplateTests(SimpleTestCase):
 
     def test_financial_breakdown_uses_existing_currency_permission_and_rates(self):
         self.assertIn(
-            '{% if can_view_prices %}\\n                <article class="pk-ov-card pk-ov-finance-card">',
+            '{% if can_view_prices %}\n                <article class="pk-ov-card pk-ov-finance-card">',
             self.html,
         )
         for expected in (
