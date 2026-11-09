@@ -2454,20 +2454,42 @@
 .pk-carton-size-warning[hidden]{display:none!important}
 input.pk-carton-size-invalid{border-color:#dc3545!important}
 
-.pk-fx-header{margin-top:14px;padding:14px 16px;border:1px solid #dae5f2;border-radius:12px;background:#f8fbff}
-.pk-fx-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:7px}
-.pk-fx-head strong{font-size:14px}
-.pk-fx-hint{font-size:12px;color:#6d7d8f;line-height:1.65}
-.pk-fx-rates{display:flex;gap:10px;flex-wrap:wrap;margin-top:9px}
-.pk-fx-rate{border:1px solid #e0e9f3;border-radius:9px;background:#fff;padding:10px;min-width:200px;flex:1 1 220px;max-width:350px}
-.pk-fx-rate label{display:block;font-size:12px;font-weight:650;margin-bottom:6px}
-.pk-fx-rate small{display:block;font-size:11px;color:#65768b;margin-top:5px}
-.pk-fx-placeholder{font-size:12px;color:#72839b;padding:8px 0}
-.pk-fx-breakdown{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.pk-fx-breakdown span{background:#eaf2fa;border:1px solid #d6e3f3;border-radius:7px;padding:4px 7px;font-size:12px}
+/* Single financial workspace: destination, rate inputs, and live result. */
+.pk-fx-header{margin-top:16px;border:1px solid #cfdfee;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 3px 14px rgba(32,65,105,.06)}
+.pk-fx-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:17px 19px;background:linear-gradient(108deg,#eef5ff 0%,#f7fbff 100%);border-bottom:1px solid #dce7f5}
+.pk-fx-heading h3{font-size:15px;font-weight:800;margin:3px 0 5px;color:#203c5b}
+.pk-fx-eyebrow{font-size:11px;font-weight:800;letter-spacing:.3px;color:#3573a5}
+.pk-fx-hint{font-size:12px;line-height:1.65;color:#687a90}
+.pk-fx-live-mark{display:inline-flex;align-items:center;gap:7px;border:1px solid #cfe2d9;border-radius:30px;padding:6px 10px;color:#2e735d;font-size:11px;font-weight:700;background:#f3fbf7}
+.pk-fx-live-dot{display:inline-block;background:#3eaa76;width:7px;height:7px;border-radius:50%}
+.pk-fx-workspace{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(255px,1fr);gap:0;align-items:stretch}
+.pk-fx-settings{padding:18px 20px;min-width:0}
+.pk-fx-section-label{display:flex;align-items:center;gap:9px;margin-bottom:10px;font-size:12px;color:#324b69}
+.pk-fx-step{width:22px;height:22px;display:inline-grid;place-items:center;border-radius:7px;color:#29618e;background:#e6f0fa;font-size:12px;font-weight:800;flex-shrink:0}
+.pk-fx-target{padding-bottom:16px;border-bottom:1px solid #e8eef5}
+.pk-fx-target-control{max-width:350px}
+.pk-fx-target-control .form-control,.pk-fx-target-control select{width:100%;min-height:41px}
+.pk-fx-target-readonly{min-height:40px;display:flex;align-items:center;padding:8px 11px;background:#f4f7fb;border:1px solid #e2e9f1;border-radius:8px;color:#344e68;font-weight:750;max-width:350px}
+.pk-fx-rates-section{padding-top:16px}
+.pk-fx-rates{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(210px,100%),1fr));gap:10px;margin-top:12px}
+.pk-fx-rate{border:1px solid #dfe8f2;background:#fafcff;border-radius:10px;padding:12px;min-width:0}
+.pk-fx-rate label{display:block;font-size:12px;font-weight:750;margin-bottom:8px;color:#385574}
+.pk-fx-rate .form-control{min-height:40px}
+.pk-fx-rate small{display:block;font-size:11px;color:#6d8198;margin-top:6px}
+.pk-fx-source-amount{display:block;color:#5b7189;font-size:12px;margin:0 0 8px}
+.pk-fx-placeholder{font-size:12px;color:#75869a;padding:10px;border:1px dashed #d7e2ef;border-radius:8px;background:#f9fbfe}
+.pk-fx-preview{padding:20px;background:#f5f9fe;border-right:1px solid #dfe9f5;min-width:0}
+.pk-fx-preview-label{font-size:12px;color:#566e88;display:block;margin-bottom:8px}
+.pk-fx-preview-amount{display:block;color:#174c83;font-size:clamp(19px,2.3vw,28px);font-weight:850;line-height:1.45;overflow-wrap:anywhere;direction:ltr;text-align:right;font-variant-numeric:tabular-nums}
+.pk-fx-preview-divider{height:1px;background:#dce7f4;margin:17px 0}
+.pk-fx-footer-note{padding:10px 18px;background:#fcfdff;border-top:1px solid #edf1f6}
+.pk-fx-breakdown{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.pk-fx-breakdown span{background:#fff;border:1px solid #dce8f4;border-radius:7px;padding:6px 9px;font-size:12px;color:#315677;font-variant-numeric:tabular-nums}
 .pk-fx-result{background:#f4f9ff;border:1px solid #d5e6fa;border-radius:9px;padding:8px}
-.pk-fx-status{display:block;margin-top:7px;font-size:11px;color:#6c7e90;line-height:1.5}
+.pk-fx-status{display:block;margin-top:8px;font-size:12px;line-height:1.6;color:#71859b}
 .pk-fx-status.is-incomplete{color:#b65724}
+@media(max-width:1050px){.pk-fx-workspace{grid-template-columns:minmax(0,1fr)}.pk-fx-preview{border-right:0;border-top:1px solid #dfe9f5}.pk-fx-settings{padding:16px}.pk-fx-preview{padding:16px}}
+@media(max-width:700px){.pk-fx-head{padding:14px}.pk-fx-live-mark{padding:5px 8px}.pk-fx-workspace{display:block}.pk-fx-preview-amount{font-size:22px}}
 </style>
 {% endblock %}
 
@@ -2781,10 +2803,6 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                         </div>
                                         {% if is_read_only_view and not is_warehouse_stage %}
                                             <div class="pk-warehouse-meta-field">
-                                                <span class="pk-mini-label" data-key="packing_currency_label">ارز مقصد</span>
-                                                <div class="pk-warehouse-meta-value">{{ packing_object.currency|default:"—" }}</div>
-                                            </div>
-                                            <div class="pk-warehouse-meta-field">
                                                 <span class="pk-mini-label" data-key="packing_origin">مبدا</span>
                                                 <div class="pk-warehouse-meta-value">{{ packing_object.origin|default:"—" }}</div>
                                             </div>
@@ -2808,7 +2826,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                     </div>
                                 {% else %}
                                     <div class="packing-meta-grid">
-                                        {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.bl_date form.transportation_company form.origin form.destination form.estimated_shipping_start_date form.estimated_arrive_to_wh_date form.description label='on-border' %}
+                                        {% render_field_by_order form form.packing_number form.shipment_type form.bl_number form.bl_date form.transportation_company form.origin form.destination form.estimated_shipping_start_date form.estimated_arrive_to_wh_date form.description label='on-border' %}
                                     </div>
                                     {% if is_superuser %}
                                         <details class="pk-superuser-extra-fields">
@@ -2824,17 +2842,50 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                 <section id="pk-currency-fx" class="pk-fx-header"
                                          data-target-currency-id="{{ packing_object.currency_id|default_if_none:'' }}"
                                          data-editable="{{ fx_can_edit|yesno:'true,false' }}"
-                                         aria-label="نرخ تبدیل ارزهای پکینگ">
+                                         aria-label="ارز مقصد، نرخ‌های تبدیل و ارزش محاسباتی پکینگ">
                                     <div class="pk-fx-head">
-                                        <strong data-key="packing_fx_header">ارز مقصد و نرخ‌های تبدیل</strong>
-                                        <span class="pk-fx-hint" data-key="packing_fx_direction">۱ واحد ارز مبدا، چند واحد ارز مقصد است؟</span>
+                                        <div class="pk-fx-heading">
+                                            <span class="pk-fx-eyebrow" data-key="packing_fx_eyebrow">خلاصه مالی پکینگ</span>
+                                            <h3 data-key="packing_fx_header">ارز مقصد و نرخ تبدیل ارزها</h3>
+                                            <p class="pk-fx-hint mb-0" data-key="packing_fx_unified_help">
+                                                انتخاب ارز مقصد، ثبت نرخ‌ها و نتیجه محاسبه در همین بخش انجام می‌شود.
+                                            </p>
+                                        </div>
+                                        <span class="pk-fx-live-mark"><span class="pk-fx-live-dot" aria-hidden="true"></span><span data-key="packing_fx_live">محاسبه زنده</span></span>
                                     </div>
-                                    {% if fx_can_edit %}
-                                        {{ form.currency_exchange_rates }}
-                                    {% endif %}
-                                    <div id="pk-fx-rate-rows" class="pk-fx-rates"></div>
-                                    <p class="pk-fx-hint mt-2 mb-0" data-key="packing_fx_saved_hint">
-                                        ارز مقصد و نرخ‌ها ذخیره می‌شوند؛ ارزش تبدیل‌شده تنها در همین صفحه محاسبه می‌شود.
+                                    <div class="pk-fx-workspace">
+                                        <div class="pk-fx-settings">
+                                            <div class="pk-fx-target">
+                                                <div class="pk-fx-section-label"><span class="pk-fx-step" aria-hidden="true">1</span><strong data-key="packing_currency_label">ارز مقصد</strong></div>
+                                                {% if form.currency %}
+                                                    <div class="pk-fx-target-control">
+                                                        {% render_field_by_order form form.currency label='on-border' %}
+                                                    </div>
+                                                {% else %}
+                                                    <div class="pk-fx-target-readonly">{{ packing_object.currency|default:"—" }}</div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="pk-fx-rates-section">
+                                                <div class="pk-fx-section-label"><span class="pk-fx-step" aria-hidden="true">2</span><strong data-key="packing_fx_rates_title">نرخ تبدیل ارزهای موجود</strong></div>
+                                                <p class="pk-fx-hint mb-2" data-key="packing_fx_direction">هر ۱ واحد ارز مبدا معادل چند واحد ارز مقصد است؟</p>
+                                                {% if fx_can_edit %}
+                                                    {{ form.currency_exchange_rates }}
+                                                {% endif %}
+                                                <div id="pk-fx-rate-rows" class="pk-fx-rates"></div>
+                                            </div>
+                                        </div>
+                                        <aside class="pk-fx-preview" aria-label="پیش‌نمایش مالی پکینگ">
+                                            <div class="pk-fx-section-label"><span class="pk-fx-step" aria-hidden="true">3</span><strong data-key="packing_fx_preview_title">نتیجه همین لحظه</strong></div>
+                                            <span class="pk-fx-preview-label" data-key="packing_fx_converted_total">ارزش محاسباتی در ارز مقصد</span>
+                                            <strong id="packing-fx-header-total" class="pk-fx-preview-amount" aria-live="polite">—</strong>
+                                            <span id="packing-fx-header-status" class="pk-fx-status" role="status" aria-live="polite"></span>
+                                            <div class="pk-fx-preview-divider"></div>
+                                            <span class="pk-fx-preview-label" data-key="packing_fx_original_totals">ارزش به تفکیک ارز</span>
+                                            <div id="packing-fx-header-breakdown" class="pk-fx-breakdown" aria-live="polite"></div>
+                                        </aside>
+                                    </div>
+                                    <p class="pk-fx-hint pk-fx-footer-note mb-0" data-key="packing_fx_saved_hint">
+                                        ارز مقصد و نرخ‌ها با ذخیره پکینگ ثبت می‌شوند؛ ارزش محاسباتی ذخیره نمی‌شود.
                                     </p>
                                 </section>
                                 {{ fx_currency_catalog|json_script:"pk-fx-catalog" }}
@@ -3664,6 +3715,11 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
     <span data-key="packing_unit_weight">Unit Weight</span>
     <span data-key="packing_row_total_value">Row Total Value</span>
     <span data-key="packing_unit_price">Unit Price</span>
+    <span data-key="packing_fx_eyebrow">Packing financial overview</span>
+    <span data-key="packing_fx_live">Live calculation</span>
+    <span data-key="packing_fx_unified_help">Choose a destination, enter rates and see the result here.</span>
+    <span data-key="packing_fx_rates_title">Rates for currencies in the Packing</span>
+    <span data-key="packing_fx_preview_title">Live result</span>
     <span data-key="packing_fx_header">Destination currency &amp; exchange rates</span>
     <span data-key="packing_fx_direction">1 unit of source currency = N destination units</span>
     <span data-key="packing_fx_saved_hint">Only target currency and FX rates are saved.</span>
@@ -3865,18 +3921,32 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             ? {target_currency_id: fxActiveTarget, rates: {...fxRates}} : {});
     }
     function fxUpdateConvertedTotal(totals) {
-        const output = document.getElementById('packing-fx-converted-total');
-        const status = document.getElementById('packing-fx-status');
-        if (!output || !status) return;
+        // Keep the header preview and footer report synchronized from a single
+        // calculation, including incomplete states and missing rates.
+        const outputs = [
+            document.getElementById('packing-fx-header-total'),
+            document.getElementById('packing-fx-converted-total')
+        ].filter(Boolean);
+        const statuses = [
+            document.getElementById('packing-fx-header-status'),
+            document.getElementById('packing-fx-status')
+        ].filter(Boolean);
+        if (!outputs.length) return;
+        function setPreview(amount, message = '', incomplete = false) {
+            outputs.forEach(node => { node.textContent = amount; });
+            statuses.forEach(node => {
+                node.textContent = message;
+                node.classList.toggle('is-incomplete', incomplete);
+            });
+        }
         const target = fxTarget();
-        output.textContent = '—';
-        status.classList.remove('is-incomplete');
+        setPreview('—');
         if (!totals.size) {
-            status.textContent = fxText('packing_fx_no_rows', 'No Packing rows yet.');
+            setPreview('—', fxText('packing_fx_no_rows', 'No Packing rows yet.'));
             return;
         }
         if (!target) {
-            status.textContent = fxText('packing_fx_select_target', 'Choose destination currency.');
+            setPreview('—', fxText('packing_fx_select_target', 'Choose destination currency.'));
             return;
         }
         let sum = 0;
@@ -3895,7 +3965,6 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             }
         });
         if (unknown || missingRates.length || !Number.isFinite(sum)) {
-            status.classList.add('is-incomplete');
             const notices = [];
             if (unknown) notices.push(fxText(
                 'packing_fx_currency_missing', 'Some row currencies are unknown.'
@@ -3904,11 +3973,10 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                 'packing_fx_rate_missing', 'Missing rates: {currencies}'
             ).replace('{currencies}', missingRates.join(', ')));
             if (!notices.length) notices.push('Invalid exchange calculation');
-            status.textContent = notices.join(' ');
+            setPreview('—', notices.join(' '), true);
             return; // No misleading partial grand total.
         }
-        output.textContent = fxMoney(sum) + ' ' + fxCurrencyName(target);
-        status.textContent = '';
+        setPreview(fxMoney(sum) + ' ' + fxCurrencyName(target));
     }
     function fxRenderRates(totals) {
         if (!fxRatesHost) return;
@@ -3935,6 +4003,10 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                 .replace('{source}', source.title)
                 .replace('{target}', fxCurrencyName(target));
             card.appendChild(label);
+            const sourceAmount = document.createElement('span');
+            sourceAmount.className = 'pk-fx-source-amount';
+            sourceAmount.textContent = fxMoney(source.amount) + ' ' + source.title;
+            card.appendChild(sourceAmount);
             if (fxEditable) {
                 const input = document.createElement('input');
                 input.type = 'number';
@@ -3972,17 +4044,20 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             fxRates = {};
         }
         const totals = fxSourceTotals();
-        const chips = document.getElementById('packing-currency-breakdown');
+        const chipHosts = [
+            document.getElementById('packing-fx-header-breakdown'),
+            document.getElementById('packing-currency-breakdown')
+        ].filter(Boolean);
         const title = document.getElementById('packing-total-value');
-        if (chips) {
-            chips.replaceChildren();
+        chipHosts.forEach(host => {
+            host.replaceChildren();
             [...totals.values()].sort((a,b) => a.title.localeCompare(b.title))
                 .forEach(row => {
                     const chip = document.createElement('span');
                     chip.textContent = fxMoney(row.amount) + ' ' + row.title;
-                    chips.appendChild(chip);
+                    host.appendChild(chip);
                 });
-        }
+        });
         if (title) {
             if (totals.size === 1) {
                 const only = totals.values().next().value;
@@ -4718,6 +4793,11 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_volume_override_warning: 'حجم واردشده با مقدار محاسباتی متفاوت است. مقدار محاسباتی: {value}',
             packing_total_cartons: 'جمع کارتن‌ها',
             packing_currency_label: 'ارز مقصد',
+            packing_fx_eyebrow: 'خلاصه مالی پکینگ',
+            packing_fx_live: 'محاسبه زنده',
+            packing_fx_unified_help: 'ارز مقصد، نرخ‌های تبدیل و نتیجه در یک بخش نمایش داده می‌شوند.',
+            packing_fx_rates_title: 'نرخ تبدیل ارزهای موجود',
+            packing_fx_preview_title: 'نتیجه همین لحظه',
             packing_fx_header: 'ارز مقصد و نرخ تبدیل ارزها',
             packing_fx_direction: 'هر ۱ واحد ارز مبدا معادل چند واحد ارز مقصد است؟',
             packing_fx_saved_hint: 'فقط ارز مقصد و نرخ‌های تبدیل ذخیره می‌شوند؛ مجموع تبدیل‌شده در همین صفحه محاسبه می‌شود.',
@@ -4759,6 +4839,11 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_volume_override_warning: 'Entered volume differs from the calculated value. Calculated: {value}',
             packing_total_cartons: 'Total Cartons',
             packing_currency_label: 'Destination currency',
+            packing_fx_eyebrow: 'Packing financial overview',
+            packing_fx_live: 'Live calculation',
+            packing_fx_unified_help: 'Choose the destination currency, enter rates and see the result together.',
+            packing_fx_rates_title: 'Rates for currencies in this Packing',
+            packing_fx_preview_title: 'Live result',
             packing_fx_header: 'Destination currency and exchange rates',
             packing_fx_direction: 'How many destination units equal 1 source currency unit?',
             packing_fx_saved_hint: 'Only the destination and rates are saved, not the converted total.',
