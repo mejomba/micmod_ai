@@ -197,6 +197,8 @@ class XeUIContractTests(SimpleTestCase):
             'fxXeQuotes', 'fxFetchXeRates', 'fxXeQuotes.get(source.id)',
             'input.addEventListener(\'input\'', 'apply.addEventListener(\'click\'',
             "fxRates[sourceId] = quote", "if (!String(fxRates[sourceId] || '').trim())",
+            "serial === fxXeRequestSerial", "if (serial === fxXeRequestSerial)",
+            ".filter(row => !automatic || !String(fxRates[row.id] || '').trim())",
             'fxSyncHidden()', 'fxUpdateConvertedTotal', 'packing_fx_xe_unconfigured',
         ):
             self.assertIn(token, html)

@@ -4164,6 +4164,9 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
         const target = fxTarget();
         const sources = [...fxSourceTotals().values()]
             .filter(row => row.id && row.id !== target)
+            // Auto-lookup requests only the missing pairs to conserve XE quota.
+            // Manual refresh can ask for every pair, including overridden ones.
+            .filter(row => !automatic || !String(fxRates[row.id] || '').trim())
             .map(row => row.id).sort();
         if (!target || !sources.length) {
             if (!automatic) {
@@ -4189,7 +4192,6 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             if (!response.ok) {
                 throw new Error(payload.error || 'XE is temporarily unavailable.');
             }
-            let adopted = 0;
             Object.entries(payload.rates || {}).forEach(([sourceId, value]) => {
                 if (!sources.includes(sourceId)) return;
                 const quote = String(value);
@@ -4198,7 +4200,6 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                 // manually modified rate: only blank inputs are autofilled.
                 if (!String(fxRates[sourceId] || '').trim()) {
                     fxRates[sourceId] = quote;
-                    adopted += 1;
                 }
             });
             fxSyncHidden();
@@ -4220,8 +4221,10 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                 fxSetXeStatus(error.message || 'XE is unavailable.', true);
             }
         } finally {
-            fxXeFetching = false;
-            if (fxXeFetchButton) fxXeFetchButton.disabled = !fxXeConfigured;
+            if (serial === fxXeRequestSerial) {
+                fxXeFetching = false;
+                if (fxXeFetchButton) fxXeFetchButton.disabled = !fxXeConfigured;
+            }
         }
     }
     fxXeFetchButton?.addEventListener('click', () => fxFetchXeRates());
@@ -4236,6 +4239,9 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             fxXeQuotes.clear();
             fxXeAutoAttempted = false;
             fxXeRequestSerial += 1; // Ignore stale quotes for the old target.
+            fxXeFetching = false;
+            if (fxXeFetchButton) fxXeFetchButton.disabled = !fxXeConfigured;
+            if (fxXeStatus) fxSetXeStatus('');
         }
         const compactTarget = document.getElementById('packing-fx-collapsed-target');
         if (compactTarget) compactTarget.textContent = target
