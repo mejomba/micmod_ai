@@ -26,60 +26,43 @@ class PackingWorkflowAssigneeSelectionTests(SimpleTestCase):
         current_assignee.groups.filter.return_value.exists.return_value = True
         historical_destination_assignee = Mock()
         packing = Mock()
+        packing.last_work_flow = SimpleNamespace(to_user=current_assignee)
         packing.workflow_state_index.return_value = 0
-        packing.workflow_assigned_user.side_effect = (
-            lambda group, fallback_first=True:
-                current_assignee if group == 'packing_current'
-                else historical_destination_assignee
-        )
+        packing.workflow_assigned_user.return_value = historical_destination_assignee
 
         selected = self.view._pick_flow_user(packing, 'packing_next')
 
         self.assertIs(selected, current_assignee)
-        self.assertEqual(
-            packing.workflow_assigned_user.call_args_list,
-            [
-                (('packing_current',), {'fallback_first': False}),
-            ],
-        )
+        packing.workflow_assigned_user.assert_not_called()
 
     def test_historical_destination_assignee_is_fallback_when_current_owner_is_not_eligible(self):
         current_assignee = Mock(is_active=True)
         current_assignee.groups.filter.return_value.exists.return_value = False
         historical_destination_assignee = Mock()
         packing = Mock()
-        packing.workflow_state_index.return_value = 0
-        packing.workflow_assigned_user.side_effect = (
-            lambda group, fallback_first=True:
-                current_assignee if group == 'packing_current'
-                else historical_destination_assignee
-        )
+        packing.last_work_flow = SimpleNamespace(to_user=current_assignee)
+        packing.workflow_assigned_user.return_value = historical_destination_assignee
 
         selected = self.view._pick_flow_user(packing, 'packing_next')
 
         self.assertIs(selected, historical_destination_assignee)
-        self.assertEqual(
-            packing.workflow_assigned_user.call_args_list,
-            [
-                (('packing_current',), {'fallback_first': False}),
-                (('packing_next',), {'fallback_first': True}),
-            ],
+        packing.workflow_assigned_user.assert_called_once_with(
+            'packing_next', fallback_first=True,
         )
 
     def test_inactive_current_assignee_is_not_reused(self):
         current_assignee = Mock(is_active=False)
         historical_destination_assignee = Mock()
         packing = Mock()
-        packing.workflow_state_index.return_value = 0
-        packing.workflow_assigned_user.side_effect = (
-            lambda group, fallback_first=True:
-                current_assignee if group == 'packing_current'
-                else historical_destination_assignee
-        )
+        packing.last_work_flow = SimpleNamespace(to_user=current_assignee)
+        packing.workflow_assigned_user.return_value = historical_destination_assignee
 
         selected = self.view._pick_flow_user(packing, 'packing_next')
 
         self.assertIs(selected, historical_destination_assignee)
+        packing.workflow_assigned_user.assert_called_once_with(
+            'packing_next', fallback_first=True,
+        )
 
 
 class PackingWorkflowAssigneeChangerTests(SimpleTestCase):

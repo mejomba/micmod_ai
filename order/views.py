@@ -3901,14 +3901,21 @@ class QuickPackingView(LoginRequiredMixin, View):
         # Keep ownership with the current assignee when that person is also
         # eligible for the destination stage. Historical destination-group
         # assignments are only a fallback when the current owner is ineligible.
-        current_group = self._flow_group(packing_obj.workflow_state_index())
+        current_flow = getattr(packing_obj, 'last_work_flow', None)
         current_assignee = (
-            packing_obj.workflow_assigned_user(
-                current_group,
-                fallback_first=False,
-            )
-            if current_group else None
+            getattr(current_flow, 'to_user', None)
+            if current_flow else None
         )
+        if not current_assignee:
+            # Older records may not have a last_work_flow FK populated.
+            current_group = self._flow_group(packing_obj.workflow_state_index())
+            current_assignee = (
+                packing_obj.workflow_assigned_user(
+                    current_group,
+                    fallback_first=False,
+                )
+                if current_group else None
+            )
         if (
             current_assignee
             and group
