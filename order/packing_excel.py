@@ -715,10 +715,20 @@ def _summary_sheet(workbook, packing, rows, cartons, fx, include_prices):
 
 
 def _invoice_groups(rows):
-    groups = OrderedDict((name, []) for name in REFERENCE_CATEGORY_ORDER)
+    """Return only categories represented by actual Packing item rows.
+
+    Keep the reference category ordering for matching categories, followed
+    by other categories in their first-seen order. Never emit a category
+    solely because it existed in the reference spreadsheet.
+    """
+    groups = OrderedDict()
     for row in rows:
-        groups.setdefault(row['category'] or 'Uncategorized', []).append(row)
-    return groups
+        category = row['category'] or 'Uncategorized'
+        groups.setdefault(category, []).append(row)
+
+    category_order = [name for name in REFERENCE_CATEGORY_ORDER if name in groups]
+    category_order.extend(name for name in groups if name not in REFERENCE_CATEGORY_ORDER)
+    return OrderedDict((name, groups[name]) for name in category_order)
 
 
 def _invoice_sheet(workbook, packing, rows, include_prices):
@@ -776,14 +786,8 @@ def _invoice_sheet(workbook, packing, rows, include_prices):
         if not include_prices:
             ws.cell(current, 5, '')
         if include_prices:
-            amount_usd = (
-                _sum_complete([row['amount_usd'] for row in group])
-                if group else Decimal('0')
-            )
-            amount_cny = (
-                _sum_complete([row['amount_cny'] for row in group])
-                if group else Decimal('0')
-            )
+            amount_usd = _sum_complete([row['amount_usd'] for row in group])
+            amount_cny = _sum_complete([row['amount_cny'] for row in group])
             unit_usd = (
                 amount_usd / quantity
                 if amount_usd is not None and quantity is not None and quantity > 0
@@ -911,8 +915,6 @@ def _packing_list_sheet(workbook, rows, cartons):
         quantity = _sum_available([row['quantity'] for row in group])
         net = _sum_available([row['calculated_weight'] for row in group])
         gross = _sum_available([row['declared_weight'] for row in group])
-        if not group:
-            quantity = net = gross = Decimal('0')
         size = _representative(row['size'] for row in group)
         values = [
             carton_count, category, quantity, '', net, gross, size or '—',

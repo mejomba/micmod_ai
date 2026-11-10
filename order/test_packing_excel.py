@@ -157,6 +157,67 @@ class PackingExcelTests(SimpleTestCase):
         self.assertEqual(packing_list.cell(electronics_row, 1).value, 2)
         self.assertEqual(packing_list.cell(electronics_row, 3).value, 8)
 
+    def test_invoice_and_packing_list_include_only_actual_categories(self):
+        """Reference-template categories must not create empty detail rows."""
+        for include_prices in (True, False):
+            with self.subTest(include_prices=include_prices):
+                workbook = self.load_export(include_prices=include_prices)
+                invoice = workbook['Invoice']
+                packing_list = workbook['Packing List']
+
+                self.assertEqual(
+                    [invoice.cell(row, 2).value for row in (5, 6)],
+                    ['Electronics', 'Mechanical'],
+                )
+                self.assertEqual(invoice['A7'].value, 'TOTAL')
+                self.assertEqual(invoice['D7'].value, 10)
+                self.assertEqual(invoice.max_row, 7)
+
+                self.assertEqual(
+                    [packing_list.cell(row, 2).value for row in (2, 3)],
+                    ['Electronics', 'Mechanical'],
+                )
+                self.assertEqual(packing_list['B4'].value, 'TOTAL')
+                self.assertEqual(packing_list['C4'].value, 10)
+                self.assertEqual(packing_list['A6'].value, 'SAY TOTAL: TWO (2) CARTONS')
+
+    def test_reference_categories_keep_their_order_without_extra_rows(self):
+        packing, items = sample_data()
+        items[0].category = 'PCB'
+        items[1].category = 'SMD ICs'
+        items[2].category = 'PCB'
+        workbook = load_workbook(
+            build_packing_workbook(packing, items, include_prices=True),
+            data_only=True,
+        )
+        self.assertEqual(
+            [workbook['Invoice'].cell(row, 2).value for row in (5, 6)],
+            ['SMD ICs', 'PCB'],
+        )
+        self.assertEqual(
+            [workbook['Packing List'].cell(row, 2).value for row in (2, 3)],
+            ['SMD ICs', 'PCB'],
+        )
+        self.assertEqual(workbook['Invoice']['A7'].value, 'TOTAL')
+        self.assertEqual(workbook['Packing List']['B4'].value, 'TOTAL')
+
+    def test_uncategorized_label_appears_only_when_an_item_has_no_category(self):
+        packing, items = sample_data()
+        items[1].category = None
+        workbook = load_workbook(
+            build_packing_workbook(packing, items, include_prices=False),
+            data_only=True,
+        )
+        self.assertEqual(
+            [workbook['Invoice'].cell(row, 2).value for row in (5, 6)],
+            ['Electronics', 'Uncategorized'],
+        )
+        self.assertEqual(
+            [workbook['Packing List'].cell(row, 2).value for row in (2, 3)],
+            ['Electronics', 'Uncategorized'],
+        )
+        self.assertEqual(workbook['Invoice']['D7'].value, 10)
+
     def test_invoice_financial_columns_are_removed_without_permission(self):
         workbook = self.load_export(include_prices=False)
         headers = [cell.value for cell in workbook['Invoice'][3]]
