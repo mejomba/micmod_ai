@@ -58,6 +58,10 @@ from .packing_volume import calculate_packing_volume, parse_packing_size, parse_
 from .packing_excel import build_packing_workbook, XLSX_CONTENT_TYPE
 from .packing_inline_labels import normalize_packing_label, packing_label_suggestions
 from .packing_carton_size import reconcile_carton_sizes
+from .gio_sepidar import (
+    GIOSepidarError, gio_is_locked, gio_document_display, group_states,
+    plan_gio_groups, send_gio_groups, user_can_send_gio,
+)
 from .form_perm import ORDER_FIELDS_BY_PERMISSION
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
     OrderPaymentItemForm, OrderPaymentItemFormSet, BazarBuyFactorForm, \
@@ -1743,7 +1747,12 @@ class GIOView(LoginRequiredMixin, BaseView):
     def get_success_url(self):
         return reverse_lazy('order:gio.update', kwargs={'pk': self.object.pk})
 
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
+        if self.object:
+            locked_gio = GIO.objects.select_for_update().get(pk=self.object.pk)
+            if gio_is_locked(locked_gio):
+                return JsonResponse({'res': {'error': 'GIO is locked after Sepidar sending.'}}, status=409)
         # if is_ajax(self.request):
         #     res = json.loads(self.request.body)
         #     # kwargs['quantity'] = res['quantity']
@@ -1780,10 +1789,22 @@ class GIOItemView(LoginRequiredMixin, BaseView):
     def get_success_url(self):
         return reverse_lazy('order:gio.update', kwargs={'pk': self.object.gio.pk})
 
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
         order_id = self.request.POST.get('order')
         part_number = self.request.POST.get('part_number')
         gio_id = self.request.POST.get('gio')
+        current_gio = getattr(self.object, 'gio', None)
+        target_gio = GIO.objects.filter(pk=gio_id).first() if gio_id else current_gio
+        # Lock both parents in a stable order, including moves between GIOs.
+        locked_parents = [
+            GIO.objects.select_for_update().get(pk=parent_id)
+            for parent_id in sorted({
+                g.pk for g in (current_gio, target_gio) if g is not None
+            })
+        ]
+        if any(gio_is_locked(parent) for parent in locked_parents):
+            return JsonResponse({'res': {'error': 'GIO is locked after Sepidar sending.'}}, status=409)
         quantity = float(self.request.POST.get('quantity', 0))
         if order_id:
             order = Order.objects.filter(pk=order_id).first()
@@ -2382,86 +2403,61 @@ class OrderAndSepidar(View):
             return JsonResponse({'res': {"error": e.args[0]}}, status=400)
 
     def trade_buy_factor_preview(self, request, *args, **kwargs):
-        gio_id = self.request.GET.get('gio_id')
-        gio = GIO.objects.get(pk=gio_id)
-        buy_factor_contex = {}
-        html = render_to_string('order/partial/sepidar/trade_buy_factor_preview.html', context=buy_factor_contex)
-
-        return JsonResponse({'res': html})
+        if not user_can_send_gio(request.user):
+            return JsonResponse({'error': 'GIO Sepidar access denied.'}, status=403)
+        try:
+            gio_id = int(request.GET.get('gio_id'))
+        except (ValueError, TypeError):
+            return JsonResponse({'error': 'Invalid GIO ID.'}, status=400)
+        gio = GIO.objects.filter(pk=gio_id, is_deleted=False).first()
+        if not gio:
+            return JsonResponse({'error': 'GIO not found.'}, status=404)
+        try:
+            planned = plan_gio_groups(gio)
+        except GIOSepidarError as exc:
+            return JsonResponse({'error': str(exc)}, status=400)
+        html = render_to_string(
+            'order/partial/sepidar/trade_buy_factor_preview.html',
+            context={'form': GIOForm(instance=gio)}, request=request,
+        )
+        previous = {x['key']: x for x in group_states(gio)}
+        return JsonResponse({
+            'res': html,
+            'groups': [
+                {**previous.get(key, {'key': key, 'status': 'pending'}), 'rows': len(rows)}
+                for key, rows in planned.items()
+            ],
+        })
 
     def trade_buy_factor(self, request, *args, **kwargs):
-        """ from GIO generate
-            1: `buy factor`
-            2: `inventory_receipt_before_central_wh`
-            3: `voucher`
-            in sepidar
-        """
+        """Send and record GIO's three Sepidar documents per vendor/currency."""
+        if not user_can_send_gio(request.user):
+            return JsonResponse({'error': 'GIO Sepidar access denied.'}, status=403)
         try:
-            from tools import utils
-            gio_id = json.loads(self.request.body or '{}').get('gio_id')
-            gio_object = GIO.objects.filter(pk=gio_id).first()
-            if not gio_object:
-                return
-
-            gio_items = gio_object.gioitems.all()
-            if not gio_items:
-                return JsonResponse({'error': f'gio {gio_id} has no any items'}, status=500)
-
-            gio_items_group_by_supplier_and_currency = dict()
-
-            supplier_currency_list = []
-            for gioi in gio_items:
-                if 'rmb' in gioi.order.currency.title_en.lower() or "یوآن" in gioi.order.currency.title.lower():
-                    currency_name = 'rmb'
-                elif 'ero' in gioi.order.currency.title_en.lower() or "یورو" in gioi.order.currency.title.lower():
-                    currency_name = 'ero'
-                elif 'usd' in gioi.order.currency.title_en.lower() or "دلار" in gioi.order.currency.title.lower():
-                    currency_name = 'usd'
-
-                key1 = gioi.order.final_supplier.dlref or settings.SEPIDAR_CONST_DATA.get(f'no_name_vendor_{currency_name}')
-                key2 = gioi.order.currency.sepidar_id
-
-                final_key = f'{key1}___{key2}'
-                supplier_currency_list.append(final_key)
-                gio_items_group_by_supplier_and_currency.setdefault(final_key, []).append(gioi)
-
-            res = SepidarApiCall.gio_to_sepidar(gio_items_group_by_supplier_and_currency, request)
-
-            if res.get('errors'):
-                return JsonResponse(res, status=500)
-
-            for supplier_currency in supplier_currency_list:
-                gio_res = res.get(supplier_currency)
-                if gio_res:
-                    grouped_gioi = gio_items_group_by_supplier_and_currency.get(supplier_currency)
-                    for gio_item in grouped_gioi:
-
-                        if SepidarOrderDocument.objects.filter(order=gio_item.order).exists():
-                            order_document_obj = SepidarOrderDocument.objects.get(order=gio_item.order)
-                            data = order_document_obj.data
-                            data['gio']['sepidar'].append(gio_res['gio']['sepidar'][0])
-                            order_document_obj.data = data
-                            order_document_obj.save()
-                        else:
-                            SepidarOrderDocument.objects.create(order=gio_item.order, data=gio_res)
-
-            gio_json_response = {"purchase_invoice":[], "before_central_wh_receipt":[], "voucher":[]}
-            for supplier_currency, gio_res in res.items():
-                purchase_invoice = gio_res['gio']['sepidar'][0]['purchase_invoice']['id']
-                before_central_wh_receipt = gio_res['gio']['sepidar'][0]['before_central_wh_receipt']['id']
-                voucher = gio_res['gio']['sepidar'][0]['voucher']['id']
-                gio_json_response['purchase_invoice'].append(purchase_invoice)
-                gio_json_response['before_central_wh_receipt'].append(before_central_wh_receipt)
-                gio_json_response['voucher'].append(voucher)
-
-            gio_object.sepidar_buy_factor_response_json = gio_json_response
-            # gio_object.sepidar_inventory_receipt_response_json = wh_res
-            gio_object.extra_data.request = self.request
-            gio_object.save()
-
-            return JsonResponse({'res': 'success'})
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            payload = json.loads(request.body or b'{}')
+            if not isinstance(payload, dict):
+                raise ValueError('Invalid GIO request.')
+            gio_id = int(payload.get('gio_id'))
+            gio = GIO.objects.filter(pk=gio_id, is_deleted=False).first()
+            if not gio:
+                return JsonResponse({'error': 'GIO not found.'}, status=404)
+            states = send_gio_groups(
+                gio, request, group_key=payload.get('group_key'),
+            )
+        except (ValueError, TypeError, GIOSepidarError) as exc:
+            return JsonResponse({'error': str(exc)}, status=400)
+        except Exception as exc:
+            # Never automatically repeat an uncertain remote operation.
+            return JsonResponse({'error': str(exc)}, status=500)
+        if any(group['status'] != 'success' for group in states):
+            status = 409 if any(
+                group['status'] in ('unknown', 'sending') for group in states
+            ) else 502
+            return JsonResponse({
+                'error': 'Some GIO groups need retry or manual reconciliation.',
+                'groups': states,
+            }, status=status)
+        return JsonResponse({'res': 'success', 'groups': states})
 
     def bazar_buy_factor(self, request, *args, **kwargs):
         from tools import utils
@@ -3485,7 +3481,8 @@ class QuickGIOView(LoginRequiredMixin, View):
         data = json.loads(request.body) or {}
         data = {k: v for k, v in data.items() if 'form-0-' not in k}  # remove form-0- from data
         total_forms = data.get('form-TOTAL_FORMS', 1)  # first form is empty
-        gio_for_update = GIO.objects.filter(pk=data.pop('gio_id', 0))
+        gio_id = data.pop('gio_id', 0)
+        gio_for_update = GIO.objects.filter(pk=gio_id)
 
         gio_data = {
             "gio_date": data.pop('gio_date', None),
@@ -3497,8 +3494,12 @@ class QuickGIOView(LoginRequiredMixin, View):
         try:
             with transaction.atomic():
                 if gio_for_update:
+                    gio_obj = GIO.objects.select_for_update().get(pk=gio_id)
+                    if gio_is_locked(gio_obj):
+                        return JsonResponse({
+                            'res': {'error': 'GIO is locked after Sepidar sending.'},
+                        }, status=409)
                     gio_for_update.update(**gio_data)
-                    gio_obj = gio_for_update.first()
                 else:
                     gio_obj = GIO(**gio_data)
                     gio_obj.extra_data.request = self.request
@@ -3543,7 +3544,9 @@ class QuickGIOView(LoginRequiredMixin, View):
         context = {
             'form': gio_form,
             'formset': gio_item_formset,
-            'gios': GIOItem.objects.filter(gio=gio_object).order_by('id')
+            'gios': GIOItem.objects.filter(gio=gio_object).order_by('id'),
+            'gio_is_locked': gio_is_locked(gio_object),
+            'gio_sepidar_response': gio_document_display(gio_object) if gio_object else {},
         }
         
         return render(request, self.template_name, context)

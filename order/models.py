@@ -1511,6 +1511,45 @@ class PackingSepidarTransferItem(models.Model):
             ),
         ]
 
+class GIOSepidarGroup(models.Model):
+    """Durable, individually reconciled Sepidar operation per vendor/currency."""
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('sending', 'Sending'),
+        ('success', 'Success'),
+        ('failed', 'Rejected'),
+        ('unknown', 'Needs manual reconciliation'),
+    )
+
+    gio = models.ForeignKey(
+        'GIO', on_delete=models.PROTECT, related_name='sepidar_groups',
+    )
+    group_key = models.CharField(max_length=255)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    invoice_id = models.BigIntegerField(null=True, blank=True)
+    invoice_number = models.CharField(max_length=64, null=True, blank=True)
+    receipt_id = models.BigIntegerField(null=True, blank=True)
+    receipt_number = models.CharField(max_length=64, null=True, blank=True)
+    voucher_id = models.BigIntegerField(null=True, blank=True)
+    voucher_number = models.CharField(max_length=64, null=True, blank=True)
+    items_snapshot = models.JSONField(default=list)
+    request_payload = models.JSONField(default=dict)
+    response_payload = models.JSONField(default=dict)
+    attempt_count = models.PositiveIntegerField(default=0)
+    last_error = models.TextField(blank=True, default='')
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['gio', 'group_key'], name='unique_gio_sepidar_group',
+            ),
+        ]
+
+    def __str__(self):
+        return 'GIO %s: %s (%s)' % (self.gio_id, self.group_key, self.status)
+
+
 class GIO(BaseModeWF):
     quantity = models.FloatField(_('quantity'), default=0, null=True, blank=True)
     gio_date = models.DateField(_('gio_date'))

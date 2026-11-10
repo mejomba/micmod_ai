@@ -29,7 +29,7 @@
 {% block content %}
 
 
-    {% with form.instance.sepidar_buy_factor_response_json|default_if_falsy:form.instance.sepidar_inventory_receipt_response_json as is_send_to_sepidar %}
+    {% with gio_is_locked as is_send_to_sepidar %}
 
 {#    <div class="rounded shadow my-10 bg-white py-10 px-3" id="block_container">#}
 {#        <div class="row">#}
@@ -334,19 +334,19 @@
                                     <div class="d-flex gap-4">
                                         <div class="d-flex flex-column">
                                             <span class="">فاکتور خرید</span>
-                                            {% for purchase_invoice in form.instance.sepidar_buy_factor_response_json.purchase_invoice %}
+                                            {% for purchase_invoice in gio_sepidar_response.purchase_invoice %}
                                                 <span onclick="get_sepidar_data(event)" data-sepidar_object_id="{{ purchase_invoice }}" data-sepidar_model_name="purchaseinvoice">{{ purchase_invoice }}</span>
                                             {% endfor %}
                                         </div>
                                         <div class="d-flex flex-column">
                                             <span>رسید انبار قبل از مرکزی</span>
-                                            {% for before_central_wh_receipt in form.instance.sepidar_buy_factor_response_json.before_central_wh_receipt %}
+                                            {% for before_central_wh_receipt in gio_sepidar_response.before_central_wh_receipt %}
                                                 <span onclick="get_sepidar_data(event)" data-sepidar_object_id="{{ before_central_wh_receipt }}" data-sepidar_model_name="inventoryreceipt">{{ before_central_wh_receipt }}</span>
                                             {% endfor %}
                                         </div>
                                         <div class="d-flex flex-column">
                                             <span>سند حسابداری</span>
-                                            {% for voucher in form.instance.sepidar_buy_factor_response_json.voucher %}
+                                            {% for voucher in gio_sepidar_response.voucher %}
                                                 <span onclick="get_sepidar_data(event)" data-sepidar_object_id="{{ voucher }}" data-sepidar_model_name="voucher">{{ voucher }}</span>
                                             {% endfor %}
                                         </div>

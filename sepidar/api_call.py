@@ -889,47 +889,41 @@ class SepidarApiCall:
         }
 
     @classmethod
-    def gio_to_sepidar(cls, obj, request=None, update=False, buy_factor_data=None):
-        """ send GIO to sepidar
-            1: `buy factor`
-            2: `inventory_receipt_before_central_wh`
-            3: `voucher`
+    def gio_to_sepidar(cls, obj=None, request=None, update=False, buy_factor_data=None,
+                       *, buy_factor_list=None):
+        """Create GIO's invoice, pre-central receipt and voucher in one API call.
+
+        The caller may pass a single prepared invoice as buy_factor_list to
+        send vendor/currency groups independently and retry only rejected groups.
         """
-        cls.setup()
-        # endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('inventory_purchase_invoice')
-        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('gio')
-
         if update:
-            data = {}
-        else:
-            buy_factor_list = list()
-            out = dict()
-            for supplier_currency, gio_items in obj.items():
-                """ generate inventory_purchase_invoice data """
-                inventory_purchase_invoice_data = cls.data.get_trade_inventory_purchase_invoice_data(supplier_currency, gio_items, request=request)
-                buy_factor_list.append(inventory_purchase_invoice_data)
-
-            """ make request for create
-             1: `buy factor`
-             2: `inventory_receipt_before_central_wh`
-             3: `voucher` 
-            """
-            d = {'buy_factor_list': buy_factor_list}
-            res = requests.post(endpoint, json=d, headers=cls.headers)
-            if res.ok:
-                out = cls.response_manager.clean_dict(res.json())
-                return out
-
-            elif res.status_code == 500:
-                return {
-                    "errors": "خطا در سرور سپیدار",
-                }
-            elif res.status_code == 400:
-                return {'errors': res.json()}
-            else:
-                return {
-                    "errors": "خطای کنترل نشده",
-                }
+            return {'errors': 'Updating existing GIO Sepidar documents is unsupported.'}
+        if buy_factor_list is None:
+            buy_factor_list = [
+                cls.data.get_trade_inventory_purchase_invoice_data(
+                    supplier_currency, gio_items, request=request,
+                )
+                for supplier_currency, gio_items in (obj or {}).items()
+            ]
+        if not buy_factor_list:
+            return {'errors': 'No purchase invoice to send.'}
+        cls.setup()
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('gio')
+        # A timeout or HTTP 5xx is not evidence of a rollback on the remote side.
+        response = requests.post(
+            endpoint, json={'buy_factor_list': buy_factor_list},
+            headers=cls.headers, timeout=(10, 90),
+        )
+        if response.ok:
+            try:
+                return cls.response_manager.clean_dict(response.json())
+            except (ValueError, TypeError):
+                return {'errors': 'Invalid JSON response from Sepidar.',
+                        'uncertain': True}
+        if 400 <= response.status_code < 500:
+            return {'errors': response.text[:2000] or 'Sepidar rejected the request.'}
+        return {'errors': response.text[:2000] or 'Sepidar server error.',
+                'uncertain': True}
 
     @classmethod
     def wh_receipt_from_bazar(cls, obj, request=None, update=False):
