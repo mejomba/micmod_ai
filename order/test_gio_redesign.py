@@ -162,6 +162,15 @@ class GIORedesignTemplateTests(SimpleTestCase):
                 self.assertIn(direction, ('asc', 'desc'))
         self.assertEqual(QuickGIODataTableListView.initial_order, [['order_number', 'desc']])
 
+    def test_ajax_datatable_queryset_does_not_force_deferred_foreign_keys(self):
+        """ajax_datatable may defer FK fields; select_related would raise FieldError."""
+        view = QuickGIODataTableListView()
+        with patch.object(QuickGIODataTableListView, 'model') as model:
+            qs = model.objects.annotate.return_value.filter.return_value
+            self.assertIs(view.get_initial_queryset(), qs)
+            model.objects.annotate.assert_called_once()
+            qs.select_related.assert_not_called()
+
     def test_each_group_has_three_docs_and_independent_retry(self):
         for label in ('فاکتور خرید', 'رسید انبار قبل از مرکزی', 'سند حسابداری'):
             self.assertIn(label, self.preview)

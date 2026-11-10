@@ -3622,7 +3622,7 @@ class QuickGIODataTableListView(AjaxDatatableView):
             is_wh=False,
             last_work_flow__current_state_name='پرداخت / PACKING / GIO',
             effective_quantity__gt=F('quantity_in_gio'),
-        ).select_related('item', 'item_trade', 'currency')
+        )
 
     def customize_row(self, row, obj):
         remaining = max(0, obj.final_quantity - obj.quantity_in_gio)
