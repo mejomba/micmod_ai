@@ -263,5 +263,10 @@
     "packing_err_send_failed": "No se pudo enviar la transferencia a Sepidar.",
     "packing_err_packing_capacity": "La cantidad de una fila supera la capacidad disponible del packing.",
     "packing_err_assignee_required": "Selecciona un usuario para cambiar el responsable.",
-    "packing_toast_error_title": "No se pudo guardar"
+    "packing_toast_error_title": "No se pudo guardar",
+    "packing_err_invalid_size": "El tamaño debe contener exactamente tres dimensiones positivas separadas por *, x o × (p. ej., 40*30*20).",
+    "packing_size_format_invalid": "El tamaño debe contener exactamente tres dimensiones positivas separadas por *, x o × (p. ej., 40*30*20).",
+    "packing_export_excel": "Descargar Excel",
+    "packing_volume_calculation_hint": "El volumen se calcula como Largo × Ancho × Alto ÷ 1.000.000.",
+    "packing_overview_note": "El volumen se calcula como Largo × Ancho × Alto ÷ 1.000.000. Se conservan los valores manuales confirmados."
 }

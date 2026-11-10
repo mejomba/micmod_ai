@@ -16,7 +16,7 @@ def row(pk, carton, category, part, qty, net, entered, volume, cartons=1, size='
         pk=pk, order=order, quantity=qty, carton_number=carton,
         carton_quantity=cartons, category=category, main_category='Independent',
         part_number=part, net_weight_kg=net, gross_weight_kg=entered,
-        volume=volume, size=size, brand='Example',
+        volume=volume, volume_is_confirmed=True, size=size, brand='Example',
     )
 
 
@@ -63,6 +63,13 @@ class CartonReportTests(SimpleTestCase):
         self.assertEqual(report['unique_carton_count'], 0)
         self.assertEqual(report['unassigned_row_count'], 2)
         self.assertEqual(len(report['cartons']), 2)
+
+
+    def test_unconfirmed_saved_volume_is_replaced_by_dimension_formula(self):
+        item = row(1, 'C-1', 'Electronics', 'Widget', 2, 1, 1, '0.900000')
+        item.volume_is_confirmed = False
+        report = build_carton_report([item])
+        self.assertEqual(report['cartons'][0]['volume'], Decimal('0.024000'))
 
     def test_size_conflict_and_equivalent_case_or_spacing(self):
         self.assertEqual(carton_key('  A-1  '), carton_key('a-1'))

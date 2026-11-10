@@ -1,16 +1,45 @@
-"""Temporary stable pseudo-random proposal for editable Packing row volume.
+"""Packing volume calculation and input validation.
 
-IMPORTANT: THIS IS TEST DATA, NOT A VOLUME CALCULATION.
-Replace calculate_packing_volume when the business formula is supplied.
-The same inputs always return the same proposed volume, so the inline
-manual-override warning doesn't change unpredictably on each request.
+Dimensions are entered in centimetres as Length x Width x Height. Their
+product divided by 1,000,000 is the volume in cubic metres (CBM).
 """
+import re
 from decimal import Decimal, InvalidOperation
-from hashlib import sha256
 
 
 MAX_VOLUME = Decimal('1000000000000')
+MAX_DIMENSION = Decimal('1000000')
 VOLUME_STEP = Decimal('0.000001')
+SIZE_FORMAT_ERROR = (
+    'سایز باید شامل سه عدد مثبت با جداکننده *، x یا × باشد '
+    '(مثلاً 40*30*20).'
+)
+_SIZE_SEPARATOR = re.compile(r'[xX×*]')
+
+
+def parse_packing_size(value):
+    """Return three positive Decimal dimensions, or None for an empty size."""
+    if value is None or str(value).strip() == '':
+        return None
+
+    parts = _SIZE_SEPARATOR.split(str(value).strip())
+    if len(parts) != 3:
+        raise ValueError(SIZE_FORMAT_ERROR)
+
+    dimensions = []
+    for part in parts:
+        try:
+            dimension = Decimal(part.strip())
+        except (InvalidOperation, TypeError, ValueError):
+            raise ValueError(SIZE_FORMAT_ERROR)
+        if (
+            not dimension.is_finite()
+            or dimension <= 0
+            or dimension > MAX_DIMENSION
+        ):
+            raise ValueError(SIZE_FORMAT_ERROR)
+        dimensions.append(dimension)
+    return tuple(dimensions)
 
 
 def parse_packing_volume(value):
@@ -29,43 +58,32 @@ def parse_packing_volume(value):
     return quantized
 
 
-def _normalize_numeric_seed(value):
-    if value is None or str(value).strip() == '':
-        return ''
-    try:
-        return format(Decimal(str(value)).normalize(), 'f')
-    except (InvalidOperation, TypeError, ValueError):
-        return str(value).strip()
-
-
 def calculate_packing_volume(
-    *, quantity=None, size=None, carton_quantity=None, order_id=None,
+    *, size=None, quantity=None, carton_quantity=None, order_id=None,
 ):
-    """TEST ONLY: deterministic random-looking Decimal, not a real formula.
+    """Calculate CBM from L x W x H; unrelated row fields are ignored."""
+    dimensions = parse_packing_size(size)
+    if dimensions is None:
+        return None
 
-    The order identifier differentiates rows with otherwise identical inputs.
-    Using a stable hash (rather than random.random) keeps the proposed value
-    reproducible across refresh, edit, preview and save. Range: 0.1 to 1.0.
-    """
-    seed = '|'.join((
-        'temporary-packing-volume-v1',
-        str(order_id or ''),
-        _normalize_numeric_seed(quantity),
-        str(size or '').strip(),
-        _normalize_numeric_seed(carton_quantity),
-    ))
-    digest = sha256(seed.encode('utf-8')).digest()
-    scaled = 100000 + int.from_bytes(digest[:8], 'big') % 900001
-    return Decimal(scaled).scaleb(-6)
+    volume = dimensions[0] * dimensions[1] * dimensions[2] / Decimal('1000000')
+    if not volume.is_finite() or volume < 0 or volume >= MAX_VOLUME:
+        raise ValueError('حجم محاسبه‌شده خارج از محدوده مجاز است.')
+    quantized = volume.quantize(VOLUME_STEP)
+    if quantized >= MAX_VOLUME:
+        raise ValueError('حجم محاسبه‌شده خارج از محدوده مجاز است.')
+    return quantized
 
 
 def resolve_packing_volume(
-    entered, *, quantity=None, size=None, carton_quantity=None, order_id=None,
+    entered, *, size=None, is_confirmed=False,
+    quantity=None, carton_quantity=None, order_id=None,
 ):
-    """Preserve a manual override, otherwise use the temporary proposal."""
-    if entered is not None:
-        return entered
-    return calculate_packing_volume(
-        quantity=quantity, size=size, carton_quantity=carton_quantity,
-        order_id=order_id,
+    """Preserve a confirmed manual override; otherwise use the size formula."""
+    calculated = calculate_packing_volume(
+        size=size, quantity=quantity,
+        carton_quantity=carton_quantity, order_id=order_id,
     )
+    if is_confirmed and entered is not None:
+        return parse_packing_volume(entered)
+    return calculated

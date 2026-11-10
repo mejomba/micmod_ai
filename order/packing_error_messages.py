@@ -8,6 +8,8 @@ import re
 
 
 EXACT_ERROR_CODES = {
+    'سایز باید شامل سه عدد مثبت با جداکننده *، x یا × باشد (مثلاً 40*30*20).': 'packing_err_invalid_size',
+    'حجم محاسبه‌شده خارج از محدوده مجاز است.': 'packing_err_invalid_size',
     'انبار مقصد انتخاب‌شده معتبر نیست.': 'packing_err_destination_invalid',
     'Received/damaged quantities are outside the Packing quantity.': 'packing_err_quantities_out_of_range',
     'A Sepidar transfer exists; quantities and destination are locked.': 'packing_err_sepidar_locked',

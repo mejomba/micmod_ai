@@ -524,5 +524,10 @@
     "packing_err_preview_failed": "Could not load the Sepidar transfer preview.",
     "packing_err_send_failed": "Could not send the transfer to Sepidar.",
     "packing_err_packing_capacity": "One row quantity exceeds the available Packing capacity.",
-    "packing_err_assignee_required": "Select a user before changing the assignee."
+    "packing_err_assignee_required": "Select a user before changing the assignee.",
+    "packing_err_invalid_size": "Size must contain exactly three positive dimensions separated by *, x, or × (e.g. 40*30*20).",
+    "packing_size_format_invalid": "Enter exactly three positive dimensions separated by *, x, or × (e.g. 40*30*20).",
+    "packing_export_excel": "Download Excel",
+    "packing_volume_calculation_hint": "Volume is calculated from Length × Width × Height ÷ 1,000,000.",
+    "packing_overview_note": "Volume is calculated as Length × Width × Height ÷ 1,000,000. Confirmed manual values are preserved."
 }

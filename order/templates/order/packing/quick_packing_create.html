@@ -2641,7 +2641,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                 <div class="pk-ov-intro">
                     <div>
                         <strong data-key="packing_overview_title">نمای کلی محموله</strong>
-                        <p data-key="packing_overview_note">حجم‌های مثبت ثبت‌شده، چه دستی و چه محاسباتی، بدون تأیید جداگانه در جمع CBM محاسبه می‌شوند. فرمول پیشنهادی فعلی آزمایشی است.</p>
+                        <p data-key="packing_overview_note">حجم بر اساس حاصل‌ضرب طول، عرض و ارتفاع تقسیم بر ۱٬۰۰۰٬۰۰۰ محاسبه می‌شود؛ مقادیر دستی تأییدشده حفظ می‌شوند.</p>
                     </div>
                     <button type="button" class="btn btn-sm btn-light-primary" id="pk-ov-edit"
                             data-key="packing_overview_edit">بازگشت به جزئیات</button>
@@ -3339,7 +3339,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                             data-overview-category="{{ packing_item.category|default_if_none:'' }}"
                                             data-overview-net="{{ packing_item.net_weight_kg|default_if_none:'' }}"
                                             data-overview-gross="{{ packing_item.gross_weight_kg|default_if_none:'' }}"
-                                            data-overview-volume="{{ packing_item.volume|default_if_none:'' }}"
+                                            data-overview-volume="{{ packing_item.effective_volume|default_if_none:'' }}"
                                             data-overview-part-number="{{ packing_item.part_number|default_if_none:'' }}"
                                             data-overview-received="{{ packing_item.wh_receipt_quantity|default_if_none:'' }}"
                                             data-overview-damaged="{{ packing_item.ruined_quantity|default_if_none:'' }}"
@@ -3513,13 +3513,16 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                                                 <input type="number" min="0" step="0.000001" inputmode="decimal" class="form-control"
                                                                        name="existing-{{ packing_item.pk }}-volume"
                                                                        data-packing-volume data-calculated-volume="{{ packing_item.calculated_volume|default_if_none:'' }}"
-                                                                       value="{{ packing_item.volume|default_if_none:'' }}">
-                                                                <small class="text-muted d-block mt-1" data-key="packing_volume_test_hint">The proposed value is for testing only; it is not calculated from a real formula yet.</small>
+                                                                       value="{{ packing_item.effective_volume|default_if_none:'' }}">
+                                                                <input type="hidden" name="existing-{{ packing_item.pk }}-volume_is_confirmed"
+                                                                       value="{{ packing_item.volume_is_confirmed|yesno:'1,0' }}">
+                                                                <small class="text-muted d-block mt-1" data-key="packing_volume_calculation_hint">Calculated from Length × Width × Height ÷ 1,000,000.</small>
                         <div class="pk-volume-warning text-warning mt-1" role="status" aria-live="polite" hidden></div>
                                                             </div>
                                                             <div>
                                                                 <label class="pk-mini-label" data-key="packing_size">Size</label>
                                                                 <input class="form-control" name="existing-{{ packing_item.pk }}-size" value="{{ packing_item.size|default_if_none:'' }}">
+                                                                                                                                                        <div class="pk-size-format-warning text-danger mt-1" role="alert" hidden></div>
                                                                 <div class="pk-carton-size-warning text-danger mt-1" role="alert" hidden></div>
                                                             </div>
                                                             <div class="pk-desc">
@@ -3741,8 +3744,10 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                                             <input type="number" min="0" step="0.000001" inputmode="decimal" class="form-control"
                                                                    name="existing-{{ packing_item.pk }}-volume"
                                                                    data-packing-volume data-calculated-volume="{{ packing_item.calculated_volume|default_if_none:'' }}"
-                                                                   value="{{ packing_item.volume|default_if_none:'' }}" disabled>
-                                                            <small class="text-muted d-block mt-1" data-key="packing_volume_test_hint">The proposed value is for testing only; it is not calculated from a real formula yet.</small>
+                                                                   value="{{ packing_item.effective_volume|default_if_none:'' }}" disabled>
+                                                            <input type="hidden" name="existing-{{ packing_item.pk }}-volume_is_confirmed"
+                                                                   value="{{ packing_item.volume_is_confirmed|yesno:'1,0' }}" disabled>
+                                                            <small class="text-muted d-block mt-1" data-key="packing_volume_calculation_hint">Calculated from Length × Width × Height ÷ 1,000,000.</small>
                         <div class="pk-volume-warning text-warning mt-1" role="status" aria-live="polite" hidden></div>
                                                         </div>
                                                         <div>
@@ -3750,7 +3755,8 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                                             <input type="text" maxlength="128" class="form-control"
                                                                    name="existing-{{ packing_item.pk }}-size"
                                                                    value="{{ packing_item.size|default_if_none:'' }}" disabled>
-                                                            <div class="pk-carton-size-warning text-danger mt-1" role="alert" hidden></div>
+                                                            <div class="pk-size-format-warning text-danger mt-1" role="alert" hidden></div>
+                                                                <div class="pk-carton-size-warning text-danger mt-1" role="alert" hidden></div>
                                                         </div>
                                                         <div class="pk-editor-description">
                                                             <label class="pk-mini-label" data-key="packing_description">Description</label>
@@ -3872,6 +3878,14 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                     </button>
                                 {% endif %}
                                 {% if packing_object %}
+                                    <a href="?export_excel=1" class="btn btn-sm btn-light-success pk-command-export">
+                                        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
+                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M12 3v12m0 0 4-4m-4 4-4-4"></path>
+                                            <path d="M5 17v3h14v-3"></path>
+                                        </svg>
+                                        <span data-key="packing_export_excel">Download Excel</span>
+                                    </a>
                                     <div class="pk-header-history-tools">
                                         <button type="button" class="btn btn-sm btn-light-primary pk-header-history-button pk-change-history-trigger"
                                                 aria-haspopup="dialog" aria-controls="pk-change-history-modal"
@@ -4990,6 +5004,30 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             || fallback;
     }
 
+    function parsePackingSizeClient(value) {
+        const raw = String(value || '').trim();
+        if (!raw) return [];
+        const parts = raw.split(/[xX×*]/).map(part => part.trim());
+        if (parts.length !== 3) return null;
+        if (!parts.every(part => /^\d+(?:\.\d+)?$/.test(part) && Number(part) > 0 && Number(part) <= 1000000)) {
+            return null;
+        }
+        return parts;
+    }
+
+    function showPackingSizeWarning(row) {
+        const sizeInput = row?.querySelector('input[name$="-size"]');
+        const warning = sizeInput?.parentElement.querySelector('.pk-size-format-warning');
+        if (!sizeInput || !warning || sizeInput.disabled) return true;
+        const valid = !sizeInput.value.trim() || parsePackingSizeClient(sizeInput.value) !== null;
+        warning.hidden = valid;
+        warning.textContent = valid ? '' : packingVolumePhrase(
+            'packing_size_format_invalid',
+            'Enter three positive dimensions separated by *, x or × (e.g. 40*30*20).'
+        );
+        return valid;
+    }
+
     function showPackingVolumeWarning(input) {
         const warning = input.closest('.pk-volume-field')?.querySelector('.pk-volume-warning');
         if (!warning) return;
@@ -5014,8 +5052,16 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
         if (!input || input.disabled || !row.isConnected) return;
         const version = (packingVolumeVersions.get(input) || 0) + 1;
         packingVolumeVersions.set(input, version);
-        const quantityInput = row.querySelector('input[name$="-quantity"]');
         const sizeInput = row.querySelector('input[name$="-size"]');
+        const confirmationInput = row.querySelector('input[name$="-volume_is_confirmed"]');
+        const confirmed = confirmationInput?.value === '1';
+        if (!showPackingSizeWarning(row)) {
+            input.dataset.calculatedVolume = '';
+            if (!confirmed) input.value = '';
+            showPackingVolumeWarning(input);
+            return;
+        }
+        const quantityInput = row.querySelector('input[name$="-quantity"]');
         const cartonInput = row.querySelector('input[name$="-carton_quantity"]');
         const params = new URLSearchParams({
             volume_preview: '1',
@@ -5028,18 +5074,19 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             const response = await fetch(window.location.pathname + '?' + params, {
                 credentials: 'same-origin', headers: {'Accept': 'application/json'}
             });
-            if (!response.ok) return;
             const body = await response.json();
             if (!input.isConnected || packingVolumeVersions.get(input) !== version) return;
+            if (!response.ok || body.error_code) {
+                input.dataset.calculatedVolume = '';
+                if (!confirmed) input.value = '';
+                showPackingVolumeWarning(input);
+                return;
+            }
             const computed = body.calculated_volume;
             const proposal = computed === null || computed === undefined ? '' : String(computed);
             input.dataset.calculatedVolume = proposal;
-            // Keep previously saved values and manual overrides unchanged.
-            if (proposal && input.dataset.volumeEdited !== '1'
-                && (!input.value.trim() || input.dataset.volumeAuto === '1')) {
-                input.value = proposal;
-                input.dataset.volumeAuto = '1';
-            }
+            // Only unconfirmed values are automatic; confirmed manual values survive size edits.
+            if (!confirmed) input.value = proposal;
             showPackingVolumeWarning(input);
         } catch (_) {
             // Manual volume editing and saving remain available.
@@ -5058,10 +5105,22 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
         if (!(input instanceof HTMLInputElement)) return;
         if (input.matches('input[data-packing-volume]')) {
             input.dataset.volumeEdited = '1';
-            input.dataset.volumeAuto = '0';
+            const version = (packingVolumeVersions.get(input) || 0) + 1;
+            packingVolumeVersions.set(input, version);
+            const row = input.closest('.packing-selected-row');
+            const confirmationInput = row?.querySelector('input[name$="-volume_is_confirmed"]');
+            if (confirmationInput) confirmationInput.value = input.value.trim() ? '1' : '0';
             showPackingVolumeWarning(input);
+            if (!input.value.trim()) queuePackingVolumePreview(row);
         } else if (input.matches('input[name$="-quantity"], input[name$="-size"], input[name$="-carton_quantity"]')) {
-            queuePackingVolumePreview(input.closest('.packing-selected-row'));
+            const row = input.closest('.packing-selected-row');
+            const volumeInput = row?.querySelector('input[data-packing-volume]');
+            if (volumeInput) {
+                const version = (packingVolumeVersions.get(volumeInput) || 0) + 1;
+                packingVolumeVersions.set(volumeInput, version);
+            }
+            if (input.matches('input[name$="-size"]')) showPackingSizeWarning(row);
+            queuePackingVolumePreview(row);
         }
     });
 
@@ -5549,7 +5608,9 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_main_category: 'دسته‌بندی اصلی',
             packing_row_brand: 'برند',
             packing_volume: 'حجم',
-            packing_volume_test_hint: 'مقدار پیشنهادی آزمایشی است و هنوز از فرمول واقعی به‌دست نمی‌آید.',
+            packing_size_format_invalid: 'سایز باید شامل سه عدد مثبت با جداکننده *، x یا × باشد (مثلاً 40*30*20).',
+            packing_export_excel: 'دریافت خروجی اکسل',
+            packing_volume_calculation_hint: 'حجم از حاصل‌ضرب طول، عرض و ارتفاع تقسیم بر ۱٬۰۰۰٬۰۰۰ محاسبه می‌شود.',
             packing_volume_override_warning: 'حجم واردشده با مقدار محاسباتی متفاوت است. مقدار محاسباتی: {value}',
             packing_total_cartons: 'جمع کارتن‌ها',
 
@@ -5597,7 +5658,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_overview_details: 'جزئیات پکینگ',
             packing_overview_tab: 'نمای کلی',
             packing_overview_title: 'نمای کلی محموله',
-            packing_overview_note: 'حجم‌های مثبت ثبت‌شده (دستی یا محاسباتی) بدون تیک جداگانه لحاظ می‌شوند. محاسبه پیشنهادی فعلی آزمایشی است.',
+            packing_overview_note: 'حجم بر اساس حاصل‌ضرب طول، عرض و ارتفاع تقسیم بر ۱٬۰۰۰٬۰۰۰ محاسبه می‌شود؛ مقادیر دستی تأییدشده حفظ می‌شوند.',
             packing_overview_edit: 'بازگشت به جزئیات',
             packing_overview_cartons: 'تعداد کارتن یکتا',
             packing_overview_quantity: 'تعداد قطعات',
@@ -5671,7 +5732,9 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_main_category: 'Main Category',
             packing_row_brand: 'Brand',
             packing_volume: 'Volume',
-            packing_volume_test_hint: 'The proposed value is for testing only; it is not calculated from a real formula yet.',
+            packing_size_format_invalid: 'Enter three positive dimensions separated by *, x or × (e.g. 40*30*20).',
+            packing_export_excel: 'Download Excel',
+            packing_volume_calculation_hint: 'Calculated from Length × Width × Height ÷ 1,000,000.',
             packing_volume_override_warning: 'Entered volume differs from the calculated value. Calculated: {value}',
             packing_total_cartons: 'Total Cartons',
 
@@ -5719,7 +5782,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
             packing_overview_details: 'Packing details',
             packing_overview_tab: 'Overview',
             packing_overview_title: 'Shipment overview',
-            packing_overview_note: 'All positive saved volumes count, including calculated proposals, without extra approval. The current proposal formula is experimental.',
+            packing_overview_note: 'Volume is calculated as Length × Width × Height ÷ 1,000,000. Confirmed manual values are preserved.',
             packing_overview_edit: 'Back to details',
             packing_overview_cartons: 'Unique outer cartons',
             packing_overview_quantity: 'Total pieces',
@@ -6501,14 +6564,16 @@ ${canViewPrices ? `
                         <label class="pk-mini-label" data-key="packing_volume">${tr('packing_volume', 'Volume')}</label>
                         <input type="number" min="0" step="0.000001" inputmode="decimal" class="form-control"
                                name="form-${index}-volume" data-packing-volume data-calculated-volume="">
-                        <small class="text-muted d-block mt-1" data-key="packing_volume_test_hint">The proposed value is for testing only; it is not calculated from a real formula yet.</small>
+                        <input type="hidden" name="form-${index}-volume_is_confirmed" value="0">
+                        <small class="text-muted d-block mt-1" data-key="packing_volume_calculation_hint">Calculated from Length × Width × Height ÷ 1,000,000.</small>
                         <div class="pk-volume-warning text-warning mt-1" role="status" aria-live="polite" hidden></div>
                     </div>
 
                     <div>
                         <label class="pk-mini-label"><span data-key="packing_size">${tr('packing_size', 'Size')}</span></label>
                         <input class="form-control" name="form-${index}-size">
-                        <div class="pk-carton-size-warning text-danger mt-1" role="alert" hidden></div>
+                        <div class="pk-size-format-warning text-danger mt-1" role="alert" hidden></div>
+                                                                <div class="pk-carton-size-warning text-danger mt-1" role="alert" hidden></div>
                     </div>
 
                     <div class="pk-desc">
@@ -6712,8 +6777,10 @@ ${canViewPrices ? `
         updatePackingCartonSizes();
     });
     document.querySelectorAll('input[data-packing-volume]').forEach(input => {
+        const row = input.closest('.packing-selected-row');
+        showPackingSizeWarning(row);
         showPackingVolumeWarning(input);
-        if (!input.disabled) queuePackingVolumePreview(input.closest('.packing-selected-row'));
+        if (!input.disabled) queuePackingVolumePreview(row);
     });
 
     // Calendar is a display preference: it never changes stored timestamps.
@@ -7412,6 +7479,18 @@ ${canViewPrices ? `
         if (!valid) {
             showPackingFeedback('error', localizedPackingError(warehouseInvalid
                 ? 'packing_err_quantities_out_of_range' : 'packing_err_packing_capacity'));
+            return;
+        }
+
+        let invalidPackingSize = false;
+        document.querySelectorAll('.packing-selected-row').forEach(row => {
+            if (!showPackingSizeWarning(row)) invalidPackingSize = true;
+        });
+        if (invalidPackingSize) {
+            showPackingFeedback('error', packingVolumePhrase(
+                'packing_size_format_invalid',
+                'Enter three positive dimensions separated by *, x or × (e.g. 40*30*20).'
+            ));
             return;
         }
 

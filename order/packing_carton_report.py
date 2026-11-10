@@ -11,6 +11,8 @@ from collections import OrderedDict
 from decimal import Decimal, InvalidOperation
 import re
 
+from .packing_volume import resolve_packing_volume
+
 
 def carton_key(value):
     """Normalize superficial spelling differences; preserve display separately."""
@@ -59,6 +61,14 @@ def _row_info(item):
     category = (getattr(item, 'category', None) or '').strip()
     main_category = (getattr(item, 'main_category', None) or '').strip()
     carton = ' '.join(str(getattr(item, 'carton_number', None) or '').split())
+    try:
+        volume = resolve_packing_volume(
+            getattr(item, 'volume', None),
+            size=getattr(item, 'size', None),
+            is_confirmed=bool(getattr(item, 'volume_is_confirmed', False)),
+        )
+    except ValueError:
+        volume = None
     return {
         'id': item.pk,
         'order_number': (getattr(order, 'order_number', None) or str(order.pk))
@@ -73,7 +83,7 @@ def _row_info(item):
         'quantity': quantity,
         'net_weight': net_weight,
         'entered_weight': _number(getattr(item, 'gross_weight_kg', None)),
-        'volume': _number(getattr(item, 'volume', None)),
+        'volume': _number(volume),
         'size': (getattr(item, 'size', None) or '').strip() or '—',
     }
 
@@ -98,7 +108,7 @@ def build_carton_report(items):
 
     for carton in cartons.values():
         carton_rows = carton['rows']
-        # Persisted volume is a temporary test value until the real formula.
+        # Unconfirmed volumes are calculated from the row dimensions.
         carton_rows.sort(
             key=lambda row: (
                 row['volume'] is not None,

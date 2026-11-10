@@ -263,5 +263,10 @@
     "packing_err_send_failed": "Impossibile inviare il trasferimento a Sepidar.",
     "packing_err_packing_capacity": "La quantità di una riga supera la capacità disponibile del packing.",
     "packing_err_assignee_required": "Seleziona un utente per cambiare il responsabile.",
-    "packing_toast_error_title": "Salvataggio non riuscito"
+    "packing_toast_error_title": "Salvataggio non riuscito",
+    "packing_err_invalid_size": "La dimensione deve contenere esattamente tre misure positive separate da *, x o × (es. 40*30*20).",
+    "packing_size_format_invalid": "La dimensione deve contenere esattamente tre misure positive separate da *, x o × (es. 40*30*20).",
+    "packing_export_excel": "Scarica Excel",
+    "packing_volume_calculation_hint": "Il volume si calcola come Lunghezza × Larghezza × Altezza ÷ 1.000.000.",
+    "packing_overview_note": "Il volume è calcolato come Lunghezza × Larghezza × Altezza ÷ 1.000.000. I valori manuali confermati vengono mantenuti."
 }

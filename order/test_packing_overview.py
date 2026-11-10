@@ -1,7 +1,6 @@
 """Regression coverage for read-only per-Packing Overview calculations.
 
-Saved positive volume participates in CBM regardless of how it was obtained.
-The legacy confirmation marker is deliberately not consulted by Overview.
+Automatic CBM is derived from dimensions; confirmed manual values are preserved.
 """
 from decimal import Decimal
 from pathlib import Path
@@ -20,28 +19,30 @@ from order.views import QuickPackingView
 
 
 class PackingOverviewVolumeTests(SimpleTestCase):
-    def test_calculated_volume_is_accepted_without_confirmation(self):
-        generated = calculate_packing_volume(
-            quantity=10, size='40x30x20', carton_quantity=5, order_id=24,
-        )
-        self.assertGreater(generated, Decimal('0'))
+    def test_calculated_volume_uses_dimensions_and_is_available_without_manual_confirmation(self):
+        generated = calculate_packing_volume(size='40x30x20')
+        self.assertEqual(generated, Decimal('0.024000'))
         self.assertEqual(
             resolve_packing_volume(
-                None, quantity=10, size='40x30x20',
-                carton_quantity=5, order_id=24,
+                None, size='40x30x20', is_confirmed=False,
             ),
             generated,
         )
         self.assertEqual(parse_packing_volume(str(generated)), generated)
 
-    def test_manual_volume_remains_authoritative(self):
+    def test_manual_volume_remains_authoritative_when_confirmed(self):
         entered = Decimal('0.123456')
         self.assertEqual(
             resolve_packing_volume(
-                entered, quantity=10, size='40x30x20',
-                carton_quantity=5, order_id=24,
+                entered, size='40x30x20', is_confirmed=True,
             ),
             entered,
+        )
+        self.assertEqual(
+            resolve_packing_volume(
+                entered, size='40x30x20', is_confirmed=False,
+            ),
+            Decimal('0.024000'),
         )
 
     def test_missing_or_invalid_volume(self):
@@ -52,13 +53,15 @@ class PackingOverviewVolumeTests(SimpleTestCase):
                 with self.assertRaises(ValueError):
                     parse_packing_volume(value)
 
-    def test_new_row_needs_no_checkbox_for_manual_volume(self):
+    def test_new_row_marks_manual_volume_as_confirmed(self):
         post = QueryDict(mutable=True)
         post.update({
             'form-TOTAL_FORMS': '2',
             'form-1-order': '24',
             'form-1-quantity': '100',
+            'form-1-size': '40x30x20',
             'form-1-volume': '0.321',
+            'form-1-volume_is_confirmed': '1',
         })
         view = QuickPackingView()
         request = SimpleNamespace(
@@ -66,20 +69,22 @@ class PackingOverviewVolumeTests(SimpleTestCase):
         )
         row = view._parse_rows(request)[0]
         self.assertEqual(row['volume'], Decimal('0.321000'))
-        self.assertNotIn('volume_confirm', row)
+        self.assertTrue(row['volume_is_confirmed'])
 
-    def test_existing_row_needs_no_checkbox_for_manual_volume(self):
+    def test_existing_row_marks_manual_volume_as_confirmed(self):
         post = QueryDict(mutable=True)
         post.update({
             'existing-17-id': '17',
             'existing-17-quantity': '20',
+            'existing-17-size': '40x30x20',
             'existing-17-volume': '0.123',
+            'existing-17-volume_is_confirmed': '1',
         })
         view = QuickPackingView()
         request = SimpleNamespace(POST=post)
         row = view._parse_existing_rows(request)[0]
         self.assertEqual(row['volume'], Decimal('0.123000'))
-        self.assertNotIn('volume_confirm', row)
+        self.assertTrue(row['volume_is_confirmed'])
         post['existing-17-volume'] = ''
         self.assertIsNone(view._parse_existing_rows(request)[0]['volume'])
 
@@ -117,7 +122,7 @@ class PackingOverviewTemplateTests(SimpleTestCase):
         self.assertIn('const target = canViewPrices ?', self.html)
 
     def test_saved_volume_counts_without_checkbox_or_legacy_marker(self):
-        self.assertIn('data-overview-volume="{{ packing_item.volume', self.html)
+        self.assertIn('data-overview-volume="{{ packing_item.effective_volume', self.html)
         self.assertIn(
             'const volume = isSaved ? ovNumber(row.dataset.overviewVolume) : null;',
             self.html,

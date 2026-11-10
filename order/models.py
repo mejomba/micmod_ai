@@ -1372,14 +1372,13 @@ class PackingItem(BaseModeWF):
     main_category = models.CharField('Main Category', max_length=150, null=True, blank=True)
     net_weight_kg = models.FloatField(_('weight_kg'), null=True, blank=True)
     gross_weight_kg = models.FloatField(_('grows_weight_kg'), null=True, blank=True)
-    # User-editable volume. The formula is intentionally not defined yet.
+    # User-editable CBM volume; unconfirmed values are recalculated from size.
     volume = models.DecimalField(
         'Volume', max_digits=18, decimal_places=6, null=True, blank=True,
         validators=[MinValueValidator(0)],
     )
     size = models.CharField(_('size'), max_length=128, null=True, blank=True)
-    # Retained for migration compatibility; Overview no longer requires volume
-    # confirmation and reports any positive saved volume (manual or proposed).
+    # Distinguishes a confirmed manual override from a value calculated from size.
     volume_is_confirmed = models.BooleanField(
         'حجم واقعی تأییدشده', default=False,
     )
@@ -1419,13 +1418,25 @@ class PackingItem(BaseModeWF):
 
     @property
     def calculated_volume(self):
-        """Temporary test proposal until the real volume formula is provided."""
+        """Return CBM calculated from the saved dimensions."""
         from .packing_volume import calculate_packing_volume
-        return calculate_packing_volume(
-            quantity=self.quantity, size=self.size,
-            carton_quantity=self.carton_quantity,
-            order_id=self.order_id,
-        )
+        try:
+            return calculate_packing_volume(size=self.size)
+        except ValueError:
+            return None
+
+    @property
+    def effective_volume(self):
+        """Return a confirmed manual value or the calculated CBM value."""
+        from .packing_volume import resolve_packing_volume
+        try:
+            return resolve_packing_volume(
+                self.volume,
+                size=self.size,
+                is_confirmed=self.volume_is_confirmed,
+            )
+        except ValueError:
+            return None
 
     @property
     def computed_status(self):

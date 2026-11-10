@@ -1,5 +1,6 @@
 from datetime import timedelta, datetime
 from math import isfinite
+from urllib.parse import quote
 
 from files.models import File
 from tools.utils import to_jalali_date
@@ -53,7 +54,8 @@ from changelog.models import ChangeLog
 from .packing_error_messages import packing_error_payload
 from .packing_change_history import build_packing_change_history
 from .packing_workflow_timeline import build_packing_workflow_timeline
-from .packing_volume import calculate_packing_volume, parse_packing_volume, resolve_packing_volume
+from .packing_volume import calculate_packing_volume, parse_packing_size, parse_packing_volume, resolve_packing_volume
+from .packing_excel import build_packing_workbook, XLSX_CONTENT_TYPE
 from .packing_inline_labels import normalize_packing_label, packing_label_suggestions
 from .packing_carton_size import reconcile_carton_sizes
 from .form_perm import ORDER_FIELDS_BY_PERMISSION
@@ -4087,6 +4089,11 @@ class QuickPackingView(LoginRequiredMixin, View):
             if quantity is None:
                 raise ValueError(f'Invalid quantity in row {row_index}.')
 
+            size = str(request.POST.get(f'form-{row_index}-size') or '').strip()
+            parse_packing_size(size)
+            volume_is_confirmed = str(
+                request.POST.get(f'form-{row_index}-volume_is_confirmed', '')
+            ).strip().lower() in ('1', 'true', 'yes', 'on')
             row = {
                 'index': row_index,
                 'order_id': int(order_id),
@@ -4098,7 +4105,8 @@ class QuickPackingView(LoginRequiredMixin, View):
                 'gross_weight_kg': self._parse_gross_weight(
                     request.POST.get(f'form-{row_index}-gross_weight_kg'),
                 ),
-                'size': request.POST.get(f'form-{row_index}-size'),
+                'size': size or None,
+                'volume_is_confirmed': volume_is_confirmed,
                 'description': request.POST.get(f'form-{row_index}-description'),
                 'category': normalize_packing_label(
                     'category', request.POST.get(f'form-{row_index}-category'),
@@ -4183,12 +4191,14 @@ class QuickPackingView(LoginRequiredMixin, View):
             if quantity is None and not delete_requested:
                 raise ValueError(f'Invalid quantity for PackingItem {item_id}.')
 
+            size = str(request.POST.get(f'existing-{item_id}-size') or '').strip()
+            parse_packing_size(size)
             row = {
                 'id': item_id,
                 'delete': delete_requested,
                 'quantity': quantity,
                 'carton_number': request.POST.get(f'existing-{item_id}-carton_number'),
-                'size': request.POST.get(f'existing-{item_id}-size'),
+                'size': size or None,
                 'description': request.POST.get(f'existing-{item_id}-description'),
             }
             gross_weight_key = f'existing-{item_id}-gross_weight_kg'
@@ -4206,6 +4216,11 @@ class QuickPackingView(LoginRequiredMixin, View):
             volume_key = f'existing-{item_id}-volume'
             if volume_key in request.POST and not delete_requested:
                 row['volume'] = parse_packing_volume(request.POST.get(volume_key))
+            volume_confirmed_key = f'existing-{item_id}-volume_is_confirmed'
+            if volume_confirmed_key in request.POST and not delete_requested:
+                row['volume_is_confirmed'] = str(
+                    request.POST.get(volume_confirmed_key, '')
+                ).strip().lower() in ('1', 'true', 'yes', 'on')
             if carton_key in request.POST and not delete_requested:
                 row['carton_quantity'] = self._parse_carton_quantity(
                     request.POST.get(carton_key),
@@ -4335,6 +4350,16 @@ class QuickPackingView(LoginRequiredMixin, View):
             quantity_changed = abs(
                 float(packing_item.quantity or 0) - row['quantity']
             ) > 0.000001
+            entered_volume = row.get('volume', packing_item.volume)
+            volume_is_confirmed = bool(
+                row.get('volume_is_confirmed', packing_item.volume_is_confirmed)
+                and entered_volume is not None
+            )
+            resolved_volume = resolve_packing_volume(
+                entered_volume,
+                size=row.get('size', packing_item.size),
+                is_confirmed=volume_is_confirmed,
+            )
 
             # Do not save unchanged rows, and allow metadata edits when the
             # upstream GIO capacity has changed since this Packing was created.
@@ -4349,14 +4374,8 @@ class QuickPackingView(LoginRequiredMixin, View):
                 or ('category' in row and (packing_item.category or '') != (row['category'] or ''))
                 or ('main_category' in row and (packing_item.main_category or '') != (row['main_category'] or ''))
                 or ('brand' in row and (packing_item.brand or '') != (row['brand'] or ''))
-                or (
-                    'volume' in row
-                    and packing_item.volume != resolve_packing_volume(
-                        row['volume'], quantity=row['quantity'], size=row['size'],
-                        carton_quantity=row.get('carton_quantity', packing_item.carton_quantity),
-                        order_id=packing_item.order_id,
-                    )
-                )
+                or packing_item.volume != resolved_volume
+                or packing_item.volume_is_confirmed != volume_is_confirmed
                 or (packing_item.size or '') != (row['size'] or '')
                 or (packing_item.description or '') != (row['description'] or '')
                 or bool(receipt_updates)
@@ -4393,12 +4412,8 @@ class QuickPackingView(LoginRequiredMixin, View):
             for field in ('category', 'main_category', 'brand'):
                 if field in row:
                     setattr(packing_item, field, row[field])
-            if 'volume' in row:
-                packing_item.volume = resolve_packing_volume(
-                    row['volume'], quantity=row['quantity'],
-                    size=row['size'], carton_quantity=packing_item.carton_quantity,
-                    order_id=packing_item.order_id,
-                )
+            packing_item.volume = resolved_volume
+            packing_item.volume_is_confirmed = volume_is_confirmed
             for attr, value in receipt_updates.items():
                 setattr(packing_item, attr, value)
             packing_item.editor_user = request.user
@@ -4564,9 +4579,11 @@ class QuickPackingView(LoginRequiredMixin, View):
                             main_category=row['main_category'],
                             description=row['description'],
                             volume=resolve_packing_volume(
-                                row['volume'], quantity=row['quantity'],
-                                size=row['size'], carton_quantity=row['carton_quantity'],
-                                order_id=row['order_id'],
+                                row['volume'], size=row['size'],
+                                is_confirmed=row['volume_is_confirmed'],
+                            ),
+                            volume_is_confirmed=bool(
+                                row['volume_is_confirmed'] and row['volume'] is not None
                             ),
                             wh_receipt_quantity=row.get('wh_receipt_quantity'),
                             ruined_quantity=row.get('ruined_quantity'),
@@ -4655,9 +4672,33 @@ class QuickPackingView(LoginRequiredMixin, View):
     def get(self, request, pk=None, *args, **kwargs):
         packing_obj = self.get_object(pk) if pk else None
         if packing_obj and not packing_obj.user_can_view_workflow(request.user):
-            # Apply before AJAX change-history too; never leak document data
-            # to users outside the current workflow stage and viewer group.
+            # Apply before AJAX change-history and file export too; never leak
+            # document data outside the current workflow stage and viewer groups.
             raise PermissionDenied('Packing document view access denied.')
+
+        if request.GET.get('export_excel') is not None:
+            if not packing_obj:
+                raise Http404('Packing not found.')
+            items = list(
+                packing_obj.packing_item_rel
+                .filter(is_deleted=False)
+                .select_related(
+                    'order', 'order__currency', 'order__brand',
+                    'order__item', 'order__item_trade',
+                )
+                .order_by('carton_number', 'id')
+            )
+            output = build_packing_workbook(
+                packing_obj,
+                items,
+                include_prices=Packing.user_can_view_prices(request.user),
+            )
+            filename = f"Packing_{packing_obj.packing_number or packing_obj.pk}.xlsx"
+            response = HttpResponse(output.getvalue(), content_type=XLSX_CONTENT_TYPE)
+            response['Content-Disposition'] = (
+                "attachment; filename*=UTF-8''" + quote(filename, safe='')
+            )
+            return response
 
         # A provider rate request is separate from saving manual Packing rates.
         # Permission checks happen *before* any paid XE API lookup.
@@ -4668,12 +4709,18 @@ class QuickPackingView(LoginRequiredMixin, View):
                     raise PermissionDenied('Packing workflow access denied.')
             else:
                 self._assert_create_access()
-            proposed = calculate_packing_volume(
-                quantity=request.GET.get('quantity'),
-                size=request.GET.get('size'),
-                carton_quantity=request.GET.get('carton_quantity'),
-                order_id=request.GET.get('order_id'),
-            )
+            try:
+                proposed = calculate_packing_volume(
+                    quantity=request.GET.get('quantity'),
+                    size=request.GET.get('size'),
+                    carton_quantity=request.GET.get('carton_quantity'),
+                    order_id=request.GET.get('order_id'),
+                )
+            except ValueError as exc:
+                return JsonResponse({
+                    'calculated_volume': None,
+                    **packing_error_payload(exc),
+                })
             return JsonResponse({
                 'calculated_volume': str(proposed) if proposed is not None else None,
             })

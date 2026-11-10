@@ -263,5 +263,10 @@
     "packing_err_send_failed": "Die Umbuchung konnte nicht an Sepidar gesendet werden.",
     "packing_err_packing_capacity": "Die Menge einer Position überschreitet die verfügbare Packkapazität.",
     "packing_err_assignee_required": "Wählen Sie eine Person für die Zuständigkeitsänderung.",
-    "packing_toast_error_title": "Speichern fehlgeschlagen"
+    "packing_toast_error_title": "Speichern fehlgeschlagen",
+    "packing_err_invalid_size": "Die Größe muss genau drei positive Maße enthalten, getrennt durch *, x oder × (z. B. 40*30*20).",
+    "packing_size_format_invalid": "Die Größe muss genau drei positive Maße enthalten, getrennt durch *, x oder × (z. B. 40*30*20).",
+    "packing_export_excel": "Excel herunterladen",
+    "packing_volume_calculation_hint": "Das Volumen wird aus Länge × Breite × Höhe ÷ 1.000.000 berechnet.",
+    "packing_overview_note": "Das Volumen wird als Länge × Breite × Höhe ÷ 1.000.000 berechnet. Bestätigte manuelle Werte bleiben erhalten."
 }

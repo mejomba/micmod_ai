@@ -43,6 +43,15 @@ class PackingErrorCodeTests(SimpleTestCase):
             ('packing_err_invalid_field', {'field': 'ruined_quantity'}),
         )
 
+
+    def test_invalid_packing_size_has_stable_localizable_code(self):
+        self.assertEqual(
+            classify_packing_error(
+                'سایز باید شامل سه عدد مثبت با جداکننده *، x یا × باشد (مثلاً 40*30*20).'
+            ),
+            ('packing_err_invalid_size', {}),
+        )
+
     def test_unexpected_remote_error_is_not_exposed_as_translation_key(self):
         code, params = classify_packing_error(
             '<script>alert("remote")</script> validation exception'
@@ -73,6 +82,20 @@ class PackingErrorCodeTests(SimpleTestCase):
                 file = Path(settings.BASE_DIR) / 'assets' / 'lang' / f'{lang}.json'
                 data = json.loads(file.read_text(encoding='utf-8'))
                 self.assertFalse(sorted(key for key in required if not data.get(key)))
+
+
+    def test_volume_and_export_ui_labels_exist_for_all_languages(self):
+        required = (
+            'packing_size_format_invalid',
+            'packing_export_excel',
+            'packing_volume_calculation_hint',
+            'packing_overview_note',
+        )
+        for lang in ('fa', 'en', 'gr', 'it', 'ru', 'sp'):
+            with self.subTest(lang=lang):
+                file = Path(settings.BASE_DIR) / 'assets' / 'lang' / f'{lang}.json'
+                data = json.loads(file.read_text(encoding='utf-8'))
+                self.assertFalse([key for key in required if not data.get(key)])
 
     def test_error_messages_do_not_use_untranslated_input_as_keys(self):
         page = (Path(settings.BASE_DIR) /
