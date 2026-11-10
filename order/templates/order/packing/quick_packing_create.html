@@ -1412,7 +1412,7 @@
         position: absolute;
         top: -18px;
         inset-inline-start: 50%;
-        transform: translateX(-50%);
+        transform: translateX(50%);
         font-size: .65rem;
         font-weight: 700;
         border: 1px solid #dbeafe;
@@ -1420,7 +1420,7 @@
         padding: 1px 5px;
         color: #2563eb;
         background: #eff6ff;
-        direction: ltr;
+        direction: rtl !important;
         white-space: nowrap;
         pointer-events: none;
     }
@@ -2779,7 +2779,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                         <div class="pk-card-header">
                             <div>
                                 <h2 class="pk-card-title">
-                                    <span class="pk-card-title-icon">PK</span>
+                                    <span class="pk-card-title-icon">{{ packing_object.pk|default:"—" }}</span>
                                     <span data-key="packing_info">Packing Information</span>
                                 </h2>
                                 <div class="pk-card-help mt-1">
@@ -2950,7 +2950,7 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                                                                 <span class="pk-workflow-event-stage" data-workflow-state="{{ entry.source|default:'' }}">{{ entry.source|default:"—" }}</span>
                                                                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
                                                                      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                                    <path d="m9 18 6-6-6-6"></path>
+                                                                    <path d="m15 18-6-6 6-6"></path>
                                                                 </svg>
                                                                 <span class="pk-workflow-event-stage is-target" data-workflow-state="{{ entry.target|default:'' }}">{{ entry.target|default:"—" }}</span>
                                                             </div>

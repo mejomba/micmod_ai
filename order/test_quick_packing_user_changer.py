@@ -135,7 +135,7 @@ class PackingWorkflowAssigneeChangerTests(SimpleTestCase):
             POST=QueryDict('workflow_action=change_user&workflow_user_id=17'),
             FILES={},
         )
-        locked = Mock()
+        locked = Mock(pk=42)
         with (
             patch('order.views.Packing.objects.select_for_update') as select_for_update,
             patch('order.views.transaction.atomic', return_value=nullcontext()),

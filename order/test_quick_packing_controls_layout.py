@@ -25,8 +25,21 @@ class QuickPackingControlLayoutTests(SimpleTestCase):
         self.assertIn('target="_blank" rel="noopener noreferrer"', html)
         self.assertNotIn('pk-ov-intro', html)
 
-    def test_packing_information_card_uses_pk_marker_instead_of_step_number(self):
-        self.assertIn('<span class="pk-card-title-icon">PK</span>', self.markup)
+    def test_packing_information_card_displays_packing_primary_key(self):
+        self.assertIn(
+            '<span class="pk-card-title-icon">{{ packing_object.pk|default:"—" }}</span>',
+            self.markup,
+        )
+
+    def test_workflow_duration_uses_rtl_text_alignment_and_requested_offset(self):
+        duration_css = self.markup.split('.pk-workflow-duration {', 1)[1].split('}', 1)[0]
+        self.assertIn('direction: rtl !important;', duration_css)
+        self.assertIn('transform: translateX(50%);', duration_css)
+        self.assertNotIn('direction: ltr;', duration_css)
+
+    def test_workflow_history_transition_arrow_points_left(self):
+        self.assertIn('<path d="m15 18-6-6 6-6"></path>', self.markup)
+        self.assertNotIn('<path d="m9 18 6-6-6-6"></path>', self.markup)
 
     def test_primary_actions_live_in_one_fixed_bottom_bar(self):
         html = self.markup
