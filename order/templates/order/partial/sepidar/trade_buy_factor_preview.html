@@ -1,8 +1,68 @@
-<div class="d-flex gap-4">
-    <span>فاکتور خرید</span>
-    <span>رسید انبار قبل از مرکزی</span>
-    <span>سند حسابداری</span>
-
-<span id="to-sepidar" class="btn btn-sm btn-primary" data-url="{% url 'order:order_and_sepidar' %}?view_name=trade_buy_factor&gio_id={{ form.instance.pk }}" onclick="send_gio_to_sepidar(event)" data-bs-toggle="tooltip" data-bs-original-title="پس از ارسال به سپیدار سند قفل شده و امکان تغییر آن وجود نخواهد داشت.">ارسال به سپیدار</span>
-
+{% if groups %}
+<div class="gio-groups" id="gio-sepidar-groups">
+  {% for group in groups %}
+    <article class="gio-group-card gio-preview-group" data-group-key="{{ group.key }}">
+      <header class="gio-group-head">
+        <div>
+          <div class="gio-eyebrow text-muted mb-1">گروه {{ forloop.counter }} · تأمین‌کننده / ارز</div>
+          <h4>{{ group.supplier }} <span class="mx-1 text-muted">/</span> {{ group.currency }}</h4>
+          <p>{{ group.row_count }} ردیف سفارش · کد تأمین‌کننده سپیدار: {{ group.supplier_ref }} · کد ارز: {{ group.currency_ref }}</p>
+        </div>
+        <span class="gio-state gio-state--{{ group.status }}">
+          {% if group.status == 'success' %}ارسال موفق{% elif group.status == 'failed' %}ارسال ناموفق · قابل تلاش مجدد{% elif group.status == 'unknown' %}وضعیت نامشخص · نیازمند بررسی{% elif group.status == 'sending' %}در حال ارسال{% else %}آماده ارسال{% endif %}
+        </span>
+      </header>
+      <div class="gio-group-content">
+        <p class="text-muted fs-8 mb-2">اقلامی که بر اساس اطلاعات فعلی پرتال در این گروه قرار می‌گیرند:</p>
+        <div class="table-responsive">
+          <table class="gio-group-table">
+            <thead><tr><th>سفارش</th><th>پارت نامبر</th><th>تعداد</th></tr></thead>
+            <tbody>
+              {% for item in group.items %}
+                <tr><td>{{ item.order_number }}</td><td>{{ item.part_number }}</td><td>{{ item.quantity }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="gio-doc-grid" aria-label="سه سند سپیدار">
+          <div class="gio-doc">
+            <span class="gio-doc-mark">سند ۱ از ۳</span>
+            <span class="gio-doc-title">فاکتور خرید</span>
+            {% if group.invoice.id %}<span class="gio-doc-value">شماره {{ group.invoice.number }} / شناسه {{ group.invoice.id }}</span>{% else %}<span class="gio-doc-value">پس از ارسال ایجاد می‌شود</span>{% endif %}
+          </div>
+          <div class="gio-doc">
+            <span class="gio-doc-mark">سند ۲ از ۳</span>
+            <span class="gio-doc-title">رسید انبار قبل از مرکزی</span>
+            {% if group.receipt.id %}<span class="gio-doc-value">شماره {{ group.receipt.number }} / شناسه {{ group.receipt.id }}</span>{% else %}<span class="gio-doc-value">پس از ارسال ایجاد می‌شود</span>{% endif %}
+          </div>
+          <div class="gio-doc">
+            <span class="gio-doc-mark">سند ۳ از ۳</span>
+            <span class="gio-doc-title">سند حسابداری</span>
+            {% if group.voucher.id %}<span class="gio-doc-value">شماره {{ group.voucher.number }} / شناسه {{ group.voucher.id }}</span>{% else %}<span class="gio-doc-value">پس از ارسال ایجاد می‌شود</span>{% endif %}
+          </div>
+        </div>
+        {% if group.error %}<div class="gio-alert gio-alert--error">{{ group.error }}</div>{% endif %}
+      </div>
+      <footer class="gio-group-footer">
+        <div class="text-muted fs-8">
+          {% if group.status == 'success' %}هر سه سند ثبت شده‌اند و ارسال مجدد مجاز نیست.
+          {% elif group.status == 'unknown' %}برای جلوگیری از ثبت تکراری، ارسال مجدد تا بررسی دستی مسدود است.
+          {% elif group.status == 'sending' %}ارسال قبلی هنوز تعیین تکلیف نشده است.
+          {% elif group.status == 'failed' %}فقط این گروه می‌تواند دوباره ارسال شود.
+          {% else %}پس از تأیید، هر سه سند این گروه در سپیدار ثبت می‌شوند.{% endif %}
+        </div>
+        {% if gio_sepidar_can_send and group.can_send %}
+          <button type="button" class="btn btn-primary gio-send-group" data-group-key="{{ group.key }}">
+            {% if group.status == 'failed' %}تلاش مجدد این گروه{% else %}ارسال این گروه به سپیدار{% endif %}
+          </button>
+        {% elif group.status == 'success' %}
+          <button type="button" class="btn btn-light-primary" data-go-tab="documents" onclick="document.querySelector('[data-gio-tab=documents]').click()">مشاهده اسناد ثبت‌شده</button>
+        {% endif %}
+      </footer>
+    </article>
+  {% endfor %}
 </div>
+<div class="gio-alert mt-4">توجه: این پیش‌نمایش از اطلاعات ثبت‌شده در پرتال ساخته می‌شود. تعداد اسناد هر گروه دقیقاً سه مورد است؛ شناسه و شماره واقعی آن‌ها پس از پاسخ موفق سپیدار در تب «اسناد ثبت‌شده» نمایش داده می‌شود.</div>
+{% else %}
+<div class="gio-empty">هیچ ردیفی برای پیش‌نمایش ارسال به سپیدار وجود ندارد.</div>
+{% endif %}

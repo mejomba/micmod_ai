@@ -60,7 +60,7 @@ from .packing_inline_labels import normalize_packing_label, packing_label_sugges
 from .packing_carton_size import reconcile_carton_sizes
 from .gio_sepidar import (
     GIOSepidarError, gio_is_locked, gio_document_display, group_states,
-    plan_gio_groups, send_gio_groups, user_can_send_gio,
+    plan_gio_groups, send_gio_groups, user_can_send_gio, gio_preview_groups,
 )
 from .form_perm import ORDER_FIELDS_BY_PERMISSION
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
@@ -2403,8 +2403,8 @@ class OrderAndSepidar(View):
             return JsonResponse({'res': {"error": e.args[0]}}, status=400)
 
     def trade_buy_factor_preview(self, request, *args, **kwargs):
-        if not user_can_send_gio(request.user):
-            return JsonResponse({'error': 'GIO Sepidar access denied.'}, status=403)
+        if not request.user.is_authenticated:
+            return JsonResponse({'error': 'Authentication is required.'}, status=403)
         try:
             gio_id = int(request.GET.get('gio_id'))
         except (ValueError, TypeError):
@@ -2413,21 +2413,18 @@ class OrderAndSepidar(View):
         if not gio:
             return JsonResponse({'error': 'GIO not found.'}, status=404)
         try:
-            planned = plan_gio_groups(gio)
+            groups = gio_preview_groups(gio)
         except GIOSepidarError as exc:
             return JsonResponse({'error': str(exc)}, status=400)
         html = render_to_string(
             'order/partial/sepidar/trade_buy_factor_preview.html',
-            context={'form': GIOForm(instance=gio)}, request=request,
+            context={
+                'gio': gio, 'groups': groups,
+                'gio_sepidar_can_send': user_can_send_gio(request.user),
+            },
+            request=request,
         )
-        previous = {x['key']: x for x in group_states(gio)}
-        return JsonResponse({
-            'res': html,
-            'groups': [
-                {**previous.get(key, {'key': key, 'status': 'pending'}), 'rows': len(rows)}
-                for key, rows in planned.items()
-            ],
-        })
+        return JsonResponse({'res': html, 'groups': groups})
 
     def trade_buy_factor(self, request, *args, **kwargs):
         """Send and record GIO's three Sepidar documents per vendor/currency."""
@@ -3450,7 +3447,7 @@ def portal_reserve_(request, sku, *args, **kwargs):
 
 
 class QuickGIOView(LoginRequiredMixin, View):
-    template_name = 'order/gio/quick_gio_create.html' # for update use 'order/gio/quick_gio_create.html'
+    template_name = 'order/gio/quick_gio_update.html'
     form_class = GIOForm
     model = GIO
     # wf_last_step_is_open = True
@@ -3541,11 +3538,27 @@ class QuickGIOView(LoginRequiredMixin, View):
         gio_form = GIOForm(instance=gio_object)
         gio_item_formset = GIOItemFormSet()
 
+        sepidar_groups = []
+        sepidar_preview_error = ''
+        if gio_object:
+            try:
+                sepidar_groups = gio_preview_groups(gio_object)
+            except GIOSepidarError as exc:
+                sepidar_preview_error = str(exc)
+
         context = {
             'form': gio_form,
             'formset': gio_item_formset,
-            'gios': GIOItem.objects.filter(gio=gio_object).order_by('id'),
+            'gios': (
+                GIOItem.objects.filter(gio=gio_object, is_deleted=False).select_related(
+                    'order', 'order__item', 'order__item_trade',
+                ).order_by('id') if gio_object else GIOItem.objects.none()
+            ),
             'gio_is_locked': gio_is_locked(gio_object),
+            'gio_sepidar_can_send': user_can_send_gio(request.user),
+            'gio_sepidar_groups': sepidar_groups,
+            'gio_has_group_submissions': gio_object.sepidar_groups.exists() if gio_object else False,
+            'gio_sepidar_preview_error': sepidar_preview_error,
             'gio_sepidar_response': gio_document_display(gio_object) if gio_object else {},
         }
         
@@ -3568,74 +3581,67 @@ class QuickGIOView(LoginRequiredMixin, View):
 
 
 class QuickGIODataTableListView(AjaxDatatableView):
+    """Order picker. Record metadata lives on the add button, not hidden cells."""
     model = Order
     title = 'order_list'
-    initial_order = [["id", "des"], ]
+    initial_order = [['id', 'desc']]
     length_menu = [[10, 25, 50], [10, 25, 50]]
     search_values_separator = '+'
-    render_row_details_template_name = 'sku_list_detail.html'
     show_column_filters = True
     column_defs = [
-        AjaxDatatableView.render_row_tools_column_def(),
-
-        {'name': 'order_number', 'title': '<div style="max-width: 60px; text-wrap: auto;">order number</div>', 'orderable': True, 'visible': True, 'searchable': True, "className": 'py-1'},
-        {'name': 'item', 'orderable': True, 'title': 'sku', 'visible': True, 'lookup_field': '__sku__icontains', 'className': 'py-1'},
-        {'name': 'item__part_number', 'orderable': True, 'title': '<div class="px-2">part number</div>', 'visible': True, 'lookup_field': '__icontains', 'className': 'partnumber'},
-        {'name': 'quantity', 'orderable': True, 'visible': True, 'searchable': False, 'title': '<div style="max-width: 55px; text-wrap: auto;">final quantity</div>', 'className': ''},
-        {'name': 'remaining_quantity', 'orderable': True, 'searchable': False, 'visible': True, 'title': '<div style="max-width: 55px; text-wrap: auto;">remaining quantity</div>', 'className': 'quantity'},
-        {'name': 'creator_user', 'title': 'creator', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
-        {'name': 'created_date', 'orderable': True, 'title': 'created date', 'visible': True, },
-        # {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'description sales'},
-        {'name': 'description_trade', 'orderable': True, 'visible': True, 'title': 'description trade'},
-        {'name': 'buy_factor', 'orderable': False, 'visible': True, 'searchable': False, 'title': '<div class="px-0" style="max-width:20px;">Add</div>', },
-
-        {'name': 'id', 'title': "id", 'orderable': True, 'searchable': False, 'visible': True, "className": 'order w-0 d-none'},
-        {'name': 'show_order_str', 'title': "show_order_str", 'orderable': False, 'searchable': False, 'visible': True, "className": 'py-1 show_order_str d-none'},
-        {'name': 'item__sepidar_id_0', 'visible': True, 'searchable': False, 'className': 'itemref d-none'},
+        {'name': 'order_number', 'title': 'سفارش', 'orderable': True,
+         'visible': True, 'searchable': True, 'className': 'gio-order-number'},
+        {'name': 'item__part_number', 'title': 'پارت نامبر', 'orderable': True,
+         'visible': True, 'searchable': True, 'lookup_field': '__icontains'},
+        {'name': 'quantity', 'title': 'تعداد کل', 'orderable': False,
+         'visible': True, 'searchable': False},
+        {'name': 'remaining_quantity', 'title': 'قابل انتخاب', 'orderable': False,
+         'visible': True, 'searchable': False},
+        {'name': 'currency', 'title': 'ارز', 'orderable': False,
+         'visible': True, 'searchable': False},
+        {'name': 'buy_factor', 'title': 'انتخاب', 'orderable': False,
+         'visible': True, 'searchable': False, 'className': 'gio-pick-cell'},
     ]
 
     def get_initial_queryset(self, request=None):
-        item_weight_subquery = (
-            ItemWeight.objects
-            .filter(
-                sku_id=OuterRef('item_id'),
-                creator_user__isnull=False,
-            )
-            .order_by('-editor_user__groups__name', '-created_date')
-            .values('weight')[:1]
-        )
-        trade_item_weight_subquery = (
-            ItemWeight.objects
-            .filter(
-                sku_id=OuterRef('item_trade_id'),
-                creator_user__isnull=False,
-            )
-            .order_by('-editor_user__groups__name', '-created_date')
-            .values('weight')[:1]
-        )
-
         effective_quantity = Case(
             When(quantity_mac__isnull=False, quantity_mac__gt=0, then=F('quantity_mac')),
             When(quantity_trade__isnull=False, quantity_trade__gt=0, then=F('quantity_trade')),
             When(quantity__isnull=False, quantity__gt=0, then=F('quantity')),
             default=Value(0),
-            output_field=FloatField()
+            output_field=FloatField(),
         )
-        qs = self.model.objects.annotate(quantity_in_gio=Coalesce(Sum('gio_items__quantity'), Value(0, output_field=FloatField())), effective_quantity=effective_quantity).filter(is_deleted=False,
-                                                                                            is_wh=False,
-                                                                                            last_work_flow__current_state_name='پرداخت / PACKING / GIO',
-                                                                                            effective_quantity__gt=F('quantity_in_gio'))
-        # .filter(Q(buy_factor_quantity_in_sepidar__lt=F('quantity')) | Q(buy_factor_quantity_in_sepidar__isnull=True)))
-        return qs
+        return self.model.objects.annotate(
+            quantity_in_gio=Coalesce(
+                Sum('gio_items__quantity', filter=Q(gio_items__is_deleted=False)),
+                Value(0, output_field=FloatField()),
+            ),
+            effective_quantity=effective_quantity,
+        ).filter(
+            is_deleted=False,
+            is_wh=False,
+            last_work_flow__current_state_name='پرداخت / PACKING / GIO',
+            effective_quantity__gt=F('quantity_in_gio'),
+        ).select_related('item', 'item_trade', 'currency')
 
     def customize_row(self, row, obj):
+        remaining = max(0, obj.final_quantity - obj.quantity_in_gio)
+        part_number = getattr(obj.final_item, 'part_number', None) or '-'
         row['quantity'] = obj.final_quantity
-        # row['remaining_quantity'] = obj.final_quantity - sum([x.sum_quantity for x in obj.gio_items.annotate(sum_quantity=Sum('quantity'))])
-        row['remaining_quantity'] = obj.final_quantity - obj.quantity_in_gio
-        row['item__sepidar_id_0'] = obj.item.sepidar_id_0
-        row['item__part_number'] = f'<span>{obj.final_item.part_number}</span>' if obj.item else ""
-        row['show_order_str'] = mark_safe(f'<div class="d-flex gap-6"> <span>{obj.order_number}</span> / <span>sku:{obj.final_item}</span> <span class="bg-light-info px-1">{obj.final_item.part_number}</span></div>')
-        row['buy_factor'] = '<span class="fw-bold p-3 cursor-pointer font-size-16 py-5 action" data-is_selected=no onclick="order_to_gio_item(event)" >➕</span>'
+        row['remaining_quantity'] = remaining
+        row['item__part_number'] = escape(str(part_number))
+        row['currency'] = escape(str(
+            getattr(obj.currency, 'title_en', None)
+            or getattr(obj.currency, 'title', None) or '-'
+        ))
+        label = '%s / %s' % (obj.order_number or obj.pk, part_number)
+        row['buy_factor'] = mark_safe(
+            '<button type="button" class="btn btn-sm btn-light-primary gio-pick-order" '
+            'data-order-id="%s" data-max-qty="%s" data-label="%s" '
+            'onclick="order_to_gio_item(event)">افزودن</button>' % (
+                obj.pk, remaining, escape(label),
+            )
+        )
 
 
 class QuickPackingView(LoginRequiredMixin, View):

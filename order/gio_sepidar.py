@@ -190,6 +190,61 @@ def group_states(gio):
     ]
 
 
+def gio_preview_groups(gio):
+    """Build readable Sepidar preview from *current* portal order data.
+
+    This never calls Sepidar and does not pretend to be an API document readback.
+    Each supplier/currency group will create exactly three document types.
+    """
+    planned = plan_gio_groups(gio)
+    saved = {group.group_key: group for group in gio.sepidar_groups.all()}
+    result = []
+    is_legacy = bool(
+        gio.sepidar_buy_factor_response_json
+        or gio.sepidar_inventory_receipt_response_json
+    )
+    for key, rows in planned.items():
+        first = rows[0].order
+        supplier = first.final_supplier
+        dlref = key.split('___', 1)[0]
+        supplier_label = (
+            str(supplier) if supplier and str(getattr(supplier, 'dlref', '')) == dlref
+            else 'تأمین‌کننده پیش‌فرض سپیدار'
+        )
+        currency = first.currency
+        currency_label = str(currency.title_en or currency.title or currency.sepidar_id)
+        record = saved.get(key)
+        status = record.status if record else ('success' if is_legacy else 'pending')
+        items = []
+        for row in rows:
+            order = row.order
+            final_item = order.final_item
+            items.append({
+                'order_id': order.pk,
+                'order_number': str(order.order_number or order.pk),
+                'part_number': str(getattr(final_item, 'part_number', None) or '-'),
+                'quantity': _quantity_text(row.quantity),
+                'description': row.description or '',
+            })
+        result.append({
+            'key': key,
+            'supplier': supplier_label,
+            'supplier_ref': dlref,
+            'currency': currency_label,
+            'currency_ref': key.split('___', 1)[1],
+            'status': status,
+            'can_send': not is_legacy and status in ('pending', 'failed'),
+            'error': record.last_error if record else '',
+            'attempts': record.attempt_count if record else 0,
+            'invoice': {'id': record.invoice_id, 'number': record.invoice_number} if record else {},
+            'receipt': {'id': record.receipt_id, 'number': record.receipt_number} if record else {},
+            'voucher': {'id': record.voucher_id, 'number': record.voucher_number} if record else {},
+            'items': items,
+            'row_count': len(items),
+        })
+    return result
+
+
 def gio_document_display(gio):
     """Feed the existing three-column Quick GIO display without changing CSS."""
     legacy = gio.sepidar_buy_factor_response_json
