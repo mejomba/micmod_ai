@@ -17,7 +17,9 @@ class QuickPackingDocumentAccessTests(SimpleTestCase):
         self.packing = Mock()
         self.packing.user_can_view_workflow.return_value = False
         self.view.get_object = Mock(return_value=self.packing)
+        self.packing.user_has_workflow_access.return_value = False
         self.user = Mock(is_authenticated=True, is_superuser=False)
+        self.user.groups.filter.return_value.exists.return_value = False
         self.request = SimpleNamespace(
             user=self.user, GET={},
         )

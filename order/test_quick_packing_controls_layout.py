@@ -15,6 +15,19 @@ class QuickPackingControlLayoutTests(SimpleTestCase):
         path = Path(settings.BASE_DIR) / 'order/templates/order/packing/quick_packing_create.html'
         cls.markup = path.read_text(encoding='utf-8')
 
+    def test_existing_packing_header_has_only_section_tabs_and_new_tab_list_link(self):
+        html = self.markup
+        self.assertIn('packing-page-header-existing', html)
+        self.assertIn('<div class="pk-ov-tabs" role="tablist" aria-label="Packing sections">', html)
+        self.assertIn('data-key="packing_overview_details"', html)
+        self.assertIn('data-key="packing_overview_tab"', html)
+        self.assertIn('class="pk-ov-list-link"', html)
+        self.assertIn('target="_blank" rel="noopener noreferrer"', html)
+        self.assertNotIn('pk-ov-intro', html)
+
+    def test_packing_information_card_uses_pk_marker_instead_of_step_number(self):
+        self.assertIn('<span class="pk-card-title-icon">PK</span>', self.markup)
+
     def test_primary_actions_live_in_one_fixed_bottom_bar(self):
         html = self.markup
         self.assertEqual(html.count('<div class="pk-command-bar"'), 1)

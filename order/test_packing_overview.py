@@ -99,7 +99,9 @@ class PackingOverviewTemplateTests(SimpleTestCase):
         ).read_text(encoding='utf-8')
 
     def test_overview_is_separate_accessible_tab_for_existing_packing(self):
-        self.assertIn('{% if packing_object %}\n            <div class="pk-ov-tabs"', self.html)
+        self.assertIn('packing-page-header-existing', self.html)
+        self.assertIn('<div class="pk-ov-tabs" role="tablist"', self.html)
+        self.assertNotIn('pk-ov-intro', self.html)
         for expected in (
             'id="pk-tab-details"', 'id="pk-tab-overview"',
             'id="pk-overview-panel"', 'role="tabpanel"',
@@ -263,6 +265,16 @@ class PackingOverviewTemplateTests(SimpleTestCase):
             "right.textContent=ovCount(values.quantity)+' · '+ovPercent(share)+'%'",
         )
         for expected in percentage_features:
+            with self.subTest(expected=expected):
+                self.assertIn(expected, self.html)
+
+    def test_overview_weights_distinguish_system_calculated_and_user_declared_values(self):
+        for expected in (
+            "packing_overview_net: 'وزن محاسباتی سیستم (kg)'",
+            "packing_overview_gross: 'وزن اعلامی کاربر (kg)'",
+            "packing_overview_net: 'System-calculated weight (kg)'",
+            "packing_overview_gross: 'User-declared weight (kg)'",
+        ):
             with self.subTest(expected=expected):
                 self.assertIn(expected, self.html)
 

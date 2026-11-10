@@ -3852,8 +3852,10 @@ class QuickPackingView(LoginRequiredMixin, View):
             only_show=only_show,
         )
 
-    def _workflow_description(self):
-        description = (self.request.POST.get('wf_description') or '').strip()
+    def _workflow_description(self, request=None):
+        request = request or getattr(self, 'request', None)
+        post = getattr(request, 'POST', {})
+        description = (post.get('wf_description') or '').strip()
         if len(description) > 255:
             raise ValueError('توضیحات جریان کاری نباید بیشتر از ۲۵۵ کاراکتر باشد.')
         return description
@@ -3896,6 +3898,25 @@ class QuickPackingView(LoginRequiredMixin, View):
         return wf
 
     def _pick_flow_user(self, packing_obj, group):
+        # Keep ownership with the current assignee when that person is also
+        # eligible for the destination stage. Historical destination-group
+        # assignments are only a fallback when the current owner is ineligible.
+        current_group = self._flow_group(packing_obj.workflow_state_index())
+        current_assignee = (
+            packing_obj.workflow_assigned_user(
+                current_group,
+                fallback_first=False,
+            )
+            if current_group else None
+        )
+        if (
+            current_assignee
+            and group
+            and getattr(current_assignee, 'is_active', False)
+            and current_assignee.groups.filter(name=group).exists()
+        ):
+            return current_assignee
+
         user = packing_obj.workflow_assigned_user(
             group,
             fallback_first=True,
@@ -3904,27 +3925,43 @@ class QuickPackingView(LoginRequiredMixin, View):
             raise ValueError(f'No user is available in workflow group {group}.')
         return user
 
-    def _can_change_user(self, packing_obj):
+    def _can_change_user(self, packing_obj, user=None):
         if not packing_obj:
             return False
+        user = user or getattr(getattr(self, 'request', None), 'user', None)
+        if not user or not getattr(user, 'is_authenticated', False):
+            return False
+        if (
+            getattr(user, 'is_superuser', False)
+            or Packing.user_can_change_workflow_user(user)
+        ):
+            return True
+
+        # A group admin already has current-stage workflow access. Checking
+        # that first also avoids resolving the active stage for unrelated users.
+        if not packing_obj.user_has_workflow_access(user):
+            return False
         current_group = self._flow_group(packing_obj.workflow_state_index())
-        return bool(
-            self.request.user.is_superuser
-            or FlowAdminGroup.is_admin_of_group(
-                self.request.user,
-                current_group,
-                model=Packing,
-            )
+        return FlowAdminGroup.is_admin_of_group(
+            user,
+            current_group,
+            model=Packing,
         )
 
-    def _change_workflow_user(self, packing_obj, user_id):
-        if not self._can_change_user(packing_obj):
-            raise PermissionDenied('Only workflow admins can change the assigned user.')
+    def _change_workflow_user(self, packing_obj, user_id, request=None):
+        request = request or getattr(self, 'request', None)
+        actor = getattr(request, 'user', None)
+        if not self._can_change_user(packing_obj, user=actor):
+            raise PermissionDenied('You are not authorized to change the workflow assignee.')
 
         state_index = packing_obj.workflow_state_index()
         states = self.flow_config.get('flow_state_list') or []
+        if state_index < 0 or state_index >= len(states):
+            raise ValueError('Packing workflow is not configured.')
         current_state = states[state_index]
         current_group = self._flow_group(state_index)
+        if not current_group:
+            raise ValueError('The current workflow group is not configured.')
 
         new_user = (
             get_user_model().objects
@@ -3947,7 +3984,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             wf_status=4,
             action='change_user',
             flow_name=self.flow_config.get('flow_name') or 'create packing',
-            from_user=self.request.user,
+            from_user=actor,
             to_user=new_user,
             state=current_state,
             deadline=timezone.now() + timedelta(days=deadline_days),
@@ -3955,12 +3992,12 @@ class QuickPackingView(LoginRequiredMixin, View):
             content_type=ContentType.objects.get_for_model(Packing),
             object_id=packing_obj.pk,
             current_state_name=current_state,
-            wf_description=self._workflow_description(),
-            creator_user=self.request.user,
-            editor_user=self.request.user,
+            wf_description=self._workflow_description(request),
+            creator_user=actor,
+            editor_user=actor,
         )
         packing_obj.last_work_flow = wf
-        packing_obj.extra_data.request = self.request
+        packing_obj.extra_data.request = request
         packing_obj.save()
         return wf
 
@@ -4436,14 +4473,32 @@ class QuickPackingView(LoginRequiredMixin, View):
         )
 
     def post(self, request, pk=None, *args, **kwargs):
+        self.request = request
         packing_obj = self.get_object(pk) if pk else None
 
         try:
             if packing_obj:
+                workflow_action = request.POST.get('workflow_action')
+
+                # Assignee changes are a narrowly scoped permission. Do not
+                # bind/save document fields or rows for users who only hold
+                # the model-specific *_user_changer group.
+                if workflow_action == 'change_user':
+                    with transaction.atomic():
+                        packing_obj = Packing.objects.select_for_update().get(pk=packing_obj.pk)
+                        self._change_workflow_user(
+                            packing_obj,
+                            request.POST.get('workflow_user_id'),
+                            request=request,
+                        )
+                    return JsonResponse(
+                        {'res': {'url': reverse_lazy('order:quick_packing', kwargs={'pk': packing_obj.pk})}},
+                        status=200,
+                    )
+
                 if not packing_obj.user_has_workflow_access(request.user):
                     raise PermissionDenied('Packing workflow access denied.')
 
-                workflow_action = request.POST.get('workflow_action')
                 if workflow_action:
                     with transaction.atomic():
                         packing_obj = Packing.objects.select_for_update().get(pk=packing_obj.pk)
@@ -4472,14 +4527,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                             request, packing_obj, pre_parsed_rows=existing_rows,
                         )
                         self._save_uploaded_files(request, packing_obj, form=form)
-
-                        if workflow_action == 'change_user':
-                            self._change_workflow_user(
-                                packing_obj,
-                                request.POST.get('workflow_user_id'),
-                            )
-                        else:
-                            self._submit_workflow_action(packing_obj, workflow_action)
+                        self._submit_workflow_action(packing_obj, workflow_action)
 
                     return JsonResponse(
                         {'res': {'url': reverse_lazy('order:quick_packing', kwargs={'pk': packing_obj.pk})}},
@@ -4672,9 +4720,39 @@ class QuickPackingView(LoginRequiredMixin, View):
     def get(self, request, pk=None, *args, **kwargs):
         packing_obj = self.get_object(pk) if pk else None
         if packing_obj and not packing_obj.user_can_view_workflow(request.user):
-            # Apply before AJAX change-history and file export too; never leak
-            # document data outside the current workflow stage and viewer groups.
-            raise PermissionDenied('Packing document view access denied.')
+            # Assignee changers get a deliberately minimal page. They can see
+            # only the current stage/assignee and eligible users, not document
+            # details, audit history, files, prices, or the packing item list.
+            if not self._can_change_user(packing_obj, user=request.user):
+                raise PermissionDenied('Packing document view access denied.')
+            if request.GET:
+                raise PermissionDenied('Packing document view access denied.')
+
+            state_index = packing_obj.workflow_state_index()
+            states = self.flow_config.get('flow_state_list') or []
+            current_group = self._flow_group(state_index)
+            return render(
+                request,
+                'order/packing/quick_packing_change_user.html',
+                {
+                    'packing_object': packing_obj,
+                    'current_state': states[state_index] if state_index < len(states) else '',
+                    'workflow_current_user': (
+                        packing_obj.workflow_assigned_user(
+                            current_group,
+                            fallback_first=False,
+                        )
+                        if current_group else None
+                    ),
+                    'workflow_group_users': (
+                        get_user_model().objects.filter(
+                            groups__name=current_group,
+                            is_active=True,
+                        ).distinct().order_by('id')
+                        if current_group else get_user_model().objects.none()
+                    ),
+                },
+            )
 
         if request.GET.get('export_excel') is not None:
             if not packing_obj:
@@ -4847,7 +4925,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                 wf_access and packing_obj and state_index > 0
                 and not warehouse_data_saved
             ),
-            'can_change_user': bool(packing_obj and self._can_change_user(packing_obj)),
+            'can_change_user': bool(packing_obj and self._can_change_user(packing_obj, user=request.user)),
             'workflow_current_user': (
                 packing_obj.workflow_assigned_user(
                     self._flow_group(state_index),

@@ -1301,6 +1301,20 @@ class Packing(BaseModeWF):
 
     VIEW_ONLY_GROUP = 'packing_viewer'
     FINANCE_VIEW_ONLY_GROUP = 'packing_finance_viewer'
+    USER_CHANGER_GROUP_SUFFIX = '_user_changer'
+
+    @classmethod
+    def workflow_user_changer_group(cls):
+        """Return the model-scoped group allowed to change workflow assignees."""
+        return f'{cls._meta.model_name}{cls.USER_CHANGER_GROUP_SUFFIX}'
+
+    @classmethod
+    def user_can_change_workflow_user(cls, user):
+        """This permission changes only the assignee, not document edit access."""
+        return bool(
+            user and getattr(user, 'is_authenticated', False)
+            and user.groups.filter(name=cls.workflow_user_changer_group()).exists()
+        )
 
     @classmethod
     def user_can_view_prices(cls, user):
