@@ -238,6 +238,46 @@ class GIOSepidarSendTests(TestCase):
                 '202___2': good_response('202___2'),
             })
 
+    def test_delete_confirmation_for_unsent_gio_and_locked_gio(self):
+        """GIO confirm must use globally imported apps, not a packing-only local."""
+        from django.test import RequestFactory
+        from core.views import delete_confirm
+        factory = RequestFactory()
+        request = factory.get('/core/delete/confirm/', {
+            'app_label': 'order',
+            'model': 'gio',
+            'object_id': str(self.gio.pk),
+        })
+        request.user = SimpleNamespace(is_authenticated=True)
+        response = delete_confirm(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'delete-confirm', response.content)
+        GIOSepidarGroup.objects.create(
+            gio=self.gio, group_key='201___1', status='unknown',
+        )
+        locked_response = delete_confirm(request)
+        self.assertEqual(locked_response.status_code, 409)
+
+    def test_delete_confirmation_for_unsent_gio_item(self):
+        """Exercise the same confirmation path reached by Quick GIO row delete."""
+        from django.test import RequestFactory
+        from core.views import delete_confirm
+        from order.models import GIOItem
+        row = GIOItem.objects.create(gio=self.gio, quantity=1)
+        request = RequestFactory().get('/core/delete/confirm/', {
+            'app_label': 'order',
+            'model': 'gioitem',
+            'object_id': str(row.pk),
+        })
+        request.user = SimpleNamespace(is_authenticated=True)
+        response = delete_confirm(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'delete-confirm', response.content)
+        GIOSepidarGroup.objects.create(
+            gio=self.gio, group_key='201___1', status='unknown',
+        )
+        self.assertEqual(delete_confirm(request).status_code, 409)
+
     def test_server_rejects_edit_and_delete_during_unknown_status(self):
         import json
         from django.test import RequestFactory

@@ -1332,7 +1332,6 @@ def delete_confirm(request, *args, **kwargs):
     object_id = request.GET.get('object_id')
 
     if app_label == 'order' and model_name == 'packingitem':
-        from django.apps import apps
         model = apps.get_model(app_label, model_name)
         obj = model.objects.filter(pk=object_id).select_related('packing').first()
         if not obj or not obj.packing.user_has_workflow_access(request.user):
