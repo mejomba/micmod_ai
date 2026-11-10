@@ -4684,7 +4684,13 @@ class QuickPackingView(LoginRequiredMixin, View):
                 .filter(is_deleted=False)
                 .select_related(
                     'order', 'order__currency', 'order__brand',
-                    'order__item', 'order__item_trade',
+                    'order__item', 'order__item__brand',
+                    'order__item__purchase_group',
+                    'order__item__purchase_group__hs', 'order__item__hs',
+                    'order__item_trade', 'order__item_trade__brand',
+                    'order__item_trade__purchase_group',
+                    'order__item_trade__purchase_group__hs',
+                    'order__item_trade__hs',
                 )
                 .order_by('carton_number', 'id')
             )

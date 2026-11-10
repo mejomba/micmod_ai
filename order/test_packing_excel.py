@@ -1,8 +1,12 @@
-"""Tests for the four-sheet Quick Packing Excel export."""
+"""Regression tests for the approved four-sheet Packing Excel export."""
 from decimal import Decimal
 from io import BytesIO
+from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
+from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from django.test import SimpleTestCase
 from openpyxl import load_workbook
 
@@ -10,59 +14,75 @@ from order.packing_excel import build_packing_workbook
 
 
 def sample_data():
+    cny = SimpleNamespace(pk=2, title='یوان', title_en='RMB')
+    usd = SimpleNamespace(pk=1, title='دلار', title_en='Dollar')
     product = SimpleNamespace(
-        part_number='PN-100',
-        description='Widget',
+        part_number='PN-100', sku='SKU-100',
+        weight=Decimal('0.250'),
+        purchase_group=SimpleNamespace(title='PCBA', hs=None),
+        hs=SimpleNamespace(code='85340000'), brand=None,
     )
     order = SimpleNamespace(
-        pk=100,
-        order_number='ORD-100',
-        final_item=product,
-        item=None,
-        item_trade=None,
-        brand=SimpleNamespace(title='Brand A'),
-        final_weight=Decimal('0.250'),
-        final_price=Decimal('12.50'),
-        currency=SimpleNamespace(title='USD', title_en='Dollar'),
-        description_trade='Trade description',
-        description_sale='Sales description',
-        part_number_mac='',
+        pk=100, order_number='ORD-100', final_item=product,
+        item=None, item_trade=None, brand=SimpleNamespace(title='Brand A'),
+        final_weight=Decimal('0.250'), final_price=Decimal('12.50'),
+        currency=cny, currency_id=2, description_trade='Trade description',
+        description_sale='Sales description', part_number_mac='',
     )
     packing = SimpleNamespace(
-        pk=9,
-        packing_number='PK-009',
-        bl_number='BL-009',
-        bl_date=None,
-        transportation_company='Carrier',
-        origin='Shenzhen',
-        destination='Tehran',
-        estimated_shipping_start_date=None,
-        estimated_arrive_to_wh_date=None,
+        pk=9, packing_number='PK-009', shipment_type='air',
+        origin='Shenzhen', destination='Tehran',
+        currency=usd, currency_id=1,
+        currency_exchange_rates={
+            'target_currency_id': '1', 'rates': {'2': '0.15'},
+        },
     )
-    item = SimpleNamespace(
-        pk=1,
-        order=order,
-        packing=packing,
-        carton_number='C-01',
-        carton_quantity=3,
-        brand='Brand A',
-        category='Electronics',
-        main_category='Hardware',
-        part_number='PN-100',
-        description='Widget',
-        quantity=4,
-        gross_weight_kg=Decimal('1.500'),
-        net_weight_kg=Decimal('1.000'),
-        size='40*30*20',
-        volume=None,
-        volume_is_confirmed=False,
-        price=Decimal('12.50'),
+    first = SimpleNamespace(
+        pk=1, order=order, packing=packing, carton_number='C-01',
+        carton_quantity=1, brand='Row Brand', category='Electronics',
+        main_category='Electronics', part_number='PN-100',
+        description='Widget', quantity=4,
+        gross_weight_kg=Decimal('1.200'), net_weight_kg=None,
+        size='40*30*20', volume=None, volume_is_confirmed=False,
+        price=Decimal('12.50'), duty_date=None,
     )
-    return packing, [item]
+
+    second_product = SimpleNamespace(
+        part_number='PN-200', sku='SKU-200',
+        weight=Decimal('0.500'),
+        purchase_group=SimpleNamespace(title='Mechanical', hs=None),
+        hs=SimpleNamespace(code='84818000'), brand=None,
+    )
+    second_order = SimpleNamespace(
+        pk=101, order_number='ORD-101', final_item=second_product,
+        item=None, item_trade=None, brand=SimpleNamespace(title='Brand B'),
+        final_weight=Decimal('0.500'), final_price=Decimal('4.00'),
+        currency=cny, currency_id=2, description_trade='Trade description',
+        description_sale='Sales description', part_number_mac='',
+    )
+    second = SimpleNamespace(
+        pk=2, order=second_order, packing=packing, carton_number='C-01',
+        carton_quantity=2, brand='Row Brand B', category='Mechanical',
+        main_category='Mechanical', part_number='PN-200',
+        description='Mechanical widget', quantity=2,
+        gross_weight_kg=Decimal('0.800'), net_weight_kg=None,
+        size='40*30*20', volume=None, volume_is_confirmed=False,
+        price=Decimal('4.00'), duty_date=None,
+    )
+    third = SimpleNamespace(
+        pk=3, order=order, packing=packing, carton_number='C-02',
+        carton_quantity=1, brand='Row Brand', category='Electronics',
+        main_category='Electronics', part_number='PN-100',
+        description='Widget', quantity=4,
+        gross_weight_kg=Decimal('0.900'), net_weight_kg=None,
+        size='20*20*20', volume=None, volume_is_confirmed=False,
+        price=Decimal('12.50'), duty_date=None,
+    )
+    return packing, [first, second, third]
 
 
 class PackingExcelTests(SimpleTestCase):
-    def load_export(self, include_prices):
+    def load_export(self, include_prices=True):
         packing, items = sample_data()
         output = build_packing_workbook(
             packing, items, include_prices=include_prices,
@@ -70,41 +90,113 @@ class PackingExcelTests(SimpleTestCase):
         self.assertIsInstance(output, BytesIO)
         return load_workbook(output, data_only=True)
 
-    def test_export_contains_the_four_agreed_sheets(self):
-        workbook = self.load_export(include_prices=True)
+    def test_export_contains_the_four_reference_sheets(self):
+        workbook = self.load_export()
         self.assertEqual(
             workbook.sheetnames,
-            ['Packing', 'Summary', 'Invoice', 'Packing List'],
+            ['PK-009 AIR', 'Summary', 'Invoice', 'Packing List'],
         )
 
-    def test_packing_sheet_preserves_agreed_a_b_i_and_m_columns(self):
-        workbook = self.load_export(include_prices=True)
-        sheet = workbook['Packing']
-        self.assertEqual(sheet['A1'].value, 'Carton Number')
-        self.assertEqual(sheet['B1'].value, 'Carton Quantity')
-        self.assertEqual(sheet['C1'].value, 'Brand')
-        self.assertEqual(sheet['I1'].value, 'Declared Weight (kg)')
-        self.assertEqual(sheet['M1'].value, 'Calculated Weight (kg)')
+    def test_main_sheet_matches_reference_columns_and_carton_weight_rules(self):
+        workbook = self.load_export()
+        sheet = workbook['PK-009 AIR']
+        self.assertEqual(sheet.max_column, 25)
+        self.assertEqual(sheet['A1'].value, 'Ctn NMMO#.')
+        self.assertEqual(sheet['B1'].value, 'Carton No.')
+        self.assertEqual(sheet['D1'].value, 'Brand')
+        self.assertEqual(sheet['I1'].value, 'Our Weight')
+        self.assertEqual(sheet['M1'].value, 'WEIGHT (kg)')
+        self.assertEqual(sheet['V1'].value, 'Item Weight (kg)')
+
         self.assertEqual(sheet['A2'].value, 'C-01')
         self.assertEqual(sheet['B2'].value, 3)
-        self.assertEqual(sheet['C2'].value, 'Brand A')
-        self.assertEqual(float(sheet['I2'].value), 1.5)
-        self.assertEqual(float(sheet['M2'].value), 1.0)
-        self.assertAlmostEqual(float(sheet['K2'].value), 0.024)
-        summary = workbook['Summary']
-        category_row = next(
-            row for row in range(1, summary.max_row + 1)
-            if summary.cell(row, 1).value == 'Category'
-        )
-        self.assertEqual(
-            summary.auto_filter.ref,
-            f'A{category_row}:D{summary.max_row}',
-        )
+        self.assertEqual(sheet['D2'].value, 'Brand A')
+        self.assertEqual(sheet['F2'].value, 'PCBA')
+        self.assertEqual(sheet['I2'].value, 1.2)
+        self.assertEqual(sheet['J2'].value, 'C-01 / Electronics')
+        self.assertEqual(sheet['M2'].value, 2.0)
+        self.assertEqual(sheet['V2'].value, 1.0)
+        self.assertEqual(sheet['V3'].value, 1.0)
+        self.assertEqual(sheet['N2'].value, 0.024)
+        self.assertIn('A2:A3', [str(r) for r in sheet.merged_cells.ranges])
+        self.assertIn('M2:M3', [str(r) for r in sheet.merged_cells.ranges])
 
+        self.assertEqual(sheet['A4'].value, 'C-02')
+        self.assertEqual(sheet['M4'].value, 1.0)
+        self.assertEqual(sheet['V4'].value, 1.0)
+        self.assertEqual(sheet['N4'].value, 0.008)
+
+    def test_saved_exchange_rate_populates_cny_and_usd_values(self):
+        workbook = self.load_export()
+        sheet = workbook['PK-009 AIR']
+        self.assertEqual(sheet['O2'].value, 12.5)
+        self.assertEqual(sheet['P2'].value, 50.0)
+        self.assertAlmostEqual(sheet['Q2'].value, 1.875)
+        self.assertAlmostEqual(sheet['R2'].value, 7.5)
+        self.assertAlmostEqual(workbook['Summary']['B5'].value, 0.15)
+        self.assertAlmostEqual(workbook['Summary']['D6'].value, 16.2)
+        self.assertEqual(workbook['Summary']['D11'].value, 108.0)
+
+    def test_summary_and_packing_list_aggregate_cartons_and_rows_separately(self):
+        workbook = self.load_export()
+        summary = workbook['Summary']
+        self.assertEqual(summary['D4'].value, 2)
+        self.assertEqual(summary['D5'].value, 10)
+        self.assertEqual(summary['D7'].value, 2.9)
+        self.assertEqual(summary['D8'].value, 3.0)
+        self.assertEqual(summary['D9'].value, 0.032)
+        self.assertEqual(summary['D10'].value, 1)
+
+        packing_list = workbook['Packing List']
+        self.assertEqual(packing_list['A1'].value, 'CTN')
+        self.assertEqual(packing_list['B1'].value, 'DESCRIPTION OF GOODS')
+        electronics_row = next(
+            row for row in range(2, packing_list.max_row + 1)
+            if packing_list.cell(row, 2).value == 'Electronics'
+        )
+        self.assertEqual(packing_list.cell(electronics_row, 1).value, 2)
+        self.assertEqual(packing_list.cell(electronics_row, 3).value, 8)
+
+    def test_invoice_financial_columns_are_removed_without_permission(self):
+        workbook = self.load_export(include_prices=False)
+        headers = [cell.value for cell in workbook['Invoice'][3]]
+        self.assertNotIn('UNIT VALUE', headers)
+        self.assertNotIn('TOTAL VALUE', headers)
+        self.assertNotIn('UNIT VALUE (CNY)', headers)
+        self.assertNotIn('TOTAL VALUE (CNY)', headers)
+        self.assertIsNone(workbook['PK-009 AIR']['O2'].value)
+        self.assertIsNone(workbook['PK-009 AIR']['R2'].value)
+
+    def test_invoice_financial_columns_are_present_with_permission(self):
+        workbook = self.load_export(include_prices=True)
+        sheet = workbook['Invoice']
+        headers = [cell.value for cell in sheet[3]]
+        self.assertIn('UNIT VALUE', headers)
+        self.assertIn('TOTAL VALUE', headers)
+        self.assertIn('UNIT VALUE (CNY)', headers)
+        self.assertIn('TOTAL VALUE (CNY)', headers)
+        electronics_row = next(
+            row for row in range(5, sheet.max_row)
+            if sheet.cell(row, 2).value == 'Electronics'
+        )
+        self.assertAlmostEqual(sheet.cell(electronics_row, 5).value, 1.875)
+        self.assertAlmostEqual(sheet.cell(electronics_row, 6).value, 15.0)
+
+    def test_zero_calculated_weight_is_reported_as_missing_for_positive_quantity(self):
+        packing, items = sample_data()
+        for item in (items[0], items[2]):
+            item.order.final_weight = Decimal('0')
+            item.order.final_item.weight = Decimal('0')
+            item.net_weight_kg = Decimal('0')
+        workbook = load_workbook(
+            build_packing_workbook(packing, items, include_prices=True),
+            data_only=True,
+        )
+        self.assertEqual(workbook['Summary']['B10'].value, 2)
+        self.assertIsNone(workbook['PK-009 AIR']['V2'].value)
+        self.assertIsNone(workbook['PK-009 AIR']['V4'].value)
 
     def test_export_button_is_present_on_the_packing_page(self):
-        from pathlib import Path
-        from django.conf import settings
         html = (
             Path(settings.BASE_DIR)
             / 'order/templates/order/packing/quick_packing_create.html'
@@ -113,9 +205,6 @@ class PackingExcelTests(SimpleTestCase):
         self.assertIn('packing_export_excel', html)
 
     def test_excel_export_requires_document_view_permission(self):
-        from django.core.exceptions import PermissionDenied
-        from unittest.mock import patch
-        from types import SimpleNamespace
         from order.views import QuickPackingView
 
         packing = SimpleNamespace(
@@ -126,19 +215,3 @@ class PackingExcelTests(SimpleTestCase):
         with patch.object(view, 'get_object', return_value=packing):
             with self.assertRaises(PermissionDenied):
                 view.get(request, pk=9)
-
-    def test_invoice_financial_columns_are_removed_without_permission(self):
-        workbook = self.load_export(include_prices=False)
-        headers = [cell.value for cell in workbook['Invoice'][1]]
-        self.assertNotIn('Unit Price', headers)
-        self.assertNotIn('Amount', headers)
-        self.assertNotIn('Currency', headers)
-
-    def test_invoice_financial_columns_are_present_with_permission(self):
-        workbook = self.load_export(include_prices=True)
-        sheet = workbook['Invoice']
-        headers = [cell.value for cell in sheet[1]]
-        self.assertIn('Unit Price', headers)
-        self.assertIn('Amount', headers)
-        self.assertEqual(float(sheet['G2'].value), 12.5)
-        self.assertEqual(float(sheet['H2'].value), 50.0)

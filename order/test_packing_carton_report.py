@@ -53,7 +53,8 @@ class CartonReportTests(SimpleTestCase):
         carton = report['cartons'][0]
         self.assertIsNone(carton['entered_weight'])
         self.assertIsNone(carton['rows'][0]['entered_percent'])
-        self.assertEqual(carton['rows'][0]['net_percent'], Decimal('25.00'))
+        row_a = next(row for row in carton['rows'] if row['part_number'] == 'A')
+        self.assertEqual(row_a['net_percent'], Decimal('25.00'))
 
     def test_missing_numbers_are_not_counted_as_the_same_carton(self):
         report = build_carton_report([
