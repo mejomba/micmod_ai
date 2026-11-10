@@ -3584,7 +3584,7 @@ class QuickGIODataTableListView(AjaxDatatableView):
     """Order picker. Record metadata lives on the add button, not hidden cells."""
     model = Order
     title = 'order_list'
-    initial_order = [['id', 'desc']]
+    initial_order = [['order_number', 'desc']]
     length_menu = [[10, 25, 50], [10, 25, 50]]
     search_values_separator = '+'
     show_column_filters = True

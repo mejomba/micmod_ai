@@ -152,6 +152,16 @@ class GIORedesignTemplateTests(SimpleTestCase):
         self.assertIn("button.dataset.orderId", self.page)
         self.assertIn('button.dataset.maxQty', self.page)
 
+    def test_initial_sort_keys_are_existing_orderable_columns(self):
+        """ajax_datatable rejects initial_order when a column has been removed."""
+        columns = {column['name']: column for column in QuickGIODataTableListView.column_defs}
+        for key, direction in QuickGIODataTableListView.initial_order:
+            with self.subTest(column=key):
+                self.assertIn(key, columns)
+                self.assertTrue(columns[key].get('orderable', True))
+                self.assertIn(direction, ('asc', 'desc'))
+        self.assertEqual(QuickGIODataTableListView.initial_order, [['order_number', 'desc']])
+
     def test_each_group_has_three_docs_and_independent_retry(self):
         for label in ('فاکتور خرید', 'رسید انبار قبل از مرکزی', 'سند حسابداری'):
             self.assertIn(label, self.preview)
