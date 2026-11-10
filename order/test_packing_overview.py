@@ -101,6 +101,7 @@ class PackingOverviewTemplateTests(SimpleTestCase):
     def test_overview_is_separate_accessible_tab_for_existing_packing(self):
         self.assertIn('packing-page-header-existing', self.html)
         self.assertIn('<div class="pk-ov-tabs" role="tablist"', self.html)
+        self.assertIn('{% if packing_object %}\n            <section id="pk-overview-panel"', self.html)
         self.assertNotIn('pk-ov-intro', self.html)
         for expected in (
             'id="pk-tab-details"', 'id="pk-tab-overview"',
@@ -272,6 +273,8 @@ class PackingOverviewTemplateTests(SimpleTestCase):
         for expected in (
             "packing_overview_net: 'وزن محاسباتی سیستم (kg)'",
             "packing_overview_gross: 'وزن اعلامی کاربر (kg)'",
+            'data-key="packing_overview_net">وزن محاسباتی سیستم (kg)',
+            'data-key="packing_overview_gross">وزن اعلامی کاربر (kg)',
             "packing_overview_net: 'System-calculated weight (kg)'",
             "packing_overview_gross: 'User-declared weight (kg)'",
         ):
