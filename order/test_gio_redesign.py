@@ -152,6 +152,19 @@ class GIORedesignTemplateTests(SimpleTestCase):
         self.assertIn("button.dataset.orderId", self.page)
         self.assertIn('button.dataset.maxQty', self.page)
 
+    def test_column_search_is_debounced_for_200ms(self):
+        """Avoid a request on each keystroke in django-ajax-datatable column filters."""
+        self.assertIn("installGioColumnSearchDebounce", self.page)
+        self.assertIn("initComplete.gioColumnDebounce", self.page)
+        self.assertIn(".datatable-column-filter-row input[data-index]", self.page)
+        self.assertIn("$filters.off('keyup change')", self.page)
+        self.assertIn("$filters.on('input.gioColumnDebounce'", self.page)
+        self.assertIn("clearTimeout(searchTimer)", self.page)
+        self.assertIn("setTimeout(function () {", self.page)
+        self.assertIn("}, 200);", self.page)
+        self.assertIn("if (changed) api.draw()", self.page)
+        self.assertIn("searchDelay:200", self.page)
+
     def test_initial_sort_keys_are_existing_orderable_columns(self):
         """ajax_datatable rejects initial_order when a column has been removed."""
         columns = {column['name']: column for column in QuickGIODataTableListView.column_defs}

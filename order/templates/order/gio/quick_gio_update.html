@@ -478,17 +478,52 @@
     window.check_gio_item_quantity_eq_to_qio = window.gio_total_quantity_show;
     window.gio_total_quantity_show();
 
+    function installGioColumnSearchDebounce() {
+        const $table = $('#quick-gio-list');
+        const $filters = $table.closest('.dataTables_wrapper')
+            .find('.datatable-column-filter-row input[data-index]');
+        if (!$filters.length) return;
+
+        // django-ajax-datatable binds keyup/change directly to every column input.
+        // Replace that immediate handler; searchDelay alone affects only global search.
+        $filters.off('keyup change');
+        const api = $table.DataTable();
+        let searchTimer = null;
+        $filters.on('input.gioColumnDebounce', function () {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(function () {
+                let changed = false;
+                // Apply all changed columns together and draw only once.
+                $filters.each(function () {
+                    const index = Number(this.dataset.index);
+                    const column = api.column(index);
+                    if (column.search() !== this.value) {
+                        column.search(this.value);
+                        changed = true;
+                    }
+                });
+                if (changed) api.draw();
+            }, 200);
+        });
+        // Select-choice filters keep their original immediate change behavior.
+    }
+
     $(function () {
         if (window.AjaxDatatableViewUtils) {
+            const $table = $('#quick-gio-list');
+            // The library adds the filter row during async initialization.
+            $table.one('initComplete.gioColumnDebounce', function () {
+                setTimeout(installGioColumnSearchDebounce, 0);
+            });
             const q = new URL(window.location.href).searchParams.get('q');
             AjaxDatatableViewUtils.initialize_table(
-                $('#quick-gio-list'),
+                $table,
                 "{% url 'order:quick_gio.datatable' %}",
                 {processing:true, autoWidth:false, full_row_select:false, scrollX:false,
-                 bFilter:true, dom:'lfrtip', pageLength:10},
+                 bFilter:true, dom:'lfrtip', pageLength:10, searchDelay:200},
                 {q:q}
             );
-            $('#quick-gio-list').on('draw.dt', window.sync_datatable);
+            $table.on('draw.dt', window.sync_datatable);
         }
     });
 
