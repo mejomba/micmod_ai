@@ -1,10 +1,13 @@
 from datetime import timedelta, datetime
+from math import isfinite
+from urllib.parse import quote
 
 from files.models import File
 from tools.utils import to_jalali_date
 import jdatetime
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
+from django.contrib.humanize.templatetags.humanize import intcomma
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
@@ -17,14 +20,15 @@ from django.db.models.expressions import RawSQL
 from django.db.models.functions import Coalesce, Now
 from django.forms import modelformset_factory
 from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q, Value, Case, When, IntegerField, Subquery, \
-    OuterRef
+    OuterRef, CharField
 from django.db.models.functions import Coalesce, NullIf
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed, HttpResponseForbidden
+from django.http import HttpResponse, Http404, JsonResponse, HttpResponseNotAllowed, HttpResponseForbidden
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
+from django.utils.html import escape
 from django.views import View
 from django.views.generic import ListView
 from rest_framework import viewsets
@@ -37,19 +41,35 @@ from comments.forms import CommentsForm
 from core.permissions import HasShopPermission
 from core.views import BaseView, Base
 from factor.models import Factor, FactorItem, FactorItemSupplyLocation
+from extra_data.models import ItemWeight
 from factor.services.supply import SupplyLocationService
 from inquiry.models import Supplier
 from micmod_base.models import QuotationItem, SupplyStatus
+from micmod_base.base import Currency
 from payment.models import PaymentOrder, Payment
 from sepidar.api_call import SepidarApiCall
 from sepidar.models import Dl
 from tools.utils import is_ajax, parse_number
-from workflow.models import WorkFlow
+from workflow.models import WorkFlow, FlowAdminGroup
+from changelog.models import ChangeLog
+from .packing_error_messages import packing_error_payload
+from .packing_change_history import build_packing_change_history
+from .packing_workflow_timeline import build_packing_workflow_timeline
+from .packing_volume import calculate_packing_volume, parse_packing_size, parse_packing_volume, resolve_packing_volume
+from .packing_excel import build_packing_workbook, XLSX_CONTENT_TYPE
+from .packing_inline_labels import normalize_packing_label, packing_label_suggestions
+from .packing_carton_size import reconcile_carton_sizes
+from .gio_sepidar import (
+    GIOSepidarError, gio_is_locked, gio_document_display, group_states,
+    plan_gio_groups, send_gio_groups, user_can_send_gio, gio_preview_groups,
+    approve_unknown_gio_retry, gio_header_status, gio_registered_group_count,
+    manual_save_gio_sepidar_documents,
+)
 from .form_perm import ORDER_FIELDS_BY_PERMISSION
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
     OrderPaymentItemForm, OrderPaymentItemFormSet, BazarBuyFactorForm, \
     TradeBuyFactorForm, TradePurchaseItemFormSet, BazarPurchaseItemFormSet, ACNTForm, GIOItemFormSet, BazarOrderForm, \
-    OrderSafeForm, OrderDelayReasonModelForm, PackingItemFormSet
+    OrderSafeForm, OrderDelayReasonModelForm, PackingItemFormSet, PackingSafeForm
 from .models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem, ACNT, \
     SepidarOrderDocument, OrderBazar, WhReserve
 from translator import get_text as _
@@ -143,6 +163,11 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
         for s in allowed_show:
             if s not in show:
                 show.append(s)
+        if (
+            (self.state_index or 0) < 2
+            or getattr(self.request.user, 'base_group', None) != 'trade'
+        ):
+            edit = [field for field in edit if field != 'brand']
         return edit, hidden, show
 
     def get_success_url(self):
@@ -629,7 +654,7 @@ class OrderDataTableListView(AjaxDatatableView):
         {'name': 'estimated_arrive_date', 'orderable': False, 'searchable': False, 'title': 'Estimated Arrive Date', 'visible': True},
         {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
         {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
-        {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
+        {'name': 'item', 'orderable': True, 'title': '<span data-key="sku">SKU</span>', 'visible': True, 'lookup_field': '__sku__icontains'},
         {'name': 'item__part_number', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__icontains'},
         {'name': 'customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},
         {'name': 'item_trade', 'orderable': True, 'title': 'SKU (T)', 'visible': True, 'lookup_field': '__sku__icontains'},
@@ -1512,13 +1537,13 @@ def ajax_order_order_add(request):
 
 class PackingView(LoginRequiredMixin, BaseView):
     template_name = 'order/packing_view.html'
-    form_class = PackingForm
+    form_class = PackingSafeForm
     model = Packing
     wf_last_step_is_open = True
     has_flow = True
     success_message = 'با موفقیت ذخیره شد'
     form_struct = {
-        'form': PackingForm,
+        'form': PackingSafeForm,
         'childes': [
             {
                 'form': PackingItemForm,
@@ -1530,6 +1555,22 @@ class PackingView(LoginRequiredMixin, BaseView):
 
     def get_success_url(self):
         return reverse_lazy('order:packing.update', kwargs={'pk': self.object.pk})
+
+    def dispatch(self, request, *args, **kwargs):
+        if not getattr(request.user, 'is_authenticated', False):
+            return super().dispatch(request, *args, **kwargs)
+        pk = kwargs.get('pk')
+        if pk:
+            packing_obj = get_object_or_404(Packing, pk=pk)
+            if not packing_obj.user_can_view_workflow(request.user):
+                raise PermissionDenied('Packing document view access denied.')
+            if not packing_obj.user_has_workflow_access(request.user):
+                if request.method in ('GET', 'HEAD'):
+                    return redirect('order:quick_packing', pk=packing_obj.pk)
+                raise PermissionDenied('Packing workflow access denied.')
+        elif not Packing.user_can_create_workflow(request.user):
+            raise PermissionDenied('Packing workflow access denied.')
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
@@ -1555,6 +1596,10 @@ class PackingView(LoginRequiredMixin, BaseView):
         return context
 
 
+def user_has_packing_workflow_access(request, packing):
+    return bool(packing and packing.user_has_workflow_access(request.user))
+
+
 class packing_list_form(LoginRequiredMixin, BaseView):
     template_name = 'order/packing_item_form.html'
     form_class = PackingItemForm
@@ -1573,6 +1618,17 @@ class packing_list_form(LoginRequiredMixin, BaseView):
         return reverse_lazy('order:packingitem.update', kwargs={'pk': self.object.packing.pk})
 
     def post(self, request, *args, **kwargs):
+        packing = None
+        if self.object:
+            packing = self.object.packing
+        else:
+            packing_id = request.POST.get('packing') or request.GET.get('pk')
+            if packing_id:
+                packing = Packing.objects.filter(pk=packing_id).first()
+
+        if not user_has_packing_workflow_access(request, packing):
+            raise PermissionDenied('Packing workflow access denied.')
+
         x = super().post(request, *args, **kwargs)
         if is_ajax(request):
             return JsonResponse({'res': 'success'})
@@ -1598,7 +1654,26 @@ class packing_list_form(LoginRequiredMixin, BaseView):
         context = {'request': self.request}
         # context = super().get_context_data(**kwargs)
         packing = Packing.objects.filter(pk=self.request.GET.get('pk')).first()
-        form = PackingItemForm(initial={'packing': packing or self.object.packing, 'request': self.request}, instance=self.object)
+        packing = packing or (self.object.packing if self.object else None)
+
+        if not user_has_packing_workflow_access(self.request, packing):
+            raise PermissionDenied('Packing workflow access denied.')
+
+        flow_config = Base.get_flow_config(
+            settings.BASE_DIR / '_keenthemes/view_config.json',
+            'PackingView',
+        )
+        form = PackingItemForm(
+            initial={
+                'packing': packing,
+                'request': self.request,
+                'workflow_constraint': {
+                    'form_state': packing.workflow_state_index(),
+                    'formset_constraint': flow_config.get('flow_formset_constraint'),
+                },
+            },
+            instance=self.object,
+        )
         context['app_name'] = self.request.resolver_match.app_name
         context['form'] = form
         return context
@@ -1641,16 +1716,17 @@ class PackingDataTableListView(AjaxDatatableView):
         {'name': 'cl_10_date', 'title': "Clearance Date 10%", 'className': 'py-1', },
         {'name': 'cl_100_date', 'title': "Clearance Date 100%", 'className': 'py-1', },
         {'name': 'arrive_to_wh_date', 'title': "Arrive to wherehouse Date", 'className': 'py-1', },
-        {'name': 'estimated_delivery_date', 'title': "Est Delivery Date", 'className': 'py-1', },
+        {'name': 'estimated_shipping_start_date', 'title': "تاریخ پیش‌بینی شروع حمل بار", 'className': 'py-1', },
         {'name': 'creator_user', 'title': _('creator_user'), 'className': 'py-1', },
     ]
 
     def customize_row(self, row, obj):
         row['pk'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
-            reverse('order:packing.update', args=(obj.id,)),
+            reverse('order:quick_packing', args=(obj.id,)),
             obj.id if obj.id else 'بدون عنوان'
         )
-        row['carton_qty'] = f'{obj.computed_carton_qty}' if obj.computed_carton_qty else '-'
+        carton_count = obj.computed_carton_qty
+        row['carton_qty'] = str(carton_count) if carton_count is not None else '-'
         row['weight'] = f'{obj.computed_weight_kg}' if obj.computed_weight_kg else '-'
 
 
@@ -1674,7 +1750,12 @@ class GIOView(LoginRequiredMixin, BaseView):
     def get_success_url(self):
         return reverse_lazy('order:gio.update', kwargs={'pk': self.object.pk})
 
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
+        if self.object:
+            locked_gio = GIO.objects.select_for_update().get(pk=self.object.pk)
+            if gio_is_locked(locked_gio):
+                return JsonResponse({'res': {'error': 'GIO is locked after Sepidar sending.'}}, status=409)
         # if is_ajax(self.request):
         #     res = json.loads(self.request.body)
         #     # kwargs['quantity'] = res['quantity']
@@ -1711,10 +1792,22 @@ class GIOItemView(LoginRequiredMixin, BaseView):
     def get_success_url(self):
         return reverse_lazy('order:gio.update', kwargs={'pk': self.object.gio.pk})
 
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
         order_id = self.request.POST.get('order')
         part_number = self.request.POST.get('part_number')
         gio_id = self.request.POST.get('gio')
+        current_gio = getattr(self.object, 'gio', None)
+        target_gio = GIO.objects.filter(pk=gio_id).first() if gio_id else current_gio
+        # Lock both parents in a stable order, including moves between GIOs.
+        locked_parents = [
+            GIO.objects.select_for_update().get(pk=parent_id)
+            for parent_id in sorted({
+                g.pk for g in (current_gio, target_gio) if g is not None
+            })
+        ]
+        if any(gio_is_locked(parent) for parent in locked_parents):
+            return JsonResponse({'res': {'error': 'GIO is locked after Sepidar sending.'}}, status=409)
         quantity = float(self.request.POST.get('quantity', 0))
         if order_id:
             order = Order.objects.filter(pk=order_id).first()
@@ -2254,7 +2347,7 @@ class CustomerRequestOrderViewSet(viewsets.ModelViewSet):
 
 
 class OrderAndSepidar(View):
-    valid_view = ('trade_buy_factor', 'new_bazar_buy_factor', 'bazar_buy_factor', 'payment_for_order_to_sepidar', 'wh_to_wh_preview', 'wh_to_wh_execute')
+    valid_view = ('trade_buy_factor', 'trade_buy_factor_reconcile', 'trade_buy_factor_manual_save', 'new_bazar_buy_factor', 'bazar_buy_factor', 'payment_for_order_to_sepidar', 'wh_to_wh_preview', 'wh_to_wh_execute')
     valid_for_get = ('trade_buy_factor_preview', 'payment_for_order_to_sepidar_preview', 'wh_to_wh_preview')
 
     def dispatch(self, request, *args, **kwargs):
@@ -2313,86 +2406,132 @@ class OrderAndSepidar(View):
             return JsonResponse({'res': {"error": e.args[0]}}, status=400)
 
     def trade_buy_factor_preview(self, request, *args, **kwargs):
-        gio_id = self.request.GET.get('gio_id')
-        gio = GIO.objects.get(pk=gio_id)
-        buy_factor_contex = {}
-        html = render_to_string('order/partial/sepidar/trade_buy_factor_preview.html', context=buy_factor_contex)
+        if not request.user.is_authenticated:
+            return JsonResponse({'error': 'Authentication is required.'}, status=403)
+        try:
+            gio_id = int(request.GET.get('gio_id'))
+        except (ValueError, TypeError):
+            return JsonResponse({'error': 'Invalid GIO ID.'}, status=400)
+        gio = GIO.objects.filter(pk=gio_id, is_deleted=False).first()
+        if not gio:
+            return JsonResponse({'error': 'GIO not found.'}, status=404)
+        try:
+            groups = gio_preview_groups(gio)
+        except GIOSepidarError as exc:
+            return JsonResponse({'error': str(exc)}, status=400)
+        html = render_to_string(
+            'order/partial/sepidar/trade_buy_factor_preview.html',
+            context={
+                'gio': gio, 'groups': groups,
+                'gio_sepidar_can_send': user_can_send_gio(request.user),
+                'gio_reconcile_can_review': bool(getattr(request.user, 'is_superuser', False) and getattr(request.user, 'is_active', False)),
+                'gio_can_manual_save_sepidar': bool(getattr(request.user, 'is_superuser', False) and getattr(request.user, 'is_active', False)),
+            },
+            request=request,
+        )
+        return JsonResponse({'res': html, 'groups': groups})
 
-        return JsonResponse({'res': html})
+    def trade_buy_factor_reconcile(self, request, *args, **kwargs):
+        """Superuser-only, audited approval of one uncertain GIO group."""
+        user = request.user
+        if not (user.is_authenticated and user.is_active and user.is_superuser):
+            return JsonResponse({'error': 'فقط مدیر کل مجاز به تأیید بررسی دستی است.'}, status=403)
+        try:
+            payload = json.loads(request.body or b'{}')
+            if not isinstance(payload, dict):
+                raise ValueError('Invalid reconciliation payload.')
+            gio = GIO.objects.filter(
+                pk=int(payload.get('gio_id')), is_deleted=False,
+            ).first()
+            if gio is None:
+                return JsonResponse({'error': 'GIO not found.'}, status=404)
+            group = approve_unknown_gio_retry(
+                gio, user,
+                group_key=payload.get('group_key'),
+                confirmed_group=payload.get('confirmed_group'),
+                reason=payload.get('reason'),
+                invoice_checked=payload.get('invoice_checked'),
+                receipt_checked=payload.get('receipt_checked'),
+                voucher_checked=payload.get('voucher_checked'),
+            )
+        except GIOSepidarError as exc:
+            return JsonResponse({'error': str(exc)}, status=409)
+        except (ValueError, TypeError) as exc:
+            return JsonResponse({'error': str(exc)}, status=400)
+        return JsonResponse({'res': 'reviewed', 'group_key': group.group_key}, status=200)
+
+    def trade_buy_factor_manual_save(self, request, *args, **kwargs):
+        """Local manual registration of confirmed Sepidar document references."""
+        user = request.user
+        if not (user.is_authenticated and user.is_active and user.is_superuser):
+            return JsonResponse({'error': 'فقط مدیر کل مجاز به ثبت دستی اطلاعات سپیدار است.'}, status=403)
+        try:
+            payload = json.loads(request.body or b'{}')
+            if not isinstance(payload, dict):
+                raise ValueError('Invalid manual document payload.')
+            gio = GIO.objects.filter(
+                pk=int(payload.get('gio_id')), is_deleted=False,
+            ).first()
+            if gio is None:
+                return JsonResponse({'error': 'GIO not found.'}, status=404)
+            record = manual_save_gio_sepidar_documents(
+                gio, user,
+                group_key=payload.get('group_key'),
+                confirmed_group=payload.get('confirmed_group'),
+                reason=payload.get('reason'),
+                documents=payload.get('documents'),
+                verified=payload.get('verified'),
+                overwrite_confirmed=payload.get('overwrite_confirmed', False),
+            )
+        except GIOSepidarError as exc:
+            return JsonResponse({'error': str(exc)}, status=409)
+        except (ValueError, TypeError) as exc:
+            return JsonResponse({'error': str(exc)}, status=400)
+        return JsonResponse({
+            'res': 'success', 'group_key': record.group_key, 'status': record.status,
+        })
 
     def trade_buy_factor(self, request, *args, **kwargs):
-        """ from GIO generate
-            1: `buy factor`
-            2: `inventory_receipt_before_central_wh`
-            3: `voucher`
-            in sepidar
-        """
+        """Send and record GIO's three Sepidar documents per vendor/currency."""
+        if not user_can_send_gio(request.user):
+            return JsonResponse({'error': 'GIO Sepidar access denied.'}, status=403)
         try:
-            from tools import utils
-            gio_id = json.loads(self.request.body or '{}').get('gio_id')
-            gio_object = GIO.objects.filter(pk=gio_id).first()
-            if not gio_object:
-                return
-
-            gio_items = gio_object.gioitems.all()
-            if not gio_items:
-                return JsonResponse({'error': f'gio {gio_id} has no any items'}, status=500)
-
-            gio_items_group_by_supplier_and_currency = dict()
-
-            supplier_currency_list = []
-            for gioi in gio_items:
-                if 'rmb' in gioi.order.currency.title_en.lower() or "یوآن" in gioi.order.currency.title.lower():
-                    currency_name = 'rmb'
-                elif 'ero' in gioi.order.currency.title_en.lower() or "یورو" in gioi.order.currency.title.lower():
-                    currency_name = 'ero'
-                elif 'usd' in gioi.order.currency.title_en.lower() or "دلار" in gioi.order.currency.title.lower():
-                    currency_name = 'usd'
-
-                key1 = gioi.order.final_supplier.dlref or settings.SEPIDAR_CONST_DATA.get(f'no_name_vendor_{currency_name}')
-                key2 = gioi.order.currency.sepidar_id
-
-                final_key = f'{key1}___{key2}'
-                supplier_currency_list.append(final_key)
-                gio_items_group_by_supplier_and_currency.setdefault(final_key, []).append(gioi)
-
-            res = SepidarApiCall.gio_to_sepidar(gio_items_group_by_supplier_and_currency, request)
-
-            if res.get('errors'):
-                return JsonResponse(res, status=500)
-
-            for supplier_currency in supplier_currency_list:
-                gio_res = res.get(supplier_currency)
-                if gio_res:
-                    grouped_gioi = gio_items_group_by_supplier_and_currency.get(supplier_currency)
-                    for gio_item in grouped_gioi:
-
-                        if SepidarOrderDocument.objects.filter(order=gio_item.order).exists():
-                            order_document_obj = SepidarOrderDocument.objects.get(order=gio_item.order)
-                            data = order_document_obj.data
-                            data['gio']['sepidar'].append(gio_res['gio']['sepidar'][0])
-                            order_document_obj.data = data
-                            order_document_obj.save()
-                        else:
-                            SepidarOrderDocument.objects.create(order=gio_item.order, data=gio_res)
-
-            gio_json_response = {"purchase_invoice":[], "before_central_wh_receipt":[], "voucher":[]}
-            for supplier_currency, gio_res in res.items():
-                purchase_invoice = gio_res['gio']['sepidar'][0]['purchase_invoice']['id']
-                before_central_wh_receipt = gio_res['gio']['sepidar'][0]['before_central_wh_receipt']['id']
-                voucher = gio_res['gio']['sepidar'][0]['voucher']['id']
-                gio_json_response['purchase_invoice'].append(purchase_invoice)
-                gio_json_response['before_central_wh_receipt'].append(before_central_wh_receipt)
-                gio_json_response['voucher'].append(voucher)
-
-            gio_object.sepidar_buy_factor_response_json = gio_json_response
-            # gio_object.sepidar_inventory_receipt_response_json = wh_res
-            gio_object.extra_data.request = self.request
-            gio_object.save()
-
-            return JsonResponse({'res': 'success'})
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            payload = json.loads(request.body or b'{}')
+            if not isinstance(payload, dict):
+                raise ValueError('Invalid GIO request.')
+            gio_id = int(payload.get('gio_id'))
+            gio = GIO.objects.filter(pk=gio_id, is_deleted=False).first()
+            if not gio:
+                return JsonResponse({'error': 'GIO not found.'}, status=404)
+            states = send_gio_groups(
+                gio, request, group_key=payload.get('group_key'),
+            )
+        except (ValueError, TypeError, GIOSepidarError) as exc:
+            return JsonResponse({'error': str(exc)}, status=400)
+        except Exception as exc:
+            # Never automatically repeat an uncertain remote operation.
+            return JsonResponse({'error': str(exc)}, status=500)
+        # A selected group's result must not be masked by the state of OTHER
+        # supplier/currency groups (which may be pending, rejected or unknown).
+        selected_key = payload.get('group_key')
+        relevant = [group for group in states if group['key'] == selected_key] if selected_key else states
+        if not relevant:
+            return JsonResponse({
+                'error': 'Selected GIO group was not found in the Sepidar result.',
+                'groups': states,
+            }, status=409)
+        if any(group['status'] != 'success' for group in relevant):
+            status = 409 if any(
+                group['status'] in ('unknown', 'sending') for group in relevant
+            ) else 502
+            return JsonResponse({
+                'error': 'This GIO group needs retry or manual reconciliation.',
+                'groups': states,
+                'group_key': selected_key,
+            }, status=status)
+        return JsonResponse({
+            'res': 'success', 'group_key': selected_key, 'groups': states,
+        })
 
     def bazar_buy_factor(self, request, *args, **kwargs):
         from tools import utils
@@ -2551,82 +2690,11 @@ class OrderAndSepidar(View):
         return JsonResponse({'res': html})
 
     def wh_to_wh_execute(self, request, *args, **kwargs):
-        """ from packing in wh state generate
-         1: Inventorydelivery
-         2: Inventoryreceipt
-         to sepidar
-         """
-        packing_id = self.request.GET.get('packing_id')
-        packing = Packing.objects.get(pk=packing_id)
-
-        # res = SepidarApiCall.wh_to_wh(packing, request)
-        res = SepidarApiCall.packing(packing, request)
-
-        try:
-            if res.get('errors'):
-                return JsonResponse({"res": res['errors']}, status=500)
-            else:
-                packing.sepidar_wh_to_wh = res['packing']['sepidar'][0]
-                for packing_item in packing.packing_item_rel.all():
-                    order_ = packing_item.order
-
-                    """
-                    پیدا کردن همه سفارش های میانی که از سفارش فعلی تامین میشوند 
-                    و آپدیت کردن فیلد کد انبار سپیدار که یعنی سفارش تامین کننده در انبار رسید شده
-                     و همه سفارش هایی که از آن تامین میشدند الان در انبار هستند
-                    """
-                    oo_queryset = OrderOrder.objects.filter(order_rel=order_)
-                    if oo_queryset:
-                        oo_queryset.update(sepidar_wh_code=settings.SEPIDAR_CONST_DATA.get('central_wh_id'))
-
-                        for oo in oo_queryset:
-                            """
-                            به ازای هر سفارشی که در جدول میانی از این سفارش تامین میشده
-                             حساب میکنیم تعداد کل تامین شده ها اگر برابر با تعداد مورد نیاز در خود همان سفارش بود
-                              پس آن سفارش در انبار رسید شده و آپدیت میشود
-                            """
-                            o = oo.order_base
-                            sum_supply_order_quantity = OrderOrder.objects.filter(order_base=o, sepidar_wh_code__isnull=False).aggregate(sum_quantity=Sum('quantity'))['sum_quantity'] or 0
-                            if sum_supply_order_quantity == o.quantity:
-                                o.is_wh = True
-                                o.receipt_in_wh = True
-                                o.sepidar_wh_code = settings.SEPIDAR_CONST_DATA.get('central_wh_id')
-                                o.extra_data.request = request
-                                o.save()
-
-                    order_document = getattr(order_, 'sepidar_document', None)
-
-                    """
-                    اگر اصلا داکیومنت برای پکینگ وجود نداشت ایجاد میکنیم
-                    اگر داکیومنت داشت اما پکینگ نداشت فقط کلید پکینگ را اضافه میکنیم
-                    اگر داکیومنت داشت و پکینگ هم داشت رکورد جدید را به لیست اضافه میکنیم یعنی این سفارش در بیش از یک پکینگ بوده و به سپیدار رفته
-                    """
-                    res['packing']['sepidar'][0]['wh_delivery']['quantity'] = packing_item.wh_receipt_quantity
-                    res['packing']['sepidar'][0]['wh_receipt']['quantity'] = packing_item.wh_receipt_quantity
-                    if not order_document:
-                        SepidarOrderDocument.objects.create(order=order_, data=res)
-                    elif order_document and not order_document.data.get('packing'):
-                        order_document.data['packing'] = res['packing']['sepidar']
-                    elif order_document and order_document.data.get('packing'):
-                        order_document.data['packing'].append(res['packing']['sepidar'][0])
-
-                    order_document.save()
-
-                    order_.is_wh = True
-                    order_.receipt_in_wh = True
-                    order_.sepidar_wh_code = settings.SEPIDAR_CONST_DATA.get('central_wh_id')
-                    order_.extra_data.request = self.request
-                    order_.save()
-                    packing.extra_data.request = self.request
-                    packing.save()
-        except Exception as e:
-            return JsonResponse({"res": str(e)}, status=500)
-
-        context = dict()
-        context['packing'] = packing
-        html = render_to_string('order/partial/sepidar/wh_to_wh_sepidar_response.html', context=context)
-
-        return JsonResponse({'res': html})
+        # The old endpoint assumed one central-warehouse document and could
+        # create duplicates. Only the new Quick Packing POST endpoint may send.
+        return JsonResponse({
+            'res': 'Warehouse transfers must be sent from Quick Packing.'
+        }, status=409)
 
 
 class OrderOfFactor(BaseView):
@@ -3456,7 +3524,7 @@ def portal_reserve_(request, sku, *args, **kwargs):
 
 
 class QuickGIOView(LoginRequiredMixin, View):
-    template_name = 'order/gio/quick_gio_create.html' # for update use 'order/gio/quick_gio_create.html'
+    template_name = 'order/gio/quick_gio_update.html'
     form_class = GIOForm
     model = GIO
     # wf_last_step_is_open = True
@@ -3487,7 +3555,8 @@ class QuickGIOView(LoginRequiredMixin, View):
         data = json.loads(request.body) or {}
         data = {k: v for k, v in data.items() if 'form-0-' not in k}  # remove form-0- from data
         total_forms = data.get('form-TOTAL_FORMS', 1)  # first form is empty
-        gio_for_update = GIO.objects.filter(pk=data.pop('gio_id', 0))
+        gio_id = data.pop('gio_id', 0)
+        gio_for_update = GIO.objects.filter(pk=gio_id)
 
         gio_data = {
             "gio_date": data.pop('gio_date', None),
@@ -3499,8 +3568,12 @@ class QuickGIOView(LoginRequiredMixin, View):
         try:
             with transaction.atomic():
                 if gio_for_update:
+                    gio_obj = GIO.objects.select_for_update().get(pk=gio_id)
+                    if gio_is_locked(gio_obj):
+                        return JsonResponse({
+                            'res': {'error': 'GIO is locked after Sepidar sending.'},
+                        }, status=409)
                     gio_for_update.update(**gio_data)
-                    gio_obj = gio_for_update.first()
                 else:
                     gio_obj = GIO(**gio_data)
                     gio_obj.extra_data.request = self.request
@@ -3542,10 +3615,46 @@ class QuickGIOView(LoginRequiredMixin, View):
         gio_form = GIOForm(instance=gio_object)
         gio_item_formset = GIOItemFormSet()
 
+        sepidar_groups = []
+        sepidar_preview_error = ''
+        if gio_object:
+            try:
+                sepidar_groups = gio_preview_groups(gio_object)
+            except GIOSepidarError as exc:
+                sepidar_preview_error = str(exc)
+
+        recorded_group_statuses = list(
+            gio_object.sepidar_groups.values_list('status', flat=True)
+        ) if gio_object else []
+        # Include unsent groups: these do not yet have a GIOSepidarGroup row.
+        # Using only recorded statuses incorrectly marks one successful group
+        # as a complete GIO while other planned groups remain pending.
+        group_statuses = (
+            [group['status'] for group in sepidar_groups]
+            if sepidar_groups else list(recorded_group_statuses)
+        )
+        if sepidar_preview_error:
+            # A broken/incomplete plan must never be declared fully sent.
+            group_statuses.append('preview_error')
+        sepidar_response = gio_document_display(gio_object) if gio_object else {}
         context = {
             'form': gio_form,
             'formset': gio_item_formset,
-            'gios': GIOItem.objects.filter(gio=gio_object).order_by('id')
+            'gios': (
+                GIOItem.objects.filter(gio=gio_object, is_deleted=False).select_related(
+                    'order', 'order__item', 'order__item_trade',
+                ).order_by('id') if gio_object else GIOItem.objects.none()
+            ),
+            'gio_is_locked': gio_is_locked(gio_object),
+            'gio_hero_status': gio_header_status(gio_object, group_statuses),
+            'gio_registered_group_count': gio_registered_group_count(recorded_group_statuses),
+            'gio_sepidar_can_send': user_can_send_gio(request.user),
+            'gio_reconcile_can_review': bool(request.user.is_authenticated and request.user.is_active and request.user.is_superuser),
+            'gio_can_manual_save_sepidar': bool(request.user.is_authenticated and request.user.is_active and request.user.is_superuser),
+            'gio_sepidar_groups': sepidar_groups,
+            'gio_has_group_submissions': bool(recorded_group_statuses),
+            'gio_sepidar_preview_error': sepidar_preview_error,
+            'gio_sepidar_response': sepidar_response,
         }
         
         return render(request, self.template_name, context)
@@ -3567,30 +3676,26 @@ class QuickGIOView(LoginRequiredMixin, View):
 
 
 class QuickGIODataTableListView(AjaxDatatableView):
+    """Order picker. Record metadata lives on the add button, not hidden cells."""
     model = Order
     title = 'order_list'
-    initial_order = [["id", "des"], ]
+    initial_order = [['order_number', 'desc']]
     length_menu = [[10, 25, 50], [10, 25, 50]]
     search_values_separator = '+'
-    render_row_details_template_name = 'sku_list_detail.html'
     show_column_filters = True
     column_defs = [
-        AjaxDatatableView.render_row_tools_column_def(),
-
-        {'name': 'order_number', 'title': '<div style="max-width: 60px; text-wrap: auto;">order number</div>', 'orderable': True, 'visible': True, 'searchable': True, "className": 'py-1'},
-        {'name': 'item', 'orderable': True, 'title': 'sku', 'visible': True, 'lookup_field': '__sku__icontains', 'className': 'py-1'},
-        {'name': 'item__part_number', 'orderable': True, 'title': '<div class="px-2">part number</div>', 'visible': True, 'lookup_field': '__icontains', 'className': 'partnumber'},
-        {'name': 'quantity', 'orderable': True, 'visible': True, 'searchable': False, 'title': '<div style="max-width: 55px; text-wrap: auto;">final quantity</div>', 'className': ''},
-        {'name': 'remaining_quantity', 'orderable': True, 'searchable': False, 'visible': True, 'title': '<div style="max-width: 55px; text-wrap: auto;">remaining quantity</div>', 'className': 'quantity'},
-        {'name': 'creator_user', 'title': 'creator', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
-        {'name': 'created_date', 'orderable': True, 'title': 'created date', 'visible': True, },
-        # {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'description sales'},
-        {'name': 'description_trade', 'orderable': True, 'visible': True, 'title': 'description trade'},
-        {'name': 'buy_factor', 'orderable': False, 'visible': True, 'searchable': False, 'title': '<div class="px-0" style="max-width:20px;">Add</div>', },
-
-        {'name': 'id', 'title': "id", 'orderable': True, 'searchable': False, 'visible': True, "className": 'order w-0 d-none'},
-        {'name': 'show_order_str', 'title': "show_order_str", 'orderable': False, 'searchable': False, 'visible': True, "className": 'py-1 show_order_str d-none'},
-        {'name': 'item__sepidar_id_0', 'visible': True, 'searchable': False, 'className': 'itemref d-none'},
+        {'name': 'order_number', 'title': 'سفارش', 'orderable': True,
+         'visible': True, 'searchable': True, 'className': 'gio-order-number'},
+        {'name': 'item__part_number', 'title': 'پارت نامبر', 'orderable': True,
+         'visible': True, 'searchable': True, 'lookup_field': '__icontains'},
+        {'name': 'quantity', 'title': 'تعداد کل', 'orderable': False,
+         'visible': True, 'searchable': False},
+        {'name': 'remaining_quantity', 'title': 'قابل انتخاب', 'orderable': False,
+         'visible': True, 'searchable': False},
+        {'name': 'currency', 'title': 'ارز', 'orderable': False,
+         'visible': True, 'searchable': False},
+        {'name': 'buy_factor', 'title': 'انتخاب', 'orderable': False,
+         'visible': True, 'searchable': False, 'className': 'gio-pick-cell'},
     ]
 
     def get_initial_queryset(self, request=None):
@@ -3599,217 +3704,1700 @@ class QuickGIODataTableListView(AjaxDatatableView):
             When(quantity_trade__isnull=False, quantity_trade__gt=0, then=F('quantity_trade')),
             When(quantity__isnull=False, quantity__gt=0, then=F('quantity')),
             default=Value(0),
-            output_field=FloatField()
+            output_field=FloatField(),
         )
-        qs = self.model.objects.annotate(quantity_in_gio=Coalesce(Sum('gio_items__quantity'), Value(0, output_field=FloatField())), effective_quantity=effective_quantity).filter(is_deleted=False,
-                                                                                            is_wh=False,
-                                                                                            last_work_flow__current_state_name='پرداخت / PACKING / GIO',
-                                                                                            effective_quantity__gt=F('quantity_in_gio'))
-        # .filter(Q(buy_factor_quantity_in_sepidar__lt=F('quantity')) | Q(buy_factor_quantity_in_sepidar__isnull=True)))
-        return qs
+        return self.model.objects.annotate(
+            quantity_in_gio=Coalesce(
+                Sum('gio_items__quantity', filter=Q(gio_items__is_deleted=False)),
+                Value(0, output_field=FloatField()),
+            ),
+            effective_quantity=effective_quantity,
+        ).filter(
+            is_deleted=False,
+            is_wh=False,
+            last_work_flow__current_state_name='پرداخت / PACKING / GIO',
+            effective_quantity__gt=F('quantity_in_gio'),
+        )
 
     def customize_row(self, row, obj):
-        row['quantity'] = obj.final_quantity
-        # row['remaining_quantity'] = obj.final_quantity - sum([x.sum_quantity for x in obj.gio_items.annotate(sum_quantity=Sum('quantity'))])
-        row['remaining_quantity'] = obj.final_quantity - obj.quantity_in_gio
-        row['item__sepidar_id_0'] = obj.item.sepidar_id_0
-        row['item__part_number'] = f'<span>{obj.final_item.part_number}</span>' if obj.item else ""
-        row['show_order_str'] = mark_safe(f'<div class="d-flex gap-6"> <span>{obj.order_number}</span> / <span>sku:{obj.final_item}</span> <span class="bg-light-info px-1">{obj.final_item.part_number}</span></div>')
-        row['buy_factor'] = '<span class="fw-bold p-3 cursor-pointer font-size-16 py-5 action" data-is_selected=no onclick="order_to_gio_item(event)" >➕</span>'
+        remaining = max(0, obj.final_quantity - obj.quantity_in_gio)
+        part_number = getattr(obj.final_item, 'part_number', None) or '-'
+        # Human-readable quantities only; leave picker data-max-qty numeric for JS.
+        row['quantity'] = intcomma(obj.final_quantity)
+        row['remaining_quantity'] = intcomma(remaining)
+        row['item__part_number'] = escape(str(part_number))
+        row['currency'] = escape(str(
+            getattr(obj.currency, 'title_en', None)
+            or getattr(obj.currency, 'title', None) or '-'
+        ))
+        label = '%s / %s' % (obj.order_number or obj.pk, part_number)
+        row['buy_factor'] = mark_safe(
+            '<button type="button" class="btn btn-sm btn-light-primary gio-pick-order" '
+            'data-order-id="%s" data-max-qty="%s" data-label="%s" '
+            'onclick="order_to_gio_item(event)">افزودن</button>' % (
+                obj.pk, remaining, escape(label),
+            )
+        )
 
 
 class QuickPackingView(LoginRequiredMixin, View):
-    template_name = 'order/packing/quick_packing_create.html'  # for update use 'order/gio/quick_gio_create.html'
-    form_class = PackingForm
+    template_name = 'order/packing/quick_packing_create.html'
+    form_class = PackingSafeForm
     model = Packing
-    # wf_last_step_is_open = True
-    has_flow = False
-    form_struct = {
-        'form': PackingForm,
-        'childes': [
-            {},
-        ]
-    }
-
-    # flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'OrderView')
+    has_flow = True
+    flow_config = Base.get_flow_config(
+        settings.BASE_DIR / '_keenthemes/view_config.json',
+        'PackingView',
+    )
 
     def setup(self, request, *args, **kwargs):
-        if kwargs.get('pk'):
-            self.template_name = 'order/packing/quick_packing_update.html'
-            self.object = self.get_object(kwargs.get('pk'))
-        return super().setup(request, *args, **kwargs)
+        super().setup(request, *args, **kwargs)
+        self.object = self.get_object(kwargs.get('pk')) if kwargs.get('pk') else None
 
-    def post(self, request, pk=None, *args, **kwargs):
+    def _assert_create_access(self):
+        if not Packing.user_can_create_workflow(self.request.user):
+            raise PermissionDenied('Packing workflow access denied.')
+
+    def _flow_group(self, state_index):
+        groups = self.flow_config.get('flow_users_groups') or []
+        if not groups:
+            return None
+        state_index = max(0, min(state_index, len(groups) - 1))
+        group = groups[state_index]
+        if isinstance(group, list):
+            group = group[0] if group else None
+        return group
+
+    def _is_warehouse_stage(self, packing_obj):
+        if not packing_obj:
+            return False
+        states = self.flow_config.get('flow_state_list') or []
+        # The terminal "Completed" stage is also handled by the warehouse group.
+        return 'انبار' in states and packing_obj.workflow_state_index() >= states.index('انبار')
+
+    @staticmethod
+    def _warehouse_choices():
+        # The selection catalog is intentionally narrower than the Order map.
+        return [(str(code), label) for code, label in Packing.sepidar_wh_map.items()]
+
+    @classmethod
+    def _parse_wh_destination(cls, value):
+        code = str(value if value is not None else '').strip()
+        if not code:
+            return None
+        if code not in {key for key, _ in cls._warehouse_choices()}:
+            raise ValueError('انبار مقصد انتخاب‌شده معتبر نیست.')
+        return code
+
+    @staticmethod
+    def _has_saved_warehouse_data(packing_obj):
+        """Once any warehouse detail is saved, the Packing cannot move backward.
+
+        Include zero quantities: an explicitly entered zero is still warehouse
+        information. Existing Sepidar documents also permanently lock return.
         """
-        1: create packing with packing-items for first time
-        2: update packing and create new packing-items in update
-        3: update single packing-item handel in PackingItemView
-        """
+        if not packing_obj:
+            return False
+        if str(packing_obj.wh_destination or '').strip() or packing_obj.sepidar_wh_to_wh:
+            return True
+        if packing_obj.sepidar_transfers.exists():
+            return True
+        return packing_obj.packing_item_rel.filter(is_deleted=False).filter(
+            (Q(wh_destination__isnull=False) & ~Q(wh_destination=''))
+            | Q(wh_receipt_quantity__isnull=False)
+            | Q(ruined_quantity__isnull=False)
+        ).exists()
 
-        try:
-            data = self.request.POST
-            data = {k: v for k, v in data.items() if 'form-0-' not in k}  # remove form-0- from data
-            total_forms = int(data.get('form-TOTAL_FORMS', 1))  # first form is empty
-            packing_for_update = Packing.objects.filter(pk=data.pop('packing_id', 0))
+    def _save_warehouse_destination(self, request, packing_obj):
+        if (not self._is_warehouse_stage(packing_obj)
+                or 'warehouse_destination' not in request.POST):
+            return
+        if not packing_obj.user_has_workflow_access(request.user):
+            raise PermissionDenied('Packing workflow access denied.')
+        destination = self._parse_wh_destination(
+            request.POST.get('warehouse_destination'),
+        )
+        if str(packing_obj.wh_destination or '') == str(destination or ''):
+            return
+        packing_obj.wh_destination = destination
+        packing_obj.editor_user = request.user
+        packing_obj.extra_data.request = request
+        packing_obj.save()
 
-            packing_data = {
-                "packing_number": data.pop('packing_number', None),
-                "currency_id": data.pop('currency', None),
-                "shipment_type": data.pop('shipment_type', None),
-                "bl_number": data.pop('bl_number', None),
-                "estimated_delivery_date": data.pop('estimated_delivery_date', None),
-                'description': data.pop('description', None),
-                'creator_user': self.request.user,
-                'editor_user': self.request.user
-            }
-
-            with transaction.atomic():
-                if packing_for_update:
-                    packing_for_update.update(**packing_data)
-                    gio_obj = packing_for_update.first()
-                else:
-                    packing_obj = Packing(**packing_data)
-                    packing_obj.extra_data.request = self.request
-                    packing_obj.save()
-
-                    """ save packing form files"""
-                    for name, f in self.request.FILES.items():
-                        prefix, group = name.split('_')
-                        packing_obj.save_file(
-                                    request=self.request,
-                                    file_groups=int(group),
-                                    file_model=File,
-                                    obj=packing_obj,
-                                    input_prefix=prefix,
-                                )
-
-                packing_items_data = {k: v for k, v in data.items() if 'form-' in k}  # remove form-0- from data
-                for row in range(1, total_forms):
-                    quantity = packing_items_data.get(f'form-{row}-quantity')
-                    order_id = packing_items_data.get(f'form-{row}-order')
-                    o = Order.objects.get(pk=order_id)
-
-                    is_valid_for_packing = o.validate_for_packing(quantity, packing_obj)
-                    if not is_valid_for_packing[0]:
-                        return JsonResponse({'res': {'ERROR: ': is_valid_for_packing[1]}}, status=400)
-
-                    packing_item_data = {
-                        'order_id': order_id,
-                        'quantity': quantity,
-                        'packing': packing_obj,
-                        'carton_number': packing_items_data.get(f'form-{row}-carton_number'),
-                        'gross_weight_kg': packing_items_data.get(f'form-{row}-gross_weight_kg') or 0,
-                        'size': packing_items_data.get(f'form-{row}-size'),
-                        'description': packing_items_data.get(f'form-{row}-description'),
-                    }
-
-                    try:
-                        packing_item_obj = PackingItem(**packing_item_data)
-                        packing_item_obj.extra_data.request = self.request
-                        packing_item_obj.save()
-                    except Exception as e:
-                        raise e
-        except Exception as e:
-            res = {'res': {'ERROR: ': str(e)}}
-            return JsonResponse(res, status=400)
-
-        messages.success(request, f'success')
-        return JsonResponse({'res': {'url': reverse_lazy('order:quick_packing', kwargs={'pk': packing_obj.pk})}},
-                            status=200)  # redirect(reverse_lazy('order:quick_gio', kwargs={'pk': gio_obj.pk}))
-
-    def get(self, request, pk=None, *args, **kwargs):
-        packing_object = self.get_object(pk)
-
-        packing_form = PackingForm(instance=packing_object)
-        packing_item_formset = PackingItemFormSet()
-
-        context = {
-            'form': packing_form,
-            'formset': packing_item_formset,
-            'packings': PackingItem.objects.filter(packing=packing_object).order_by('id')
+    def _workflow_constraint(self, packing_obj=None):
+        state_index = packing_obj.workflow_state_index() if packing_obj else 0
+        wf_access = (
+            packing_obj.user_has_workflow_access(self.request.user)
+            if packing_obj
+            else Packing.user_can_create_workflow(self.request.user)
+        )
+        return {
+            'form_state': state_index,
+            'request': self.request,
+            'wf_access': wf_access,
+            'form_constraint': self.flow_config.get('flow_form_constraint'),
+            'formset_constraint': self.flow_config.get('flow_formset_constraint'),
         }
 
+    def _build_form(self, packing_obj=None, data=None, files=None):
+        constraint = self._workflow_constraint(packing_obj)
+        form_state = constraint.get('form_state') or 0
+        form_constraints = constraint.get('form_constraint') or []
+        state_constraint = (
+            form_constraints[form_state]
+            if form_state < len(form_constraints)
+            else {}
+        ) or {}
+        if isinstance(state_constraint, list):
+            state_constraint = state_constraint[0] if state_constraint else {}
+
+        hidden = set(state_constraint.get('hide') or [])
+        read = set(state_constraint.get('read') or [])
+
+        quick_fields = [
+            'packing_number',
+            'currency',
+            'shipment_type',
+            'currency_exchange_rates',
+            'bl_number',
+            'bl_date',
+            'transportation_company',
+            'origin',
+            'destination',
+            'estimated_shipping_start_date',
+            'estimated_arrive_to_wh_date',
+            'description',
+        ] + [f'file_{idx}' for idx in range(1, 12)]
+
+        if not constraint.get('wf_access') or '__all__' in read:
+            allowed_fields = []
+            only_show = [name for name in quick_fields if name not in hidden]
+        else:
+            allowed_fields = [
+                name for name in quick_fields
+                if name not in hidden and name not in read
+            ]
+            only_show = [
+                name for name in quick_fields
+                if name in read and name not in hidden
+            ]
+
+        if getattr(self.request.user, 'is_superuser', False) is True:
+            # The superuser's field set is the UNION of safe Packing fields
+            # available to all workflow groups, independent of current stage.
+            # Never expose audit/user/workflow relation fields from Meta='__all__'.
+            allowed_fields = list(dict.fromkeys(
+                list(PackingSafeForm.field_layout) + ['currency_exchange_rates']
+                + [f'file_{idx}' for idx in range(1, PackingSafeForm.file_groups_2 + 1)]
+            ))
+            only_show = []
+        elif not constraint.get('wf_access'):
+            # Viewer group: no editable form fields, but show all existing
+            # documents in read-only mode regardless of current workflow step.
+            allowed_fields = []
+            only_show = [f'file_{idx}' for idx in range(1, 12)]
+        elif self._is_warehouse_stage(packing_obj):
+            # Warehouse operators retain the legacy read-only header.
+            allowed_fields = [name for name in allowed_fields if name.startswith('file_')]
+            only_show = [name for name in only_show if name.startswith('file_')]
+
+        if not Packing.user_can_view_prices(self.request.user):
+            # A user who cannot see financial values must not silently
+            # change the target currency while leaving its rates unchanged.
+            allowed_fields = [
+                name for name in allowed_fields
+                if name not in ('currency', 'currency_exchange_rates')
+            ]
+        elif 'currency' not in allowed_fields:
+            allowed_fields = [
+                name for name in allowed_fields if name != 'currency_exchange_rates'
+            ]
+
+        if packing_obj and form_state > 0 and constraint.get('wf_access'):
+            # These three registration fields are always editable by the
+            # authorized workflow editor after leaving the draft.
+            allowed_fields = list(dict.fromkeys(
+                allowed_fields + list(Packing.POST_DRAFT_FIELDS)
+            ))
+            only_show = [
+                name for name in only_show if name not in Packing.POST_DRAFT_FIELDS
+            ]
+        else:
+            allowed_fields = [
+                name for name in allowed_fields if name not in Packing.POST_DRAFT_FIELDS
+            ]
+
+        # Preserve the saved target/rates on workflow-only or partial POSTs.
+        # When the destination field is absent, do not clear it implicitly.
+        if packing_obj and data is not None and 'currency' not in data:
+            allowed_fields = [
+                name for name in allowed_fields
+                if name not in ('currency', 'currency_exchange_rates')
+            ]
+        elif packing_obj and data is not None and 'currency_exchange_rates' not in data:
+            allowed_fields = [
+                name for name in allowed_fields if name != 'currency_exchange_rates'
+            ]
+
+        # Partial workflow requests that omit these optional fields must not
+        # erase previously saved registration data.
+        if packing_obj and data is not None:
+            allowed_fields = [
+                name for name in allowed_fields
+                if name not in Packing.POST_DRAFT_FIELDS or name in data
+            ]
+
+        return self.form_class(
+            data=data,
+            files=files,
+            instance=packing_obj,
+            initial={'constraint': constraint},
+            allowed_fields=allowed_fields,
+            allowed_hidden=[],
+            only_show=only_show,
+        )
+
+    def _workflow_description(self, request=None):
+        request = request or getattr(self, 'request', None)
+        post = getattr(request, 'POST', {})
+        description = (post.get('wf_description') or '').strip()
+        if len(description) > 255:
+            raise ValueError('توضیحات جریان کاری نباید بیشتر از ۲۵۵ کاراکتر باشد.')
+        return description
+
+    def _create_initial_workflow(self, packing_obj):
+        state = self.flow_config.get('flow_state_list', ['پیش‌نویس'])[0]
+        group = self._flow_group(0) or 'packing_user_p'
+
+        first_deadline = self.flow_config.get('flow_deadline', [0])[0] or 0
+        if isinstance(first_deadline, list):
+            first_deadline = first_deadline[0] if first_deadline else 0
+
+        assignee = (
+            self.request.user
+            if self.request.user.groups.filter(name=group).exists()
+            else packing_obj.workflow_assigned_user(group, fallback_first=True)
+        )
+        if not assignee:
+            raise ValueError(f'No user is available in workflow group {group}.')
+
+        wf = WorkFlow.objects.create(
+            wf_status=5,
+            action=self.flow_config.get('flow_action') or 'create',
+            flow_name=self.flow_config.get('flow_name') or 'create packing',
+            from_user=self.request.user,
+            to_user=assignee,
+            state=state,
+            deadline=timezone.now() + timedelta(days=first_deadline),
+            belong_to_group=group,
+            content_type=ContentType.objects.get_for_model(Packing),
+            object_id=packing_obj.pk,
+            current_state_name=state,
+            wf_description=self._workflow_description(),
+            creator_user=self.request.user,
+            editor_user=self.request.user,
+        )
+        packing_obj.last_work_flow = wf
+        packing_obj.extra_data.request = self.request
+        packing_obj.save()
+        return wf
+
+    def _pick_flow_user(self, packing_obj, group):
+        # Keep ownership with the current assignee when that person is also
+        # eligible for the destination stage. Historical destination-group
+        # assignments are only a fallback when the current owner is ineligible.
+        current_flow = getattr(packing_obj, 'last_work_flow', None)
+        current_assignee = (
+            getattr(current_flow, 'to_user', None)
+            if current_flow else None
+        )
+        if not current_assignee:
+            # Older records may not have a last_work_flow FK populated.
+            current_group = self._flow_group(packing_obj.workflow_state_index())
+            current_assignee = (
+                packing_obj.workflow_assigned_user(
+                    current_group,
+                    fallback_first=False,
+                )
+                if current_group else None
+            )
+        if (
+            current_assignee
+            and group
+            and getattr(current_assignee, 'is_active', False)
+            and current_assignee.groups.filter(name=group).exists()
+        ):
+            return current_assignee
+
+        user = packing_obj.workflow_assigned_user(
+            group,
+            fallback_first=True,
+        )
+        if not user:
+            raise ValueError(f'No user is available in workflow group {group}.')
+        return user
+
+    def _can_change_user(self, packing_obj, user=None):
+        if not packing_obj:
+            return False
+        user = user or getattr(getattr(self, 'request', None), 'user', None)
+        if not user or not getattr(user, 'is_authenticated', False):
+            return False
+        if (
+            getattr(user, 'is_superuser', False)
+            or Packing.user_can_change_workflow_user(user)
+        ):
+            return True
+
+        # A group admin already has current-stage workflow access. Checking
+        # that first also avoids resolving the active stage for unrelated users.
+        if not packing_obj.user_has_workflow_access(user):
+            return False
+        current_group = self._flow_group(packing_obj.workflow_state_index())
+        return FlowAdminGroup.is_admin_of_group(
+            user,
+            current_group,
+            model=Packing,
+        )
+
+    def _change_workflow_user(self, packing_obj, user_id, request=None):
+        request = request or getattr(self, 'request', None)
+        actor = getattr(request, 'user', None)
+        if not self._can_change_user(packing_obj, user=actor):
+            raise PermissionDenied('You are not authorized to change the workflow assignee.')
+
+        state_index = packing_obj.workflow_state_index()
+        states = self.flow_config.get('flow_state_list') or []
+        if state_index < 0 or state_index >= len(states):
+            raise ValueError('Packing workflow is not configured.')
+        current_state = states[state_index]
+        current_group = self._flow_group(state_index)
+        if not current_group:
+            raise ValueError('The current workflow group is not configured.')
+
+        new_user = (
+            get_user_model().objects
+            .filter(
+                pk=user_id,
+                groups__name=current_group,
+                is_active=True,
+            )
+            .distinct()
+            .first()
+        )
+        if not new_user:
+            raise ValueError('Selected user is not a valid member of the current workflow group.')
+
+        deadline_days = self.flow_config.get('flow_deadline', [0])[state_index] or 0
+        if isinstance(deadline_days, list):
+            deadline_days = deadline_days[0] if deadline_days else 0
+
+        wf = WorkFlow.objects.create(
+            wf_status=4,
+            action='change_user',
+            flow_name=self.flow_config.get('flow_name') or 'create packing',
+            from_user=actor,
+            to_user=new_user,
+            state=current_state,
+            deadline=timezone.now() + timedelta(days=deadline_days),
+            belong_to_group=current_group,
+            content_type=ContentType.objects.get_for_model(Packing),
+            object_id=packing_obj.pk,
+            current_state_name=current_state,
+            wf_description=self._workflow_description(request),
+            creator_user=actor,
+            editor_user=actor,
+        )
+        packing_obj.last_work_flow = wf
+        packing_obj.extra_data.request = request
+        packing_obj.save()
+        return wf
+
+    def _submit_workflow_action(self, packing_obj, action):
+        if not packing_obj.user_has_workflow_access(self.request.user):
+            raise PermissionDenied('Packing workflow access denied.')
+
+        states = self.flow_config.get('flow_state_list') or []
+        if not states:
+            raise ValueError('Packing workflow is not configured.')
+
+        state_index = packing_obj.workflow_state_index()
+        current_state = states[state_index]
+        current_group = self._flow_group(state_index)
+
+        if action == 'next':
+            if state_index >= len(states) - 1:
+                raise ValueError('Packing is already in the last workflow state.')
+            target_index = state_index + 1
+            wf_status = 3
+        elif action == 'back':
+            if state_index <= 0:
+                raise ValueError('Packing is already in the first workflow state.')
+            if self._has_saved_warehouse_data(packing_obj):
+                raise ValueError(
+                    'برای این پکینگ اطلاعات انبار ثبت شده و امکان عودت به مرحله قبل وجود ندارد.'
+                )
+            target_index = state_index - 1
+            wf_status = 2
+        else:
+            raise ValueError('Invalid workflow action.')
+
+        target_state = states[target_index]
+        if current_state == 'انبار' and target_state == 'اتمام کار':
+            from order.packing_sepidar import transfer_preview
+            if not packing_obj.sepidar_wh_to_wh:
+                transfers = transfer_preview(packing_obj)
+                if not all(x['status'] == 'success' for x in transfers):
+                    raise ValueError('All Sepidar warehouse transfers must succeed before completion.')
+        target_group = self._flow_group(target_index)
+        to_user = self._pick_flow_user(packing_obj, target_group)
+
+        deadline_days = self.flow_config.get('flow_deadline', [0])[state_index] or 0
+        if isinstance(deadline_days, list):
+            deadline_days = deadline_days[0] if deadline_days else 0
+
+        wf = WorkFlow.objects.create(
+            wf_status=wf_status,
+            action=action,
+            flow_name=self.flow_config.get('flow_name') or 'create packing',
+            from_user=self.request.user,
+            to_user=to_user,
+            state=current_state,
+            deadline=timezone.now() + timedelta(days=deadline_days),
+            belong_to_group=current_group,
+            content_type=ContentType.objects.get_for_model(Packing),
+            object_id=packing_obj.pk,
+            current_state_name=target_state,
+            wf_description=self._workflow_description(),
+            creator_user=self.request.user,
+            editor_user=self.request.user,
+        )
+        packing_obj.last_work_flow = wf
+        packing_obj.extra_data.request = self.request
+        packing_obj.save()
+        return wf
+
+    @staticmethod
+    def _to_float(value, default=0):
+        try:
+            return float(str(value).replace(',', '').strip())
+        except (TypeError, ValueError):
+            return default
+
+    def _receipt_payload(self, post, prefix, required=False):
+        """Validate receipt fields without confusing them with Packing quantity."""
+        received_key = f'{prefix}-wh_receipt_quantity'
+        damaged_key = f'{prefix}-ruined_quantity'
+        if not required and received_key not in post and damaged_key not in post:
+            return {}
+        parsed = {}
+        for field, key in (
+            ('wh_receipt_quantity', received_key),
+            ('ruined_quantity', damaged_key),
+        ):
+            raw = post.get(key)
+            value = None if raw is None or str(raw).strip() == '' else self._to_float(raw, None)
+            if (required and value is None) or (value is not None and not isfinite(value)):
+                raise ValueError(f'Invalid {field} value.')
+            parsed[field] = value
+        return parsed
+
+    @classmethod
+    def _parse_gross_weight(cls, value):
+        """Empty user weight is unknown, not the number zero."""
+        if value is None or str(value).strip() == '':
+            return None
+        weight = cls._to_float(value, default=None)
+        if weight is None or not isfinite(weight) or weight < 0:
+            raise ValueError('وزن واردشده باید عددی معتبر و غیرمنفی باشد.')
+        return weight
+
+    @staticmethod
+    def _parse_carton_quantity(value):
+        if value is None or str(value).strip() == '':
+            return None
+        raw = str(value).strip()
+        if not raw.isascii() or not raw.isdecimal():
+            raise ValueError('تعداد کارتن باید عدد صحیح و غیرمنفی باشد.')
+        number = int(raw)
+        if number > 2147483647:
+            raise ValueError('تعداد کارتن بیشتر از حد مجاز است.')
+        return number
+
+    def _parse_rows(self, request):
+        total_forms = int(request.POST.get('form-TOTAL_FORMS', 1) or 1)
+        rows = []
+        for row_index in range(1, total_forms):
+            order_id = request.POST.get(f'form-{row_index}-order')
+            quantity = self._to_float(
+                request.POST.get(f'form-{row_index}-quantity'),
+                default=None,
+            )
+            if not order_id:
+                continue
+            if quantity is None:
+                raise ValueError(f'Invalid quantity in row {row_index}.')
+
+            size = str(request.POST.get(f'form-{row_index}-size') or '').strip()
+            parse_packing_size(size)
+            volume_is_confirmed = str(
+                request.POST.get(f'form-{row_index}-volume_is_confirmed', '')
+            ).strip().lower() in ('1', 'true', 'yes', 'on')
+            row = {
+                'index': row_index,
+                'order_id': int(order_id),
+                'quantity': quantity,
+                'carton_number': request.POST.get(f'form-{row_index}-carton_number'),
+                'carton_quantity': self._parse_carton_quantity(
+                    request.POST.get(f'form-{row_index}-carton_quantity'),
+                ),
+                'gross_weight_kg': self._parse_gross_weight(
+                    request.POST.get(f'form-{row_index}-gross_weight_kg'),
+                ),
+                'size': size or None,
+                'volume_is_confirmed': volume_is_confirmed,
+                'description': request.POST.get(f'form-{row_index}-description'),
+                'category': normalize_packing_label(
+                    'category', request.POST.get(f'form-{row_index}-category'),
+                ),
+                'main_category': normalize_packing_label(
+                    'main_category', request.POST.get(f'form-{row_index}-main_category'),
+                ),
+                'volume': parse_packing_volume(
+                    request.POST.get(f'form-{row_index}-volume'),
+                ),
+            }
+            brand_key = f'form-{row_index}-brand'
+            if brand_key in request.POST:
+                row['brand'] = normalize_packing_label(
+                    'brand', request.POST.get(brand_key),
+                )
+            if getattr(getattr(request, 'user', None), 'is_superuser', False) is True:
+                dest_key = f'form-{row_index}-wh_destination'
+                if dest_key in request.POST:
+                    row['wh_destination'] = self._parse_wh_destination(request.POST.get(dest_key))
+                row.update(self._receipt_payload(request.POST, f'form-{row_index}'))
+                if row.get('wh_receipt_quantity') is not None or row.get('ruined_quantity') is not None:
+                    self._validate_receipt_quantities(
+                        row.get('wh_receipt_quantity'), row.get('ruined_quantity'),
+                        row['quantity'],
+                    )
+            rows.append(row)
+        return rows
+
+    @staticmethod
+    def _validate_receipt_quantities(received, ruined, quantity):
+        if received is None and ruined is None:
+            return
+        if (
+            received is None or ruined is None
+            or not isfinite(float(received))
+            or received < 0 or received > float(quantity or 0)
+            or (ruined is not None and (
+                not isfinite(float(ruined)) or ruined < 0 or ruined > received
+            ))
+        ):
+            raise ValueError('Received/damaged quantities are outside the Packing quantity.')
+
+    def _parse_existing_rows(self, request, warehouse_stage=False, superuser=False):
+        rows = []
+        prefix = 'existing-'
+        item_ids = []
+
+        for key in request.POST.keys():
+            if key.startswith(prefix) and key.endswith('-id'):
+                try:
+                    item_ids.append(int(request.POST.get(key)))
+                except (TypeError, ValueError):
+                    continue
+
+        for item_id in sorted(set(item_ids)):
+            delete_requested = (
+                str(request.POST.get(f'existing-{item_id}-delete', '')).lower()
+                in ('1', 'true', 'yes', 'on')
+            )
+
+            if warehouse_stage:
+                if delete_requested:
+                    rows.append({'id': item_id, 'delete': True})
+                    continue
+                receipts = self._receipt_payload(
+                    request.POST, f'existing-{item_id}', required=False,
+                )
+                row = {'id': item_id, 'delete': False, **receipts}
+                dest_key = f'existing-{item_id}-wh_destination'
+                if dest_key in request.POST or 'warehouse_destination' in request.POST:
+                    row['wh_destination'] = self._parse_wh_destination(
+                        request.POST.get(dest_key, request.POST.get('warehouse_destination')),
+                    )
+                rows.append(row)
+                continue
+
+            quantity = self._to_float(
+                request.POST.get(f'existing-{item_id}-quantity'),
+                default=None,
+            )
+            if quantity is None and not delete_requested:
+                raise ValueError(f'Invalid quantity for PackingItem {item_id}.')
+
+            size = str(request.POST.get(f'existing-{item_id}-size') or '').strip()
+            parse_packing_size(size)
+            row = {
+                'id': item_id,
+                'delete': delete_requested,
+                'quantity': quantity,
+                'carton_number': request.POST.get(f'existing-{item_id}-carton_number'),
+                'size': size or None,
+                'description': request.POST.get(f'existing-{item_id}-description'),
+            }
+            gross_weight_key = f'existing-{item_id}-gross_weight_kg'
+            if gross_weight_key in request.POST and not delete_requested:
+                row['gross_weight_kg'] = self._parse_gross_weight(
+                    request.POST.get(gross_weight_key),
+                )
+            carton_key = f'existing-{item_id}-carton_quantity'
+            for field in ('category', 'main_category', 'brand'):
+                key = f'existing-{item_id}-{field}'
+                if key in request.POST and not delete_requested:
+                    row[field] = normalize_packing_label(
+                        field, request.POST.get(key),
+                    )
+            volume_key = f'existing-{item_id}-volume'
+            if volume_key in request.POST and not delete_requested:
+                row['volume'] = parse_packing_volume(request.POST.get(volume_key))
+            volume_confirmed_key = f'existing-{item_id}-volume_is_confirmed'
+            if volume_confirmed_key in request.POST and not delete_requested:
+                row['volume_is_confirmed'] = str(
+                    request.POST.get(volume_confirmed_key, '')
+                ).strip().lower() in ('1', 'true', 'yes', 'on')
+            if carton_key in request.POST and not delete_requested:
+                row['carton_quantity'] = self._parse_carton_quantity(
+                    request.POST.get(carton_key),
+                )
+            if superuser and not delete_requested:
+                dest_key = f'existing-{item_id}-wh_destination'
+                if dest_key in request.POST:
+                    row['wh_destination'] = self._parse_wh_destination(request.POST.get(dest_key))
+                row.update(self._receipt_payload(request.POST, f'existing-{item_id}'))
+            rows.append(row)
+
+        return rows
+
+    def _prepare_carton_sizes(self, request, packing_obj, new_rows):
+        superuser = getattr(request.user, 'is_superuser', False) is True
+        warehouse_only = self._is_warehouse_stage(packing_obj) and not superuser
+        existing_rows = self._parse_existing_rows(
+            request, warehouse_stage=warehouse_only, superuser=superuser,
+        )
+        if warehouse_only or not (new_rows or existing_rows):
+            return existing_rows
+
+        # The Packing header is locked by the caller's transaction. Lock its
+        # active items as well, so concurrent document edits cannot bypass the
+        # cross-row carton invariant.
+        saved_items = list(
+            PackingItem.objects.select_for_update()
+            .filter(packing=packing_obj, is_deleted=False)
+            .only('pk', 'carton_number', 'size')
+        )
+        fill_saved = reconcile_carton_sizes(saved_items, existing_rows, new_rows)
+        for packing_item, size in fill_saved:
+            packing_item.size = size
+            packing_item.editor_user = request.user
+            packing_item.extra_data.request = request
+            packing_item.save()
+        return existing_rows
+
+    def _update_existing_rows(self, request, packing_obj, pre_parsed_rows=None):
+        superuser = getattr(request.user, 'is_superuser', False) is True
+        warehouse_only = self._is_warehouse_stage(packing_obj) and not superuser
+        rows = pre_parsed_rows if pre_parsed_rows is not None else self._parse_existing_rows(
+            request, warehouse_stage=warehouse_only, superuser=superuser,
+        )
+        if not rows:
+            return
+
+        # Existing rows may be edited in every stage by the current workflow
+        # assignee, their workflow group supervisor, or a superuser.
+        if not packing_obj.user_has_workflow_access(request.user):
+            raise PermissionDenied('Packing workflow access denied.')
+
+        first_stage = packing_obj.workflow_state_index() == 0
+        if not first_stage and any(row['delete'] for row in rows):
+            raise PermissionDenied(
+                'Packing items can only be deleted in the first workflow state.'
+            )
+
+        for row in rows:
+            packing_item = (
+                PackingItem.objects
+                .select_for_update()
+                .filter(
+                    pk=row['id'],
+                    packing=packing_obj,
+                    is_deleted=False,
+                )
+                .first()
+            )
+            if not packing_item:
+                raise ValueError('Packing item does not belong to this Packing.')
+
+            if packing_item.sepidar_transfer_lines.filter(
+                transfer__status__in=('success', 'sending', 'unknown'),
+            ).exists():
+                for locked_field in ('quantity', 'wh_receipt_quantity', 'ruined_quantity', 'wh_destination'):
+                    if locked_field in row and row[locked_field] != getattr(packing_item, locked_field):
+                        raise ValueError('A Sepidar transfer exists; quantities and destination are locked.')
+
+            if row.get('delete'):
+                packing_item.is_deleted = True
+                packing_item.editor_user = request.user
+                packing_item.extra_data.request = request
+                packing_item.save()
+                continue
+
+            if warehouse_only:
+                # Group's warehouse users edit ONLY their own received/damaged fields.
+                arrived = row.get('wh_receipt_quantity', packing_item.wh_receipt_quantity)
+                ruined = row.get('ruined_quantity', packing_item.ruined_quantity)
+                self._validate_receipt_quantities(arrived, ruined, packing_item.quantity)
+                dest = row.get('wh_destination', packing_item.wh_destination)
+                if (
+                    packing_item.wh_receipt_quantity == arrived
+                    and packing_item.ruined_quantity == ruined
+                    and str(packing_item.wh_destination or '') == str(dest or '')
+                ):
+                    continue
+                packing_item.wh_receipt_quantity = arrived
+                packing_item.ruined_quantity = ruined
+                packing_item.wh_destination = dest
+                packing_item.editor_user = request.user
+                packing_item.extra_data.request = request
+                packing_item.save()
+                continue
+
+            # Superuser may edit row fields from every workflow stage.
+            receipt_updates = {}
+            if superuser and 'wh_destination' in row:
+                if str(packing_item.wh_destination or '') != str(row['wh_destination'] or ''):
+                    receipt_updates['wh_destination'] = row['wh_destination']
+            if superuser and (
+                'wh_receipt_quantity' in row or 'ruined_quantity' in row
+            ):
+                arrived = row.get('wh_receipt_quantity', packing_item.wh_receipt_quantity)
+                ruined = row.get('ruined_quantity', packing_item.ruined_quantity)
+                self._validate_receipt_quantities(arrived, ruined, row['quantity'])
+                for attr, new_value in (
+                    ('wh_receipt_quantity', arrived),
+                    ('ruined_quantity', ruined),
+                ):
+                    if getattr(packing_item, attr) != new_value:
+                        receipt_updates[attr] = new_value
+
+            order = Order.objects.select_for_update().get(pk=packing_item.order_id)
+
+            quantity_changed = abs(
+                float(packing_item.quantity or 0) - row['quantity']
+            ) > 0.000001
+            entered_volume = row.get('volume', packing_item.volume)
+            volume_is_confirmed = bool(
+                row.get('volume_is_confirmed', packing_item.volume_is_confirmed)
+                and entered_volume is not None
+            )
+            resolved_volume = resolve_packing_volume(
+                entered_volume,
+                size=row.get('size', packing_item.size),
+                is_confirmed=volume_is_confirmed,
+            )
+
+            # Do not save unchanged rows, and allow metadata edits when the
+            # upstream GIO capacity has changed since this Packing was created.
+            if not first_stage and not (
+                quantity_changed
+                or (
+                    'gross_weight_kg' in row
+                    and packing_item.gross_weight_kg != row['gross_weight_kg']
+                )
+                or (packing_item.carton_number or '') != (row['carton_number'] or '')
+                or ('carton_quantity' in row and packing_item.carton_quantity != row['carton_quantity'])
+                or ('category' in row and (packing_item.category or '') != (row['category'] or ''))
+                or ('main_category' in row and (packing_item.main_category or '') != (row['main_category'] or ''))
+                or ('brand' in row and (packing_item.brand or '') != (row['brand'] or ''))
+                or packing_item.volume != resolved_volume
+                or packing_item.volume_is_confirmed != volume_is_confirmed
+                or (packing_item.size or '') != (row['size'] or '')
+                or (packing_item.description or '') != (row['description'] or '')
+                or bool(receipt_updates)
+            ):
+                continue
+
+            if first_stage or quantity_changed:
+                is_valid, validation_error = order.validate_for_packing(
+                    row['quantity'],
+                    packing_obj,
+                    packing_item_obj=packing_item,
+                )
+                if not is_valid:
+                    raise ValueError(validation_error)
+
+            packing_item.quantity = row['quantity']
+            if first_stage:
+                # Later metadata edits must not silently reprice old items.
+                item = order.final_item
+                packing_item.price = float(order.final_price or 0)
+                # A manually selected Packing brand is not overwritten from Item.brand.
+            if first_stage or quantity_changed:
+                # Keep the previously recorded weight for metadata-only edits.
+                packing_item.net_weight_kg = (
+                    float(order.final_weight or 0) * row['quantity']
+                )
+            if 'gross_weight_kg' in row:
+                packing_item.gross_weight_kg = row['gross_weight_kg']
+            packing_item.carton_number = row['carton_number']
+            if 'carton_quantity' in row:
+                packing_item.carton_quantity = row['carton_quantity']
+            packing_item.size = row['size']
+            packing_item.description = row['description']
+            for field in ('category', 'main_category', 'brand'):
+                if field in row:
+                    setattr(packing_item, field, row[field])
+            packing_item.volume = resolved_volume
+            packing_item.volume_is_confirmed = volume_is_confirmed
+            for attr, value in receipt_updates.items():
+                setattr(packing_item, attr, value)
+            packing_item.editor_user = request.user
+            packing_item.extra_data.request = request
+            packing_item.save()
+
+    def _save_uploaded_files(self, request, packing_obj, form=None):
+        supplied_files = {name for name in request.FILES if name.startswith('file_')}
+        if not supplied_files:
+            return
+        if form is not None and not supplied_files.issubset(set(form.fields)):
+            raise PermissionDenied('File upload is not allowed in this workflow stage.')
+
+        packing_obj.save_file(
+            request=request,
+            file_groups=11,
+            file_model=File,
+            obj=packing_obj,
+            input_prefix='file',
+        )
+
+    def post(self, request, pk=None, *args, **kwargs):
+        self.request = request
+        packing_obj = self.get_object(pk) if pk else None
+
+        try:
+            if packing_obj:
+                workflow_action = request.POST.get('workflow_action')
+
+                # Assignee changes are a narrowly scoped permission. Do not
+                # bind/save document fields or rows for users who only hold
+                # the model-specific *_user_changer group.
+                if workflow_action == 'change_user':
+                    with transaction.atomic():
+                        packing_obj = Packing.objects.select_for_update().get(pk=packing_obj.pk)
+                        self._change_workflow_user(
+                            packing_obj,
+                            request.POST.get('workflow_user_id'),
+                            request=request,
+                        )
+                    return JsonResponse(
+                        {'res': {'url': reverse_lazy('order:quick_packing', kwargs={'pk': packing_obj.pk})}},
+                        status=200,
+                    )
+
+                if not packing_obj.user_has_workflow_access(request.user):
+                    raise PermissionDenied('Packing workflow access denied.')
+
+                if workflow_action:
+                    with transaction.atomic():
+                        packing_obj = Packing.objects.select_for_update().get(pk=packing_obj.pk)
+
+                        form = self._build_form(
+                            packing_obj=packing_obj,
+                            data=request.POST,
+                            files=request.FILES,
+                        )
+                        if not form.is_valid():
+                            return JsonResponse(
+                                {'res': {'ERROR': form.errors.get_json_data()}, 'error_code': 'packing_err_form_invalid'},
+                                status=400,
+                            )
+
+                        # Set the request before the *first* save so ChangeLog
+                        # records both the correct field diff and the actor.
+                        # Do not issue the old redundant second save.
+                        form.instance.extra_data.request = request
+                        packing_obj = form.save() or form.instance
+                        self._save_warehouse_destination(request, packing_obj)
+                        existing_rows = self._prepare_carton_sizes(
+                            request, packing_obj, [],
+                        )
+                        self._update_existing_rows(
+                            request, packing_obj, pre_parsed_rows=existing_rows,
+                        )
+                        self._save_uploaded_files(request, packing_obj, form=form)
+                        self._submit_workflow_action(packing_obj, workflow_action)
+
+                    return JsonResponse(
+                        {'res': {'url': reverse_lazy('order:quick_packing', kwargs={'pk': packing_obj.pk})}},
+                        status=200,
+                    )
+            else:
+                self._assert_create_access()
+
+            rows = self._parse_rows(request)
+            state_index = packing_obj.workflow_state_index() if packing_obj else 0
+
+            if packing_obj and state_index > 0 and rows:
+                raise PermissionDenied(
+                    'Packing items can only be added in the first workflow state.'
+                )
+
+            if not packing_obj and not rows:
+                return JsonResponse(
+                    {'res': {'ERROR': 'Select at least one order for Packing.'}, 'error_code': 'packing_err_no_order'},
+                    status=400,
+                )
+
+            with transaction.atomic():
+                if packing_obj:
+                    # Lock first, then bind/validate the form against the exact
+                    # instance that will be saved. Replacing form.instance after
+                    # is_valid() discards ModelForm's cleaned values.
+                    packing_obj = Packing.objects.select_for_update().get(pk=packing_obj.pk)
+
+                form = self._build_form(
+                    packing_obj=packing_obj,
+                    data=request.POST,
+                    files=request.FILES,
+                )
+                if not form.is_valid():
+                    return JsonResponse(
+                        {'res': {'ERROR': form.errors.get_json_data()}, 'error_code': 'packing_err_form_invalid'},
+                        status=400,
+                    )
+
+                # One save with request attribution produces one accurate audit
+                # snapshot (rather than an unattributed save and a second log).
+                form.instance.extra_data.request = request
+                packing_obj = form.save() or form.instance
+                self._save_warehouse_destination(request, packing_obj)
+
+                existing_rows = self._prepare_carton_sizes(
+                    request, packing_obj, rows,
+                )
+                self._update_existing_rows(
+                    request, packing_obj, pre_parsed_rows=existing_rows,
+                )
+
+                if rows:
+                    if packing_obj.workflow_state_index() > 0:
+                        raise PermissionDenied(
+                            'Packing items can only be added in the first workflow state.'
+                        )
+
+                    seen_order_ids = set()
+                    for row in rows:
+                        if row['order_id'] in seen_order_ids:
+                            raise ValueError('An order cannot be added twice in one request.')
+                        seen_order_ids.add(row['order_id'])
+
+                        # Lock only Order itself. item/item_trade are nullable FKs and
+                        # select_for_update() across their OUTER JOIN is invalid in PostgreSQL.
+                        order = Order.objects.select_for_update().get(pk=row['order_id'])
+
+                        is_valid, validation_error = order.validate_for_packing(
+                            row['quantity'],
+                            packing_obj,
+                        )
+                        if not is_valid:
+                            raise ValueError(validation_error)
+
+                        item = order.final_item
+                        unit_weight = float(order.final_weight or 0)
+                        unit_price = float(order.final_price or 0)
+
+                        packing_item_obj = PackingItem(
+                            order=order,
+                            packing=packing_obj,
+                            part_number=getattr(item, 'part_number', None),
+                            quantity=row['quantity'],
+                            price=unit_price,
+                            net_weight_kg=unit_weight * row['quantity'],
+                            gross_weight_kg=row['gross_weight_kg'],
+                            carton_number=row['carton_number'],
+                            carton_quantity=row['carton_quantity'],
+                            size=row['size'],
+                            brand=(
+                                row['brand'] if 'brand' in row
+                                else (order.brand.title if order.brand_id else None)
+                            ),
+                            category=row['category'],
+                            main_category=row['main_category'],
+                            description=row['description'],
+                            volume=resolve_packing_volume(
+                                row['volume'], size=row['size'],
+                                is_confirmed=row['volume_is_confirmed'],
+                            ),
+                            volume_is_confirmed=bool(
+                                row['volume_is_confirmed'] and row['volume'] is not None
+                            ),
+                            wh_receipt_quantity=row.get('wh_receipt_quantity'),
+                            ruined_quantity=row.get('ruined_quantity'),
+                            wh_destination=row.get('wh_destination'),
+                            creator_user=request.user,
+                            editor_user=request.user,
+                        )
+                        packing_item_obj.extra_data.request = request
+                        packing_item_obj.save()
+
+                self._save_uploaded_files(request, packing_obj, form=form)
+
+                if not pk:
+                    self._create_initial_workflow(packing_obj)
+
+        except PermissionDenied:
+            raise
+        except Exception as exc:
+            return JsonResponse(
+                {'res': {'ERROR': str(exc)}, **packing_error_payload(exc)},
+                status=400,
+            )
+
+        messages.success(request, 'Packing با موفقیت ذخیره شد.')
+        return JsonResponse(
+            {
+                'res': {
+                    'url': reverse_lazy(
+                        'order:quick_packing',
+                        kwargs={'pk': packing_obj.pk},
+                    )
+                }
+            },
+            status=200,
+        )
+
+    def _render_change_history(self, request, packing_obj):
+        """Fetch ONLY the selected model/object audit trail on demand.
+
+        Do not send all Packing and PackingItem logs to the browser and hide
+        unrelated records with CSS/JavaScript.
+        """
+        scope = request.GET.get('audit_scope')
+        row_details = []
+
+        if scope == 'header':
+            target_model = Packing
+            object_id = packing_obj.pk
+        elif scope == 'item':
+            item_id = request.GET.get('audit_item_id')
+            if not item_id or not str(item_id).isdigit():
+                raise Http404('Invalid PackingItem id.')
+            # The row must belong to this Packing, including soft-deleted rows.
+            row_details = list(
+                PackingItem.objects.full_queryset()
+                .filter(pk=int(item_id), packing_id=packing_obj.pk)
+                .values('id', 'part_number', 'order_id', 'order__order_number')
+            )
+            if not row_details:
+                raise Http404('PackingItem not found in this Packing.')
+            target_model = PackingItem
+            object_id = int(item_id)
+        else:
+            raise Http404('Invalid change history scope.')
+
+        logs = (
+            ChangeLog.objects.filter(
+                content_type=ContentType.objects.get_for_model(target_model),
+                object_id=object_id,
+            )
+            .select_related('content_type', 'editor_user', 'creator_user')
+            .order_by('-created_date', '-pk')
+        )
+        history = build_packing_change_history(
+            logs, Packing, PackingItem, row_details,
+            include_financial=Packing.user_can_view_prices(
+                getattr(request, 'user', None),
+            ),
+        )
+        return render(
+            request,
+            'order/packing/partial/quick_packing_change_history.html',
+            {'change_history': history},
+        )
+
+    def get(self, request, pk=None, *args, **kwargs):
+        packing_obj = self.get_object(pk) if pk else None
+        if packing_obj and not packing_obj.user_can_view_workflow(request.user):
+            # Assignee changers get a deliberately minimal page. They can see
+            # only the current stage/assignee and eligible users, not document
+            # details, audit history, files, prices, or the packing item list.
+            if not self._can_change_user(packing_obj, user=request.user):
+                raise PermissionDenied('Packing document view access denied.')
+            if request.GET:
+                raise PermissionDenied('Packing document view access denied.')
+
+            state_index = packing_obj.workflow_state_index()
+            states = self.flow_config.get('flow_state_list') or []
+            current_group = self._flow_group(state_index)
+            return render(
+                request,
+                'order/packing/quick_packing_change_user.html',
+                {
+                    'packing_object': packing_obj,
+                    'current_state': states[state_index] if state_index < len(states) else '',
+                    'workflow_current_user': (
+                        packing_obj.workflow_assigned_user(
+                            current_group,
+                            fallback_first=False,
+                        )
+                        if current_group else None
+                    ),
+                    'workflow_group_users': (
+                        get_user_model().objects.filter(
+                            groups__name=current_group,
+                            is_active=True,
+                        ).distinct().order_by('id')
+                        if current_group else get_user_model().objects.none()
+                    ),
+                },
+            )
+
+        if request.GET.get('export_excel') is not None:
+            if not packing_obj:
+                raise Http404('Packing not found.')
+            items = list(
+                packing_obj.packing_item_rel
+                .filter(is_deleted=False)
+                .select_related(
+                    'order', 'order__currency', 'order__brand',
+                    'order__item', 'order__item__brand',
+                    'order__item__purchase_group',
+                    'order__item__purchase_group__hs', 'order__item__hs',
+                    'order__item_trade', 'order__item_trade__brand',
+                    'order__item_trade__purchase_group',
+                    'order__item_trade__purchase_group__hs',
+                    'order__item_trade__hs',
+                )
+                .order_by('carton_number', 'id')
+            )
+            output = build_packing_workbook(
+                packing_obj,
+                items,
+                include_prices=Packing.user_can_view_prices(request.user),
+            )
+            filename = f"Packing_{packing_obj.packing_number or packing_obj.pk}.xlsx"
+            response = HttpResponse(output.getvalue(), content_type=XLSX_CONTENT_TYPE)
+            response['Content-Disposition'] = (
+                "attachment; filename*=UTF-8''" + quote(filename, safe='')
+            )
+            return response
+
+        # A provider rate request is separate from saving manual Packing rates.
+        # Permission checks happen *before* any paid XE API lookup.
+        # Same-page, read-only preview. No new form or page is created.
+        if request.GET.get('volume_preview') is not None:
+            if packing_obj:
+                if not packing_obj.user_has_workflow_access(request.user):
+                    raise PermissionDenied('Packing workflow access denied.')
+            else:
+                self._assert_create_access()
+            try:
+                proposed = calculate_packing_volume(
+                    quantity=request.GET.get('quantity'),
+                    size=request.GET.get('size'),
+                    carton_quantity=request.GET.get('carton_quantity'),
+                    order_id=request.GET.get('order_id'),
+                )
+            except ValueError as exc:
+                return JsonResponse({
+                    'calculated_volume': None,
+                    **packing_error_payload(exc),
+                })
+            return JsonResponse({
+                'calculated_volume': str(proposed) if proposed is not None else None,
+            })
+
+        if request.GET.get('packing_autocomplete') is not None:
+            # Existing page, independent read-only suggestion endpoint.
+            if packing_obj:
+                if not packing_obj.user_has_workflow_access(request.user):
+                    raise PermissionDenied('Packing workflow access denied.')
+            else:
+                self._assert_create_access()
+            return JsonResponse({
+                'results': packing_label_suggestions(
+                    request.GET.get('packing_autocomplete'),
+                    request.GET.get('q'),
+                ),
+            })
+
+        if request.GET.get('audit_scope') is not None:
+            if not packing_obj:
+                raise Http404('Packing not found.')
+            return self._render_change_history(request, packing_obj)
+
+        if packing_obj:
+            state_index = packing_obj.workflow_state_index()
+            wf_access = packing_obj.user_has_workflow_access(request.user)
+        else:
+            self._assert_create_access()
+            state_index = 0
+            wf_access = True
+
+        states = self.flow_config.get('flow_state_list') or []
+        can_add_items = bool(
+            state_index == 0
+            and wf_access
+        )
+        can_edit_items = bool(packing_obj and wf_access)
+
+        packing_items = []
+        if packing_obj:
+            packing_items = list(
+                packing_obj.packing_item_rel
+                .filter(is_deleted=False)
+                .select_related('order', 'order__currency')
+                .order_by('id')
+            )
+            if can_edit_items:
+                for packing_item in packing_items:
+                    packing_item.quick_available_quantity = (
+                        packing_item.order.packing_available_quantity(
+                            exclude_packing_item=packing_item,
+                        )
+                    )
+
+        workflow_records = []
+        if packing_obj:
+            workflow_records = list(
+                WorkFlow.objects.filter(
+                    object_id=packing_obj.pk,
+                    content_type=ContentType.objects.get_for_model(Packing),
+                )
+                .select_related('from_user', 'to_user', 'creator_user')
+                .order_by('created_date', 'id')
+            )
+        timeline = build_packing_workflow_timeline(
+            workflow_records,
+            states,
+            Packing.normalize_workflow_state_name,
+        )
+
+        warehouse_data_saved = (
+            self._has_saved_warehouse_data(packing_obj)
+            if packing_obj and state_index > 0 else False
+        )
+
+        price_access = Packing.user_can_view_prices(request.user)
+        form = self._build_form(packing_obj=packing_obj)
+        context = {
+            'workflow_stages': timeline['stages'],
+            'workflow_history': timeline['history'],
+            'form': form,
+            'formset': PackingItemFormSet(),
+            'packings': packing_items,
+            'packing_object': packing_obj,
+            'state_index': state_index,
+            'flow_state_index': state_index,
+            'flow_state_list': states,
+            'current_state': states[state_index] if states else None,
+            'wf_access': wf_access,
+            'is_read_only_view': bool(packing_obj and not wf_access),
+            'can_view_prices': price_access,
+            'fx_currency_catalog': (
+                list(Currency.objects.order_by('title_en', 'pk').values(
+                    'id', 'title', 'title_en',
+                )) if price_access else []
+            ),
+            'fx_saved_config': (
+                packing_obj.currency_exchange_rates if price_access and packing_obj else {}
+            ) or {},
+            'fx_can_edit': bool(
+                price_access
+                and 'currency' in form.fields
+                and 'currency_exchange_rates' in form.fields
+            ),
+            'can_add_items': can_add_items,
+            'can_edit_items': can_edit_items,
+            'is_superuser': getattr(request.user, 'is_superuser', False) is True,
+            'is_warehouse_stage': self._is_warehouse_stage(packing_obj),
+            'can_send_to_sepidar': bool(
+                packing_obj and wf_access
+                and 'انبار' in states
+                and state_index == states.index('انبار')
+            ),
+            'warehouse_options': self._warehouse_choices(),
+            'central_wh_id': str(settings.SEPIDAR_CONST_DATA.get('central_wh_id') or ''),
+            'can_next': bool(wf_access and packing_obj and state_index < len(states) - 1),
+            'can_back': bool(
+                wf_access and packing_obj and state_index > 0
+                and not warehouse_data_saved
+            ),
+            'can_change_user': bool(packing_obj and self._can_change_user(packing_obj, user=request.user)),
+            'workflow_current_user': (
+                packing_obj.workflow_assigned_user(
+                    self._flow_group(state_index),
+                    fallback_first=False,
+                )
+                if packing_obj else None
+            ),
+            'workflow_group_users': (
+                get_user_model().objects.filter(
+                    groups__name=self._flow_group(state_index),
+                    is_active=True,
+                ).distinct().order_by('id')
+                if packing_obj else get_user_model().objects.none()
+            ),
+            'flow': list(reversed(workflow_records)),
+        }
         return render(request, self.template_name, context)
 
     def get_object(self, pk):
-        if pk:
-            return Packing.objects.get(pk=pk)
-        else:
+        if not pk:
             return None
-
-    def form_valid(self, form):
-        res = super().form_valid(form)
-        return res
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['app_name'] = self.request.resolver_match.app_name
-        return context
+        return get_object_or_404(Packing, pk=pk)
 
 
 class QuickPackingDataTableListView(AjaxDatatableView):
+    def dispatch(self, request, *args, **kwargs):
+        # A direct AJAX request must not expose the order source list to
+        # anyone who cannot create a Packing in the first workflow stage.
+        if not Packing.user_can_create_workflow(request.user):
+            raise PermissionDenied('Packing order list access denied.')
+        return super().dispatch(request, *args, **kwargs)
+
     model = Order
     title = 'order_list'
-    initial_order = [["id", "des"], ]
+    initial_order = [['created_date', 'des']]
     length_menu = [[10, 25, 50], [10, 25, 50]]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
     show_column_filters = True
+
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-
-        {'name': 'order_number', 'title': '<div style="max-width: 60px; text-wrap: auto;">order number</div>',
-         'orderable': True, 'visible': True, 'searchable': True, "className": 'py-1'},
-        {'name': 'item', 'orderable': True, 'title': 'sku', 'visible': True, 'lookup_field': '__sku__icontains',
-         'className': 'py-1'},
-        {'name': 'item__part_number', 'orderable': True, 'title': '<div class="px-2">part number</div>',
-         'visible': True, 'lookup_field': '__icontains', 'className': 'partnumber'},
-        {'name': 'quantity_in_gio', 'orderable': False, 'visible': True, 'searchable': False,
-         'title': '<div style="max-width: 55px; text-wrap: auto;">quantity in gio</div>', 'className': ''},
-        {'name': 'remaining_quantity', 'orderable': True, 'searchable': False, 'visible': True,
-         'title': '<div style="max-width: 55px; text-wrap: auto;">remaining quantity</div>', 'className': 'quantity'},
-        {'name': 'creator_user', 'title': 'creator', 'visible': True, 'orderable': True,
-         'lookup_field': '__username__icontains'},
-        {'name': 'created_date', 'orderable': True, 'title': 'created date', 'visible': True, },
-        # {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'description sales'},
-        {'name': 'description_trade', 'orderable': True, 'visible': True, 'title': 'description trade'},
-        {'name': 'buy_factor', 'orderable': False, 'visible': True, 'searchable': False,
-         'title': '<div class="px-0" style="max-width:20px;">Add</div>', },
-
-        {'name': 'id', 'title': "id", 'orderable': True, 'searchable': False, 'visible': True,
-         "className": 'order w-0 d-none'},
-        {'name': 'show_order_str', 'title': "show_order_str", 'orderable': False, 'searchable': False, 'visible': True,
-         "className": 'py-1 show_order_str d-none'},
-        {'name': 'item__sepidar_id_0', 'visible': True, 'searchable': False, 'className': 'itemref d-none'},
+        {
+            'name': 'order_number',
+            'title': '<span data-key="packing_order_number">Order Number</span>',
+            'orderable': True,
+            'visible': True,
+            'searchable': True,
+            'className': 'py-1 order-number',
+        },
+        {
+            'name': 'sku',
+            'title': 'SKU',
+            'orderable': False,
+            'visible': True,
+            'searchable': False,
+            'className': 'py-1 sku',
+        },
+        {
+            'name': 'part_number',
+            'title': '<span data-key="part_number">Part Number</span>',
+            'orderable': False,
+            'visible': True,
+            'searchable': False,
+            'className': 'py-1 partnumber',
+        },
+        {
+            'name': 'quantity_in_gio',
+            'title': '<span data-key="packing_gio_quantity">GIO Qty</span>',
+            'orderable': True,
+            'visible': True,
+            'searchable': False,
+            'className': 'py-1 quantity-in-gio',
+        },
+        {
+            'name': 'available_for_packing',
+            'title': '<span data-key="packing_available">Available for Packing</span>',
+            'orderable': True,
+            'visible': True,
+            'searchable': False,
+            'className': 'py-1 available-for-packing',
+        },
+        {
+            'name': 'remaining_quantity_in_order',
+            'title': '<span data-key="packing_order_remaining">Remaining in Order</span>',
+            'orderable': True,
+            'visible': True,
+            'searchable': False,
+            'className': 'py-1 remaining-quantity-in-order',
+        },
+        {
+            'name': 'created_date',
+            'title': '<span data-key="created_date">Created Date</span>',
+            'orderable': True,
+            'visible': True,
+        },
+        {
+            'name': 'description_trade',
+            'title': '<span data-key="description_trade">Trade Description</span>',
+            'orderable': True,
+            'visible': True,
+        },
+        {
+            'name': 'add_to_packing',
+            'title': '<span data-key="add">Add</span>',
+            'orderable': False,
+            'visible': True,
+            'searchable': False,
+            'className': 'py-1',
+        },
+        {
+            'name': 'id',
+            'title': 'id',
+            'orderable': False,
+            'searchable': False,
+            'visible': True,
+            'className': 'order d-none',
+        },
+        {
+            'name': 'brand_title',
+            'title': 'brand_title',
+            'orderable': False,
+            'searchable': False,
+            'visible': True,
+            'className': 'order-brand d-none',
+        },
+        {
+            'name': 'unit_weight',
+            'title': 'unit_weight',
+            'orderable': False,
+            'searchable': False,
+            'visible': True,
+            'className': 'unit-weight d-none',
+        },
+        {
+            'name': 'final_price',
+            'title': 'final_price',
+            'orderable': False,
+            'searchable': False,
+            'visible': True,
+            'className': 'final-price d-none',
+        },
+        {
+            'name': 'currency_title',
+            'title': 'currency_title',
+            'orderable': False,
+            'searchable': False,
+            'visible': True,
+            'className': 'currency-title d-none',
+        },
+        {
+            'name': 'currency_pk',
+            'title': 'currency_pk',
+            'orderable': False,
+            'searchable': False,
+            'visible': True,
+            'className': 'currency-pk d-none',
+        },
+        {
+            'name': 'show_order_str',
+            'title': 'show_order_str',
+            'orderable': False,
+            'searchable': False,
+            'visible': True,
+            'className': 'show-order-str d-none',
+        },
     ]
 
     def get_initial_queryset(self, request=None):
+        # BaseModel has Meta.ordering = ['-created_date'].
+        # Clear it before GROUP BY, otherwise PostgreSQL/Django can include the
+        # ordering column in the grouped subquery and [:1] would return only one
+        # grouped row instead of the sum of every active item for this Order.
+        gio_quantity_subquery = (
+            GIOItem.objects
+            .filter(order_id=OuterRef('pk'), is_deleted=False)
+            .order_by()
+            .values('order_id')
+            .annotate(total=Sum('quantity'))
+            .values('total')[:1]
+        )
+        packing_quantity_subquery = (
+            PackingItem.objects
+            .filter(order_id=OuterRef('pk'), is_deleted=False)
+            .order_by()
+            .values('order_id')
+            .annotate(total=Sum('quantity'))
+            .values('total')[:1]
+        )
+        item_weight_subquery = (
+            ItemWeight.objects
+            .filter(
+                sku_id=OuterRef('item_id'),
+                creator_user__isnull=False,
+            )
+            .order_by('-editor_user__groups__name', '-created_date')
+            .values('weight')[:1]
+        )
+        trade_item_weight_subquery = (
+            ItemWeight.objects
+            .filter(
+                sku_id=OuterRef('item_trade_id'),
+                creator_user__isnull=False,
+            )
+            .order_by('-editor_user__groups__name', '-created_date')
+            .values('weight')[:1]
+        )
+
         effective_quantity = Case(
             When(quantity_mac__isnull=False, quantity_mac__gt=0, then=F('quantity_mac')),
             When(quantity_trade__isnull=False, quantity_trade__gt=0, then=F('quantity_trade')),
             When(quantity__isnull=False, quantity__gt=0, then=F('quantity')),
-            default=Value(0),
-            output_field=FloatField()
+            default=Value(0.0),
+            output_field=FloatField(),
         )
-        qs = self.model.objects.annotate(
-            quantity_in_gio=Coalesce(Sum('gio_items__quantity'), Value(0, output_field=FloatField())),
-            effective_quantity=effective_quantity).filter(is_deleted=False,
-                                                          is_wh=False,
-                                                          last_work_flow__current_state_name='پرداخت / PACKING / GIO',
-                                                          effective_quantity__gt=F('quantity_in_gio'))
-        # .filter(Q(buy_factor_quantity_in_sepidar__lt=F('quantity')) | Q(buy_factor_quantity_in_sepidar__isnull=True)))
+
+        qs = (
+            self.model.objects
+            .annotate(
+                effective_quantity=effective_quantity,
+                effective_sku=Case(
+                    When(item_trade__isnull=False, then=F('item_trade__sku')),
+                    default=F('item__sku'),
+                    output_field=CharField(),
+                ),
+                effective_part_number=Case(
+                    When(item_trade__isnull=False, then=F('item_trade__part_number')),
+                    default=F('item__part_number'),
+                    output_field=CharField(),
+                ),
+                effective_unit_weight=Coalesce(
+                    Case(
+                        When(
+                            item_trade__isnull=False,
+                            then=Subquery(
+                                trade_item_weight_subquery,
+                                output_field=FloatField(),
+                            ),
+                        ),
+                        default=Subquery(
+                            item_weight_subquery,
+                            output_field=FloatField(),
+                        ),
+                        output_field=FloatField(),
+                    ),
+                    Value(0.0),
+                ),
+                effective_unit_price=Coalesce(
+                    NullIf(F('price'), Value(0.0)),
+                    NullIf(F('price_mac'), Value(0.0)),
+                    NullIf(F('price_trade'), Value(0.0)),
+                    Value(0.0),
+                    output_field=FloatField(),
+                ),
+                effective_currency_title=Coalesce(
+                    F('currency__title_en'),
+                    Value(''),
+                    output_field=CharField(),
+                ),
+                # Use an annotation rather than deferred FK traversal:
+                # ajax_datatable can defer Order.currency in pagination.
+                effective_currency_pk=F('currency_id'),
+                # Annotate the brand title instead of select_related('brand'):
+                # ajax_datatable uses a deferred-field queryset for paging.
+                # Joining a deferred relation via select_related raises
+                # FieldError: brand cannot be deferred and traversed.
+                effective_brand_title=Coalesce(
+                    F('brand__title'),
+                    Value(''),
+                    output_field=CharField(),
+                ),
+                quantity_in_gio=Coalesce(
+                    Subquery(
+                        gio_quantity_subquery,
+                        output_field=FloatField(),
+                    ),
+                    Value(0.0),
+                ),
+                quantity_in_packing=Coalesce(
+                    Subquery(
+                        packing_quantity_subquery,
+                        output_field=FloatField(),
+                    ),
+                    Value(0.0),
+                ),
+            )
+            .annotate(
+                packable_gio=Case(
+                    When(
+                        quantity_in_gio__gt=F('effective_quantity'),
+                        then=F('effective_quantity'),
+                    ),
+                    default=F('quantity_in_gio'),
+                    output_field=FloatField(),
+                ),
+                remaining_quantity_in_order=Case(
+                    When(
+                        effective_quantity__gt=F('quantity_in_gio'),
+                        then=ExpressionWrapper(
+                            F('effective_quantity') - F('quantity_in_gio'),
+                            output_field=FloatField(),
+                        ),
+                    ),
+                    default=Value(0.0),
+                    output_field=FloatField(),
+                ),
+            )
+            .annotate(
+                available_for_packing=ExpressionWrapper(
+                    F('packable_gio') - F('quantity_in_packing'),
+                    output_field=FloatField(),
+                ),
+            )
+            .filter(
+                is_deleted=False,
+                is_wh=False,
+                cancel=False,
+                sales_admin_cancel=False,
+                last_work_flow__current_state_name='پرداخت / PACKING / GIO',
+                quantity_in_gio__gt=0,
+                available_for_packing__gt=0,
+            )
+        )
         return qs
 
     def customize_row(self, row, obj):
-        row['quantity'] = obj.final_quantity
-        # row['remaining_quantity'] = obj.final_quantity - sum([x.sum_quantity for x in obj.gio_items.annotate(sum_quantity=Sum('quantity'))])
-        row['remaining_quantity'] = obj.final_quantity - obj.quantity_in_gio
-        row['item__sepidar_id_0'] = obj.item.sepidar_id_0
-        row['item__part_number'] = f'<span>{obj.final_item.part_number}</span>' if obj.item else ""
+        row['sku'] = obj.effective_sku or ''
+        row['part_number'] = obj.effective_part_number or ''
+        row['quantity_in_gio'] = obj.quantity_in_gio or 0
+        row['available_for_packing'] = obj.available_for_packing or 0
+        row['remaining_quantity_in_order'] = obj.remaining_quantity_in_order or 0
+        row['unit_weight'] = obj.effective_unit_weight or 0
+        row['brand_title'] = escape(obj.effective_brand_title or '')
+        # Hiding a DataTables column does not hide its HTTP response data.
+        row['final_price'] = (
+            (obj.effective_unit_price or 0)
+            if Packing.user_can_view_prices(self.request.user) else ''
+        )
+        row['currency_title'] = obj.effective_currency_title or ''
+        row['currency_pk'] = (
+            str(obj.effective_currency_pk or '')
+            if Packing.user_can_view_prices(self.request.user) else ''
+        )
         row['show_order_str'] = mark_safe(
-            f'<div class="d-flex gap-6"> <span>{obj.order_number}</span> / <span>sku:{obj.final_item}</span> <span class="bg-light-info px-1">{obj.final_item.part_number}</span></div>')
-        row[
-            'buy_factor'] = '<span class="fw-bold p-3 cursor-pointer font-size-16 py-5 action" data-is_selected=no onclick="order_to_gio_item(event)" >➕</span>'
+            '<div class="d-flex gap-3">'
+            f'<span>{obj.order_number or obj.pk}</span>'
+            f'<span>SKU: {obj.effective_sku or "-"}</span>'
+            f'<span>{obj.effective_part_number or "-"}</span>'
+            '</div>'
+        )
+        row['add_to_packing'] = (
+            '<button type="button" '
+            'class="btn btn-sm btn-light-primary action" '
+            'data-is-selected="no" '
+            'onclick="order_to_packing_item(event)">'
+            '➕'
+            '</button>'
+        )
+
+
 
 
 # class SafeFactorView(LoginRequiredMixin, BaseView):

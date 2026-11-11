@@ -2,6 +2,7 @@ import jdatetime
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.core.validators import RegexValidator, MinValueValidator
 from django.db.models import Sum, ExpressionWrapper, F, FloatField, Count
 from django.utils import timezone
 from django.utils.formats import number_format
@@ -177,6 +178,11 @@ class Order(BaseModeWF):
     order_title = models.CharField(max_length=255, blank=True, null=True)
     order_number = models.CharField(max_length=255, blank=True, null=True)
     item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, null=True)
+    # Filled explicitly by Trade; no default or Item.brand backfill.
+    brand = models.ForeignKey(
+        Brand, on_delete=models.PROTECT, related_name='orders_with_brand',
+        null=True, blank=True, verbose_name='Brand',
+    )
     sales_admin_cancel = models.BooleanField(_('sales_admin_cancel'), default=False)
     has_customer_prepaid = models.BooleanField(_('has_customer_prepaid'), default=False)
     transportation_method = models.CharField(_('transportation_method'), max_length=64, choices=TRANSPORTATION_CHOICE,
@@ -522,11 +528,68 @@ class Order(BaseModeWF):
 
         return True, ''
 
-    def validate_for_packing(self, quantity, packing_obj):
-        if self.packing_item_order.filter(packing=packing_obj, is_deleted=False).exists():
-            return False, f'duplicate order {self.order_number} in packing {packing_obj.pk}'
+    def packing_available_quantity(self, exclude_packing_item=None):
+        """
+        Return the maximum quantity that can currently be assigned to Packing.
 
-        total_arrived_wh_in_percent, total_arrived_wh, final_quantity = self.packing_info
+        When editing an existing PackingItem, exclude that row from the already
+        packed quantity so its current allocation becomes available to itself.
+        """
+        gio_quantity = self.gio_items.filter(
+            is_deleted=False
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+
+        packed_qs = self.packing_item_order.filter(is_deleted=False)
+        if exclude_packing_item is not None:
+            exclude_pk = getattr(exclude_packing_item, 'pk', exclude_packing_item)
+            if exclude_pk:
+                packed_qs = packed_qs.exclude(pk=exclude_pk)
+
+        packed_quantity = packed_qs.aggregate(total=Sum('quantity'))['total'] or 0
+        final_quantity = float(self.final_quantity or 0)
+        packable_gio = min(final_quantity, float(gio_quantity or 0))
+
+        return max(
+            packable_gio - float(packed_quantity or 0),
+            0,
+        )
+
+    def validate_for_packing(self, quantity, packing_obj=None, packing_item_obj=None):
+        """
+        Packing can only consume quantities that have already been GIO'd and
+        have not been consumed by previous active PackingItems.
+        """
+        try:
+            requested_quantity = float(quantity or 0)
+        except (TypeError, ValueError):
+            return False, 'تعداد وارد شده برای پکینگ معتبر نیست.'
+
+        if requested_quantity <= 0:
+            return False, 'تعداد پکینگ باید بیشتر از صفر باشد.'
+
+        gio_quantity = self.gio_items.filter(
+            is_deleted=False
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+
+        packed_qs = self.packing_item_order.filter(is_deleted=False)
+        if packing_item_obj is not None:
+            exclude_pk = getattr(packing_item_obj, 'pk', packing_item_obj)
+            if exclude_pk:
+                packed_qs = packed_qs.exclude(pk=exclude_pk)
+
+        packed_quantity = packed_qs.aggregate(total=Sum('quantity'))['total'] or 0
+        available_for_packing = self.packing_available_quantity(
+            exclude_packing_item=packing_item_obj,
+        )
+
+        if requested_quantity > available_for_packing + 0.000001:
+            return False, (
+                f'حداکثر تعداد قابل استفاده از سفارش {self.order_number or self.pk} '
+                f'در پکینگ {available_for_packing:0.20g} است. '
+                f'(GIO: {float(gio_quantity or 0):0.20g} / '
+                f'Packing قبلی: {float(packed_quantity or 0):0.20g})'
+            )
+
         return True, ''
 
 
@@ -953,11 +1016,53 @@ class OrderOrder(BaseModel):
 
 
 class Packing(BaseModeWF):
+    POST_DRAFT_FIELDS = (
+        'order_registration_number', 'proforma_pi_number', 'commercial_card',
+    )
+    COMMERCIAL_CARD_CHOICES = [
+        ('rahavard_tejarat_ayande', 'رهاورد تجارت آینده'),
+        ('rasoul_rafie', 'رسول رفیع'),
+        ('modern_electronic', 'مدرن الکترونیک'),
+        ('faraz_fanavaran_faran', 'فراز فن آوران فاران'),
+        ('hikar', 'هایکار'),
+        ('hibar', 'هایبار'),
+    ]
+
+    # Destination warehouses offered by Quick Packing only. Extend this map
+    # when another destination is approved; do not change Order.sepidar_wh_map.
+    sepidar_wh_map = {
+        2: "انبار مرکزی",
+        73: "انبار رسالت",
+        42: "انبار کالای معیوب",
+    }
+
     SHIPMENT_TYPE = [("express", "express"), ("air", "air"), ("sea", "sea"), ]
     WH_DESTINATION_CHOICE = [(2, _("central")), (3, _("resalat")), ]
     packing_number = models.CharField(_('packing_number'), max_length=255, null=True, blank=True)
+    order_registration_number = models.CharField(
+        'شماره ثبت سفارش (۸ رقم)', max_length=8, null=True, blank=True,
+        validators=[RegexValidator(
+            regex=r'^[0-9]{8}$', message='شماره ثبت سفارش باید دقیقاً ۸ رقم باشد.',
+        )],
+    )
+    proforma_pi_number = models.CharField(
+        'شماره پرفورما (PI)', max_length=255, null=True, blank=True,
+    )
+    commercial_card = models.CharField(
+        'کارت بازرگانی', max_length=32, choices=COMMERCIAL_CARD_CHOICES,
+        null=True, blank=True,
+    )
     shipment_type = models.CharField(_('shipment_type'), max_length=255, choices=SHIPMENT_TYPE, null=True, blank=True)
     bl_number = models.CharField(_('bl_number'), max_length=255, null=True, blank=True)
+    bl_date = models.DateField(_('bl_date'), null=True, blank=True)
+    transportation_company = models.CharField(
+        _('transportation_company'),
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+    origin = models.CharField(_('origin'), max_length=255, null=True, blank=True)
+    destination = models.CharField(_('destination'), max_length=255, null=True, blank=True)
     departure_date = models.DateField(_('departure_date'), null=True, blank=True)
     arrival_date = models.DateField(_('arrival_date'), null=True, blank=True)
     sales_manager_needed = models.BooleanField(_('sales_manager_needed'), default=False)
@@ -967,7 +1072,7 @@ class Packing(BaseModeWF):
     cl_10_date = models.DateField(_('cl_10_date'), null=True, blank=True)
     cl_100_date = models.DateField(_('cl_100_date'), null=True, blank=True)
     arrive_to_wh_date = models.DateField(_('arrive_to_wh_date'), null=True, blank=True)
-    estimated_delivery_date = models.DateField(_('estimated_arrive_date'), null=True, blank=True)
+    estimated_shipping_start_date = models.DateField(_('تاریخ پیش‌بینی شروع حمل بار'), null=True, blank=True)
     estimated_arrive_to_wh_date = models.DateField(_('estimated_arrive_to_wh_date'), null=True, blank=True)
     reserve_bar_date = models.DateField(_('reserve_bar_date'), null=True, blank=True)
     sum_qty = models.FloatField(_('sum_qty'), null=True, blank=True)
@@ -978,19 +1083,285 @@ class Packing(BaseModeWF):
     sales_10_darsad = models.TextField('sales_10_darsad', null=True, blank=True, help_text='شماره کارتن هایی که به عنوان 10 درصد هستند. با علامت / جدا کنید')
     currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, null=True, blank=True,
                                  related_name='packings')
+    # FX configuration only. Converted totals are deliberately calculated
+    # in the Quick Packing browser and must never be persisted.
+    currency_exchange_rates = models.JSONField(
+        'نرخ‌های تبدیل ارز', default=dict, blank=True,
+    )
+
+    @staticmethod
+    def normalize_workflow_state_name(state_name):
+        """Recognize stage labels saved before the nine-stage Packing workflow."""
+        old_names = {
+            'پیش نویس': 'پیش‌نویس',
+            'پیشنویس': 'پیش‌نویس',
+            'DEP': 'تحویل شرکت حمل',
+            'arrive': 'حمل',
+            '10%': 'قبض انبار',
+            'اظهار گمرکی': 'اظهار',
+            'ترخیص گمرک': 'ترخیص',
+        }
+        return old_names.get(state_name, state_name)
+
+    def workflow_state_index(self):
+        """Return the active stage from the actual workflow destination.
+
+        current_state_name is the destination of next/back actions. Using the
+        source state plus/minus one would misplace old Packing workflows when
+        the new Guarantee stage is inserted between Declaration and Clearance.
+        """
+        flow_config = self.get_flow_config(
+            settings.BASE_DIR / '_keenthemes/view_config.json',
+            'PackingView',
+        )
+        states = list(flow_config.get('flow_state_list') or [])
+        if not states:
+            return 0
+
+        from workflow.models import WorkFlow
+        from django.contrib.contenttypes.models import ContentType
+
+        flow = WorkFlow.objects.filter(
+            object_id=self.pk,
+            content_type=ContentType.objects.get_for_model(self.__class__),
+        ).order_by('id').last()
+
+        if not flow:
+            return 0
+
+        destination = self.normalize_workflow_state_name(flow.current_state_name)
+        if destination in states:
+            return states.index(destination)
+
+        # Compatibility with older records without current_state_name.
+        # The old eight-stage process jumped straight from declaration to
+        # clearance; those historical transitions must skip the newly inserted
+        # guarantee step even if current_state_name was never populated.
+        if not flow.current_state_name and flow.state == 'اظهار گمرکی' and flow.wf_status == 3:
+            return states.index('ترخیص')
+        if not flow.current_state_name and flow.state == 'ترخیص گمرک' and flow.wf_status == 2:
+            return states.index('اظهار')
+
+        source = self.normalize_workflow_state_name(flow.state)
+        if source not in states:
+            return 0
+        base_index = states.index(source)
+        if flow.wf_status == 2:
+            return max(base_index - 1, 0)
+        if flow.wf_status == 3:
+            return min(base_index + 1, len(states) - 1)
+        if flow.wf_status == 5:
+            return 0
+        return base_index
+
+    @classmethod
+    def workflow_group_for_state(cls, state_name):
+        if not state_name:
+            return None
+
+        flow_config = cls.get_flow_config(
+            settings.BASE_DIR / '_keenthemes/view_config.json',
+            'PackingView',
+        )
+        states = list(flow_config.get('flow_state_list') or [])
+        groups = list(flow_config.get('flow_users_groups') or [])
+
+        try:
+            index = states.index(cls.normalize_workflow_state_name(state_name))
+        except (ValueError, TypeError):
+            return None
+
+        if index >= len(groups):
+            return None
+
+        group = groups[index]
+        if isinstance(group, list):
+            group = group[0] if group else None
+        return group
+
+    def workflow_assigned_user(self, group_name, fallback_first=True):
+        """
+        Return the latest assignee remembered for a workflow group.
+
+        Assignment memory is derived from the effective state because
+        belong_to_group describes the source step on next/back records while
+        to_user is the assignee of the destination step.
+
+        A wf_status=4 change-user record becomes the newest assignment for that
+        group and is automatically reused by later next/back transitions.
+        """
+        if not group_name:
+            return None
+
+        users = (
+            get_user_model().objects
+            .filter(groups__name=group_name)
+            .distinct()
+            .order_by('id')
+        )
+        valid_user_ids = set(users.values_list('id', flat=True))
+
+        flows = (
+            WorkFlow.objects
+            .filter(
+                object_id=self.pk,
+                content_type=ContentType.objects.get_for_model(self.__class__),
+            )
+            .select_related('to_user')
+            .order_by('-id')
+        )
+
+        for flow in flows:
+            effective_state = self.normalize_workflow_state_name(
+                flow.current_state_name or flow.state
+            )
+            effective_group = self.workflow_group_for_state(effective_state)
+            if (
+                effective_group == group_name
+                and flow.to_user_id
+                and flow.to_user_id in valid_user_ids
+            ):
+                return flow.to_user
+
+        return users.first() if fallback_first else None
+
+    @classmethod
+    def user_can_create_workflow(cls, user):
+        if not user or not getattr(user, 'is_authenticated', False):
+            return False
+        if user.is_superuser:
+            return True
+        # Viewer memberships are additive; they cannot revoke permission to
+        # create a Packing granted by the first workflow group or its admins.
+        from workflow.models import FlowAdminGroup
+
+        flow_config = cls.get_flow_config(
+            settings.BASE_DIR / '_keenthemes/view_config.json',
+            'PackingView',
+        )
+        groups = list(flow_config.get('flow_users_groups') or [])
+        if not groups:
+            return False
+
+        first_group = groups[0]
+        if isinstance(first_group, list):
+            first_group = first_group[0] if first_group else None
+        if not first_group:
+            return False
+
+        return (
+            user.groups.filter(name=first_group).exists()
+            or FlowAdminGroup.is_admin_of_group(user, first_group, model=cls)
+        )
+
+    def user_has_workflow_access(self, user):
+        """Server-side edit access for Packing and all Packing child actions."""
+        if not user or not getattr(user, 'is_authenticated', False):
+            return False
+        if user.is_superuser:
+            return True
+        # Only the current-stage assignee or group admin may edit. Viewer
+        # groups add read/price access without overriding this permission.
+        from workflow.models import WorkFlow, FlowAdminGroup
+        from django.contrib.contenttypes.models import ContentType
+
+        flow_config = self.get_flow_config(
+            settings.BASE_DIR / '_keenthemes/view_config.json',
+            'PackingView',
+        )
+        groups = list(flow_config.get('flow_users_groups') or [])
+        if not groups:
+            return False
+
+        state_index = self.workflow_state_index()
+        current_group = groups[min(state_index, len(groups) - 1)]
+        if isinstance(current_group, list):
+            current_group = current_group[0] if current_group else None
+        if not current_group:
+            return False
+
+        if FlowAdminGroup.is_admin_of_group(user, current_group, model=self.__class__):
+            return True
+
+        last_flow = WorkFlow.objects.filter(
+            object_id=self.pk,
+            content_type=ContentType.objects.get_for_model(self.__class__),
+        ).order_by('id').last()
+
+        if last_flow:
+            # Being assigned to a workflow record is not sufficient without
+            # belonging to that stage's group. Group supervisors were handled
+            # by FlowAdminGroup above.
+            return (
+                last_flow.to_user_id == user.id
+                and user.groups.filter(name=current_group).exists()
+            )
+
+        return state_index == 0 and user.groups.filter(name=current_group).exists()
+
+    VIEW_ONLY_GROUP = 'packing_viewer'
+    FINANCE_VIEW_ONLY_GROUP = 'packing_finance_viewer'
+    USER_CHANGER_GROUP_SUFFIX = '_user_changer'
+
+    @classmethod
+    def workflow_user_changer_group(cls):
+        """Return the model-scoped group allowed to change workflow assignees."""
+        return f'{cls._meta.model_name}{cls.USER_CHANGER_GROUP_SUFFIX}'
+
+    @classmethod
+    def user_can_change_workflow_user(cls, user):
+        """This permission changes only the assignee, not document edit access."""
+        return bool(
+            user and getattr(user, 'is_authenticated', False)
+            and user.groups.filter(name=cls.workflow_user_changer_group()).exists()
+        )
+
+    @classmethod
+    def user_can_view_prices(cls, user):
+        """Prices require superuser or financial-viewer membership."""
+        return bool(
+            user and getattr(user, 'is_authenticated', False)
+            and (user.is_superuser or user.groups.filter(
+                name=cls.FINANCE_VIEW_ONLY_GROUP,
+            ).exists())
+        )
+
+    def user_has_finance_view_only_access(self, user):
+        """Financial visibility supplements any workflow permissions."""
+        return bool(
+            user and getattr(user, 'is_authenticated', False)
+            and user.groups.filter(name=self.FINANCE_VIEW_ONLY_GROUP).exists()
+        )
+
+    def user_has_view_only_access(self, user):
+        """Document-wide read permission, without revoking editing rights."""
+        return bool(
+            user and getattr(user, 'is_authenticated', False)
+            and user.groups.filter(name=self.VIEW_ONLY_GROUP).exists()
+        )
+
+    def user_can_view_workflow(self, user):
+        """Combine stage-specific editor rights with global viewer grants."""
+        return (
+            self.user_has_workflow_access(user)
+            or self.user_has_view_only_access(user)
+            or self.user_has_finance_view_only_access(user)
+        )
 
     def __str__(self):
         return f'{self.bl_number} -- {self.created_date}'
 
     @property
-    def computed_estimated_delivery_date(self):
+    def computed_estimated_shipping_start_date(self):
         # Todo: check this
-        return self.estimated_delivery_date
+        return self.estimated_shipping_start_date
 
     @property
     def computed_carton_qty(self):
         # Todo: check this
-        return self.packing_item_rel.all().count()
+        return self.packing_item_rel.filter(is_deleted=False).aggregate(
+            total=Sum('carton_quantity'),
+        )['total']
 
     @property
     def computed_weight_kg(self):
@@ -1003,14 +1374,28 @@ class PackingItem(BaseModeWF):
     part_number = models.CharField(_('part_number'), max_length=255, null=True, blank=True)
     quantity = models.FloatField(_('quantity'), null=True, blank=True)
     ruined_quantity = models.FloatField(_('ruined_quantity'), null=True, blank=True)
+    # Per-row destination: Sepidar warehouse code. A Packing can be split.
+    wh_destination = models.CharField('انبار مقصد', max_length=16, null=True, blank=True)
     # arrive_date = models.DateField(_('arrive_date'), null=True, blank=True) Todo: check this
-    # arrived_quantity = models.FloatField(null=True, blank=True)
     price = models.FloatField(_('price'), null=True, blank=True)
     packing = models.ForeignKey(Packing, on_delete=models.DO_NOTHING, related_name='packing_item_rel')
     carton_number = models.CharField(_('carton_number'), max_length=100, null=True, blank=True)
+    carton_quantity = models.PositiveIntegerField('تعداد کارتن', null=True, blank=True)
+    # Independent metadata labels; no Category/Main Category hierarchy.
+    category = models.CharField('Category', max_length=150, null=True, blank=True)
+    main_category = models.CharField('Main Category', max_length=150, null=True, blank=True)
     net_weight_kg = models.FloatField(_('weight_kg'), null=True, blank=True)
     gross_weight_kg = models.FloatField(_('grows_weight_kg'), null=True, blank=True)
+    # User-editable CBM volume; unconfirmed values are recalculated from size.
+    volume = models.DecimalField(
+        'Volume', max_digits=18, decimal_places=6, null=True, blank=True,
+        validators=[MinValueValidator(0)],
+    )
     size = models.CharField(_('size'), max_length=128, null=True, blank=True)
+    # Distinguishes a confirmed manual override from a value calculated from size.
+    volume_is_confirmed = models.BooleanField(
+        'حجم واقعی تأییدشده', default=False,
+    )
     brand = models.CharField(_('brand'), null=True, blank=True)
     description = models.TextField(_('description'), null=True, blank=True)
     sales_conf = models.BooleanField(_('sales_conf'), default=False)
@@ -1046,9 +1431,170 @@ class PackingItem(BaseModeWF):
         return 0
 
     @property
+    def calculated_volume(self):
+        """Return CBM calculated from the saved dimensions."""
+        from .packing_volume import calculate_packing_volume
+        try:
+            return calculate_packing_volume(size=self.size)
+        except ValueError:
+            return None
+
+    @property
+    def effective_volume(self):
+        """Return a confirmed manual value or the calculated CBM value."""
+        from .packing_volume import resolve_packing_volume
+        try:
+            return resolve_packing_volume(
+                self.volume,
+                size=self.size,
+                is_confirmed=self.volume_is_confirmed,
+            )
+        except ValueError:
+            return None
+
+    @property
     def computed_status(self):
         # Todo check this
         return 'wh'
+
+
+
+class PackingSepidarTransfer(models.Model):
+    """One Sepidar warehouse transfer (delivery + receipt) per Packing destination."""
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('sending', 'Sending'),
+        ('success', 'Success'),
+        ('failed', 'Failed'),
+        ('unknown', 'Needs reconciliation'),
+    )
+    TYPE_CHOICES = (('normal', 'Normal'), ('damaged', 'Damaged'))
+
+    packing = models.ForeignKey('Packing', on_delete=models.PROTECT, related_name='sepidar_transfers')
+    transfer_type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    source_stock_ref = models.PositiveIntegerField()
+    destination_stock_ref = models.PositiveIntegerField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    delivery_id = models.BigIntegerField(null=True, blank=True)
+    delivery_number = models.CharField(max_length=64, null=True, blank=True)
+    receipt_id = models.BigIntegerField(null=True, blank=True)
+    receipt_number = models.CharField(max_length=64, null=True, blank=True)
+    request_payload = models.JSONField(default=dict)
+    response_payload = models.JSONField(default=dict)
+    attempt_count = models.PositiveIntegerField(default=0)
+    last_error = models.TextField(blank=True, default='')
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['packing', 'transfer_type', 'destination_stock_ref'],
+                name='unique_packing_sepidar_transfer',
+            ),
+        ]
+
+    def __str__(self):
+        return f'Packing {self.packing_id}: {self.transfer_type} -> {self.destination_stock_ref}'
+
+
+class PackingSepidarTransferItem(models.Model):
+    transfer = models.ForeignKey(PackingSepidarTransfer, on_delete=models.CASCADE, related_name='lines')
+    packing_item = models.ForeignKey('PackingItem', on_delete=models.PROTECT, related_name='sepidar_transfer_lines')
+    item_ref = models.PositiveIntegerField()
+    quantity = models.DecimalField(max_digits=18, decimal_places=4)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['transfer', 'packing_item'],
+                name='unique_packing_transfer_item',
+            ),
+        ]
+
+class GIOSepidarGroup(models.Model):
+    """Durable, individually reconciled Sepidar operation per vendor/currency."""
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('sending', 'Sending'),
+        ('success', 'Success'),
+        ('failed', 'Rejected'),
+        ('unknown', 'Needs manual reconciliation'),
+        ('reviewed', 'Manually reviewed; explicit retry permitted'),
+    )
+
+    gio = models.ForeignKey(
+        'GIO', on_delete=models.PROTECT, related_name='sepidar_groups',
+    )
+    group_key = models.CharField(max_length=255)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    invoice_id = models.BigIntegerField(null=True, blank=True)
+    invoice_number = models.CharField(max_length=64, null=True, blank=True)
+    receipt_id = models.BigIntegerField(null=True, blank=True)
+    receipt_number = models.CharField(max_length=64, null=True, blank=True)
+    voucher_id = models.BigIntegerField(null=True, blank=True)
+    voucher_number = models.CharField(max_length=64, null=True, blank=True)
+    items_snapshot = models.JSONField(default=list)
+    request_payload = models.JSONField(default=dict)
+    response_payload = models.JSONField(default=dict)
+    attempt_count = models.PositiveIntegerField(default=0)
+    last_error = models.TextField(blank=True, default='')
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['gio', 'group_key'], name='unique_gio_sepidar_group',
+            ),
+        ]
+
+    def __str__(self):
+        return 'GIO %s: %s (%s)' % (self.gio_id, self.group_key, self.status)
+
+
+class GIOSepidarManualReview(models.Model):
+    """Append-only record of a superuser's documented manual reconciliation.
+
+    Approval only means an operator has checked Sepidar; no remote existence
+    verification is performed here and a second send can still create duplicates.
+    """
+    group = models.ForeignKey(
+        'GIOSepidarGroup', on_delete=models.PROTECT, related_name='manual_reviews',
+    )
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        related_name='gio_sepidar_manual_reviews',
+    )
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    reason = models.TextField()
+    previous_error = models.TextField(blank=True, default='')
+    previous_request_payload = models.JSONField(default=dict)
+    previous_response_payload = models.JSONField(default=dict)
+    previous_attempt_count = models.PositiveIntegerField()
+    confirmations = models.JSONField(default=dict)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+
+
+class GIOSepidarManualDocumentEntry(models.Model):
+    """Immutable audit of a superuser's manual Sepidar document reconciliation."""
+
+    group = models.ForeignKey(
+        'GIOSepidarGroup', on_delete=models.PROTECT,
+        related_name='manual_document_entries',
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        related_name='gio_sepidar_manual_document_entries',
+    )
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    reason = models.TextField()
+    previous_status = models.CharField(max_length=10, blank=True)
+    previous_documents = models.JSONField(default=dict)
+    new_documents = models.JSONField(default=dict)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
 
 
 class GIO(BaseModeWF):

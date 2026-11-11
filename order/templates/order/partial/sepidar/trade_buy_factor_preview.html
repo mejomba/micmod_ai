@@ -1,8 +1,132 @@
-<div class="d-flex gap-4">
-    <span>فاکتور خرید</span>
-    <span>رسید انبار قبل از مرکزی</span>
-    <span>سند حسابداری</span>
-
-<span id="to-sepidar" class="btn btn-sm btn-primary" data-url="{% url 'order:order_and_sepidar' %}?view_name=trade_buy_factor&gio_id={{ form.instance.pk }}" onclick="send_gio_to_sepidar(event)" data-bs-toggle="tooltip" data-bs-original-title="پس از ارسال به سپیدار سند قفل شده و امکان تغییر آن وجود نخواهد داشت.">ارسال به سپیدار</span>
-
+{% load humanize %}
+{% if groups %}
+<div class="gio-groups" id="gio-sepidar-groups">
+  {% for group in groups %}
+    <details class="gio-group-card gio-preview-group gio-accordion-item" name="gio-sepidar-accordion" data-group-key="{{ group.key }}">
+      <summary class="gio-group-head gio-accordion-summary">
+        <span class="gio-accordion-main">
+          <span class="gio-eyebrow gio-accordion-heading">
+            <span class="gio-accordion-group-label">گروه {{ forloop.counter }} · </span>
+            <strong>{{ group.supplier }}</strong><span class="mx-1 text-muted">/</span><strong>{{ group.currency }}</strong>
+          </span>
+          <span class="gio-accordion-stats">
+            <span>{{ group.row_count|intcomma }} ردیف سفارش</span>
+            <span>مجموع تعداد: {{ group.total_quantity|intcomma }}</span>
+          </span>
+          {% if group.status == 'success' and group.invoice.number %}
+            <span class="gio-accordion-numbers">
+              فاکتور خرید: {{ group.invoice.number }}
+              {% if group.receipt.number %} · رسید انبار: {{ group.receipt.number }}{% endif %}
+              {% if group.voucher.number %} · سند حسابداری: {{ group.voucher.number }}{% endif %}
+            </span>
+          {% elif group.status == 'failed' or group.status == 'unknown' %}
+            {% if group.error %}<span class="gio-accordion-error">{{ group.error|truncatechars:100 }}</span>{% endif %}
+          {% endif %}
+        </span>
+        <span class="gio-accordion-side">
+          <span class="gio-state gio-state--{{ group.status }}">
+            {% if group.status == 'success' %}ارسال موفق{% elif group.status == 'failed' %}ارسال ناموفق · قابل تلاش مجدد{% elif group.status == 'unknown' %}وضعیت نامشخص · نیازمند بررسی{% elif group.status == 'reviewed' %}بررسی دستی تأییدشده · آماده ارسال مجدد{% elif group.status == 'sending' %}در حال ارسال{% else %}آماده ارسال{% endif %}
+          </span>
+          <span class="gio-accordion-toggle" aria-hidden="true">
+            <span class="gio-accordion-show">مشاهده جزئیات</span>
+            <span class="gio-accordion-hide">بستن جزئیات</span>
+            <span class="gio-accordion-chevron"></span>
+          </span>
+        </span>
+      </summary>
+      <div class="gio-group-send-feedback gio-alert" role="status" aria-live="polite" hidden></div>
+      <div class="gio-group-content">
+        <p class="text-muted fs-8 mb-2">اقلامی که بر اساس اطلاعات فعلی پرتال در این گروه قرار می‌گیرند · کد تأمین‌کننده: {{ group.supplier_ref }} · کد ارز: {{ group.currency_ref }}</p>
+        <div class="table-responsive">
+          <table class="gio-group-table">
+            <thead><tr><th>سفارش</th><th>پارت نامبر</th><th>SKU</th><th>تعداد</th></tr></thead>
+            <tbody>
+              {% for item in group.items %}
+                <tr><td>{{ item.order_number }}</td><td>{{ item.part_number }}</td><td>{{ item.sku }}</td><td>{{ item.quantity|intcomma }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="gio-doc-grid" aria-label="سه سند سپیدار">
+          <div class="gio-doc">
+            <span class="gio-doc-mark">سند ۱ از ۳</span>
+            <span class="gio-doc-title">فاکتور خرید</span>
+            {% if group.invoice.id %}<span class="gio-doc-value">شماره {{ group.invoice.number }} / شناسه {{ group.invoice.id }}</span>{% else %}<span class="gio-doc-value">پس از ارسال ایجاد می‌شود</span>{% endif %}
+          </div>
+          <div class="gio-doc">
+            <span class="gio-doc-mark">سند ۲ از ۳</span>
+            <span class="gio-doc-title">رسید انبار قبل از مرکزی</span>
+            {% if group.receipt.id %}<span class="gio-doc-value">شماره {{ group.receipt.number }} / شناسه {{ group.receipt.id }}</span>{% else %}<span class="gio-doc-value">پس از ارسال ایجاد می‌شود</span>{% endif %}
+          </div>
+          <div class="gio-doc">
+            <span class="gio-doc-mark">سند ۳ از ۳</span>
+            <span class="gio-doc-title">سند حسابداری</span>
+            {% if group.voucher.id %}<span class="gio-doc-value">شماره {{ group.voucher.number }} / شناسه {{ group.voucher.id }}</span>{% else %}<span class="gio-doc-value">پس از ارسال ایجاد می‌شود</span>{% endif %}
+          </div>
+        </div>
+        {% include 'order/partial/sepidar/gio_group_error.html' with group=group %}
+        {% if group.status == 'unknown' %}
+          <div class="gio-alert gio-alert--error mt-2" role="alert">
+            <strong>هشدار مهم:</strong> ممکن است اسناد این گروه در سپیدار ایجاد شده باشند، حتی اگر پاسخ دریافت نشده است.
+            قبل از تأیید رفع مشکل، فاکتور خرید، رسید انبار قبل از مرکزی و سند حسابداری را در سپیدار
+            با تأمین‌کننده، ارز، اقلام و تاریخ بررسی کنید. تأیید اشتباه می‌تواند اسناد تکراری ایجاد کند.
+          </div>
+        {% endif %}
+        {% if group.manual_document_entry %}
+          <div class="gio-alert gio-alert--success mt-2">
+            <strong>آخرین ثبت دستی اطلاعات سپیدار:</strong>
+            {{ group.manual_document_entry.actor }} · {{ group.manual_document_entry.at }}
+            <div>شرح ثبت: {{ group.manual_document_entry.reason }}</div>
+          </div>
+        {% endif %}
+        {% if group.manual_review %}
+          <div class="gio-alert gio-alert--warning mt-2">
+            <strong>سابقه بررسی دستی:</strong> {{ group.manual_review.reviewer }} · {{ group.manual_review.at }}
+            <div>توضیحات بررسی: {{ group.manual_review.reason }}</div>
+          </div>
+        {% endif %}
+      </div>
+      <footer class="gio-group-footer">
+        <div class="text-muted fs-8">
+          {% if group.status == 'success' %}هر سه سند ثبت شده‌اند و ارسال مجدد مجاز نیست.
+          {% elif group.status == 'unknown' %}برای جلوگیری از ثبت تکراری، ارسال مجدد تا بررسی دقیق هر سه سند و تأیید مدیر کل مسدود است.
+          {% elif group.status == 'reviewed' %}مدیر کل بررسی دستی را ثبت کرده است؛ فقط ارسال مجدد همین گروه مجاز است و اقلام GIO همچنان قفل هستند.
+          {% elif group.status == 'sending' %}ارسال قبلی هنوز تعیین تکلیف نشده است.
+          {% elif group.status == 'failed' %}فقط این گروه می‌تواند دوباره ارسال شود.
+          {% else %}پس از تأیید، هر سه سند این گروه در سپیدار ثبت می‌شوند.{% endif %}
+        </div>
+        {% if gio_can_manual_save_sepidar and group.status != 'sending' %}
+          <button type="button" class="btn btn-sm btn-light-primary gio-manual-sepidar-open"
+                    data-group-key="{{ group.key }}" data-status="{{ group.status }}"
+                    data-invoice-id="{{ group.invoice.id|default_if_none:'' }}"
+                    data-invoice-number="{{ group.invoice.number|default_if_none:'' }}"
+                    data-receipt-id="{{ group.receipt.id|default_if_none:'' }}"
+                    data-receipt-number="{{ group.receipt.number|default_if_none:'' }}"
+                    data-voucher-id="{{ group.voucher.id|default_if_none:'' }}"
+                    data-voucher-number="{{ group.voucher.number|default_if_none:'' }}"
+                    data-bs-toggle="modal" data-bs-target="#gio-manual-sepidar-modal">
+              {% if group.status == 'success' %}اصلاح اطلاعات سپیدار{% else %}ثبت دستی اطلاعات سپیدار{% endif %}
+            </button>
+        {% endif %}
+        {% if gio_reconcile_can_review and group.status == 'unknown' %}
+          <button type="button" class="btn btn-outline-danger gio-review-unknown-group"
+                  data-group-key="{{ group.key }}" data-bs-toggle="modal" data-bs-target="#gio-manual-review-modal">
+            ثبت بررسی دستی و فعال‌سازی ارسال مجدد
+          </button>
+        {% endif %}
+        {% if gio_sepidar_can_send and group.can_send %}
+          <button type="button" class="btn btn-primary gio-send-group" data-group-key="{{ group.key }}"
+                  data-manual-reviewed="{% if group.status == 'reviewed' %}true{% else %}false{% endif %}">
+            {% if group.status == 'reviewed' %}ارسال مجدد پس از بررسی دستی{% elif group.status == 'failed' %}تلاش مجدد این گروه{% else %}ارسال این گروه به سپیدار{% endif %}
+          </button>
+        {% elif group.status == 'success' %}
+          <button type="button" class="btn btn-light-primary" data-go-tab="documents" onclick="document.querySelector('[data-gio-tab=documents]').click()">مشاهده اسناد ثبت‌شده</button>
+        {% endif %}
+      </footer>
+    </details>
+  {% endfor %}
 </div>
+<div class="gio-alert mt-4">توجه: این پیش‌نمایش از اطلاعات ثبت‌شده در پرتال ساخته می‌شود. تعداد اسناد هر گروه دقیقاً سه مورد است؛ شناسه و شماره واقعی آن‌ها پس از پاسخ موفق سپیدار در تب «اسناد ثبت‌شده» نمایش داده می‌شود.</div>
+{% else %}
+<div class="gio-empty">هیچ ردیفی برای پیش‌نمایش ارسال به سپیدار وجود ندارد.</div>
+{% endif %}

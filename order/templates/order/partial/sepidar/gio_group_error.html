@@ -1,0 +1,17 @@
+{% if group.error and group.status == 'failed' or group.error and group.status == 'unknown' %}
+<section class="gio-error-panel" aria-label="خطای ذخیره‌شده ارسال سپیدار">
+  <div class="gio-error-panel-title">خطای ثبت‌شده این گروه</div>
+  <details class="gio-error-details">
+    <summary>
+      <span class="gio-error-open">مشاهده متن کامل خطا</span>
+      <span class="gio-error-close">بستن متن خطا</span>
+    </summary>
+    <div class="gio-error-full" tabindex="0" aria-label="متن کامل خطا؛ قابل پیمایش">
+      <pre class="gio-error-text" dir="auto">{{ group.error }}</pre>
+    </div>
+    <button type="button" class="btn btn-sm btn-light-danger gio-error-copy mt-2">
+      کپی متن خطا
+    </button>
+  </details>
+</section>
+{% endif %}

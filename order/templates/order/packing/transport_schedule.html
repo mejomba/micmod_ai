@@ -1,0 +1,477 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}مرور و تقویم حمل پکینگ{% endblock title %}
+
+{% block extra_css %}
+<style>
+.pt-wrap{direction:rtl;--pt-border:#e2e8f0;--pt-text:#273349;--pt-muted:#718096;--pt-blue:#86a9e9;--pt-green:#16a085;--pt-orange:#e1a342;--pt-red:#cf655c;color:var(--pt-text)}
+.pt-title{font-size:24px;font-weight:800;margin:0}
+.pt-subtitle{color:var(--pt-muted);margin:5px 0 0;font-size:13px}
+.pt-card{background:#fff;border:1px solid var(--pt-border);border-radius:13px;padding:16px;margin-bottom:16px;box-shadow:0 3px 14px rgba(22,33,55,.025)}
+.pt-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:15px}
+.pt-heading h2{font-size:17px;font-weight:750;margin:0}
+.pt-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.pt-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
+.pt-kpi{padding:17px;background:white;border:1px solid var(--pt-border);border-radius:12px}
+.pt-kpi span{display:block;color:var(--pt-muted);font-size:12px}
+.pt-kpi strong{display:block;font-size:27px;margin-top:4px;font-weight:800;font-variant-numeric:tabular-nums}
+.pt-form{display:grid;grid-template-columns:minmax(160px,2fr) repeat(4,minmax(120px,1fr)) auto;gap:10px;align-items:end}
+.pt-form label{display:block;font-size:12px;font-weight:600;margin-bottom:6px}
+.pt-form .form-control,.pt-form .form-select{width:100%;min-height:38px;font-size:13px}
+.pt-form-buttons{display:flex;gap:6px}
+.pt-legend{display:flex;flex-wrap:wrap;gap:14px;align-items:center;color:var(--pt-muted);font-size:12px}
+.pt-swatch{display:inline-block;vertical-align:middle;width:21px;height:8px;margin-left:5px;border-radius:3px}
+.pt-chart-scroll{overflow-x:auto;border:1px solid var(--pt-border);border-radius:10px}
+.pt-chart-grid{min-width:930px}
+.pt-chart-row{display:grid;grid-template-columns:218px minmax(0,1fr);border-bottom:1px solid var(--pt-border);direction:rtl}
+.pt-chart-row:last-child{border-bottom:0}
+.pt-chart-title{padding:9px 13px;border-left:1px solid var(--pt-border);min-height:75px}
+.pt-chart-title a{font-weight:700;text-decoration:none}
+.pt-chart-title small{display:block;color:var(--pt-muted);margin-top:3px;font-size:11px}
+.pt-chart-track{position:relative;direction:ltr;min-height:75px;background:repeating-linear-gradient(to right,transparent,transparent calc(20% - 1px),#f0f2f6 calc(20% - 1px),#f0f2f6 20%)}
+.pt-chart-bar{position:absolute;height:12px;border-radius:5px;min-width:5px}
+.pt-chart-bar.plan{top:19px;background:#acc4f1;border:1px dashed #5c82ce}
+.pt-chart-bar.actual{top:44px;background:var(--pt-green)}
+.pt-chart-bar.delayed{background:var(--pt-red)}
+.pt-chart-marker{position:absolute;top:39px;height:21px;width:2px;background:#187e65;z-index:2}
+.pt-chart-marker.end{background:#385c80}
+.pt-chart-marker.planned{top:14px;background:#5c82ce}
+.pt-chart-marker.overdue{top:14px;background:var(--pt-red)}
+.pt-chart-today{position:absolute;top:0;bottom:0;border-left:2px dashed #c68827;pointer-events:none;z-index:2}
+.pt-chart-axis .pt-chart-track{min-height:36px;background:#f9fafc}
+.pt-chart-axis .pt-chart-title{min-height:36px;font-weight:750}
+.pt-tick{position:absolute;top:8px;transform:translateX(-50%);font-size:11px;color:var(--pt-muted);white-space:nowrap}
+.pt-table-scroll{overflow-x:auto}
+.pt-table{width:100%;min-width:1200px;border-collapse:collapse;font-size:12px}
+.pt-table th{white-space:nowrap;background:#f8fafc;color:#53627a;text-align:right;font-weight:700;padding:12px 10px;border-bottom:1px solid var(--pt-border)}
+.pt-table td{vertical-align:middle;border-bottom:1px solid var(--pt-border);padding:12px 10px}
+.pt-table tbody tr:hover{background:#f6f9ff}
+.pt-table a{font-weight:700;text-decoration:none}
+.pt-table time{white-space:nowrap;font-variant-numeric:tabular-nums}
+.pt-table details{min-width:155px}
+.pt-table details summary{cursor:pointer;font-weight:600}
+.pt-table details ul{list-style:none;padding:7px 8px;margin:5px 0 0;border:1px solid var(--pt-border);border-radius:8px;background:#f8fafc;max-width:330px}
+.pt-table details li{padding:4px 0;border-bottom:1px solid #e8ecf2}
+.pt-table details li:last-child{border:0}
+.pt-tag{display:inline-block;border-radius:7px;padding:4px 8px;white-space:nowrap;font-size:11px;font-weight:700;background:#edf1f6;color:#53627a}
+.pt-tag-arrived{background:#e3f4ec;color:#087851}
+.pt-tag-in_transit{background:#eaf1fe;color:#2a5d9b}
+.pt-tag-delayed{background:#fdebe9;color:#b64540}
+.pt-delay{color:#b64540;font-weight:700;white-space:nowrap}
+.pt-empty{color:var(--pt-muted);padding:28px;text-align:center}
+.pt-page-links{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:16px;flex-wrap:wrap}
+.pt-page-links a{border:1px solid var(--pt-border);border-radius:7px;padding:6px 12px}
+.pt-help{font-size:12px;color:var(--pt-muted);margin:10px 0 0}
+.pt-chart-row.pt-interactive{cursor:pointer;transition:background .15s}
+.pt-chart-row.pt-interactive:hover,.pt-chart-row.pt-interactive.is-open{background:#f1f6ff}
+.pt-chart-toggle{border:0;background:transparent;color:#165789;font:inherit;font-weight:750;padding:3px;cursor:pointer;text-align:right}
+.pt-chart-toggle:hover{text-decoration:underline}
+.pt-chart-toggle:focus-visible,.pt-group-tab:focus-visible{outline:2px solid #2563a2;outline-offset:2px}
+.pt-chart-toggle .pt-chevron{display:inline-block;transition:transform .2s}
+.pt-chart-toggle[aria-expanded=true] .pt-chevron{transform:rotate(90deg)}
+.pt-chart-detail{padding:18px;direction:rtl;background:#f6f9fe;border-bottom:1px solid #dfe8f2}
+.pt-chart-detail[hidden],.pt-group-view[hidden]{display:none!important}
+.pt-detail-body{padding:16px;border:1px solid #dfe8f2;border-radius:11px;background:#fff}
+.pt-detail-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}
+.pt-detail-head strong{font-size:15px}
+.pt-detail-meta,.pt-detail-stats{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:15px}
+.pt-detail-meta{font-size:12px;color:#58687d}
+.pt-detail-stats span{border:1px solid #d8e4f1;background:#eef5fc;padding:6px 10px;border-radius:8px;font-size:12px}
+.pt-alert{background:#fff5e6;color:#92530a;border:1px solid #ecd0a2;padding:10px;border-radius:8px;font-size:12px;margin:11px 0}
+.pt-group-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0;border-bottom:1px solid #dfe5ef;padding-bottom:10px}
+.pt-group-tab{font-size:12px;font-weight:700;padding:8px 12px;border:1px solid #c7d4e5;border-radius:8px;background:#fff;color:#3d536d;cursor:pointer}
+.pt-group-tab.is-active{background:#235c8a;border-color:#235c8a;color:#fff}
+.pt-group{border:1px solid #dfe6ef;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.pt-group>summary{padding:12px;background:#f5f8fc;cursor:pointer;display:flex;gap:12px;align-items:center;flex-wrap:wrap;list-style:none;font-size:12px}
+.pt-group>summary::-webkit-details-marker{display:none}
+.pt-group>summary:before{content:'+';font-weight:900;font-size:17px;color:#315d8e}
+.pt-group[open]>summary:before{content:'−'}
+.pt-group>summary small{color:#5d6f86}
+.pt-group-content{padding:12px}
+.pt-report-scroll{overflow:auto}
+.pt-report{width:100%;min-width:1040px;border-collapse:collapse;font-size:12px}
+.pt-report th{padding:9px 7px;background:#f1f5f9;border-bottom:1px solid #d9e1eb;text-align:right;white-space:nowrap}
+.pt-report td{padding:9px 7px;border-bottom:1px solid #ecf0f5}
+.pt-report tbody tr:hover{background:#f3f8ff}
+.pt-report tbody tr:last-child td{border-bottom:0}
+.pt-chart-unscheduled{position:absolute;top:30px;right:10px;font-size:11px;color:#8190a2;direction:rtl}
+@media(max-width:670px){.pt-chart-grid{min-width:770px}.pt-chart-detail{padding:10px}.pt-detail-body{padding:10px}}
+@media(max-width:1250px){.pt-form{grid-template-columns:repeat(3,minmax(150px,1fr))}}
+@media(max-width:670px){.pt-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.pt-form{grid-template-columns:1fr 1fr}.pt-form>div:first-child,.pt-form-buttons{grid-column:1/-1}.pt-title{font-size:20px}}
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="container-fluid py-4 pt-wrap" id="packing-transport-page" data-today="{{ today_iso }}" data-packing-url="{% url 'order:quick_packing' %}">
+    <div class="pt-heading">
+        <div>
+            <h1 class="pt-title">مرور و تقویم حمل پکینگ</h1>
+            <p class="pt-subtitle">نمای زمانی، تقویم حمل و جزئیات کارتن و کالاهای هر پکینگ در یک صفحه</p>
+        </div>
+        <div class="pt-actions">
+            <a class="btn btn-sm btn-light" href="{% url 'order:packing.list' %}">لیست پکینگ‌ها</a>
+        </div>
+    </div>
+
+    <div class="pt-kpis" aria-label="خلاصه وضعیت پکینگ‌های فیلترشده">
+        <div class="pt-kpi"><span>در انتظار شروع حمل</span><strong>{{ metrics.planned }}</strong></div>
+        <div class="pt-kpi"><span>شروع‌شده / در مسیر</span><strong>{{ metrics.in_transit }}</strong></div>
+        <div class="pt-kpi"><span>رسیده به مرحله انبار</span><strong>{{ metrics.arrived }}</strong></div>
+        <div class="pt-kpi"><span>دارای تأخیر نسبت به برنامه</span><strong class="text-danger">{{ metrics.delayed }}</strong></div>
+    </div>
+
+    <div class="pt-card">
+        <form class="pt-form" action="" method="get" aria-label="فیلتر مرور حمل">
+            <div><label for="pt-query">جست‌وجوی پکینگ، بارنامه، سفارش یا قطعه</label>
+                <input id="pt-query" class="form-control" type="search" name="q" value="{{ q }}" placeholder="شماره پکینگ / سفارش / بارنامه"></div>
+            <div><label for="pt-method">روش حمل</label>
+                <select id="pt-method" class="form-select" name="method">
+                    <option value="">همه روش‌ها</option>
+                    <option value="sea" {% if method == 'sea' %}selected{% endif %}>دریایی</option>
+                    <option value="air" {% if method == 'air' %}selected{% endif %}>هوایی</option>
+                    <option value="express" {% if method == 'express' %}selected{% endif %}>اکسپرس</option>
+                </select></div>
+            <div><label for="pt-status">وضعیت حمل</label>
+                <select id="pt-status" class="form-select" name="status">
+                    <option value="all" {% if status == 'all' %}selected{% endif %}>همه وضعیت‌ها</option>
+                    <option value="planned" {% if status == 'planned' %}selected{% endif %}>در انتظار حمل</option>
+                    <option value="in_transit" {% if status == 'in_transit' %}selected{% endif %}>در مسیر</option>
+                    <option value="arrived" {% if status == 'arrived' %}selected{% endif %}>رسیده به انبار</option>
+                    <option value="delayed" {% if status == 'delayed' %}selected{% endif %}>دارای تأخیر</option>
+                    <option value="unscheduled" {% if status == 'unscheduled' %}selected{% endif %}>فاقد برنامه کامل</option>
+                </select></div>
+            <div><label for="pt-from">از تاریخ (میلادی)</label>
+                <input id="pt-from" class="form-control" type="date" name="date_from" value="{{ date_from }}"></div>
+            <div><label for="pt-to">تا تاریخ (میلادی)</label>
+                <input id="pt-to" class="form-control" type="date" name="date_to" value="{{ date_to }}"></div>
+            <div class="pt-form-buttons">
+                <button class="btn btn-sm btn-primary" type="submit">اعمال</button>
+                <a class="btn btn-sm btn-light" href="{% url 'order:packing.transport_schedule' %}">پاک کردن</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="pt-card">
+        <div class="pt-heading">
+            <h2>نمای اصلی زمان‌بندی و پیگیری پکینگ <span class="text-muted fs-7">({{ filtered_total }} پکینگ)</span></h2>
+            <div class="pt-actions">
+                <label for="pt-calendar" class="text-muted">نمایش تاریخ</label>
+                <select class="form-select form-select-sm" style="width:auto" id="pt-calendar">
+                    <option value="gregorian">میلادی</option><option value="jalali">شمسی</option>
+                </select>
+            </div>
+        </div>
+        <div class="pt-legend mb-3" aria-label="راهنمای نمودار">
+            <span><i class="pt-swatch" style="background:#acc4f1;border:1px dashed #5c82ce"></i> پیش‌بینی</span>
+            <span><i class="pt-swatch" style="background:#16a085"></i> واقعی</span>
+            <span><i class="pt-swatch" style="background:#cf655c"></i> تأخیر در بازه واقعی</span>
+            <span><i class="pt-swatch" style="width:2px;height:13px;border-left:2px dashed #c68827"></i> امروز</span>
+        </div>
+        <div id="pt-chart" class="pt-chart-scroll" role="region" aria-label="گانت حمل پکینگ" tabindex="0">
+            <div class="pt-empty">در حال آماده‌سازی نمای زمانی…</div>
+        </div>
+        <p class="pt-help">برای مشاهده جزئیات یک پکینگ روی همان ردیف زمانی کلیک کنید. نوار بالایی برنامه و نوار پایینی تاریخ‌های واقعی Workflow است. هر صفحه حداکثر ۵۰ پکینگ دارد.</p>
+    </div>
+
+
+    {% if page_obj.paginator.num_pages > 1 %}
+    <nav class="pt-page-links" aria-label="صفحه‌بندی تقویم حمل">
+        {% if page_obj.has_previous %}<a href="?{{ page_query }}page={{ page_obj.previous_page_number }}">قبلی</a>{% endif %}
+        <span>صفحه {{ page_obj.number }} از {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}<a href="?{{ page_query }}page={{ page_obj.next_page_number }}">بعدی</a>{% endif %}
+    </nav>
+    {% endif %}
+
+    {# Each authorized, paginated packing has one embedded timeline detail template. #}
+    <div id="pt-detail-sources" hidden>
+    {% for row in rows %}
+    <template id="pt-detail-source-{{ row.id }}">
+        <div class="pt-detail-body">
+            <div class="pt-detail-head">
+                <strong>پکینگ {{ row.number }} · بارنامه {{ row.bl_number }}</strong>
+                <a class="btn btn-sm btn-light-primary" href="{% url 'order:quick_packing' pk=row.id %}">مشاهده و ویرایش سند</a>
+            </div>
+            <div class="pt-detail-meta">
+                <span>مرحله: {{ row.stage }}</span><span>{{ row.shipment_type }} · {{ row.transportation_company }}</span>
+                <span>{{ row.origin }} ← {{ row.destination }}</span>
+                <span>شروع پیش‌بینی: <time data-pt-date="{{ row.planned_start|date:'Y-m-d' }}">—</time></span>
+                <span>شروع واقعی: <time data-pt-date="{{ row.actual_start|date:'Y-m-d' }}">—</time></span>
+                <span>ورود پیش‌بینی: <time data-pt-date="{{ row.planned_arrival|date:'Y-m-d' }}">—</time></span>
+                <span>ورود واقعی: <time data-pt-date="{{ row.actual_arrival|date:'Y-m-d' }}">—</time></span>
+                {% if row.start_delay %}<span class="pt-delay">تأخیر شروع: {{ row.start_delay }} روز</span>{% endif %}
+                {% if row.arrival_delay %}<span class="pt-delay">تأخیر رسیدن: {{ row.arrival_delay }} روز</span>{% endif %}
+            </div>
+            <div class="pt-detail-stats">
+                <span>کارتن بزرگ منحصربه‌فرد: <strong>{{ row.unique_carton_count }}</strong></span>
+                <span>تعداد کالا: <strong>{{ row.total_quantity|floatformat:-2 }}</strong></span>
+                <span>تعداد سفارش: <strong>{{ row.order_count }}</strong></span>
+                {% if row.unassigned_row_count %}<span>ردیف بدون شماره کارتن: {{ row.unassigned_row_count }}</span>{% endif %}
+            </div>
+            {% if row.size_conflicts %}<div class="pt-alert" role="alert">{{ row.size_conflicts }} کارتن دارای مغایرت سایز است؛ اطلاعات را در پکینگ اصلاح کنید.</div>{% endif %}
+            <p class="pt-help">حجم فعلاً آزمایشی است. اولویت کالاها بر اساس حجم نزولی است و در نبود حجم، وزن محاسباتی ملاک می‌شود. وزن محاسباتی و وزن واردشده جداگانه گزارش می‌شوند.</p>
+            <div class="pt-group-tabs" role="group" aria-label="انتخاب گروه‌بندی">
+                <button class="pt-group-tab is-active" type="button" data-pt-group="carton" aria-pressed="true">بر اساس Carton Number</button>
+                <button class="pt-group-tab" type="button" data-pt-group="category" aria-pressed="false">بر اساس Category</button>
+            </div>
+            <section class="pt-group-view" data-pt-view="carton">
+            {% for carton in row.cartons %}
+                <details class="pt-group" {% if forloop.first %}open{% endif %}>
+                    <summary>
+                        <strong>کارتن {{ carton.number }}</strong>
+                        <small>{{ carton.row_count }} ردیف کالا</small>
+                        <small>سایز: {{ carton.size }}</small>
+                        <small>وزن محاسباتی: {{ carton.computed_weight|default_if_none:"—"|floatformat:-3 }} kg</small>
+                        <small>وزن واردشده: {{ carton.entered_weight|default_if_none:"—"|floatformat:-3 }} kg</small>
+                        <small>مجموع carton_quantity: {{ carton.row_carton_quantity }}</small>
+                        {% if carton.main_item %}<small>کالای اصلی: {{ carton.main_item.part_number }}</small>{% endif %}
+                    </summary>
+                    <div class="pt-group-content">
+                        {% if carton.size_conflict %}<div class="pt-alert" role="alert">شماره کارتن {{ carton.number }} سایزهای متفاوت دارد.</div>{% endif %}
+                        <div class="pt-report-scroll"><table class="pt-report">
+                            <thead><tr><th>کالا / پارت نامبر</th><th>سفارش</th><th>Category</th><th>Main Category</th>
+                                <th>Brand</th><th>تعداد کالا</th><th>carton_quantity</th><th>وزن محاسباتی (kg)</th>
+                                <th>سهم محاسباتی</th><th>وزن واردشده (kg)</th><th>سهم وزن واردشده</th><th>حجم</th></tr></thead>
+                            <tbody>{% for item in carton.rows %}
+                                <tr>
+                                    <td><strong>{{ item.part_number }}</strong>{% if forloop.first %} <span class="pt-tag">{% if item.volume is not None %}بیشترین حجم{% else %}اولویت وزن محاسباتی{% endif %}</span>{% endif %}</td>
+                                    <td>{{ item.order_number }}</td><td>{{ item.category }}</td><td>{{ item.main_category }}</td>
+                                    <td>{{ item.brand }}</td><td>{{ item.quantity|default_if_none:"—"|floatformat:-2 }}</td>
+                                    <td>{{ item.carton_quantity|default_if_none:"—" }}</td>
+                                    <td>{{ item.net_weight|default_if_none:"—"|floatformat:-3 }}</td>
+                                    <td>{% if item.net_percent is not None %}{{ item.net_percent|floatformat:2 }}٪{% else %}—{% endif %}</td>
+                                    <td>{{ item.entered_weight|default_if_none:"—"|floatformat:-3 }}</td>
+                                    <td>{% if item.entered_percent is not None %}{{ item.entered_percent|floatformat:2 }}٪{% else %}—{% endif %}</td>
+                                    <td>{{ item.volume|default_if_none:"—"|floatformat:-6 }}</td>
+                                </tr>{% endfor %}
+                            </tbody>
+                        </table></div>
+                        <p class="pt-help">هر شماره Carton Number یک کارتن بزرگ است؛ carton_quantity تعداد کارتن اختصاص‌یافته به آن کالا در همان شماره کارتن است. درصد وزن فقط با وجود وزن تمام کالاهای آن کارتن محاسبه می‌شود.</p>
+                    </div>
+                </details>
+            {% empty %}<div class="pt-empty">ردیف کالایی ثبت نشده است.</div>{% endfor %}
+            </section>
+            <section class="pt-group-view" data-pt-view="category" hidden>
+            {% for category in row.category_groups %}
+                <details class="pt-group" {% if forloop.first %}open{% endif %}>
+                    <summary><strong>{{ category.name }}</strong>
+                        <small>{{ category.row_count }} ردیف</small>
+                        <small>{{ category.cartons_count }} کارتن بزرگ</small>
+                        <small>{{ category.quantity|default_if_none:"—"|floatformat:-2 }} کالا</small>
+                    </summary>
+                    <div class="pt-group-content pt-report-scroll"><table class="pt-report">
+                        <thead><tr><th>شماره کارتن</th><th>کالا</th><th>Main Category</th><th>سفارش</th>
+                            <th>تعداد کالا</th><th>carton_quantity</th><th>وزن محاسباتی</th><th>وزن واردشده</th><th>حجم</th></tr></thead>
+                        <tbody>{% for item in category.rows %}
+                            <tr><td>{{ item.carton_number }}</td><td>{{ item.part_number }}</td><td>{{ item.main_category }}</td>
+                                <td>{{ item.order_number }}</td><td>{{ item.quantity|default_if_none:"—"|floatformat:-2 }}</td>
+                                <td>{{ item.carton_quantity|default_if_none:"—" }}</td>
+                                <td>{{ item.net_weight|default_if_none:"—"|floatformat:-3 }}</td>
+                                <td>{{ item.entered_weight|default_if_none:"—"|floatformat:-3 }}</td>
+                                <td>{{ item.volume|default_if_none:"—"|floatformat:-6 }}</td></tr>
+                        {% endfor %}</tbody>
+                    </table></div>
+                </details>
+            {% empty %}<div class="pt-empty">دسته‌بندی ثبت نشده است.</div>{% endfor %}
+            </section>
+            <details><summary>سفارش‌های مرتبط ({{ row.order_count }})</summary>
+                <ul>{% for order in row.orders %}<li>{{ order.number }} · {{ order.part_number }} · {{ order.quantity|floatformat:-2 }}</li>{% empty %}<li>—</li>{% endfor %}</ul>
+            </details>
+        </div>
+    </template>
+    {% endfor %}
+    </div>
+    <p class="pt-help">تاریخ قطعی شروع = ورود به مرحله «حمل»؛ تاریخ قطعی رسیدن = ورود به مرحله «انبار». هر دو از تاریخچه Workflow استخراج می‌شوند و در این صفحه قابل ویرایش نیستند.</p>
+    {{ plot_rows|json_script:"packing-transport-data" }}
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+    const root = document.getElementById('packing-transport-page');
+    const chart = document.getElementById('pt-chart');
+    const dataNode = document.getElementById('packing-transport-data');
+    if (!root || !chart || !dataNode) return;
+    const entries = JSON.parse(dataNode.textContent);
+    const today = root.dataset.today;
+    const prefix = root.dataset.packingUrl;
+    const calendar = document.getElementById('pt-calendar');
+    const DAY = 86400000;
+    function timestamp(iso) {
+        return iso ? Date.parse(iso + 'T00:00:00Z') : NaN;
+    }
+    function formatDate(iso) {
+        if (!iso) return '—';
+        if (calendar.value === 'gregorian') return iso;
+        const when = new Date(timestamp(iso));
+        return new Intl.DateTimeFormat('fa-IR-u-ca-persian-nu-latn', {
+            day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
+        }).format(when);
+    }
+    function elem(tag, cls, text) {
+        const node = document.createElement(tag);
+        if (cls) node.className = cls;
+        if (text !== undefined) node.textContent = text;
+        return node;
+    }
+    function renderTableDates(scope = root) {
+        scope.querySelectorAll('[data-pt-date]').forEach(function (node) {
+            node.textContent = formatDate(node.dataset.ptDate);
+        });
+    }
+    function renderChart() {
+        const expanded = new Set([...chart.querySelectorAll('.pt-chart-toggle[aria-expanded="true"]')].map(btn => String(btn.dataset.packingId)));
+        chart.textContent = '';
+        if (!entries.length) {
+            chart.appendChild(elem('div', 'pt-empty', 'رکوردی برای نمایش وجود ندارد.'));
+            return;
+        }
+        const values = entries.flatMap(function (row) {
+            return ['planned_start','planned_arrival','actual_start','actual_arrival']
+                .map(function (field) { return timestamp(row[field]); })
+                .filter(Number.isFinite);
+        });
+        if (!values.length) values.push(timestamp(today));
+        if (entries.some(function (row) { return row.actual_start && !row.actual_arrival; })) {
+            values.push(timestamp(today));
+        }
+        let min = Math.min.apply(null, values) - 3 * DAY;
+        let max = Math.max.apply(null, values) + 3 * DAY;
+        if (max - min < 28 * DAY) {
+            const mid = (min + max) / 2;
+            min = mid - 14 * DAY; max = mid + 14 * DAY;
+        }
+        function percent(iso) {
+            return (timestamp(iso) - min) / (max - min) * 100;
+        }
+        function bar(track, from, to, cls, title) {
+            if (!from) return;
+            const left = Math.max(0, Math.min(100, percent(from)));
+            const right = to ? Math.max(left, Math.min(100, percent(to))) : left;
+            const node = elem('div', 'pt-chart-bar ' + cls);
+            node.style.left = left + '%';
+            node.style.width = Math.max(0.5, right - left) + '%';
+            node.title = title;
+            track.appendChild(node);
+        }
+        function marker(track, at, cls, title) {
+            if (!at) return;
+            const node = elem('div', 'pt-chart-marker ' + cls);
+            node.style.left = percent(at) + '%';
+            node.title = title;
+            track.appendChild(node);
+        }
+        function todayLine(track) {
+            const x = timestamp(today);
+            if (x >= min && x <= max) {
+                const node = elem('div', 'pt-chart-today');
+                node.style.left = (x - min) / (max - min) * 100 + '%';
+                node.title = 'امروز: ' + formatDate(today);
+                track.appendChild(node);
+            }
+        }
+        const grid = elem('div', 'pt-chart-grid');
+        const header = elem('div', 'pt-chart-row pt-chart-axis');
+        header.appendChild(elem('div', 'pt-chart-title', 'پکینگ / جزئیات'));
+        const axis = elem('div', 'pt-chart-track');
+        for (let i = 0; i <= 5; i++) {
+            const tick = elem('span', 'pt-tick');
+            const iso = new Date(min + (max - min) * i / 5).toISOString().slice(0,10);
+            tick.textContent = formatDate(iso);
+            tick.style.left = i * 20 + '%';
+            if (i === 0) tick.style.transform = 'translateX(0)';
+            if (i === 5) tick.style.transform = 'translateX(-100%)';
+            axis.appendChild(tick);
+        }
+        header.appendChild(axis); grid.appendChild(header);
+        entries.forEach(function (row) {
+            const wrap = elem('div', 'pt-chart-row pt-interactive');
+            const title = elem('div', 'pt-chart-title');
+            const panelId = 'pt-detail-' + row.id;
+            const toggle = elem('button', 'pt-chart-toggle');
+            toggle.type = 'button';
+            toggle.dataset.packingId = row.id;
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.setAttribute('aria-controls', panelId);
+            toggle.appendChild(elem('span', 'pt-chevron', '▸'));
+            toggle.appendChild(elem('span', '', row.number));
+            title.appendChild(toggle);
+            title.appendChild(elem('small', '', row.stage + ' · ' + row.order_count + ' سفارش · ' +
+                row.unique_carton_count + ' کارتن بزرگ'));
+            if (row.is_delayed) title.appendChild(elem('small', 'text-danger', 'دارای تأخیر'));
+            wrap.appendChild(title);
+            const track = elem('div', 'pt-chart-track');
+            bar(track, row.planned_start, row.planned_arrival, 'plan',
+                'پیش‌بینی: ' + formatDate(row.planned_start) + ' تا ' + formatDate(row.planned_arrival));
+            if (!row.planned_start && row.planned_arrival) {
+                marker(track, row.planned_arrival, 'planned',
+                    'رسیدن پیش‌بینی‌شده: ' + formatDate(row.planned_arrival));
+            }
+            if (row.planned_start && !row.actual_start && timestamp(row.planned_start) < timestamp(today)) {
+                marker(track, row.planned_start, 'overdue', 'شروع حمل از برنامه عقب است');
+            }
+            if (row.planned_arrival && !row.actual_arrival && timestamp(row.planned_arrival) < timestamp(today)) {
+                marker(track, row.planned_arrival, 'overdue', 'رسیدن به انبار از برنامه عقب است');
+            }
+            const realEnd = row.actual_arrival || (row.actual_start && timestamp(today) >= timestamp(row.actual_start) ? today : null);
+            bar(track, row.actual_start, realEnd, 'actual' + (row.is_delayed ? ' delayed' : ''),
+                'واقعی: ' + formatDate(row.actual_start) + ' تا ' + formatDate(row.actual_arrival));
+            marker(track, row.actual_start, '', 'شروع قطعی: ' + formatDate(row.actual_start));
+            marker(track, row.actual_arrival, 'end', 'رسیدن قطعی: ' + formatDate(row.actual_arrival));
+            todayLine(track);
+            if (!row.planned_start && !row.planned_arrival && !row.actual_start && !row.actual_arrival) {
+                track.appendChild(elem('div', 'pt-chart-unscheduled', 'تاریخ حمل ثبت نشده است'));
+            }
+            wrap.appendChild(track);
+            grid.appendChild(wrap);
+            const panel = elem('div', 'pt-chart-detail');
+            panel.id = panelId;
+            panel.hidden = true;
+            const source = document.getElementById('pt-detail-source-' + row.id);
+            if (source) panel.appendChild(source.content.cloneNode(true));
+            grid.appendChild(panel);
+            const togglePanel = function () {
+                const opening = panel.hidden;
+                panel.hidden = !opening;
+                wrap.classList.toggle('is-open', opening);
+                toggle.setAttribute('aria-expanded', String(opening));
+                if (opening) renderTableDates(panel);
+            };
+            toggle.addEventListener('click', function (event) {
+                event.stopPropagation();
+                togglePanel();
+            });
+            wrap.addEventListener('click', function (event) {
+                if (event.target.closest('a, button, input, select')) return;
+                togglePanel();
+            });
+            if (expanded.has(String(row.id))) togglePanel();
+        });
+        chart.appendChild(grid);
+    }
+    chart.addEventListener('click', function (event) {
+        const tab = event.target.closest('button[data-pt-group]');
+        if (!tab) return;
+        const body = tab.closest('.pt-detail-body');
+        if (!body) return;
+        const selected = tab.dataset.ptGroup;
+        body.querySelectorAll('button[data-pt-group]').forEach(button => {
+            const active = button.dataset.ptGroup === selected;
+            button.classList.toggle('is-active', active);
+            button.setAttribute('aria-pressed', String(active));
+        });
+        body.querySelectorAll('[data-pt-view]').forEach(view => {
+            view.hidden = view.dataset.ptView !== selected;
+        });
+    });
+    calendar.addEventListener('change', function () {
+        renderTableDates();
+        renderChart();
+    });
+    renderTableDates();
+    renderChart();
+})();
+</script>
+{% endblock extra_js %}
