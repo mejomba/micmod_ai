@@ -322,6 +322,10 @@
                </span>
            </div>
         {% endif %}
+
+        {% if flow_state_index == 0 %}
+        {% render_field_by_order form form.is_reserve label='on-border' %}
+        {% endif %}
         <div class="col-sm-6">
             {% if request.user.base_group == 'accounting' %}
                 {% get_comment_user_list form_s request.user obj_rel=form.instance.q comment_type='factor_accounting' %}
@@ -486,6 +490,13 @@
 {#                                <option value="{{ factor_item.instance.product_id }}" selected>{{ factor_item.instance.product_id }} کد کالای شاپ </option>#}
 {#                                </select>#}
 {#                            {% endif %}#}
+
+                        {% if form.instance.get_customer_party_id.pk == 2691 %}
+                            <input list="{{ form_s.prefix }}-{{ forloop.counter0 }}-product_id" placeholder="کالای شاپ" type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-product_id" class="LTR-RTL w-80 rounded text-center font-size-11" onmouseenter="get_product_selection_safe(event)" required value="{{ factor_item.instance.product_id|default_if_falsy:'' }}" >
+                            <datalist id="{{ form_s.prefix }}-{{ forloop.counter0 }}-product_id">
+
+                            </datalist>
+                        {% endif %}
 
                         </span>
                         <div class="mt-1">
@@ -1267,6 +1278,37 @@ flatpickr("#id_collecting_start_time_1", {
 
                         fill_product_name(target, text);
                     });
+                },
+                error: function () {
+
+                },
+                {#complete: release_main_container#}
+            });
+        }
+    }
+
+    function get_product_selection_safe(event){
+        debugger
+        const target = event.currentTarget
+        const datalist = target.parentElement.querySelector('datalist[id$="-product_id"]')
+        const sku = findAncestor(target, 'factor_item_self').querySelector('input[name$="-goods_code"]').value
+        const product_name = findAncestor(target, 'factor_item_self').querySelector('input[name$="-product_name"]')
+        const factor_id = document.querySelector('input[name="factor_id"]').value || 0
+        if (sku){
+            $.ajax({
+                type: 'GET',
+                url: `/factor/ajax/product_select/${sku}/${factor_id}`,
+                dataType: 'json',
+                cache: false,
+                processData: false,
+                contentType: false,
+                {#beforeSend: block_main_container,#}
+                success: function (data) {
+                    let html = ""
+                    data['res'].forEach(function(item){
+                        html += `<option value="${item[0]}">(${item[0]}) ${item[1]}</option>`
+                    })
+                    datalist.innerHTML = html
                 },
                 error: function () {
 

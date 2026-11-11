@@ -23,6 +23,7 @@ from django.conf import settings
 
 from tools.utils import DaxCall, to_jalali_date
 from workflow.models import WorkFlow
+from django.db import connection, transaction
 
 
 def get_sepidar_quantity():
@@ -454,3 +455,48 @@ def over_seven_days_factor():
 def send_order_notifications():
     from tools.utils import DaxCall
     DaxCall.process_order_notifications()
+
+
+@shared_task(
+    name="micmod_base.update_local_price_inquiry_dates",
+    ignore_result=False,
+)
+def update_local_price_inquiry_dates():
+    """
+    Update missing local price inquiry dates
+    using the latest matching changelog.
+    """
+
+    query = """
+        WITH need_local_q AS (
+            SELECT DISTINCT ON (object_id)
+                object_id AS object_item_id,
+                created_date AS local_date
+            FROM changelog_changelog
+            WHERE content_type_id = 11
+              AND is_deleted = FALSE
+              AND diff_json->'fields' ? 'local_price_inquiry_done'
+              AND diff_json->'fields'->'local_price_inquiry_done'->>0 = 'true'
+            ORDER BY object_id, created_date DESC
+        )
+        UPDATE micmod_base_quotationitem AS qi
+        SET local_price_inquiry_done_date = l.local_date
+        FROM need_local_q AS l
+        WHERE qi.id = l.object_item_id
+          AND qi.local_price_inquiry_done = TRUE
+          AND qi.local_price_inquiry_done_date IS NULL
+    """
+
+    try:
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                updated_count = cursor.rowcount
+
+        return {
+            "status": "success",
+            "updated_count": updated_count,
+        }
+
+    except Exception:
+        pass

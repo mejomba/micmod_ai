@@ -1,0 +1,263 @@
+<div class="pad-scope" dir="rtl">
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
+
+  <!-- کارت ۱: پدهای مونتاژ شده امروز -->
+  <section class="pad-card pad-today" aria-label="پدهای مونتاژ شده امروز">
+    <div class="pad-main">
+      <header class="pad-head">
+        <span class="pad-pulse pad-pulse-today" aria-hidden="true"></span>
+        <div>
+          <p class="pad-kicker pad-kicker-today">گزارش لحظه‌ای</p>
+          <h2 class="pad-title">پدهای مونتاژ شده امروز</h2>
+        </div>
+        <time class="pad-date" id="padDateToday"></time>
+      </header>
+      <div class="pad-amount-wrap">
+        <div class="pad-amount" id="padAmountToday" aria-live="polite">
+          <span class="pad-placeholder">برای محاسبه دکمه را بزنید</span>
+        </div>
+        <span class="pad-unit" id="padUnitToday" hidden>پد</span>
+      </div>
+      <p class="pad-hint" id="padHintToday"></p>
+    </div>
+    <button class="pad-btn pad-btn-today" id="padBtnToday" type="button" aria-label="محاسبه پدهای مونتاژ شده امروز">
+      <svg class="pad-btn-ico" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path d="M21 12a9 9 0 1 1-2.64-6.36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M21 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="pad-spinner" aria-hidden="true"></span>
+    </button>
+  </section>
+
+  <!-- کارت ۲: پدهای مونتاژ شده امسال -->
+  <section class="pad-card pad-year" aria-label="پدهای مونتاژ شده امسال">
+    <div class="pad-main">
+      <header class="pad-head">
+        <span class="pad-pulse pad-pulse-year" aria-hidden="true"></span>
+        <div>
+          <p class="pad-kicker pad-kicker-year">گزارش سالانه</p>
+          <h2 class="pad-title">پدهای مونتاژ شده امسال</h2>
+        </div>
+        <time class="pad-date" id="padDateYear"></time>
+      </header>
+      <div class="pad-amount-wrap">
+        <div class="pad-amount" id="padAmountYear" aria-live="polite">
+          <span class="pad-placeholder">برای محاسبه دکمه را بزنید</span>
+        </div>
+        <span class="pad-unit" id="padUnitYear" hidden>پد</span>
+      </div>
+      <p class="pad-hint" id="padHintYear"></p>
+    </div>
+    <button class="pad-btn pad-btn-year" id="padBtnYear" type="button" aria-label="محاسبه پدهای مونتاژ شده امسال">
+      <svg class="pad-btn-ico" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path d="M21 12a9 9 0 1 1-2.64-6.36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M21 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="pad-spinner" aria-hidden="true"></span>
+    </button>
+  </section>
+</div>
+<style>
+.pad-scope{
+  --pad-violet:#7C3AED; --pad-violet-soft:#A78BFA; --pad-violet-deep:#4C1D95;
+  --pad-amber:#D97706;  --pad-amber-soft:#FBBF24;  --pad-amber-deep:#92400E;
+  --pad-ink:#2a1d4c; --pad-muted:#7c7290; --pad-line:#ece6f6; --pad-danger:#e11d48;
+  font-family:"Vazirmatn",system-ui,sans-serif;
+  padding:16px;color:var(--pad-ink);
+  display:flex;flex-direction:row;flex-wrap:wrap;gap:14px;
+}
+.pad-scope *{box-sizing:border-box;}
+
+.pad-card{
+  position:relative;flex:1 1 300px;max-width:487px;overflow:hidden;
+  display:flex;align-items:center;gap:16px;
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(124,58,237,.09), transparent 60%),
+    linear-gradient(180deg,#ffffff 0%,#fcfaff 100%);
+  border:1px solid var(--pad-line);border-radius:16px;
+  padding:14px 18px;
+  box-shadow:0 14px 34px -22px rgba(42,29,76,.28), 0 1px 4px rgba(42,29,76,.05);
+}
+.pad-today::before{
+  content:"";position:absolute;top:0;right:0;width:4px;height:100%;
+  background:linear-gradient(180deg,var(--pad-violet-deep),var(--pad-violet),var(--pad-violet-soft));
+}
+.pad-year{
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(217,119,6,.10), transparent 60%),
+    linear-gradient(180deg,#ffffff 0%,#fffdf8 100%);
+}
+.pad-year::before{
+  content:"";position:absolute;top:0;right:0;width:4px;height:100%;
+  background:linear-gradient(180deg,var(--pad-amber-deep),var(--pad-amber),var(--pad-amber-soft));
+}
+.pad-main{flex:1;min-width:0;}
+
+.pad-head{display:flex;align-items:center;gap:8px;}
+.pad-pulse{width:8px;height:8px;border-radius:50%;flex:none;}
+.pad-pulse-today{background:var(--pad-violet);animation:padPulseViolet 2.4s infinite;}
+.pad-pulse-year{background:var(--pad-amber);animation:padPulseAmber 2.4s infinite;}
+@keyframes padPulseViolet{
+  0%{box-shadow:0 0 0 0 rgba(124,58,237,.55)}
+  70%{box-shadow:0 0 0 7px rgba(124,58,237,0)}
+  100%{box-shadow:0 0 0 0 rgba(124,58,237,0)}
+}
+@keyframes padPulseAmber{
+  0%{box-shadow:0 0 0 0 rgba(217,119,6,.55)}
+  70%{box-shadow:0 0 0 7px rgba(217,119,6,0)}
+  100%{box-shadow:0 0 0 0 rgba(217,119,6,0)}
+}
+.pad-kicker{margin:0;font-size:10px;letter-spacing:.4px;font-weight:600;}
+.pad-kicker-today{color:var(--pad-violet);}
+.pad-kicker-year{color:var(--pad-amber);}
+.pad-title{margin:0;font-size:13px;font-weight:700;}
+.pad-date{margin-right:auto;font-size:11px;color:var(--pad-muted);white-space:nowrap;}
+
+.pad-amount-wrap{display:flex;align-items:baseline;gap:6px;margin-top:10px;}
+.pad-amount{
+  font-weight:800;line-height:1.2;letter-spacing:-.5px;
+  font-variant-numeric:tabular-nums;white-space:nowrap;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.pad-today .pad-amount{background-image:linear-gradient(180deg,var(--pad-violet),var(--pad-violet-deep));}
+.pad-year .pad-amount{background-image:linear-gradient(180deg,var(--pad-amber),var(--pad-amber-deep));}
+.pad-placeholder{
+  font-size:12px;font-weight:500;color:var(--pad-muted);
+  -webkit-text-fill-color:var(--pad-muted);letter-spacing:0;
+}
+.pad-amount.is-error,.pad-amount.is-error .pad-placeholder{
+  -webkit-text-fill-color:var(--pad-danger);color:var(--pad-danger);
+}
+.pad-unit{font-size:12px;font-weight:600;color:var(--pad-muted);flex:none;}
+.pad-hint{margin:4px 0 0;font-size:10px;color:var(--pad-muted);min-height:12px;}
+
+.pad-btn{
+  flex:none;width:46px;height:46px;border:none;border-radius:12px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:#fff;
+  transition:transform .15s ease, box-shadow .2s ease, filter .2s ease;
+}
+.pad-btn-today{
+  background:linear-gradient(180deg,var(--pad-violet-soft),var(--pad-violet));
+  box-shadow:0 8px 18px -8px rgba(124,58,237,.65);
+}
+.pad-btn-year{
+  background:linear-gradient(180deg,var(--pad-amber-soft),var(--pad-amber));
+  box-shadow:0 8px 18px -8px rgba(217,119,6,.65);
+}
+.pad-btn:hover{transform:translateY(-2px);filter:brightness(1.04);}
+.pad-btn:active{transform:translateY(0);}
+.pad-btn:disabled{cursor:wait;filter:saturate(.6) brightness(.97);transform:none;}
+.pad-btn.is-loading .pad-btn-ico{display:none;}
+.pad-spinner{
+  display:none;width:18px;height:18px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.4);border-top-color:#fff;
+  animation:padSpin .7s linear infinite;
+}
+.pad-btn.is-loading .pad-spinner{display:inline-block;}
+@keyframes padSpin{to{transform:rotate(360deg)}}
+</style>
+
+<script>
+(function(){
+  const DEMO_MODE = false;
+
+  // ⚠️ این آدرس‌ها باید دقیقاً با urls.py شما یکی باشن
+  const PAD_ENDPOINTS = {
+    today: "/pcba/ajax/today_pad_count/?q=today_pad_count",
+    year:  "/pcba/ajax/this_year_pad_count/?q=this_year_pad_count"
+  };
+  const PAD_KEYS = { today: 'today_pad_count', year: 'this_year_pad_count' };
+
+  const MAX_FONT = 28, MIN_FONT = 14;
+  const faNum = n => new Intl.NumberFormat('fa-IR').format(n);
+
+  try {
+    document.getElementById('padDateToday').textContent =
+      new Intl.DateTimeFormat('fa-IR', {day:'numeric', month:'long'}).format(new Date());
+    document.getElementById('padDateYear').textContent =
+      new Intl.DateTimeFormat('fa-IR', {year:'numeric'}).format(new Date());
+  } catch(e){}
+
+  function setLoading(btn, on){
+    btn.classList.toggle('is-loading', on);
+    btn.disabled = on;
+  }
+
+  function fitFont(amountEl, unitEl, text){
+    amountEl.style.fontSize = MAX_FONT + 'px';
+    amountEl.textContent = text;
+    let size = MAX_FONT;
+    const limit = amountEl.parentElement.clientWidth - (unitEl.offsetWidth || 20) - 6;
+    while(amountEl.scrollWidth > limit && size > MIN_FONT){
+      size--; amountEl.style.fontSize = size + 'px';
+    }
+  }
+
+  function countUp(amountEl, unitEl, target){
+    amountEl.classList.remove('is-error');
+    unitEl.hidden = false;
+    fitFont(amountEl, unitEl, faNum(target));
+    const dur = 800, t0 = performance.now();
+    function frame(now){
+      const p = Math.min((now - t0) / dur, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      amountEl.textContent = faNum(Math.round(target * eased));
+      if(p < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function showPlaceholder(amountEl, unitEl, msg, isError){
+    amountEl.style.fontSize = '';
+    amountEl.classList.toggle('is-error', !!isError);
+    amountEl.innerHTML = '<span class="pad-placeholder">' + msg + '</span>';
+    unitEl.hidden = true;
+  }
+
+  async function fetchPadTotal(type){
+    if(DEMO_MODE){
+      await new Promise(r => setTimeout(r, 700));
+      return { [PAD_KEYS[type]]: Math.floor(Math.random() * (type === 'today' ? 500 : 20000)) };
+    }
+    const res = await fetch(PAD_ENDPOINTS[type], {
+      method: 'GET',
+      headers: {'X-Requested-With': 'XMLHttpRequest'},
+      credentials: 'same-origin'
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }
+
+  function setupPadBtn(btnId, amountId, unitId, hintId, type){
+    const btn    = document.getElementById(btnId);
+    const amount = document.getElementById(amountId);
+    const unit   = document.getElementById(unitId);
+    const hint   = document.getElementById(hintId);
+
+    btn.addEventListener('click', async () => {
+      setLoading(btn, true);
+      hint.textContent = '';
+      try{
+        const data = await fetchPadTotal(type);
+        if(data.error) throw new Error(data.error);
+        const val = data[PAD_KEYS[type]];
+        if(val === undefined || val === null){
+          showPlaceholder(amount, unit, 'اطلاعاتی برای این بازه ثبت نشده', false);
+        } else {
+          countUp(amount, unit, Number(val));
+          hint.textContent = 'به‌روزرسانی شد';
+        }
+      } catch(err){
+        showPlaceholder(amount, unit, 'خطا در دریافت اطلاعات', true);
+        hint.textContent = 'دوباره تلاش کنید.';
+        console.error(err);
+      } finally {
+        setLoading(btn, false);
+      }
+    });
+  }
+
+  setupPadBtn('padBtnToday', 'padAmountToday', 'padUnitToday', 'padHintToday', 'today');
+  setupPadBtn('padBtnYear',  'padAmountYear',  'padUnitYear',  'padHintYear',  'year');
+})();
+</script>

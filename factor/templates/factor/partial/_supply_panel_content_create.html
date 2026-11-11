@@ -111,6 +111,8 @@
               </label>
             </div>
 
+        <div class="d-none">
+        فقط برای مخفی کردن
 {#        سفارش خارجی موقتا غیر فعال#}
             <div class="sp-group sp-g-foreign">سفارش خارجی</div>
             {% for f in supply.foreign_orders %}
@@ -165,7 +167,7 @@
                 <input type="text" inputmode="decimal" class="sp-qty sp-qty-free" min="0" placeholder="تعداد" disabled>
               </label>
             </div>
-
+        </div>
             <div class="sp-footer">
               <div class="sp-foot-line"><span>مورد نیاز</span><b>{{ quantity|floatformat:'-2g' }}</b></div>
               <div class="sp-foot-line"><span>تأمین‌شده</span><b class="sp-sup">0</b></div>

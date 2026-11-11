@@ -1038,6 +1038,9 @@ class Packing(BaseModeWF):
 
     SHIPMENT_TYPE = [("express", "express"), ("air", "air"), ("sea", "sea"), ]
     WH_DESTINATION_CHOICE = [(2, _("central")), (3, _("resalat")), ]
+    source = models.CharField(_('source'), null=True, blank=True)
+    destination = models.CharField(_('destination'), null=True, blank=True)
+    transporter_company = models.CharField(_('transporter_company'), null=True, blank=True)
     packing_number = models.CharField(_('packing_number'), max_length=255, null=True, blank=True)
     order_registration_number = models.CharField(
         'شماره ثبت سفارش (۸ رقم)', max_length=8, null=True, blank=True,
@@ -1350,6 +1353,109 @@ class Packing(BaseModeWF):
 
     def __str__(self):
         return f'{self.bl_number} -- {self.created_date}'
+
+    def submit_flow(self, request, is_new):
+        self.flow_config = self.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'PackingView')
+        groups = {
+            0: {"group": "packing_user_p", "state_name": "پیش نویس"},
+            1: {"group": "packing_user_dep", "state_name": "DEP"},
+            2: {"group": "packing_user_arrive", "state_name": "arrive"},
+            3: {"group": "packing_user_10", "state_name": "10%"},
+            4: {"group": "packing_user_asnad", "state_name": "تحویل اسناد"},
+            5: {"group": "packing_user_ezhar", "state_name": "اظهار گمرکی"},
+            6: {"group": "packing_user_tarkhis", "state_name": "ترخیص گمرک"},
+            7: {"group": "wh_user", "state_name": "انبار"},
+            8: {"group": "wh_user", "state_name": "مرحله نهایی"},
+        }
+
+        last_flow = self.last_work_flow
+        current_state_index = self.get_flow_index()
+
+        if 0 < current_state_index < 8:
+            next_state_index = current_state_index + 1
+            previews_state_index = current_state_index - 1
+
+        if current_state_index == 0:
+            next_state_index = 1
+            previews_state_index = 0
+
+        if current_state_index == 8:
+            next_state_index = 8
+            previews_state_index = 7
+
+        current_group_name = groups.get(current_state_index).get('group')
+        next_group_name = groups.get(next_state_index).get('group')
+        previews_group_name = groups.get(previews_state_index).get('group')
+
+        current_state_name = groups.get(current_state_index).get('state_name')
+        next_state_name = groups.get(next_state_index).get('state_name')
+        previews_state_name = groups.get(previews_state_index).get('state_name')
+
+        # 3 next
+        if 'next' in request.POST or 'next' in getattr(request, 'data', []):
+            current_group_last_wf_obj = self.workflows.filter(belong_to_group=next_group_name)
+            if current_group_last_wf_obj:
+                to_user = current_group_last_wf_obj.latest("pk").from_user
+            else:
+                next_state_user = get_user_model().objects.filter(groups__name=next_group_name)
+                to_user = next_state_user.last()
+
+            wf = WorkFlow.objects.create(action='next', flow_name='quotation', creator_user=request.user,
+                                         editor_user=request.user, wf_status=3,
+                                         from_user=getattr(last_flow, "to_user", None) or request.user,
+                                         to_user=to_user,
+                                         content_type=self.__class__.content_type(), object_id=self.pk,
+                                         belong_to_group=current_group_name, current_state_name=next_state_name,
+                                         wf_description=request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        # 5 first draft
+        elif ('draft' in request.POST or 'draft' in getattr(request, 'data', [])) and (is_new or not last_flow):
+            wf = WorkFlow.objects.create(action='draft', flow_name='quotation', wf_status=5,
+                                         creator_user=request.user,
+                                         editor_user=request.user,
+                                         from_user=request.user,
+                                         to_user=request.user,
+                                         content_type=self.__class__.content_type(), object_id=self.pk,
+                                         belong_to_group=current_group_name, current_state_name=current_state_name,
+                                         wf_description=request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        # 2 back
+        elif 'back' in request.POST or 'back' in getattr(request, 'data', []):
+            current_group_last_wf_obj = self.workflows.filter(belong_to_group=previews_group_name).latest("pk")
+            if current_group_last_wf_obj:
+                to_user = current_group_last_wf_obj.from_user
+            else:
+                previews_state_user = get_user_model().objects.filter(groups__name=previews_group_name)
+                to_user = previews_state_user.first()
+
+            wf = WorkFlow.objects.create(action='back', flow_name='quotation', creator_user=request.user,
+                                         editor_user=request.user, wf_status=2,
+                                         from_user=last_flow.to_user,
+                                         to_user=to_user,
+                                         content_type=self.__class__.content_type(), object_id=self.pk,
+                                         belong_to_group=current_group_name, current_state_name=previews_state_name,
+                                         wf_description=request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        # 4 change user
+        elif 'change_user' in request.POST or 'change_user' in getattr(request, 'data', []):
+            to_user = request.POST.get('to_current_group_user')
+            wf = WorkFlow.objects.create(action='change user', flow_name='quotation', creator_user=request.user,
+                                         editor_user=request.user, wf_status=4,
+                                         from_user=last_flow.to_user,
+                                         to_user_id=to_user,
+                                         content_type=self.__class__.content_type(), object_id=self.pk,
+                                         belong_to_group=current_group_name, current_state_name=current_state_name,
+                                         wf_description=request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        return last_flow
 
     @property
     def computed_estimated_shipping_start_date(self):

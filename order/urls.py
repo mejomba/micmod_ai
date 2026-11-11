@@ -105,4 +105,6 @@ urlpatterns = [
     path('wh_packing_view/', views.wh_packing_view, name='wh_packing_view'),
     path('wh_packing_view/<int:sepidar_buy_factor_id>/', views.wh_packing_view, name='wh_packing_view'),
     path('portal_reserve/<int:sku>/', views.portal_reserve_, name='portal_reserve_'),
+    path('expert_list_api/', views.expert_list_api, name='expert_list_api'),
+    path('my_orders/', views.my_orders, name='my_orders'),
 ]

@@ -118,9 +118,15 @@
           "menus": [
             {
               "icon": "message-add",
-              "title": "create",
+              "title": "نسخه قدیم",
               "path_key": "factor/view",
               "link": "factor:factor.view"
+            },
+            {
+              "icon": "message-add",
+              "title": "نسخه جدید",
+              "path_key": "factor/view/safe",
+              "link": "factor:safe.factor.view"
             },
             {
               "icon": "burger-menu",

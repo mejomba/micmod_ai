@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import Q, Value
 from django.contrib import messages
@@ -40,6 +41,12 @@ class FactorItemManager(BaseManager):
         return self.get_queryset().order_by('-index', 'id')
 
 
+def validate_sale_type_multi_condition(value):
+    """Require a JSON array containing only JSON objects."""
+    if not isinstance(value, list) or any(not isinstance(item, dict) for item in value):
+        raise ValidationError('شرایط فروش باید یک لیست از آبجکت‌های JSON باشد.')
+
+
 class Factor(SLSDoc):
     ENTITY_CODE = 1
 
@@ -47,7 +54,7 @@ class Factor(SLSDoc):
     shop_buy_factor_id = models.IntegerField(null=True, blank=True)
     shop_document_id = models.IntegerField(null=True, blank=True)
     shop_payment_approved = models.BooleanField(default=False, verbose_name=_('shop_payment_approved'))
-    is_reserve = models.BooleanField(default=False, verbose_name=_(''))
+    is_reserve = models.BooleanField(default=False, verbose_name=_('is_reserve'))
     customer_party_id = models.ForeignKey(Customer, verbose_name=_('party_id'), null=True, blank=True,
                                           to_field='sepidar_party_id', on_delete=models.DO_NOTHING,
                                           db_column='customer_party_id')
@@ -81,6 +88,12 @@ class Factor(SLSDoc):
     payment_method = models.CharField(choices=PaymentMethod, max_length=10, null=True, blank=True,
                                       verbose_name=_('payment_method'), default="6,2 Month")
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='factors')
+    sale_type_multi_condition = models.JSONField(
+        verbose_name='شرایط فروش چندشرطی',
+        default=list,
+        blank=True,
+        validators=[validate_sale_type_multi_condition],
+    )
 
     need_financial_approval = models.BooleanField(default=True, verbose_name=_('نیاز به تایید مالی'))
     wh_user = models.ManyToManyField(User, related_name='wh_factors', null=True, blank=True, verbose_name=_('کارشناس انبار'))

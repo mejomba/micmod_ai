@@ -1,0 +1,61 @@
+{% load static %}
+{# The JSONField is rendered as a hidden ModelForm field elsewhere in the form. #}
+{% if form.sale_type_multi_condition or form.instance.sale_type_multi_condition %}
+<section class="card shadow-sm sac-card" id="sac-root" dir="rtl" data-document-type="{{ sac_document_type|default:'factor' }}"
+         data-editable="{% if form.sale_type_multi_condition and not form.sale_type_multi_condition.field.disabled %}1{% else %}0{% endif %}"
+         data-document-id="{{ form.instance.pk|default:'' }}"
+         data-initial-multi="{% if form.instance.sale_type_id == 53 %}1{% else %}0{% endif %}"
+         aria-label="شرایط فروش چندشرطی"
+         {% if form.instance.sale_type_id != 53 %}hidden{% endif %}>
+  <details class="sac-accordion" id="sac-details" {% if form.sale_type_multi_condition.errors %}open{% endif %}>
+    <summary class="card-header border-0 sac-header" aria-controls="sac-panel">
+      <div class="card-title d-flex align-items-center gap-3">
+        <span class="symbol symbol-30px bg-light-primary rounded text-primary d-inline-flex align-items-center justify-content-center fs-6">٪</span>
+        <div>
+          <h3 class="fs-5 fw-bold mb-1">شرایط فروش چندشرطی</h3>
+          <div class="text-muted fs-8">مبلغ و درصد پرداخت‌ها به‌صورت خودکار محاسبه می‌شوند.</div>
+        </div>
+      </div>
+      <div id="sac-collapsed-summary" class="sac-collapsed-summary" aria-live="polite"
+           aria-label="خلاصه درصدهای شرایط پرداخت">
+        <span class="sac-overview-pending">در حال دریافت خلاصه…</span>
+      </div>
+    </summary>
+    <div class="card-body sac-body" id="sac-panel">
+    {% if form.sale_type_multi_condition.errors %}
+    <div class="alert alert-danger" role="alert">{{ form.sale_type_multi_condition.errors }}</div>
+    {% endif %}
+    <div id="sac-error" class="alert alert-danger py-2 mb-3" role="alert" hidden></div>
+    <div id="sac-system-row" class="sac-row sac-system-row mb-2" aria-label="مانده نقدی سیستمی">
+      <div class="sac-system-identity">
+        <span class="sac-system-icon" aria-hidden="true">✓</span>
+        <span class="sac-system-title">نقدی سیستمی <small class="sac-system-tag">محاسبه خودکار</small></span>
+      </div>
+      <div class="sac-system-fields" aria-live="polite">
+        <span class="sac-system-metric"><small>مبلغ کل سند</small><b id="sac-base-total">0</b></span>
+        <span class="sac-system-metric sac-system-main"><small>مانده نقدی</small><b data-sac-system="amount">0</b></span>
+        <span class="sac-system-metric"><small>درصد مانده</small><b data-sac-system="percent">0٪</b></span>
+      </div>
+      <span class="sac-system-lock" title="این ردیف خودکار و غیرقابل ویرایش است" aria-label="غیرقابل ویرایش">🔒</span>
+    </div>
+    <p class="text-muted mb-2 sac-system-help">ردیف اول، مانده مبلغ کل سند است و به‌صورت پیش‌فرض نقدی در نظر گرفته می‌شود.</p>
+    {% if form.sale_type_multi_condition and not form.sale_type_multi_condition.field.disabled %}
+    <div class="sac-toolbar sac-v7-toolbar">
+      <button type="button" id="sac-add" class="btn btn-sm btn-primary sac-add-condition"><span aria-hidden="true" class="sac-add-plus">＋</span> افزودن شرط پرداخت</button>
+{#      <span class="sac-toolbar-hint">مثلاً چک، نقدی یا پیش‌پرداخت</span>#}
+    </div>
+    {% endif %}
+    <div id="sac-rows" class="d-flex flex-column gap-2"></div>
+    <div id="sac-empty" class="text-muted fs-8 rounded bg-light px-3 py-2">برای ثبت شروط پرداخت بیشتر، از «افزودن شرط پرداخت» استفاده کنید.</div>
+    <div id="sac-summary" class="d-flex flex-wrap gap-2 mt-2"></div>
+    </div>
+  </details>
+</section>
+{% if form.sale_type_multi_condition %}
+{{ form.sale_type_multi_condition.value|json_script:"sac-initial-data" }}
+{% else %}
+{{ form.instance.sale_type_multi_condition|json_script:"sac-initial-data" }}
+{% endif %}
+<link rel="stylesheet" href="{% static 'factor/css/sale_conditions.css' %}">
+<script defer src="{% static 'factor/js/sale_conditions.js' %}"></script>
+{% endif %}
