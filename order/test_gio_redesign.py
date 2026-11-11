@@ -19,7 +19,8 @@ def fake_order(order_id, supplier_ref, currency_ref, part_number):
                                title='ارز', sepidar_id=currency_ref)
     order = SimpleNamespace(pk=order_id, order_number='ORD-' + str(order_id),
                             final_supplier=supplier, currency=currency,
-                            final_item=SimpleNamespace(part_number=part_number))
+                            final_item=SimpleNamespace(
+                                part_number=part_number, sku='SKU-' + str(order_id)))
     return SimpleNamespace(order=order, order_id=order_id,
                            quantity=3, description='توضیح ردیف')
 
@@ -53,10 +54,40 @@ class GIORedesignPreviewTests(SimpleTestCase):
         self.assertFalse(groups[0]['can_send'])
         self.assertEqual(groups[0]['invoice']['number'], '901')
         self.assertEqual(groups[0]['items'][0]['order_number'], 'ORD-11')
+        self.assertEqual(groups[0]['items'][0]['sku'], 'SKU-11')
         self.assertEqual(groups[1]['key'], '202___2')
         self.assertEqual(groups[1]['currency_ref'], '2')
         self.assertTrue(groups[1]['can_send'])
         self.assertEqual(groups[1]['row_count'], 1)
+
+    def test_preview_sku_comes_from_final_trade_item_not_sales_item(self):
+        row = fake_order(31, 101, 1, 'TRADE-PN')
+        # In trade orders the purchasing item can differ from the sales item.
+        row.order.item = SimpleNamespace(sku='SALES-SKU', part_number='SALES-PN')
+        row.order.final_item = SimpleNamespace(sku='TRADE-SKU', part_number='TRADE-PN')
+        gio = SimpleNamespace(
+            sepidar_buy_factor_response_json=None,
+            sepidar_inventory_receipt_response_json=None,
+            sepidar_groups=SimpleNamespace(all=lambda: []),
+        )
+        with patch('order.gio_sepidar.plan_gio_groups',
+                   return_value=OrderedDict([('101___1', [row])])):
+            item = gio_preview_groups(gio)[0]['items'][0]
+        self.assertEqual(item['sku'], 'TRADE-SKU')
+        self.assertEqual(item['part_number'], 'TRADE-PN')
+
+    def test_preview_missing_sku_is_displayed_as_placeholder(self):
+        row = fake_order(32, 101, 1, 'NO-SKU-PN')
+        row.order.final_item.sku = None
+        gio = SimpleNamespace(
+            sepidar_buy_factor_response_json=None,
+            sepidar_inventory_receipt_response_json=None,
+            sepidar_groups=SimpleNamespace(all=lambda: []),
+        )
+        with patch('order.gio_sepidar.plan_gio_groups',
+                   return_value=OrderedDict([('101___1', [row])])):
+            item = gio_preview_groups(gio)[0]['items'][0]
+        self.assertEqual(item['sku'], '-')
 
     def test_unknown_groups_are_not_retryable(self):
         row = fake_order(12, 101, 1, 'ABC-2')
@@ -109,6 +140,7 @@ class GIORedesignPreviewTests(SimpleTestCase):
         self.assertIn('سند حسابداری', content['res'])
         self.assertIn('ارسال این گروه', content['res'])
         self.assertIn('ORD-12', content['res'])
+        self.assertIn('<th>SKU</th>', content['res'])
 
 
 class GIORedesignTemplateTests(SimpleTestCase):
@@ -138,6 +170,12 @@ class GIORedesignTemplateTests(SimpleTestCase):
         self.assertIn('@media(max-width:1170px)', self.page)
         self.assertIn('{% render_field_by_order form form.gio_date form.description', self.page)
         self.assertIn('form_s.order form_s.quantity form_s.description', self.page)
+
+    def test_preview_and_mock_document_rows_display_sku_column(self):
+        self.assertIn('<th>SKU</th>', self.preview)
+        self.assertIn('{{ item.sku }}', self.preview)
+        self.assertIn('<th>SKU</th>', self.page)
+        self.assertIn("item.sku || '—'", self.page)
 
     def test_saved_document_preview_and_mock_are_separate_tabs(self):
         for name in ('editor', 'preview', 'documents'):

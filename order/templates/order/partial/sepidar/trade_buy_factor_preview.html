@@ -37,10 +37,10 @@
         <p class="text-muted fs-8 mb-2">اقلامی که بر اساس اطلاعات فعلی پرتال در این گروه قرار می‌گیرند · کد تأمین‌کننده: {{ group.supplier_ref }} · کد ارز: {{ group.currency_ref }}</p>
         <div class="table-responsive">
           <table class="gio-group-table">
-            <thead><tr><th>سفارش</th><th>پارت نامبر</th><th>تعداد</th></tr></thead>
+            <thead><tr><th>سفارش</th><th>پارت نامبر</th><th>SKU</th><th>تعداد</th></tr></thead>
             <tbody>
               {% for item in group.items %}
-                <tr><td>{{ item.order_number }}</td><td>{{ item.part_number }}</td><td>{{ item.quantity|intcomma }}</td></tr>
+                <tr><td>{{ item.order_number }}</td><td>{{ item.part_number }}</td><td>{{ item.sku }}</td><td>{{ item.quantity|intcomma }}</td></tr>
               {% endfor %}
             </tbody>
           </table>

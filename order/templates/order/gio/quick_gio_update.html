@@ -334,7 +334,7 @@
           </dl>
           <h6 class="fw-bold mt-4">ردیف‌ها بر اساس اطلاعات پرتال (نمونه نمایشی)</h6>
           <div class="table-responsive">
-            <table class="gio-group-table"><thead><tr><th>سفارش</th><th>پارت نامبر</th><th>تعداد</th></tr></thead><tbody id="gio-mock-rows"></tbody></table>
+            <table class="gio-group-table"><thead><tr><th>سفارش</th><th>پارت نامبر</th><th>SKU</th><th>تعداد</th></tr></thead><tbody id="gio-mock-rows"></tbody></table>
           </div>
           <div id="gio-mock-no-rows" class="gio-alert mt-3" hidden>اطلاعات ردیف‌های این سند از API سپیدار هنوز در دسترس نیست.</div>
         </div>
@@ -718,7 +718,7 @@
             const items = group ? group.items : [];
             items.forEach(function (item) {
                 const tr = document.createElement('tr');
-                [item.order_number, item.part_number, formatGioQuantity(item.quantity)].forEach(function (value) {
+                [item.order_number, item.part_number, item.sku || '—', formatGioQuantity(item.quantity)].forEach(function (value) {
                     const td = document.createElement('td');
                     td.textContent = value;
                     tr.appendChild(td);

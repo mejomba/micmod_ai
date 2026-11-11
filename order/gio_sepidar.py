@@ -68,7 +68,7 @@ def plan_gio_groups(gio):
     """Keep the current supplier/currency rule, but reject incomplete input."""
     groups = OrderedDict()
     items = gio.gioitems.filter(is_deleted=False).select_related(
-        'order', 'order__currency', 'order__item',
+        'order', 'order__currency', 'order__item', 'order__item_trade',
     ).order_by('pk')
     for row in items:
         order = row.order
@@ -226,6 +226,7 @@ def gio_preview_groups(gio):
                 'order_id': order.pk,
                 'order_number': str(order.order_number or order.pk),
                 'part_number': str(getattr(final_item, 'part_number', None) or '-'),
+                'sku': str(getattr(final_item, 'sku', None) or '-'),
                 'quantity': quantity,
                 'description': row.description or '',
             })
