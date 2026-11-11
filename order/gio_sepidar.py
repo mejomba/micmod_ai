@@ -11,7 +11,7 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
-from order.models import GIO, GIOSepidarGroup, SepidarOrderDocument
+from order.models import GIO, GIOSepidarGroup, GIOSepidarManualReview, SepidarOrderDocument
 from sepidar.api_call import SepidarApiCall
 from sepidar.data import SepidarDataFactory
 
@@ -20,7 +20,7 @@ class GIOSepidarError(ValueError):
     pass
 
 
-BLOCKING_STATUSES = ('sending', 'success', 'unknown')
+BLOCKING_STATUSES = ('sending', 'success', 'unknown', 'reviewed')
 
 
 def user_can_send_gio(user):
@@ -215,6 +215,14 @@ def gio_preview_groups(gio):
         currency_label = str(currency.title_en or currency.title or currency.sepidar_id)
         record = saved.get(key)
         status = record.status if record else ('success' if is_legacy else 'pending')
+        review = None
+        if record and getattr(record, 'manual_reviews', None) is not None:
+            review = record.manual_reviews.select_related('reviewer').first()
+        review_display = {
+            'reviewer': str(review.reviewer),
+            'at': timezone.localtime(review.created_at).strftime('%Y-%m-%d %H:%M'),
+            'reason': review.reason,
+        } if review else None
         items = []
         total_quantity = Decimal('0')
         for row in rows:
@@ -237,7 +245,8 @@ def gio_preview_groups(gio):
             'currency': currency_label,
             'currency_ref': key.split('___', 1)[1],
             'status': status,
-            'can_send': not is_legacy and status in ('pending', 'failed'),
+            'can_send': not is_legacy and status in ('pending', 'failed', 'reviewed'),
+            'manual_review': review_display,
             'error': record.last_error if record else '',
             'attempts': record.attempt_count if record else 0,
             'invoice': {'id': record.invoice_id, 'number': record.invoice_number} if record else {},
@@ -287,6 +296,64 @@ def _finalize_group(gio_id, group_id, response, status, identifiers, error, rows
         )
 
 
+def approve_unknown_gio_retry(gio, user, *, group_key, confirmed_group,
+                              reason, invoice_checked, receipt_checked, voucher_checked):
+    """Superuser attests that all THREE remote documents are absent.
+
+    This is an explicit, audited human override, NOT a Sepidar existence check.
+    The operation is serialized with send_gio_groups using the GIO row lock.
+    """
+    if not (user and user.is_authenticated and user.is_active and user.is_superuser):
+        raise PermissionError('Only an active superuser can approve an uncertain GIO retry.')
+    if not isinstance(group_key, str) or not group_key:
+        raise GIOSepidarError('A valid supplier/currency group is required.')
+    if confirmed_group != group_key:
+        raise GIOSepidarError('Type the exact group key to confirm the reviewed group.')
+    if any(value is not True for value in (
+        invoice_checked, receipt_checked, voucher_checked,
+    )):
+        raise GIOSepidarError('Confirm that all three Sepidar document types were checked.')
+    if not isinstance(reason, str) or not (20 <= len(reason.strip()) <= 2000):
+        raise GIOSepidarError('Manual review details must be between 20 and 2000 characters.')
+
+    with transaction.atomic():
+        locked_gio = GIO.objects.select_for_update().get(pk=gio.pk, is_deleted=False)
+        if (locked_gio.sepidar_buy_factor_response_json
+                or locked_gio.sepidar_inventory_receipt_response_json):
+            raise GIOSepidarError('This GIO already has a completed/legacy Sepidar response.')
+        record = GIOSepidarGroup.objects.select_for_update().filter(
+            gio=locked_gio, group_key=group_key,
+        ).first()
+        if not record or record.status != 'unknown':
+            raise GIOSepidarError('Only a currently unknown group can be manually reviewed.')
+        # If ANY identifiers were recorded, do not allow an uncertain retry.
+        if any((record.invoice_id, record.invoice_number, record.receipt_id,
+                record.receipt_number, record.voucher_id, record.voucher_number)):
+            raise GIOSepidarError(
+                'Sepidar identifiers are already recorded; investigate manually instead.'
+            )
+        planned = plan_gio_groups(locked_gio)
+        if group_key not in planned:
+            raise GIOSepidarError('The reviewed group is no longer present in GIO.')
+        if record.items_snapshot != snapshot_for_group(planned[group_key]):
+            raise GIOSepidarError('GIO rows changed since the uncertain Sepidar request.')
+        GIOSepidarManualReview.objects.create(
+            group=record, reviewer=user, reason=reason.strip(),
+            previous_error=record.last_error,
+            previous_request_payload=record.request_payload,
+            previous_response_payload=record.response_payload,
+            previous_attempt_count=record.attempt_count,
+            confirmations={
+                'purchase_invoice_absent': True,
+                'before_central_wh_receipt_absent': True,
+                'voucher_absent': True,
+            },
+        )
+        record.status = 'reviewed'
+        record.save(update_fields=['status'])
+        return record
+
+
 def send_gio_groups(gio, request, *, group_key=None):
     """Reserve before I/O, send one vendor/currency at a time, persist each result."""
     work = []
@@ -310,9 +377,14 @@ def send_gio_groups(gio, request, *, group_key=None):
             if old and old.status in BLOCKING_STATUSES:
                 if old.items_snapshot != snapshot:
                     raise GIOSepidarError('An already sent or uncertain group differs from current rows.')
-                if group_key == key:
-                    raise GIOSepidarError('This group has been sent or requires manual reconciliation.')
-                continue
+                if old.status == 'reviewed':
+                    # A manual override permits ONLY an explicitly selected group.
+                    if group_key is None:
+                        raise GIOSepidarError('A reviewed group requires an explicit retry group key.')
+                else:
+                    if group_key == key:
+                        raise GIOSepidarError('This group has been sent or requires manual reconciliation.')
+                    continue
             if group_key is not None and group_key != key:
                 continue
             # Prepare every eligible request before marking any group as sending.

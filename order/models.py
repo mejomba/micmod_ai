@@ -1519,6 +1519,7 @@ class GIOSepidarGroup(models.Model):
         ('success', 'Success'),
         ('failed', 'Rejected'),
         ('unknown', 'Needs manual reconciliation'),
+        ('reviewed', 'Manually reviewed; explicit retry permitted'),
     )
 
     gio = models.ForeignKey(
@@ -1548,6 +1549,31 @@ class GIOSepidarGroup(models.Model):
 
     def __str__(self):
         return 'GIO %s: %s (%s)' % (self.gio_id, self.group_key, self.status)
+
+
+class GIOSepidarManualReview(models.Model):
+    """Append-only record of a superuser's documented manual reconciliation.
+
+    Approval only means an operator has checked Sepidar; no remote existence
+    verification is performed here and a second send can still create duplicates.
+    """
+    group = models.ForeignKey(
+        'GIOSepidarGroup', on_delete=models.PROTECT, related_name='manual_reviews',
+    )
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        related_name='gio_sepidar_manual_reviews',
+    )
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    reason = models.TextField()
+    previous_error = models.TextField(blank=True, default='')
+    previous_request_payload = models.JSONField(default=dict)
+    previous_response_payload = models.JSONField(default=dict)
+    previous_attempt_count = models.PositiveIntegerField()
+    confirmations = models.JSONField(default=dict)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
 
 
 class GIO(BaseModeWF):

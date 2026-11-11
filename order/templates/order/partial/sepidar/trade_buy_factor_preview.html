@@ -24,7 +24,7 @@
         </span>
         <span class="gio-accordion-side">
           <span class="gio-state gio-state--{{ group.status }}">
-            {% if group.status == 'success' %}ارسال موفق{% elif group.status == 'failed' %}ارسال ناموفق · قابل تلاش مجدد{% elif group.status == 'unknown' %}وضعیت نامشخص · نیازمند بررسی{% elif group.status == 'sending' %}در حال ارسال{% else %}آماده ارسال{% endif %}
+            {% if group.status == 'success' %}ارسال موفق{% elif group.status == 'failed' %}ارسال ناموفق · قابل تلاش مجدد{% elif group.status == 'unknown' %}وضعیت نامشخص · نیازمند بررسی{% elif group.status == 'reviewed' %}بررسی دستی تأییدشده · آماده ارسال مجدد{% elif group.status == 'sending' %}در حال ارسال{% else %}آماده ارسال{% endif %}
           </span>
           <span class="gio-accordion-toggle" aria-hidden="true">
             <span class="gio-accordion-show">مشاهده جزئیات</span>
@@ -62,19 +62,40 @@
             {% if group.voucher.id %}<span class="gio-doc-value">شماره {{ group.voucher.number }} / شناسه {{ group.voucher.id }}</span>{% else %}<span class="gio-doc-value">پس از ارسال ایجاد می‌شود</span>{% endif %}
           </div>
         </div>
-        {% if group.error %}<div class="gio-alert gio-alert--error">{{ group.error }}</div>{% endif %}
+        {% if group.error and group.status == 'unknown' %}<div class="gio-alert gio-alert--error">{{ group.error }}</div>{% endif %}
+        {% if group.status == 'unknown' %}
+          <div class="gio-alert gio-alert--error mt-2" role="alert">
+            <strong>هشدار مهم:</strong> ممکن است اسناد این گروه در سپیدار ایجاد شده باشند، حتی اگر پاسخ دریافت نشده است.
+            قبل از تأیید رفع مشکل، فاکتور خرید، رسید انبار قبل از مرکزی و سند حسابداری را در سپیدار
+            با تأمین‌کننده، ارز، اقلام و تاریخ بررسی کنید. تأیید اشتباه می‌تواند اسناد تکراری ایجاد کند.
+          </div>
+        {% endif %}
+        {% if group.manual_review %}
+          <div class="gio-alert gio-alert--warning mt-2">
+            <strong>سابقه بررسی دستی:</strong> {{ group.manual_review.reviewer }} · {{ group.manual_review.at }}
+            <div>توضیحات بررسی: {{ group.manual_review.reason }}</div>
+          </div>
+        {% endif %}
       </div>
       <footer class="gio-group-footer">
         <div class="text-muted fs-8">
           {% if group.status == 'success' %}هر سه سند ثبت شده‌اند و ارسال مجدد مجاز نیست.
-          {% elif group.status == 'unknown' %}برای جلوگیری از ثبت تکراری، ارسال مجدد تا بررسی دستی مسدود است.
+          {% elif group.status == 'unknown' %}برای جلوگیری از ثبت تکراری، ارسال مجدد تا بررسی دقیق هر سه سند و تأیید مدیر کل مسدود است.
+          {% elif group.status == 'reviewed' %}مدیر کل بررسی دستی را ثبت کرده است؛ فقط ارسال مجدد همین گروه مجاز است و اقلام GIO همچنان قفل هستند.
           {% elif group.status == 'sending' %}ارسال قبلی هنوز تعیین تکلیف نشده است.
           {% elif group.status == 'failed' %}فقط این گروه می‌تواند دوباره ارسال شود.
           {% else %}پس از تأیید، هر سه سند این گروه در سپیدار ثبت می‌شوند.{% endif %}
         </div>
+        {% if gio_reconcile_can_review and group.status == 'unknown' %}
+          <button type="button" class="btn btn-outline-danger gio-review-unknown-group"
+                  data-group-key="{{ group.key }}" data-bs-toggle="modal" data-bs-target="#gio-manual-review-modal">
+            ثبت بررسی دستی و فعال‌سازی ارسال مجدد
+          </button>
+        {% endif %}
         {% if gio_sepidar_can_send and group.can_send %}
-          <button type="button" class="btn btn-primary gio-send-group" data-group-key="{{ group.key }}">
-            {% if group.status == 'failed' %}تلاش مجدد این گروه{% else %}ارسال این گروه به سپیدار{% endif %}
+          <button type="button" class="btn btn-primary gio-send-group" data-group-key="{{ group.key }}"
+                  data-manual-reviewed="{% if group.status == 'reviewed' %}true{% else %}false{% endif %}">
+            {% if group.status == 'reviewed' %}ارسال مجدد پس از بررسی دستی{% elif group.status == 'failed' %}تلاش مجدد این گروه{% else %}ارسال این گروه به سپیدار{% endif %}
           </button>
         {% elif group.status == 'success' %}
           <button type="button" class="btn btn-light-primary" data-go-tab="documents" onclick="document.querySelector('[data-gio-tab=documents]').click()">مشاهده اسناد ثبت‌شده</button>

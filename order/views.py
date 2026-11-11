@@ -62,6 +62,7 @@ from .packing_carton_size import reconcile_carton_sizes
 from .gio_sepidar import (
     GIOSepidarError, gio_is_locked, gio_document_display, group_states,
     plan_gio_groups, send_gio_groups, user_can_send_gio, gio_preview_groups,
+    approve_unknown_gio_retry,
 )
 from .form_perm import ORDER_FIELDS_BY_PERMISSION
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
@@ -2345,7 +2346,7 @@ class CustomerRequestOrderViewSet(viewsets.ModelViewSet):
 
 
 class OrderAndSepidar(View):
-    valid_view = ('trade_buy_factor', 'new_bazar_buy_factor', 'bazar_buy_factor', 'payment_for_order_to_sepidar', 'wh_to_wh_preview', 'wh_to_wh_execute')
+    valid_view = ('trade_buy_factor', 'trade_buy_factor_reconcile', 'new_bazar_buy_factor', 'bazar_buy_factor', 'payment_for_order_to_sepidar', 'wh_to_wh_preview', 'wh_to_wh_execute')
     valid_for_get = ('trade_buy_factor_preview', 'payment_for_order_to_sepidar_preview', 'wh_to_wh_preview')
 
     def dispatch(self, request, *args, **kwargs):
@@ -2422,10 +2423,40 @@ class OrderAndSepidar(View):
             context={
                 'gio': gio, 'groups': groups,
                 'gio_sepidar_can_send': user_can_send_gio(request.user),
+                'gio_reconcile_can_review': bool(getattr(request.user, 'is_superuser', False) and getattr(request.user, 'is_active', False)),
             },
             request=request,
         )
         return JsonResponse({'res': html, 'groups': groups})
+
+    def trade_buy_factor_reconcile(self, request, *args, **kwargs):
+        """Superuser-only, audited approval of one uncertain GIO group."""
+        user = request.user
+        if not (user.is_authenticated and user.is_active and user.is_superuser):
+            return JsonResponse({'error': 'فقط مدیر کل مجاز به تأیید بررسی دستی است.'}, status=403)
+        try:
+            payload = json.loads(request.body or b'{}')
+            if not isinstance(payload, dict):
+                raise ValueError('Invalid reconciliation payload.')
+            gio = GIO.objects.filter(
+                pk=int(payload.get('gio_id')), is_deleted=False,
+            ).first()
+            if gio is None:
+                return JsonResponse({'error': 'GIO not found.'}, status=404)
+            group = approve_unknown_gio_retry(
+                gio, user,
+                group_key=payload.get('group_key'),
+                confirmed_group=payload.get('confirmed_group'),
+                reason=payload.get('reason'),
+                invoice_checked=payload.get('invoice_checked'),
+                receipt_checked=payload.get('receipt_checked'),
+                voucher_checked=payload.get('voucher_checked'),
+            )
+        except GIOSepidarError as exc:
+            return JsonResponse({'error': str(exc)}, status=409)
+        except (ValueError, TypeError) as exc:
+            return JsonResponse({'error': str(exc)}, status=400)
+        return JsonResponse({'res': 'reviewed', 'group_key': group.group_key}, status=200)
 
     def trade_buy_factor(self, request, *args, **kwargs):
         """Send and record GIO's three Sepidar documents per vendor/currency."""
@@ -3557,6 +3588,7 @@ class QuickGIOView(LoginRequiredMixin, View):
             ),
             'gio_is_locked': gio_is_locked(gio_object),
             'gio_sepidar_can_send': user_can_send_gio(request.user),
+            'gio_reconcile_can_review': bool(request.user.is_authenticated and request.user.is_active and request.user.is_superuser),
             'gio_sepidar_groups': sepidar_groups,
             'gio_has_group_submissions': gio_object.sepidar_groups.exists() if gio_object else False,
             'gio_sepidar_preview_error': sepidar_preview_error,

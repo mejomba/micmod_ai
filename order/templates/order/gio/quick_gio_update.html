@@ -103,6 +103,13 @@
 .gio-state--success {background:#e4f6ed;color:#147d50}
 .gio-state--failed {background:#fff0e4;color:#a15a05}
 .gio-state--unknown,.gio-state--sending {background:#fff1f0;color:#ab3025}
+.gio-state--reviewed {background:#e6efff;color:#2257a7}
+.gio-review-checks {display:grid;gap:10px;margin:15px 0}
+.gio-review-checks label {display:flex;align-items:flex-start;gap:9px;padding:12px;border:1px solid #e9c0bd;border-radius:9px;background:#fff8f7;cursor:pointer}
+.gio-review-checks input {margin-top:4px;flex-shrink:0}
+.gio-review-warning {border:2px solid #bf3530;background:#fff1f0;color:#8c231e;font-weight:650;border-radius:12px;padding:15px;line-height:1.95}
+.gio-review-code {direction:ltr;display:inline-block;padding:3px 7px;background:#f0f3f5;border-radius:5px;font-weight:700}
+.gio-review-modal-label {font-size:.87rem;font-weight:700;margin:14px 0 6px;display:block}
 .gio-document-actions {display:flex;flex-wrap:wrap;gap:7px}
 .gio-document-actions .btn {font-size:.81rem}
 .gio-empty {border:1px dashed var(--bs-gray-300,#cbd5e1);border-radius:13px;padding:24px;text-align:center;color:var(--bs-gray-600,#667085)}
@@ -315,6 +322,46 @@
   </div>
   {% include 'core/partial/empty_modal_lg.html' %}
   {% include 'core/partial/empty_modal_sm.html' %}
+  {% if gio_reconcile_can_review %}
+  <div class="modal fade" id="gio-manual-review-modal" tabindex="-1" aria-labelledby="gio-review-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content" dir="rtl">
+        <div class="modal-header">
+          <h5 class="modal-title" id="gio-review-modal-title">تأیید بررسی دستی وضعیت نامشخص سپیدار</h5>
+          <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="بستن"></button>
+        </div>
+        <div class="modal-body">
+          <div class="gio-review-warning" role="alert">
+            <strong>هشدار جدی — احتمال ثبت اسناد تکراری</strong>
+            <div>نامشخص بودن نتیجه ارسال به معنی ثبت نشدن اسناد نیست. ممکن است عملیات قبلی در سپیدار کامل شده باشد.
+              بدون بررسی کامل و مستقل هر سه سند در خود سپیدار، هرگز این تأیید را انجام ندهید.
+              این اقدام مسئولیت‌دار است و نام شما، زمان و توضیحات بررسی ذخیره می‌شود.</div>
+            <div>سامانه امکان تأیید خودکار عدم وجود سند در سپیدار را ندارد.</div>
+          </div>
+          <p class="mt-3 mb-2">گروه مورد بررسی: <span id="gio-review-group-code" class="gio-review-code"></span></p>
+          <div class="gio-review-checks">
+            <label><input id="gio-review-invoice" type="checkbox"> بررسی کرده‌ام که فاکتور خرید این گروه در سپیدار ثبت نشده است.</label>
+            <label><input id="gio-review-receipt" type="checkbox"> بررسی کرده‌ام که رسید انبار قبل از مرکزی این گروه در سپیدار ثبت نشده است.</label>
+            <label><input id="gio-review-voucher" type="checkbox"> بررسی کرده‌ام که سند حسابداری این گروه در سپیدار ثبت نشده است.</label>
+          </div>
+          <label class="gio-review-modal-label" for="gio-review-reason">شرح بررسی و مستندات (حداقل ۲۰ کاراکتر)</label>
+          <textarea id="gio-review-reason" rows="3" maxlength="2000" class="form-control"
+                    placeholder="روش بررسی، محدوده زمانی و نتیجه جستجو در سپیدار را بنویسید."></textarea>
+          <label class="gio-review-modal-label" for="gio-review-confirm-key">برای تأیید نهایی، کد همین گروه را دقیقاً تایپ کنید:</label>
+          <input id="gio-review-confirm-key" class="form-control" type="text" autocomplete="off"
+                 autocapitalize="off" spellcheck="false" dir="ltr" placeholder="کد گروه">
+          <div id="gio-review-error" class="gio-alert gio-alert--error mt-3" hidden role="alert"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light-secondary" data-bs-dismiss="modal">انصراف؛ گروه مسدود بماند</button>
+          <button type="button" id="gio-review-confirm" class="btn btn-danger" disabled>
+            تأیید بررسی و اجازه یک ارسال مجدد
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
   <div class="modal fade" id="gio-document-mock-modal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content" dir="rtl">
@@ -399,6 +446,11 @@
     if (loadedUrl.searchParams.get('gio_saved') === '1') {
         notify('تغییرات GIO با موفقیت ذخیره شد.', false);
         loadedUrl.searchParams.delete('gio_saved');
+        window.history.replaceState(null, '', loadedUrl.toString());
+    }
+    if (loadedUrl.searchParams.get('gio_reviewed') === '1') {
+        notify('بررسی دستی ثبت شد. این گروه اکنون فقط با انتخاب صریح قابل ارسال مجدد است.', false, 'gio-send-message');
+        loadedUrl.searchParams.delete('gio_reviewed');
         window.history.replaceState(null, '', loadedUrl.toString());
     }
 
@@ -656,10 +708,90 @@
         });
     });
 
+    const reviewModal = document.getElementById('gio-manual-review-modal');
+    if (reviewModal) {
+        const reviewCode = document.getElementById('gio-review-group-code');
+        const confirmKey = document.getElementById('gio-review-confirm-key');
+        const reviewReason = document.getElementById('gio-review-reason');
+        const invoiceCheck = document.getElementById('gio-review-invoice');
+        const receiptCheck = document.getElementById('gio-review-receipt');
+        const voucherCheck = document.getElementById('gio-review-voucher');
+        const reviewConfirm = document.getElementById('gio-review-confirm');
+        const reviewError = document.getElementById('gio-review-error');
+        let currentReviewGroup = '';
+
+        function updateReviewConfirmation() {
+            reviewConfirm.disabled = !(currentReviewGroup &&
+                confirmKey.value.trim() === currentReviewGroup &&
+                reviewReason.value.trim().length >= 20 &&
+                reviewReason.value.trim().length <= 2000 &&
+                invoiceCheck.checked && receiptCheck.checked && voucherCheck.checked);
+        }
+        [confirmKey, reviewReason, invoiceCheck, receiptCheck, voucherCheck].forEach(function (field) {
+            field.addEventListener('input', updateReviewConfirmation);
+            field.addEventListener('change', updateReviewConfirmation);
+        });
+        document.querySelectorAll('.gio-review-unknown-group').forEach(function (trigger) {
+            trigger.addEventListener('click', function () {
+                currentReviewGroup = trigger.dataset.groupKey || '';
+                reviewCode.textContent = currentReviewGroup;
+                confirmKey.value = '';
+                reviewReason.value = '';
+                invoiceCheck.checked = false;
+                receiptCheck.checked = false;
+                voucherCheck.checked = false;
+                reviewError.hidden = true;
+                reviewError.textContent = '';
+                reviewConfirm.textContent = 'تأیید بررسی و اجازه یک ارسال مجدد';
+                updateReviewConfirmation();
+            });
+        });
+        reviewConfirm.addEventListener('click', function () {
+            if (reviewConfirm.disabled) return;
+            if (!window.confirm('هشدار نهایی: آیا شخصاً تأیید می‌کنید که هیچ‌یک از سه سند این گروه در سپیدار ثبت نشده است؟ تأیید اشتباه ممکن است سند تکراری ایجاد کند.')) {
+                return;
+            }
+            reviewConfirm.disabled = true;
+            reviewConfirm.textContent = 'در حال ثبت بررسی...';
+            reviewError.hidden = true;
+            $.ajax({
+                type:'POST',
+                url:"{% url 'order:order_and_sepidar' %}?view_name=trade_buy_factor_reconcile",
+                contentType:'application/json; charset=utf-8', dataType:'json',
+                headers:{'X-CSRFToken':getCookie('csrftoken')},
+                data:JSON.stringify({
+                    gio_id:document.getElementById('gio_id').value,
+                    group_key:currentReviewGroup,
+                    confirmed_group:confirmKey.value.trim(),
+                    reason:reviewReason.value.trim(),
+                    invoice_checked:invoiceCheck.checked,
+                    receipt_checked:receiptCheck.checked,
+                    voucher_checked:voucherCheck.checked
+                }),
+                success:function () {
+                    const target = new URL(window.location.href);
+                    target.searchParams.set('gio_reviewed', '1');
+                    target.hash = 'gio-preview';
+                    window.location.assign(target.toString());
+                },
+                error:function (xhr) {
+                    const response = xhr.responseJSON || {};
+                    reviewError.textContent = response.error || 'ثبت بررسی دستی انجام نشد. وضعیت گروه را دوباره بررسی کنید.';
+                    reviewError.hidden = false;
+                    reviewConfirm.textContent = 'تأیید بررسی و اجازه یک ارسال مجدد';
+                    updateReviewConfirmation();
+                }
+            });
+        });
+    }
+
     document.querySelectorAll('.gio-send-group').forEach(function (button) {
         button.addEventListener('click', function () {
             if (!isSaved) return;
-            if (!window.confirm('با ارسال این گروه، ۳ سند در سپیدار ایجاد می‌شود و امکان ویرایش GIO محدود خواهد شد. ادامه می‌دهید؟')) return;
+            const warning = button.dataset.manualReviewed === 'true'
+                ? 'هشدار ارسال مجدد: این گروه قبلاً وضعیت نامشخص داشته است. حتی بعد از تأیید بررسی دستی، اگر اسناد در سپیدار موجود باشند، ارسال مجدد ممکن است اسناد تکراری بسازد. آیا با بررسی نتیجه باز هم ادامه می‌دهید؟'
+                : 'با ارسال این گروه، ۳ سند در سپیدار ایجاد می‌شود و امکان ویرایش GIO محدود خواهد شد. ادامه می‌دهید؟';
+            if (!window.confirm(warning)) return;
             button.disabled = true;
             button.textContent = 'در حال ارسال...';
             $.ajax({
