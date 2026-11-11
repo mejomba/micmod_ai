@@ -197,6 +197,61 @@ class GIORedesignTemplateTests(SimpleTestCase):
             model.objects.annotate.assert_called_once()
             qs.select_related.assert_not_called()
 
+    def test_preview_groups_expose_total_quantity_for_closed_summary(self):
+        rows = OrderedDict([('101___1', [
+            fake_order(11, 101, 1, 'ABC-1'),
+            fake_order(12, 101, 1, 'ABC-2'),
+        ])])
+        gio = SimpleNamespace(
+            sepidar_buy_factor_response_json=None,
+            sepidar_inventory_receipt_response_json=None,
+            sepidar_groups=SimpleNamespace(all=lambda: []),
+        )
+        with patch('order.gio_sepidar.plan_gio_groups', return_value=rows):
+            group = gio_preview_groups(gio)[0]
+        self.assertEqual(group['row_count'], 2)
+        self.assertEqual(group['total_quantity'], '6')
+
+    def test_preview_groups_are_collapsed_accessible_accordion_with_summary(self):
+        groups = [
+            {'key': '101___1', 'supplier': 'تأمین‌کننده اول', 'currency': 'Dollar',
+             'supplier_ref': '101', 'currency_ref': '1', 'row_count': 2,
+             'total_quantity': '6', 'status': 'success', 'can_send': False,
+             'invoice': {'id': 5, 'number': 'INV-77'},
+             'receipt': {'id': 6, 'number': 'REC-78'},
+             'voucher': {'id': 7, 'number': 'ACC-79'}, 'items': [],
+             'error': ''},
+            {'key': '202___2', 'supplier': 'تأمین‌کننده دوم', 'currency': 'rmb',
+             'supplier_ref': '202', 'currency_ref': '2', 'row_count': 1,
+             'total_quantity': '3', 'status': 'pending', 'can_send': True,
+             'invoice': {}, 'receipt': {}, 'voucher': {},
+             'items': [{'order_number': 'ORD-22', 'part_number': 'XYZ',
+                        'quantity': '3'}], 'error': ''},
+        ]
+        html = render_to_string(
+            'order/partial/sepidar/trade_buy_factor_preview.html',
+            {'groups': groups, 'gio_sepidar_can_send': True},
+        )
+        self.assertEqual(html.count('<details class="gio-group-card gio-preview-group'), 2)
+        self.assertEqual(html.count('<summary class="gio-group-head gio-accordion-summary">'), 2)
+        self.assertEqual(html.count('</details>'), 2)
+        self.assertIn('name="gio-sepidar-accordion"', html)
+        self.assertNotIn(' name="gio-sepidar-accordion" open', html)
+        for value in ('تأمین‌کننده اول', 'Dollar', '2 ردیف سفارش',
+                      'مجموع تعداد: 6', '۳ سند سپیدار', 'ارسال موفق',
+                      'INV-77', 'REC-78', 'ACC-79', 'آماده ارسال'):
+            self.assertIn(value, html)
+        self.assertIn('data-group-key="202___2"', html)
+        self.assertIn('gio-send-group', html)
+        self.assertIn('ORD-22', html)
+        self.assertIn('gio-accordion-toggle', html)
+
+    def test_preview_accordion_has_keyboard_focus_and_exclusive_toggle(self):
+        self.assertIn('.gio-accordion-summary:focus-visible', self.page)
+        self.assertIn('.gio-accordion-item[open]', self.page)
+        self.assertIn("panel.addEventListener('toggle'", self.page)
+        self.assertIn('if (other !== panel && other.open) other.open = false', self.page)
+
     def test_each_group_has_three_docs_and_independent_retry(self):
         for label in ('فاکتور خرید', 'رسید انبار قبل از مرکزی', 'سند حسابداری'):
             self.assertIn(label, self.preview)

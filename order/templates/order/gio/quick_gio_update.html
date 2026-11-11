@@ -71,6 +71,24 @@
 .gio-group-head {display:flex;justify-content:space-between;gap:15px;align-items:center;flex-wrap:wrap;background:var(--bs-light,#f7f9fb);padding:18px 20px}
 .gio-group-head h4 {font-size:1rem;font-weight:800;margin:0 0 5px}
 .gio-group-head p {font-size:.83rem;margin:0;color:var(--bs-gray-600,#667085)}
+.gio-accordion-summary {list-style:none;cursor:pointer;user-select:none;outline-offset:-3px}
+.gio-accordion-summary::-webkit-details-marker {display:none}
+.gio-accordion-summary:focus-visible {outline:3px solid var(--bs-primary,#206c88);border-radius:12px}
+.gio-accordion-main {display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;flex:1}
+.gio-accordion-title {display:block;font-size:1.05rem;font-weight:800;overflow-wrap:anywhere}
+.gio-accordion-stats {display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.82rem;color:var(--bs-gray-700,#455468)}
+.gio-accordion-stats > span {border:1px solid var(--bs-gray-300,#d6dce3);background:var(--bs-body-bg,#fff);border-radius:8px;padding:3px 9px}
+.gio-accordion-numbers {font-size:.81rem;color:#147d50;line-height:1.8}
+.gio-accordion-error {font-size:.8rem;color:#b42318;overflow-wrap:anywhere}
+.gio-accordion-side {display:flex;align-items:center;gap:13px;flex-wrap:wrap}
+.gio-accordion-toggle {display:inline-flex;align-items:center;gap:8px;font-size:.81rem;font-weight:700;color:var(--bs-primary,#206c88)}
+.gio-accordion-hide {display:none}
+.gio-accordion-item[open] .gio-accordion-hide {display:inline}
+.gio-accordion-item[open] .gio-accordion-show {display:none}
+.gio-accordion-chevron {display:inline-block;width:9px;height:9px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .18s ease}
+.gio-accordion-item[open] .gio-accordion-chevron {transform:rotate(135deg)}
+.gio-accordion-item[open] > .gio-accordion-summary {border-bottom:1px solid var(--bs-gray-200,#e6e9ed)}
+.gio-accordion-item:not([open]) > .gio-group-content,.gio-accordion-item:not([open]) > .gio-group-footer {display:none}
 .gio-group-content {padding:18px 20px}
 .gio-doc-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:17px 0}
 .gio-doc {border:1px solid var(--bs-gray-200,#e6e9ed);border-radius:12px;padding:15px 12px;display:flex;flex-direction:column;gap:5px}
@@ -626,6 +644,17 @@
         target.searchParams.set('gio_view', 'results');
         window.location.assign(target.toString());
     }
+
+    // Keep only one supplier/currency group expanded, including older browsers
+    // without support for native <details name="..."> exclusivity.
+    document.querySelectorAll('#gio-sepidar-groups > details.gio-preview-group').forEach(function (panel) {
+        panel.addEventListener('toggle', function () {
+            if (!panel.open) return;
+            document.querySelectorAll('#gio-sepidar-groups > details.gio-preview-group').forEach(function (other) {
+                if (other !== panel && other.open) other.open = false;
+            });
+        });
+    });
 
     document.querySelectorAll('.gio-send-group').forEach(function (button) {
         button.addEventListener('click', function () {

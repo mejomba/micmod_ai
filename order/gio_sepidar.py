@@ -216,14 +216,17 @@ def gio_preview_groups(gio):
         record = saved.get(key)
         status = record.status if record else ('success' if is_legacy else 'pending')
         items = []
+        total_quantity = Decimal('0')
         for row in rows:
             order = row.order
             final_item = order.final_item
+            quantity = _quantity_text(row.quantity)
+            total_quantity += Decimal(quantity)
             items.append({
                 'order_id': order.pk,
                 'order_number': str(order.order_number or order.pk),
                 'part_number': str(getattr(final_item, 'part_number', None) or '-'),
-                'quantity': _quantity_text(row.quantity),
+                'quantity': quantity,
                 'description': row.description or '',
             })
         result.append({
@@ -241,6 +244,7 @@ def gio_preview_groups(gio):
             'voucher': {'id': record.voucher_id, 'number': record.voucher_number} if record else {},
             'items': items,
             'row_count': len(items),
+            'total_quantity': format(total_quantity.normalize(), 'f'),
         })
     return result
 

@@ -1,19 +1,39 @@
 {% if groups %}
 <div class="gio-groups" id="gio-sepidar-groups">
   {% for group in groups %}
-    <article class="gio-group-card gio-preview-group" data-group-key="{{ group.key }}">
-      <header class="gio-group-head">
-        <div>
-          <div class="gio-eyebrow text-muted mb-1">گروه {{ forloop.counter }} · تأمین‌کننده / ارز</div>
-          <h4>{{ group.supplier }} <span class="mx-1 text-muted">/</span> {{ group.currency }}</h4>
-          <p>{{ group.row_count }} ردیف سفارش · کد تأمین‌کننده سپیدار: {{ group.supplier_ref }} · کد ارز: {{ group.currency_ref }}</p>
-        </div>
-        <span class="gio-state gio-state--{{ group.status }}">
-          {% if group.status == 'success' %}ارسال موفق{% elif group.status == 'failed' %}ارسال ناموفق · قابل تلاش مجدد{% elif group.status == 'unknown' %}وضعیت نامشخص · نیازمند بررسی{% elif group.status == 'sending' %}در حال ارسال{% else %}آماده ارسال{% endif %}
+    <details class="gio-group-card gio-preview-group gio-accordion-item" name="gio-sepidar-accordion" data-group-key="{{ group.key }}">
+      <summary class="gio-group-head gio-accordion-summary">
+        <span class="gio-accordion-main">
+          <span class="gio-eyebrow text-muted mb-1">گروه {{ forloop.counter }} · تأمین‌کننده / ارز</span>
+          <span class="gio-accordion-title">{{ group.supplier }} <span class="mx-1 text-muted">/</span> {{ group.currency }}</span>
+          <span class="gio-accordion-stats">
+            <span>{{ group.row_count }} ردیف سفارش</span>
+            <span>مجموع تعداد: {{ group.total_quantity }}</span>
+            <span>۳ سند سپیدار</span>
+          </span>
+          {% if group.status == 'success' and group.invoice.number %}
+            <span class="gio-accordion-numbers">
+              فاکتور خرید: {{ group.invoice.number }}
+              {% if group.receipt.number %} · رسید انبار: {{ group.receipt.number }}{% endif %}
+              {% if group.voucher.number %} · سند حسابداری: {{ group.voucher.number }}{% endif %}
+            </span>
+          {% elif group.status == 'failed' or group.status == 'unknown' %}
+            {% if group.error %}<span class="gio-accordion-error">{{ group.error|truncatechars:100 }}</span>{% endif %}
+          {% endif %}
         </span>
-      </header>
+        <span class="gio-accordion-side">
+          <span class="gio-state gio-state--{{ group.status }}">
+            {% if group.status == 'success' %}ارسال موفق{% elif group.status == 'failed' %}ارسال ناموفق · قابل تلاش مجدد{% elif group.status == 'unknown' %}وضعیت نامشخص · نیازمند بررسی{% elif group.status == 'sending' %}در حال ارسال{% else %}آماده ارسال{% endif %}
+          </span>
+          <span class="gio-accordion-toggle" aria-hidden="true">
+            <span class="gio-accordion-show">مشاهده جزئیات</span>
+            <span class="gio-accordion-hide">بستن جزئیات</span>
+            <span class="gio-accordion-chevron"></span>
+          </span>
+        </span>
+      </summary>
       <div class="gio-group-content">
-        <p class="text-muted fs-8 mb-2">اقلامی که بر اساس اطلاعات فعلی پرتال در این گروه قرار می‌گیرند:</p>
+        <p class="text-muted fs-8 mb-2">اقلامی که بر اساس اطلاعات فعلی پرتال در این گروه قرار می‌گیرند · کد تأمین‌کننده: {{ group.supplier_ref }} · کد ارز: {{ group.currency_ref }}</p>
         <div class="table-responsive">
           <table class="gio-group-table">
             <thead><tr><th>سفارش</th><th>پارت نامبر</th><th>تعداد</th></tr></thead>
@@ -59,7 +79,7 @@
           <button type="button" class="btn btn-light-primary" data-go-tab="documents" onclick="document.querySelector('[data-gio-tab=documents]').click()">مشاهده اسناد ثبت‌شده</button>
         {% endif %}
       </footer>
-    </article>
+    </details>
   {% endfor %}
 </div>
 <div class="gio-alert mt-4">توجه: این پیش‌نمایش از اطلاعات ثبت‌شده در پرتال ساخته می‌شود. تعداد اسناد هر گروه دقیقاً سه مورد است؛ شناسه و شماره واقعی آن‌ها پس از پاسخ موفق سپیدار در تب «اسناد ثبت‌شده» نمایش داده می‌شود.</div>
