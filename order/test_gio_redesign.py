@@ -120,6 +120,13 @@ class GIORedesignTemplateTests(SimpleTestCase):
         cls.preview = (root / 'partial' / 'sepidar' /
                        'trade_buy_factor_preview.html').read_text(encoding='utf-8')
 
+    def test_standalone_preview_loads_humanize_for_intcomma(self):
+        """An included template is also rendered directly by the AJAX preview."""
+        self.assertEqual(self.preview.splitlines()[0], '{% load humanize %}')
+        for name in ('group.row_count', 'group.total_quantity', 'item.quantity'):
+            self.assertIn('{{ ' + name + '|intcomma }}', self.preview)
+        get_template('order/partial/sepidar/trade_buy_factor_preview.html')
+
     def test_django_templates_compile(self):
         get_template('order/gio/quick_gio_update.html')
         get_template('order/partial/sepidar/trade_buy_factor_preview.html')
