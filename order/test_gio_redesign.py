@@ -472,6 +472,48 @@ class GIORedesignTemplateTests(SimpleTestCase):
         self.assertNotIn("اگر سند را در برنامه نمی‌بینید", self.page)
         self.assertIn("پیش از هر ارسال مجدد، اسناد سپیدار را بررسی کنید", self.page)
 
+    def test_failed_and_unknown_groups_can_expand_untruncated_escaped_error(self):
+        from django.utils.html import escape
+        full_error = 'Gateway failed: ' + ('ERR0123456789' * 130) + (
+            '\nSQL: <script>alert("x")</script> | SELECT /api/response'
+        )
+        for status in ('failed', 'unknown'):
+            with self.subTest(status=status):
+                html = render_to_string(
+                    'order/partial/sepidar/gio_group_error.html',
+                    {'group': {'status': status, 'error': full_error}},
+                )
+                self.assertIn('gio-error-details', html)
+                self.assertIn('مشاهده متن کامل خطا', html)
+                self.assertIn('class="gio-error-text"', html)
+                self.assertIn(escape(full_error.split('\n')[0]), html)
+                self.assertIn('\nSQL:', html)
+                self.assertIn('&lt;script&gt;', html)
+                self.assertNotIn('<script>alert("x")</script>', html)
+                self.assertIn('gio-error-copy', html)
+        for status in ('pending', 'success', 'reviewed', 'sending'):
+            self.assertNotIn(
+                'gio-error-details',
+                render_to_string(
+                    'order/partial/sepidar/gio_group_error.html',
+                    {'group': {'status': status, 'error': full_error}},
+                ),
+            )
+
+    def test_all_gio_group_error_surfaces_use_shared_readable_component(self):
+        include = "{% include 'order/partial/sepidar/gio_group_error.html' with group=group %}"
+        self.assertIn(include, self.preview)
+        self.assertIn(include, self.page)
+        self.assertNotIn('<div class="mt-2">{{ group.error }}</div>', self.page)
+        self.assertNotIn('<div class="gio-alert gio-alert--error">{{ group.error }}</div>', self.preview)
+        self.assertIn('{{ group.error|truncatechars:100 }}', self.preview)
+        self.assertIn('.gio-error-full {', self.page)
+        self.assertIn('max-height:320px;overflow:auto', self.page)
+        self.assertIn('white-space:pre-wrap;overflow-wrap:anywhere', self.page)
+        self.assertIn('gio-error-details > summary:focus-visible', self.page)
+        self.assertIn("event.target.closest('.gio-error-copy')", self.page)
+        self.assertIn('navigator.clipboard.writeText(pre.textContent)', self.page)
+
     def test_each_group_has_three_docs_and_independent_retry(self):
         for label in ('فاکتور خرید', 'رسید انبار قبل از مرکزی', 'سند حسابداری'):
             self.assertIn(label, self.preview)

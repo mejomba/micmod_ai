@@ -84,7 +84,19 @@
 .gio-accordion-stats {display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.82rem;color:var(--bs-gray-700,#455468)}
 .gio-accordion-stats > span {border:1px solid var(--bs-gray-300,#d6dce3);background:var(--bs-body-bg,#fff);border-radius:8px;padding:3px 9px}
 .gio-accordion-numbers {font-size:.81rem;color:#147d50;line-height:1.8}
-.gio-accordion-error {font-size:.8rem;color:#b42318;overflow-wrap:anywhere}
+.gio-accordion-error {font-size:.8rem;color:#b42318;min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:break-word;unicode-bidi:plaintext}
+.gio-error-panel {max-width:100%;min-width:0;margin-top:13px;padding:13px 15px;border:1px solid #f2c0b9;border-radius:12px;background:#fff8f6}
+.gio-error-panel-title {font-size:.86rem;font-weight:800;color:#9e2d24;margin-bottom:7px}
+.gio-error-details {max-width:100%;min-width:0}
+.gio-error-details > summary {display:inline-flex;gap:6px;align-items:center;cursor:pointer;font-size:.84rem;font-weight:750;color:#a4312a;list-style:none}
+.gio-error-details > summary::-webkit-details-marker {display:none}
+.gio-error-details > summary:focus-visible {outline:2px solid #a4312a;outline-offset:3px;border-radius:3px}
+.gio-error-details .gio-error-close {display:none}
+.gio-error-details[open] .gio-error-close {display:inline}
+.gio-error-details[open] .gio-error-open {display:none}
+.gio-error-full {max-width:100%;min-width:0;max-height:320px;overflow:auto;overscroll-behavior:contain;margin-top:11px;border:1px solid #ead1ce;border-radius:9px;background:var(--bs-body-bg,#fff)}
+.gio-error-text {display:block;max-width:100%;min-width:0;margin:0;padding:12px;font-size:.8rem;line-height:1.75;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;unicode-bidi:plaintext}
+.gio-group-send-feedback {max-width:100%;overflow-wrap:anywhere;word-break:break-word;white-space:pre-wrap}
 .gio-accordion-side {display:flex;align-items:center;gap:13px;flex-wrap:wrap}
 .gio-accordion-toggle {display:inline-flex;align-items:center;gap:8px;font-size:.81rem;font-weight:700;color:var(--bs-primary,#206c88)}
 .gio-accordion-hide {display:none}
@@ -316,8 +328,8 @@
                         {% elif group.status == 'failed' %}سپیدار درخواست این گروه را نپذیرفته است. از تب پیش‌نمایش می‌توانید تنها این گروه را دوباره ارسال کنید.
                         {% elif group.status == 'sending' %}درخواست ثبت‌شده هنوز تعیین تکلیف نشده است؛ از ارسال مجدد خودداری کنید.
                         {% else %}هنوز سندی برای این گروه ثبت نشده است.{% endif %}
-                        {% if group.error %}<div class="mt-2">{{ group.error }}</div>{% endif %}
                       </div>
+                      {% include 'order/partial/sepidar/gio_group_error.html' with group=group %}
                     {% endif %}
                   </div>
                 </article>
@@ -858,6 +870,29 @@
                 if (other !== panel && other.open) other.open = false;
             });
         });
+    });
+
+    // Delegated handler also works when a group preview is rendered by AJAX.
+    document.addEventListener('click', function (event) {
+        const button = event.target.closest('.gio-error-copy');
+        if (!button) return;
+        const pre = button.closest('.gio-error-panel').querySelector('.gio-error-text');
+        if (!pre) return;
+        function selectErrorForManualCopy() {
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(pre);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            button.textContent = 'متن انتخاب شد؛ برای کپی Ctrl+C بزنید';
+        }
+        if (!navigator.clipboard || !navigator.clipboard.writeText) {
+            selectErrorForManualCopy();
+            return;
+        }
+        navigator.clipboard.writeText(pre.textContent).then(function () {
+            button.textContent = 'متن خطا کپی شد';
+        }).catch(selectErrorForManualCopy);
     });
 
     const reviewModal = document.getElementById('gio-manual-review-modal');

@@ -63,7 +63,7 @@
             {% if group.voucher.id %}<span class="gio-doc-value">شماره {{ group.voucher.number }} / شناسه {{ group.voucher.id }}</span>{% else %}<span class="gio-doc-value">پس از ارسال ایجاد می‌شود</span>{% endif %}
           </div>
         </div>
-        {% if group.error and group.status == 'unknown' %}<div class="gio-alert gio-alert--error">{{ group.error }}</div>{% endif %}
+        {% include 'order/partial/sepidar/gio_group_error.html' with group=group %}
         {% if group.status == 'unknown' %}
           <div class="gio-alert gio-alert--error mt-2" role="alert">
             <strong>هشدار مهم:</strong> ممکن است اسناد این گروه در سپیدار ایجاد شده باشند، حتی اگر پاسخ دریافت نشده است.
