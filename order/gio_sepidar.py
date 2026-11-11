@@ -259,6 +259,42 @@ def gio_preview_groups(gio):
     return result
 
 
+def gio_header_status(gio, statuses):
+    """Return a visually distinct GIO status based on persisted group states."""
+    if gio is None:
+        return {'tone': 'draft', 'label': 'ثبت اولیه'}
+
+    statuses = set(statuses)
+    if 'unknown' in statuses:
+        return {'tone': 'danger', 'label': 'نیازمند بررسی دستی سپیدار'}
+    if 'failed' in statuses:
+        return {'tone': 'danger', 'label': 'ارسال ناموفق به سپیدار'}
+    if 'sending' in statuses:
+        return {'tone': 'warning', 'label': 'در حال ارسال به سپیدار'}
+    if 'reviewed' in statuses:
+        return {'tone': 'warning', 'label': 'بررسی‌شده؛ آماده ارسال مجدد'}
+    if statuses and statuses == {'success'}:
+        return {'tone': 'success', 'label': 'ارسال کامل به سپیدار'}
+    if 'success' in statuses:
+        return {'tone': 'warning', 'label': 'ارسال بخشی از گروه‌ها'}
+    if (gio.sepidar_buy_factor_response_json
+            or gio.sepidar_inventory_receipt_response_json):
+        return {'tone': 'success', 'label': 'ارسال ثبت‌شده در سپیدار'}
+    return {'tone': 'info', 'label': 'ثبت‌شده در پرتال'}
+
+
+def gio_registered_document_count(documents):
+    """Count documented IDs, not planned groups or placeholder documents."""
+    if not isinstance(documents, dict):
+        return 0
+    count = 0
+    for name in ('purchase_invoice', 'before_central_wh_receipt', 'voucher'):
+        ids = documents.get(name)
+        if isinstance(ids, (list, tuple)):
+            count += sum(1 for value in ids if value)
+    return count
+
+
 def gio_document_display(gio):
     """Feed the existing three-column Quick GIO display without changing CSS."""
     legacy = gio.sepidar_buy_factor_response_json

@@ -62,7 +62,7 @@ from .packing_carton_size import reconcile_carton_sizes
 from .gio_sepidar import (
     GIOSepidarError, gio_is_locked, gio_document_display, group_states,
     plan_gio_groups, send_gio_groups, user_can_send_gio, gio_preview_groups,
-    approve_unknown_gio_retry,
+    approve_unknown_gio_retry, gio_header_status, gio_registered_document_count,
 )
 from .form_perm import ORDER_FIELDS_BY_PERMISSION
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
@@ -3590,6 +3590,10 @@ class QuickGIOView(LoginRequiredMixin, View):
             except GIOSepidarError as exc:
                 sepidar_preview_error = str(exc)
 
+        group_statuses = list(
+            gio_object.sepidar_groups.values_list('status', flat=True)
+        ) if gio_object else []
+        sepidar_response = gio_document_display(gio_object) if gio_object else {}
         context = {
             'form': gio_form,
             'formset': gio_item_formset,
@@ -3599,12 +3603,14 @@ class QuickGIOView(LoginRequiredMixin, View):
                 ).order_by('id') if gio_object else GIOItem.objects.none()
             ),
             'gio_is_locked': gio_is_locked(gio_object),
+            'gio_hero_status': gio_header_status(gio_object, group_statuses),
+            'gio_registered_document_count': gio_registered_document_count(sepidar_response),
             'gio_sepidar_can_send': user_can_send_gio(request.user),
             'gio_reconcile_can_review': bool(request.user.is_authenticated and request.user.is_active and request.user.is_superuser),
             'gio_sepidar_groups': sepidar_groups,
-            'gio_has_group_submissions': gio_object.sepidar_groups.exists() if gio_object else False,
+            'gio_has_group_submissions': bool(group_statuses),
             'gio_sepidar_preview_error': sepidar_preview_error,
-            'gio_sepidar_response': gio_document_display(gio_object) if gio_object else {},
+            'gio_sepidar_response': sepidar_response,
         }
         
         return render(request, self.template_name, context)

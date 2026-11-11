@@ -9,7 +9,7 @@ from django.conf import settings
 from django.template.loader import get_template, render_to_string
 from django.test import RequestFactory, SimpleTestCase
 
-from order.gio_sepidar import gio_preview_groups
+from order.gio_sepidar import gio_preview_groups, gio_header_status, gio_registered_document_count
 from order.views import OrderAndSepidar, QuickGIODataTableListView
 
 
@@ -23,6 +23,52 @@ def fake_order(order_id, supplier_ref, currency_ref, part_number):
                                 part_number=part_number, sku='SKU-' + str(order_id)))
     return SimpleNamespace(order=order, order_id=order_id,
                            quantity=3, description='توضیح ردیف')
+
+
+class GIOHeaderPresentationTests(SimpleTestCase):
+    def test_header_tones_cover_draft_saved_complete_partial_and_warnings(self):
+        gio = SimpleNamespace(
+            sepidar_buy_factor_response_json=None,
+            sepidar_inventory_receipt_response_json=None,
+        )
+        cases = [
+            (None, [], 'draft', 'ثبت اولیه'),
+            (gio, [], 'info', 'ثبت‌شده در پرتال'),
+            (gio, ['pending'], 'info', 'ثبت‌شده در پرتال'),
+            (gio, ['success'], 'success', 'ارسال کامل به سپیدار'),
+            (gio, ['success', 'pending'], 'warning', 'ارسال بخشی از گروه‌ها'),
+            (gio, ['sending'], 'warning', 'در حال ارسال به سپیدار'),
+            (gio, ['reviewed'], 'warning', 'بررسی‌شده؛ آماده ارسال مجدد'),
+            (gio, ['failed', 'success'], 'danger', 'ارسال ناموفق به سپیدار'),
+            (gio, ['unknown', 'success'], 'danger', 'نیازمند بررسی دستی سپیدار'),
+            (gio, ['unknown', 'failed'], 'danger', 'نیازمند بررسی دستی سپیدار'),
+        ]
+        for obj, statuses, tone, label in cases:
+            with self.subTest(statuses=statuses):
+                self.assertEqual(gio_header_status(obj, statuses), {
+                    'tone': tone, 'label': label,
+                })
+        legacy_gio = SimpleNamespace(
+            sepidar_buy_factor_response_json={'purchase_invoice': [1001]},
+            sepidar_inventory_receipt_response_json=None,
+        )
+        self.assertEqual(gio_header_status(legacy_gio, [])['tone'], 'success')
+
+    def test_registered_documents_badge_counts_real_ids_not_group_slots(self):
+        response = {
+            'purchase_invoice': [101, 201],
+            'before_central_wh_receipt': [102, 202],
+            'voucher': [103, 203],
+        }
+        self.assertEqual(gio_registered_document_count(response), 6)
+        self.assertEqual(gio_registered_document_count({
+            'purchase_invoice': [101, None],
+            'before_central_wh_receipt': [0],
+            'voucher': [],
+        }), 1)
+        self.assertEqual(gio_registered_document_count({}), 0)
+        self.assertEqual(gio_registered_document_count(None), 0)
+        self.assertEqual(gio_registered_document_count({'voucher': 'ACC-123'}), 0)
 
 
 class GIORedesignPreviewTests(SimpleTestCase):
@@ -374,11 +420,26 @@ class GIORedesignTemplateTests(SimpleTestCase):
         self.assertIn("showGioGroupMessage(groupKey, uncertain", self.page)
         self.assertIn("target.searchParams.set('gio_review_group', currentReviewGroup)", self.page)
 
+    def test_steps_removed_and_registered_documents_have_count_badge(self):
+        self.assertNotIn('class="gio-steps"', self.page)
+        self.assertNotIn('class="gio-step"', self.page)
+        self.assertNotIn('.gio-steps {', self.page)
+        self.assertIn('gio_registered_document_count', self.page)
+        self.assertIn('aria-label="{{ gio_registered_document_count }} سند"', self.page)
+        self.assertIn('{{ gio_registered_document_count|intcomma }}', self.page)
+        self.assertIn('gio-tab-count--empty', self.page)
+
+    def test_hero_status_uses_server_derived_severity_and_color(self):
+        self.assertIn('gio-hero-status--{{ gio_hero_status.tone }}', self.page)
+        self.assertIn('{{ gio_hero_status.label }}', self.page)
+        for tone in ('draft', 'info', 'warning', 'danger', 'success'):
+            self.assertIn('.gio-hero-status--' + tone, self.page)
+
     def test_previous_sepidar_app_visibility_disclaimer_is_removed(self):
         self.assertNotIn("قابل‌مشاهده بودن سند حسابداری", self.page)
         self.assertNotIn("وجود شناسه یا رکورد در دیتابیس", self.page)
         self.assertNotIn("اگر سند را در برنامه نمی‌بینید", self.page)
-        self.assertIn("بدون بررسی ارسال مجدد نکنید", self.page)
+        self.assertIn("پیش از هر ارسال مجدد، اسناد سپیدار را بررسی کنید", self.page)
 
     def test_each_group_has_three_docs_and_independent_retry(self):
         for label in ('فاکتور خرید', 'رسید انبار قبل از مرکزی', 'سند حسابداری'):

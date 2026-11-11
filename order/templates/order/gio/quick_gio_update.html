@@ -18,10 +18,15 @@
 .gio-hero h2 {color:#fff;font-weight:800;font-size:1.55rem;margin:6px 0}
 .gio-hero p {color:#d0e6eb;font-size:.94rem;margin:0}
 .gio-eyebrow {letter-spacing:.055em;font-size:.75rem;font-weight:700;opacity:.9}
-.gio-hero-status {display:inline-flex;gap:8px;align-items:center;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.24);padding:10px 14px;border-radius:12px;font-weight:700}
-.gio-steps {display:flex;gap:9px;margin:18px 0 14px;flex-wrap:wrap}
-.gio-steps .gio-step {border:1px solid var(--bs-gray-300,#d6dce3);background:var(--bs-body-bg,#fff);padding:9px 14px;border-radius:12px;font-size:.86rem}
-.gio-steps .gio-step strong {display:inline-flex;width:24px;height:24px;align-items:center;justify-content:center;border-radius:50%;background:var(--bs-light,#eef2f6);margin-left:6px}
+.gio-hero-status {display:inline-flex;gap:10px;align-items:center;border:1px solid transparent;padding:10px 14px;border-radius:12px;font-weight:800;line-height:1.6}
+.gio-hero-status::before {content:"";width:10px;height:10px;border-radius:50%;flex:none;background:currentColor}
+.gio-hero-status--draft {background:#f1f5f9;border-color:#cbd5e1;color:#475569}
+.gio-hero-status--info {background:#e0f2fe;border-color:#7dd3fc;color:#075985}
+.gio-hero-status--warning {background:#fef3c7;border-color:#fcd34d;color:#92400e}
+.gio-hero-status--danger {background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+.gio-hero-status--success {background:#dcfce7;border-color:#86efac;color:#166534}
+.gio-tab-count {display:inline-flex;align-items:center;justify-content:center;min-width:23px;height:23px;padding:0 7px;margin-inline-start:7px;background:#dbeafe;color:#1d4ed8;border-radius:16px;font-size:.79rem;font-weight:800;direction:ltr;vertical-align:middle}
+.gio-tab-count--empty {background:var(--bs-gray-200,#e5e7eb);color:var(--bs-gray-600,#667085)}
 .gio-tabs {display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--bs-gray-300,#d6dce3);padding:10px 0;margin-bottom:20px;flex-wrap:wrap}
 .gio-tabs button {border:0;background:transparent;border-radius:9px 9px 0 0;color:var(--bs-gray-600,#667085);padding:12px 18px;font-weight:700;position:relative}
 .gio-tabs button[aria-selected=true] {background:var(--bs-light,#f1f6f9);color:var(--bs-primary,#206c88)}
@@ -132,20 +137,15 @@
             <h2>{% if form.instance.pk %}سند GIO شماره {{ form.instance.pk }}{% else %}ایجاد سند GIO{% endif %}</h2>
             <p>ثبت اقلام در پرتال، بررسی تفکیک تأمین‌کننده و ارز، سپس صدور اسناد سپیدار</p>
           </div>
-          <div class="gio-hero-status">
-            {% if gio_is_locked %}سند قفل شده / ارسال به سپیدار{% elif form.instance.pk %}ثبت‌شده در پرتال{% else %}ثبت اولیه{% endif %}
+          <div class="gio-hero-status gio-hero-status--{{ gio_hero_status.tone }}" role="status">
+            {{ gio_hero_status.label }}
           </div>
         </header>
-        <div class="gio-steps" aria-label="مراحل ثبت">
-          <span class="gio-step"><strong>۱</strong>ثبت سند و ردیف‌ها</span>
-          <span class="gio-step"><strong>۲</strong>پیش‌نمایش گروه‌ها</span>
-          <span class="gio-step"><strong>۳</strong>ارسال و بررسی ۳ سند هر گروه</span>
-        </div>
 
         <nav class="gio-tabs" role="tablist" aria-label="بخش‌های GIO">
           <button type="button" role="tab" aria-selected="true" aria-controls="gio-stage-editor" data-gio-tab="editor">سند و اقلام</button>
           <button type="button" role="tab" aria-selected="false" aria-controls="gio-stage-preview" data-gio-tab="preview" {% if not form.instance.pk %}disabled title="ابتدا سند را ثبت کنید"{% endif %}>پیش‌نمایش سپیدار</button>
-          <button type="button" role="tab" aria-selected="false" aria-controls="gio-stage-documents" data-gio-tab="documents" {% if not form.instance.pk %}disabled title="ابتدا سند را ثبت کنید"{% endif %}>اسناد ثبت‌شده</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="gio-stage-documents" data-gio-tab="documents" {% if not form.instance.pk %}disabled title="ابتدا سند را ثبت کنید"{% endif %}>اسناد ثبت‌شده <span class="gio-tab-count{% if not gio_registered_document_count %} gio-tab-count--empty{% endif %}" aria-label="{{ gio_registered_document_count }} سند">{{ gio_registered_document_count|intcomma }}</span></button>
         </nav>
 
         <section id="gio-stage-editor" class="gio-tab-pane" role="tabpanel" data-gio-panel="editor">
