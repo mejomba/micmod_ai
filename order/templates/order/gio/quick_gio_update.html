@@ -89,6 +89,8 @@
 .gio-accordion-item[open] .gio-accordion-chevron {transform:rotate(135deg)}
 .gio-accordion-item[open] > .gio-accordion-summary {border-bottom:1px solid var(--bs-gray-200,#e6e9ed)}
 .gio-accordion-item:not([open]) > .gio-group-content,.gio-accordion-item:not([open]) > .gio-group-footer {display:none}
+.gio-group-send-feedback {margin:12px 20px 0;scroll-margin-top:100px}
+.gio-group-send-feedback[hidden] {display:none!important}
 .gio-group-content {padding:18px 20px}
 .gio-doc-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:17px 0}
 .gio-doc {border:1px solid var(--bs-gray-200,#e6e9ed);border-radius:12px;padding:15px 12px;display:flex;flex-direction:column;gap:5px}
@@ -316,9 +318,6 @@
           {% endif %}
         </section>
 
-        <div class="gio-alert gio-alert--warning mt-3">
-          شناسه و شماره اسناد این صفحه بر اساس پاسخ API سفارشی سپیدار هستند. وجود شناسه یا رکورد در دیتابیس، تأیید قابل‌مشاهده بودن سند حسابداری در نرم‌افزار سپیدار نیست. اگر سند را در برنامه نمی‌بینید، وضعیت سند و تنظیمات سال مالی را بررسی کنید و برای رفع مشکل ارسال مجدد نکنید.
-        </div>
         {{ gio_sepidar_groups|json_script:"gio-sepidar-group-data" }}
       </main>
     </div>
@@ -451,29 +450,58 @@
         loadedUrl.searchParams.delete('gio_saved');
         window.history.replaceState(null, '', loadedUrl.toString());
     }
-    if (loadedUrl.searchParams.get('gio_reviewed') === '1') {
-        notify('بررسی دستی ثبت شد. این گروه اکنون فقط با انتخاب صریح قابل ارسال مجدد است.', false, 'gio-send-message');
-        loadedUrl.searchParams.delete('gio_reviewed');
-        window.history.replaceState(null, '', loadedUrl.toString());
-    }
-    const sendNotice = loadedUrl.searchParams.get('gio_send_notice');
-    if (sendNotice) {
-        const sent = sendNotice === 'success';
-        const message = sent
-            ? 'ارسال گروه با پاسخ موفق ثبت شد و آخرین وضعیت از سرور بارگذاری شد. توجه: قابل‌مشاهده بودن سند حسابداری در نرم‌افزار سپیدار باید جداگانه بررسی شود.'
-            : sendNotice === 'failed'
-                ? 'سپیدار درخواست این گروه را رد کرده است؛ خطای گروه را بررسی کنید.'
-                : 'وضعیت این گروه قطعی نیست. پیش از هر اقدام، فاکتور خرید، رسید انبار و سند حسابداری را در سپیدار بررسی کنید؛ بدون بررسی ارسال مجدد نکنید.';
-        notify(message, !sent, 'gio-send-message');
-        loadedUrl.searchParams.delete('gio_send_notice');
-        window.history.replaceState(null, '', loadedUrl.toString());
-    }
-
     function notify(text, error, containerId) {
         const element = document.getElementById(containerId || 'ajax-response');
         if (!element) return;
         element.className = 'gio-alert mt-3 ' + (error ? 'gio-alert--error' : 'gio-alert--success');
         element.textContent = String(text || '');
+    }
+
+    function showGioGroupMessage(groupKey, message, error) {
+        const groups = document.querySelectorAll('#gio-sepidar-groups > details.gio-preview-group');
+        const panel = Array.from(groups).find(function (item) {
+            return item.dataset.groupKey === groupKey;
+        });
+        if (!panel) {
+            // Only use the general area if the group no longer exists on this page.
+            notify(message, error, 'gio-send-message');
+            return;
+        }
+        groups.forEach(function (item) {
+            if (item !== panel && item.open) item.open = false;
+        });
+        panel.open = true;
+        const feedback = panel.querySelector('.gio-group-send-feedback');
+        if (!feedback) return;
+        feedback.hidden = false;
+        feedback.className = 'gio-group-send-feedback gio-alert ' +
+            (error ? 'gio-alert--error' : 'gio-alert--success');
+        feedback.textContent = String(message || '');
+        feedback.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+
+    if (loadedUrl.searchParams.get('gio_reviewed') === '1') {
+        showGioGroupMessage(
+            loadedUrl.searchParams.get('gio_review_group'),
+            'بررسی دستی ثبت شد. این گروه اکنون فقط با انتخاب صریح قابل ارسال مجدد است.', false
+        );
+        loadedUrl.searchParams.delete('gio_reviewed');
+        loadedUrl.searchParams.delete('gio_review_group');
+        window.history.replaceState(null, '', loadedUrl.toString());
+    }
+    const sendNotice = loadedUrl.searchParams.get('gio_send_notice');
+    const sendGroup = loadedUrl.searchParams.get('gio_send_group');
+    if (sendNotice) {
+        const sent = sendNotice === 'success';
+        const message = sent
+            ? 'ارسال این گروه با موفقیت ثبت شد. آخرین وضعیت و شماره اسناد به‌روزرسانی شده است.'
+            : sendNotice === 'failed'
+                ? 'ارسال این گروه ناموفق بود. جزئیات خطای گروه را بررسی کنید.'
+                : 'وضعیت ارسال این گروه قطعی نیست. پیش از هر ارسال مجدد، اسناد سپیدار را بررسی کنید.';
+        showGioGroupMessage(sendGroup, message, !sent);
+        loadedUrl.searchParams.delete('gio_send_notice');
+        loadedUrl.searchParams.delete('gio_send_group');
+        window.history.replaceState(null, '', loadedUrl.toString());
     }
 
     function updateQueue() {
@@ -705,11 +733,12 @@
         });
     });
 
-    function refreshGioSendResult(status) {
-        // A query marker guarantees a full GET even if the current hash is the
-        // same; on load it is removed without a second network request.
+    function refreshGioSendResult(status, groupKey) {
+        // Preserve the exact group across the full GET so only its own
+        // accordion displays the success/failure notice after reload.
         const target = new URL(window.location.href);
         target.searchParams.set('gio_send_notice', status);
+        target.searchParams.set('gio_send_group', groupKey);
         target.hash = 'gio-preview';
         window.location.replace(target.toString());
     }
@@ -793,6 +822,7 @@
                 success:function () {
                     const target = new URL(window.location.href);
                     target.searchParams.set('gio_reviewed', '1');
+                    target.searchParams.set('gio_review_group', currentReviewGroup);
                     target.hash = 'gio-preview';
                     window.location.assign(target.toString());
                 },
@@ -818,6 +848,7 @@
             const groupKey = button.dataset.groupKey;
             button.disabled = true;
             button.textContent = 'در حال ارسال...';
+            showGioGroupMessage(groupKey, 'در حال ارسال این گروه به سپیدار...', false);
             $.ajax({
                 type:'POST',
                 url:"{% url 'order:order_and_sepidar' %}?view_name=trade_buy_factor",
@@ -831,11 +862,11 @@
                 success:function (response) {
                     const group = gioGroupResult(response, groupKey);
                     if (group && group.status === 'success') {
-                        notify('پاسخ ثبت این گروه از سپیدار با موفقیت دریافت شد. در حال دریافت آخرین وضعیت...', false, 'gio-send-message');
-                        refreshGioSendResult('success');
+                        showGioGroupMessage(groupKey, 'گروه با موفقیت ثبت شد. در حال دریافت آخرین وضعیت...', false);
+                        refreshGioSendResult('success', groupKey);
                     } else {
                         // Missing/ambiguous results must never trigger an automatic resend.
-                        notify('پاسخ سرور وضعیت قطعی این گروه را نشان نمی‌دهد. صفحه را بازخوانی و اسناد سپیدار را بررسی کنید؛ ارسال مجدد نکنید.', true, 'gio-send-message');
+                        showGioGroupMessage(groupKey, 'پاسخ سرور وضعیت قطعی این گروه را نشان نمی‌دهد. صفحه را بازخوانی و اسناد سپیدار را بررسی کنید؛ ارسال مجدد نکنید.', true);
                         button.textContent = 'بررسی وضعیت الزامی است';
                     }
                 },
@@ -847,14 +878,15 @@
                         // Refresh with a notice for the actual selected group.
                         refreshGioSendResult(
                             group.status === 'success' ? 'success' :
-                            group.status === 'failed' ? 'failed' : 'uncertain'
+                            group.status === 'failed' ? 'failed' : 'uncertain',
+                            groupKey
                         );
                         return;
                     }
                     const uncertain = xhr.status === 0 || xhr.status >= 500 || xhr.status === 409;
-                    notify(uncertain
+                    showGioGroupMessage(groupKey, uncertain
                         ? 'نتیجه ارسال قطعی نیست. صفحه را بازخوانی و اسناد سپیدار را بررسی کنید؛ ارسال مجدد نکنید.'
-                        : (response.error || 'درخواست رد شد؛ اطلاعات را بررسی کنید.'), true, 'gio-send-message');
+                        : (response.error || 'درخواست رد شد؛ اطلاعات را بررسی کنید.'), true);
                     button.textContent = uncertain ? 'بررسی وضعیت الزامی است' : originalLabel;
                     if (!uncertain) button.disabled = false;
                 }

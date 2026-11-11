@@ -346,11 +346,14 @@ class GIORedesignTemplateTests(SimpleTestCase):
         self.assertIn("data-quantity=\"{{ gio.quantity }}\"", self.page)
         self.assertIn("field.value = maxQuantity", self.page)
 
-    def test_send_response_reloads_preview_and_shows_exact_group_status(self):
-        self.assertIn("function refreshGioSendResult(status)", self.page)
+    def test_send_response_reloads_exact_group_and_shows_in_card(self):
+        self.assertIn("function refreshGioSendResult(status, groupKey)", self.page)
         self.assertIn("target.searchParams.set('gio_send_notice', status)", self.page)
+        self.assertIn("target.searchParams.set('gio_send_group', groupKey)", self.page)
         self.assertIn("window.location.replace(target.toString())", self.page)
         self.assertIn("loadedUrl.searchParams.delete('gio_send_notice')", self.page)
+        self.assertIn("loadedUrl.searchParams.delete('gio_send_group')", self.page)
+        self.assertIn("showGioGroupMessage(sendGroup, message, !sent)", self.page)
         self.assertIn("function gioGroupResult(response, key)", self.page)
         self.assertIn("group.key === key", self.page)
         self.assertIn("group && group.status === 'success'", self.page)
@@ -359,9 +362,22 @@ class GIORedesignTemplateTests(SimpleTestCase):
         self.assertIn("بررسی وضعیت الزامی است", self.page)
         self.assertNotIn("success:showUpdatedDocuments", self.page)
 
-    def test_success_receipt_warning_does_not_equate_api_id_to_visible_voucher(self):
-        self.assertIn("قابل‌مشاهده بودن سند حسابداری", self.page)
-        self.assertIn("وجود شناسه یا رکورد در دیتابیس", self.page)
+    def test_success_error_and_processing_feedback_stay_inside_correct_group(self):
+        self.assertIn('gio-group-send-feedback', self.preview)
+        self.assertIn('aria-live="polite"', self.preview)
+        self.assertIn("function showGioGroupMessage(groupKey, message, error)", self.page)
+        self.assertIn("item.dataset.groupKey === groupKey", self.page)
+        self.assertIn("panel.open = true", self.page)
+        self.assertIn("panel.querySelector('.gio-group-send-feedback')", self.page)
+        self.assertIn("feedback.textContent = String(message || '')", self.page)
+        self.assertIn("showGioGroupMessage(groupKey, 'در حال ارسال", self.page)
+        self.assertIn("showGioGroupMessage(groupKey, uncertain", self.page)
+        self.assertIn("target.searchParams.set('gio_review_group', currentReviewGroup)", self.page)
+
+    def test_previous_sepidar_app_visibility_disclaimer_is_removed(self):
+        self.assertNotIn("قابل‌مشاهده بودن سند حسابداری", self.page)
+        self.assertNotIn("وجود شناسه یا رکورد در دیتابیس", self.page)
+        self.assertNotIn("اگر سند را در برنامه نمی‌بینید", self.page)
         self.assertIn("بدون بررسی ارسال مجدد نکنید", self.page)
 
     def test_each_group_has_three_docs_and_independent_retry(self):
