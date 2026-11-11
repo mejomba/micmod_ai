@@ -359,9 +359,18 @@ class GIORedesignTemplateTests(SimpleTestCase):
         self.assertIn('name="gio-sepidar-accordion"', html)
         self.assertNotIn(' name="gio-sepidar-accordion" open', html)
         for value in ('تأمین‌کننده اول', 'Dollar', '2 ردیف سفارش',
-                      'مجموع تعداد: 6', '۳ سند سپیدار', 'ارسال موفق',
+                      'مجموع تعداد: 6', 'ارسال موفق',
                       'INV-77', 'REC-78', 'ACC-79', 'آماده ارسال'):
             self.assertIn(value, html)
+        self.assertEqual(html.count('class="gio-eyebrow gio-accordion-heading"'), 2)
+        self.assertEqual(html.count('class="gio-accordion-group-label"'), 2)
+        self.assertIn('گروه 1 ·', html)
+        self.assertIn('گروه 2 ·', html)
+        self.assertNotIn('تأمین‌کننده / ارز', html)
+        self.assertNotIn('۳ سند سپیدار', html)
+        self.assertNotIn('class="gio-accordion-title"', html)
+        self.assertIn('class="gio-eyebrow gio-accordion-heading"', self.preview)
+        self.assertIn('.gio-accordion-heading strong {font-weight:800}', self.page)
         self.assertIn('data-group-key="202___2"', html)
         self.assertIn('gio-send-group', html)
         self.assertIn('ORD-22', html)
