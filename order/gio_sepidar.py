@@ -6,12 +6,15 @@ that transaction committed; such a group must never be automatically retried.
 """
 from collections import OrderedDict
 from decimal import Decimal, InvalidOperation
+import re
 
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
-from order.models import GIO, GIOSepidarGroup, GIOSepidarManualReview, SepidarOrderDocument
+from order.models import (GIO, GIOSepidarGroup, GIOSepidarManualReview,
+                          GIOSepidarManualDocumentEntry, SepidarOrderDocument)
 from sepidar.api_call import SepidarApiCall
 from sepidar.data import SepidarDataFactory
 
@@ -153,8 +156,12 @@ def _document_value(group):
     }
 
 
-def _record_order_documents(group, rows):
-    """Update the legacy per-order ledger only after all 3 IDs are verified."""
+def _record_order_documents(group, rows, *, previous_invoice_id=None):
+    """Sync the per-order ledger after 3 IDs are verified.
+
+    Manual corrections replace the previous group's entry rather than leaving
+    an incorrect old voucher triple alongside the newly verified one.
+    """
     document = _document_value(group)
     for order_id in sorted({row.order_id for row in rows}):
         existing, _ = SepidarOrderDocument.objects.select_for_update().get_or_create(
@@ -165,11 +172,20 @@ def _record_order_documents(group, rows):
         if not isinstance(gio_data, dict):
             raise GIOSepidarError('Unexpected legacy order document format.')
         invoices = list(gio_data.get('sepidar') or [])
-        if not any(
-            str((item.get('purchase_invoice') or {}).get('id')) == str(group.invoice_id)
-            for item in invoices if isinstance(item, dict)
-        ):
+        # Prefer replacing the record originally attributed to this group.
+        # Do not disturb Sepidar records of other GIO groups/orders.
+        index = next((
+            i for i, item in enumerate(invoices)
+            if isinstance(item, dict) and (
+                (previous_invoice_id is not None and
+                 str((item.get('purchase_invoice') or {}).get('id')) == str(previous_invoice_id))
+                or str((item.get('purchase_invoice') or {}).get('id')) == str(group.invoice_id)
+            )
+        ), None)
+        if index is None:
             invoices.append(document)
+        else:
+            invoices[index] = document
         gio_data['sepidar'] = invoices
         data['gio'] = gio_data
         existing.data = data
@@ -223,6 +239,13 @@ def gio_preview_groups(gio):
             'at': timezone.localtime(review.created_at).strftime('%Y-%m-%d %H:%M'),
             'reason': review.reason,
         } if review else None
+        entry = (record.manual_document_entries.select_related('actor').first()
+                 if record and hasattr(record, 'manual_document_entries') else None)
+        entry_display = {
+            'actor': str(entry.actor),
+            'at': timezone.localtime(entry.created_at).strftime('%Y-%m-%d %H:%M'),
+            'reason': entry.reason,
+        } if entry else None
         items = []
         total_quantity = Decimal('0')
         for row in rows:
@@ -247,6 +270,7 @@ def gio_preview_groups(gio):
             'status': status,
             'can_send': not is_legacy and status in ('pending', 'failed', 'reviewed'),
             'manual_review': review_display,
+            'manual_document_entry': entry_display,
             'error': record.last_error if record else '',
             'attempts': record.attempt_count if record else 0,
             'invoice': {'id': record.invoice_id, 'number': record.invoice_number} if record else {},
@@ -387,6 +411,148 @@ def approve_unknown_gio_retry(gio, user, *, group_key, confirmed_group,
         )
         record.status = 'reviewed'
         record.save(update_fields=['status'])
+        return record
+
+
+def _manual_document_identifiers(documents):
+    """Validate three complete ID/number pairs (IDs stored as BIGINT)."""
+    if not isinstance(documents, dict):
+        raise GIOSepidarError('اطلاعات سه سند سپیدار معتبر نیست.')
+    fields = {}
+    for prefix, title in (
+        ('invoice', 'فاکتور خرید'),
+        ('receipt', 'رسید انبار'),
+        ('voucher', 'سند حسابداری'),
+    ):
+        data = documents.get(prefix)
+        if not isinstance(data, dict):
+            raise GIOSepidarError('شناسه و شماره %s الزامی است.' % title)
+        raw_id = data.get('id')
+        if isinstance(raw_id, bool) or not isinstance(raw_id, (str, int)):
+            raise GIOSepidarError('شناسه %s باید عدد صحیح مثبت باشد.' % title)
+        identifier_text = str(raw_id).strip()
+        if not re.fullmatch(r'[0-9]{1,19}', identifier_text):
+            raise GIOSepidarError('شناسه %s باید عدد صحیح مثبت باشد.' % title)
+        identifier = int(identifier_text)
+        if not 0 < identifier <= 9223372036854775807:
+            raise GIOSepidarError('شناسه %s خارج از محدوده مجاز است.' % title)
+        number = data.get('number')
+        if not isinstance(number, str):
+            raise GIOSepidarError('شماره %s الزامی است.' % title)
+        number = number.strip()
+        if not number or len(number) > 64 or any(c in number for c in '\r\n'):
+            raise GIOSepidarError('شماره %s باید بین ۱ تا ۶۴ کاراکتر باشد.' % title)
+        fields[prefix + '_id'] = identifier
+        fields[prefix + '_number'] = number
+    return fields
+
+
+def manual_save_gio_sepidar_documents(
+    gio, user, *, group_key, confirmed_group, reason, documents,
+    verified, overwrite_confirmed=False,
+):
+    """Register/correct all three Sepidar documents for one selected GIO group.
+
+    This is a *local-only* reconciliation: no API write is made to Sepidar.
+    All changes and ledger synchronization are atomic and audited.
+    """
+    if not (user and getattr(user, 'is_authenticated', False)
+            and getattr(user, 'is_active', False)
+            and getattr(user, 'is_superuser', False)):
+        raise PermissionError('Only an active superuser can register documents manually.')
+    if not isinstance(group_key, str) or not group_key:
+        raise GIOSepidarError('گروه سپیدار مشخص نشده است.')
+    if confirmed_group != group_key or verified is not True:
+        raise GIOSepidarError('تأیید بررسی واقعی اسناد و کد دقیق گروه الزامی است.')
+    if not isinstance(reason, str) or not 20 <= len(reason.strip()) <= 2000:
+        raise GIOSepidarError('شرح بررسی باید بین ۲۰ تا ۲۰۰۰ کاراکتر باشد.')
+    fields = _manual_document_identifiers(documents)
+
+    with transaction.atomic():
+        locked_gio = GIO.objects.select_for_update().get(pk=gio.pk, is_deleted=False)
+        planned = plan_gio_groups(locked_gio)
+        if group_key not in planned:
+            raise GIOSepidarError('گروه انتخاب‌شده در GIO وجود ندارد.')
+
+        record = GIOSepidarGroup.objects.select_for_update().filter(
+            gio=locked_gio, group_key=group_key,
+        ).first()
+        # Do not mix the old ungrouped legacy response with new group records.
+        if locked_gio.sepidar_inventory_receipt_response_json or (
+            locked_gio.sepidar_buy_factor_response_json
+            and not GIOSepidarGroup.objects.filter(gio=locked_gio).exists()
+        ):
+            raise GIOSepidarError('اسناد قدیمی فاقد گروه‌بندی قابل ثبت دستی نیستند.')
+
+        if record and record.status == 'sending':
+            raise GIOSepidarError('در حین ارسال فعال، ویرایش دستی اسناد ممنوع است.')
+        if record and record.status == 'success' and overwrite_confirmed is not True:
+            raise GIOSepidarError('برای اصلاح یک گروه موفق، تأیید جایگزینی اطلاعات الزامی است.')
+
+        rows = planned[group_key]
+        snapshot = snapshot_for_group(rows)
+        if record and record.items_snapshot and record.items_snapshot != snapshot:
+            raise GIOSepidarError('اقلام گروه نسبت به اطلاعات زمان ارسال تغییر کرده‌اند.')
+
+        # Sepidar document IDs are global: reject reusing the same remote ID
+        # in any GIO, not only a different group within this GIO.
+        conflicts = GIOSepidarGroup.objects.select_for_update().filter(
+            Q(invoice_id=fields['invoice_id']) |
+            Q(receipt_id=fields['receipt_id']) |
+            Q(voucher_id=fields['voucher_id'])
+        )
+        if record:
+            conflicts = conflicts.exclude(pk=record.pk)
+        if conflicts.exists():
+            raise GIOSepidarError('حداقل یکی از شناسه‌های واردشده در GIO دیگری یا گروه دیگری ثبت شده است.')
+
+        previous_documents = ({
+            prefix: {'id': getattr(record, prefix + '_id'),
+                     'number': getattr(record, prefix + '_number')}
+            for prefix in ('invoice', 'receipt', 'voucher')
+        } if record else {})
+        previous_status = record.status if record else ''
+        old_invoice_id = record.invoice_id if record else None
+        if record and record.status == 'success' and all(
+            getattr(record, name) == value for name, value in fields.items()
+        ):
+            raise GIOSepidarError('اطلاعات واردشده با مقادیر موجود یکسان است.')
+
+        if record is None:
+            record = GIOSepidarGroup(gio=locked_gio, group_key=group_key)
+        record.items_snapshot = snapshot
+        for name, value in fields.items():
+            setattr(record, name, value)
+        record.status = 'success'
+        record.last_error = ''
+        # sent_at is not set for manual records: remote send time is unknown.
+        record.save()
+
+        GIOSepidarManualDocumentEntry.objects.create(
+            group=record, actor=user, reason=reason.strip(),
+            previous_status=previous_status,
+            previous_documents=previous_documents,
+            new_documents={
+                prefix: {'id': fields[prefix + '_id'],
+                         'number': fields[prefix + '_number']}
+                for prefix in ('invoice', 'receipt', 'voucher')
+            },
+        )
+        _record_order_documents(record, rows, previous_invoice_id=old_invoice_id)
+
+        # Keep the existing summary response in sync, including corrections
+        # made to an already completed, grouped GIO.
+        saved = {
+            x.group_key: x for x in GIOSepidarGroup.objects.select_for_update().filter(
+                gio=locked_gio,
+            )
+        }
+        if all(key in saved and saved[key].status == 'success' for key in planned):
+            GIO.objects.filter(pk=locked_gio.pk).update(sepidar_buy_factor_response_json={
+                'purchase_invoice': [saved[key].invoice_id for key in planned],
+                'before_central_wh_receipt': [saved[key].receipt_id for key in planned],
+                'voucher': [saved[key].voucher_id for key in planned],
+            })
         return record
 
 

@@ -113,10 +113,17 @@
 .gio-state--reviewed {background:#e6efff;color:#2257a7}
 .gio-review-checks {display:grid;gap:10px;margin:15px 0}
 .gio-review-checks label {display:flex;align-items:flex-start;gap:9px;padding:12px;border:1px solid #e9c0bd;border-radius:9px;background:#fff8f7;cursor:pointer}
+.gio-review-checks label[hidden] {display:none!important}
 .gio-review-checks input {margin-top:4px;flex-shrink:0}
 .gio-review-warning {border:2px solid #bf3530;background:#fff1f0;color:#8c231e;font-weight:650;border-radius:12px;padding:15px;line-height:1.95}
 .gio-review-code {direction:ltr;display:inline-block;padding:3px 7px;background:#f0f3f5;border-radius:5px;font-weight:700}
 .gio-review-modal-label {font-size:.87rem;font-weight:700;margin:14px 0 6px;display:block}
+.gio-manual-doc-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}
+.gio-manual-doc-card {border:1px solid var(--bs-gray-300,#d6dce3);background:var(--bs-body-bg,#fff);border-radius:12px;padding:13px;min-width:0}
+.gio-manual-doc-card h6 {font-size:.9rem;font-weight:800;margin:0 0 10px}
+.gio-manual-doc-card label {display:block;font-size:.8rem;font-weight:700;margin:9px 0 5px}
+.gio-manual-doc-card input {direction:ltr;text-align:left}
+@media(max-width:840px){.gio-manual-doc-grid{grid-template-columns:1fr}}
 .gio-document-actions {display:flex;flex-wrap:wrap;gap:7px}
 .gio-document-actions .btn {font-size:.81rem}
 .gio-empty {border:1px dashed var(--bs-gray-300,#cbd5e1);border-radius:13px;padding:24px;text-align:center;color:var(--bs-gray-600,#667085)}
@@ -281,6 +288,21 @@
                       {% if group.status == 'success' %}ثبت موفق{% elif group.status == 'unknown' %}نیازمند بررسی دستی{% elif group.status == 'failed' %}ارسال ناموفق{% elif group.status == 'sending' %}در حال ارسال{% else %}ارسال نشده{% endif %}
                     </span>
                   </div>
+                  {% if gio_can_manual_save_sepidar and group.status != 'sending' %}
+                    <div class="gio-group-content pb-0">
+                      <button type="button" class="btn btn-sm btn-light-primary gio-manual-sepidar-open"
+                    data-group-key="{{ group.key }}" data-status="{{ group.status }}"
+                    data-invoice-id="{{ group.invoice.id|default_if_none:'' }}"
+                    data-invoice-number="{{ group.invoice.number|default_if_none:'' }}"
+                    data-receipt-id="{{ group.receipt.id|default_if_none:'' }}"
+                    data-receipt-number="{{ group.receipt.number|default_if_none:'' }}"
+                    data-voucher-id="{{ group.voucher.id|default_if_none:'' }}"
+                    data-voucher-number="{{ group.voucher.number|default_if_none:'' }}"
+                    data-bs-toggle="modal" data-bs-target="#gio-manual-sepidar-modal">
+              {% if group.status == 'success' %}اصلاح اطلاعات سپیدار{% else %}ثبت دستی اطلاعات سپیدار{% endif %}
+            </button>
+                    </div>
+                  {% endif %}
                   <div class="gio-group-content">
                     {% if group.status == 'success' and group.invoice.id %}
                       <div class="gio-doc-grid">
@@ -358,6 +380,76 @@
           <button type="button" class="btn btn-light-secondary" data-bs-dismiss="modal">انصراف؛ گروه مسدود بماند</button>
           <button type="button" id="gio-review-confirm" class="btn btn-danger" disabled>
             تأیید بررسی و اجازه یک ارسال مجدد
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% if gio_can_manual_save_sepidar %}
+  <div class="modal fade" id="gio-manual-sepidar-modal" tabindex="-1"
+       aria-labelledby="gio-manual-sepidar-title" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content" dir="rtl">
+        <div class="modal-header">
+          <h5 class="modal-title" id="gio-manual-sepidar-title">ثبت دستی اطلاعات اسناد سپیدار</h5>
+          <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="بستن"></button>
+        </div>
+        <div class="modal-body">
+          <div class="gio-review-warning" role="alert">
+            <strong>هشدار — ثبت دستی فقط پس از تطبیق واقعی اسناد</strong>
+            <div>این عملیات فقط شناسه‌ها و شماره‌های اسناد را در پرتال ذخیره می‌کند و
+            <strong>هیچ سند جدیدی در سپیدار ایجاد نمی‌کند.</strong>
+            اطلاعات را با فاکتور خرید، رسید انبار قبل از مرکزی و سند حسابداری موجود در سپیدار تطبیق دهید.
+            ثبت اشتباه می‌تواند باعث اعلام موفقیت نادرست و جلوگیری از ارسال صحیح گروه شود.</div>
+          </div>
+          <p class="mt-3 mb-1">گروه: <span class="gio-review-code" id="gio-manual-group-code"></span></p>
+          <p class="text-muted fs-8">هر سه شناسه و شماره سند برای ثبت کامل گروه الزامی است. برای اصلاح گروه موفق، تأیید جداگانه لازم است.</p>
+          <div class="gio-manual-doc-grid">
+            <section class="gio-manual-doc-card">
+              <h6>۱. فاکتور خرید</h6>
+              <label for="gio-manual-invoice-id">شناسه سپیدار</label>
+              <input class="form-control" id="gio-manual-invoice-id" type="text" inputmode="numeric" maxlength="19" autocomplete="off" placeholder="ID">
+              <label for="gio-manual-invoice-number">شماره سند</label>
+              <input class="form-control" id="gio-manual-invoice-number" type="text" maxlength="64" autocomplete="off" placeholder="شماره فاکتور خرید">
+            </section>
+            <section class="gio-manual-doc-card">
+              <h6>۲. رسید انبار قبل از مرکزی</h6>
+              <label for="gio-manual-receipt-id">شناسه سپیدار</label>
+              <input class="form-control" id="gio-manual-receipt-id" type="text" inputmode="numeric" maxlength="19" autocomplete="off" placeholder="ID">
+              <label for="gio-manual-receipt-number">شماره سند</label>
+              <input class="form-control" id="gio-manual-receipt-number" type="text" maxlength="64" autocomplete="off" placeholder="شماره رسید انبار">
+            </section>
+            <section class="gio-manual-doc-card">
+              <h6>۳. سند حسابداری</h6>
+              <label for="gio-manual-voucher-id">شناسه سپیدار</label>
+              <input class="form-control" id="gio-manual-voucher-id" type="text" inputmode="numeric" maxlength="19" autocomplete="off" placeholder="ID">
+              <label for="gio-manual-voucher-number">شماره سند</label>
+              <input class="form-control" id="gio-manual-voucher-number" type="text" maxlength="64" autocomplete="off" placeholder="شماره سند حسابداری">
+            </section>
+          </div>
+          <label class="gio-review-modal-label" for="gio-manual-reason">علت ثبت دستی و مستندات بررسی (حداقل ۲۰ کاراکتر)</label>
+          <textarea class="form-control" id="gio-manual-reason" rows="3" maxlength="2000"
+                    placeholder="برای مثال: شماره اسناد در سپیدار بررسی و با گروه تأمین‌کننده و ارز تطبیق داده شد."></textarea>
+          <div class="gio-review-checks">
+            <label><input id="gio-manual-verified" type="checkbox">
+              هر سه سند را در سپیدار بررسی کرده‌ام و صحت شناسه، شماره، تأمین‌کننده و ارز آن‌ها را تأیید می‌کنم.
+            </label>
+            <label id="gio-manual-overwrite-row" hidden><input id="gio-manual-overwrite" type="checkbox">
+              این گروه قبلاً موفق بوده است؛ جایگزینی اطلاعات ثبت‌شده و اصلاح سابقه پرتال را تأیید می‌کنم.
+            </label>
+          </div>
+          <label class="gio-review-modal-label" for="gio-manual-confirm-key">
+            برای ثبت نهایی، کد گروه را عیناً وارد کنید:
+          </label>
+          <input id="gio-manual-confirm-key" class="form-control" type="text" dir="ltr"
+                 autocomplete="off" spellcheck="false" autocapitalize="off">
+          <div id="gio-manual-error" class="gio-alert gio-alert--error mt-3" role="alert" hidden></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light-secondary" data-bs-dismiss="modal">انصراف</button>
+          <button type="button" class="btn btn-primary" id="gio-manual-save" disabled>
+            ذخیره دستی سه سند در پرتال
           </button>
         </div>
       </div>
@@ -487,6 +579,15 @@
         );
         loadedUrl.searchParams.delete('gio_reviewed');
         loadedUrl.searchParams.delete('gio_review_group');
+        window.history.replaceState(null, '', loadedUrl.toString());
+    }
+    if (loadedUrl.searchParams.get('gio_manual_saved') === '1') {
+        showGioGroupMessage(
+            loadedUrl.searchParams.get('gio_manual_group'),
+            'اطلاعات سه سند سپیدار به‌صورت دستی ثبت شد و وضعیت گروه به‌روزرسانی شد.', false
+        );
+        loadedUrl.searchParams.delete('gio_manual_saved');
+        loadedUrl.searchParams.delete('gio_manual_group');
         window.history.replaceState(null, '', loadedUrl.toString());
     }
     const sendNotice = loadedUrl.searchParams.get('gio_send_notice');
@@ -832,6 +933,112 @@
                     reviewError.hidden = false;
                     reviewConfirm.textContent = 'تأیید بررسی و اجازه یک ارسال مجدد';
                     updateReviewConfirmation();
+                }
+            });
+        });
+    }
+
+    const manualModal = document.getElementById('gio-manual-sepidar-modal');
+    if (manualModal) {
+        const manualKeyDisplay = document.getElementById('gio-manual-group-code');
+        const manualKeyInput = document.getElementById('gio-manual-confirm-key');
+        const manualReason = document.getElementById('gio-manual-reason');
+        const manualVerified = document.getElementById('gio-manual-verified');
+        const manualOverwriteRow = document.getElementById('gio-manual-overwrite-row');
+        const manualOverwrite = document.getElementById('gio-manual-overwrite');
+        const manualSave = document.getElementById('gio-manual-save');
+        const manualError = document.getElementById('gio-manual-error');
+        let manualGroupKey = '';
+        let manualIsCorrection = false;
+        const manualDocFields = ['invoice', 'receipt', 'voucher'];
+        const field = function (kind, part) {
+            return document.getElementById('gio-manual-' + kind + '-' + part);
+        };
+        const getManualDocuments = function () {
+            const documents = {};
+            manualDocFields.forEach(function (kind) {
+                documents[kind] = {
+                    id:field(kind, 'id').value.trim(),
+                    number:field(kind, 'number').value.trim()
+                };
+            });
+            return documents;
+        };
+        function updateManualSave() {
+            const complete = manualDocFields.every(function (kind) {
+                const id = field(kind, 'id').value.trim();
+                const number = field(kind, 'number').value.trim();
+                return /^[0-9]{1,19}$/.test(id) && Number(id) > 0 && number.length > 0 && number.length <= 64;
+            });
+            manualSave.disabled = !(complete && manualGroupKey &&
+                manualKeyInput.value.trim() === manualGroupKey &&
+                manualReason.value.trim().length >= 20 &&
+                manualReason.value.trim().length <= 2000 &&
+                manualVerified.checked &&
+                (!manualIsCorrection || manualOverwrite.checked));
+        }
+        manualDocFields.forEach(function (kind) {
+            ['id', 'number'].forEach(function (part) {
+                field(kind, part).addEventListener('input', updateManualSave);
+            });
+        });
+        [manualKeyInput, manualReason, manualVerified, manualOverwrite].forEach(function (input) {
+            input.addEventListener('input', updateManualSave);
+            input.addEventListener('change', updateManualSave);
+        });
+        document.querySelectorAll('.gio-manual-sepidar-open').forEach(function (trigger) {
+            trigger.addEventListener('click', function () {
+                manualGroupKey = trigger.dataset.groupKey || '';
+                manualIsCorrection = trigger.dataset.status === 'success';
+                manualKeyDisplay.textContent = manualGroupKey;
+                manualKeyInput.value = '';
+                manualReason.value = '';
+                manualVerified.checked = false;
+                manualOverwrite.checked = false;
+                manualOverwriteRow.hidden = !manualIsCorrection;
+                manualDocFields.forEach(function (kind) {
+                    field(kind, 'id').value = trigger.dataset[kind + 'Id'] || '';
+                    field(kind, 'number').value = trigger.dataset[kind + 'Number'] || '';
+                });
+                manualError.hidden = true;
+                manualError.textContent = '';
+                manualSave.textContent = 'ذخیره دستی سه سند در پرتال';
+                updateManualSave();
+            });
+        });
+        manualSave.addEventListener('click', function () {
+            if (manualSave.disabled) return;
+            if (!window.confirm('تأیید نهایی: آیا هر سه سند را در سپیدار بررسی کرده‌اید و از صحت شناسه‌ها و شماره‌ها اطمینان دارید؟ اطلاعات فقط در پرتال ثبت خواهند شد.')) return;
+            manualSave.disabled = true;
+            manualSave.textContent = 'در حال ذخیره...';
+            manualError.hidden = true;
+            $.ajax({
+                type:'POST',
+                url:"{% url 'order:order_and_sepidar' %}?view_name=trade_buy_factor_manual_save",
+                dataType:'json', contentType:'application/json; charset=utf-8',
+                headers:{'X-CSRFToken':getCookie('csrftoken')},
+                data:JSON.stringify({
+                    gio_id:document.getElementById('gio_id').value,
+                    group_key:manualGroupKey,
+                    confirmed_group:manualKeyInput.value.trim(),
+                    reason:manualReason.value.trim(),
+                    documents:getManualDocuments(),
+                    verified:manualVerified.checked,
+                    overwrite_confirmed:manualIsCorrection && manualOverwrite.checked
+                }),
+                success:function (result) {
+                    const target = new URL(window.location.href);
+                    target.searchParams.set('gio_manual_saved', '1');
+                    target.searchParams.set('gio_manual_group', result.group_key || manualGroupKey);
+                    target.hash = 'gio-preview';
+                    window.location.replace(target.toString());
+                },
+                error:function (xhr) {
+                    const response = xhr.responseJSON || {};
+                    manualError.textContent = response.error || 'ثبت دستی ناموفق بود. اطلاعات را بررسی کنید و دوباره تلاش کنید.';
+                    manualError.hidden = false;
+                    manualSave.textContent = 'ذخیره دستی سه سند در پرتال';
+                    updateManualSave();
                 }
             });
         });

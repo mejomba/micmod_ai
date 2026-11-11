@@ -1576,6 +1576,27 @@ class GIOSepidarManualReview(models.Model):
         ordering = ['-created_at', '-pk']
 
 
+class GIOSepidarManualDocumentEntry(models.Model):
+    """Immutable audit of a superuser's manual Sepidar document reconciliation."""
+
+    group = models.ForeignKey(
+        'GIOSepidarGroup', on_delete=models.PROTECT,
+        related_name='manual_document_entries',
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        related_name='gio_sepidar_manual_document_entries',
+    )
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    reason = models.TextField()
+    previous_status = models.CharField(max_length=10, blank=True)
+    previous_documents = models.JSONField(default=dict)
+    new_documents = models.JSONField(default=dict)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+
+
 class GIO(BaseModeWF):
     quantity = models.FloatField(_('quantity'), default=0, null=True, blank=True)
     gio_date = models.DateField(_('gio_date'))

@@ -71,6 +71,13 @@
             با تأمین‌کننده، ارز، اقلام و تاریخ بررسی کنید. تأیید اشتباه می‌تواند اسناد تکراری ایجاد کند.
           </div>
         {% endif %}
+        {% if group.manual_document_entry %}
+          <div class="gio-alert gio-alert--success mt-2">
+            <strong>آخرین ثبت دستی اطلاعات سپیدار:</strong>
+            {{ group.manual_document_entry.actor }} · {{ group.manual_document_entry.at }}
+            <div>شرح ثبت: {{ group.manual_document_entry.reason }}</div>
+          </div>
+        {% endif %}
         {% if group.manual_review %}
           <div class="gio-alert gio-alert--warning mt-2">
             <strong>سابقه بررسی دستی:</strong> {{ group.manual_review.reviewer }} · {{ group.manual_review.at }}
@@ -87,6 +94,19 @@
           {% elif group.status == 'failed' %}فقط این گروه می‌تواند دوباره ارسال شود.
           {% else %}پس از تأیید، هر سه سند این گروه در سپیدار ثبت می‌شوند.{% endif %}
         </div>
+        {% if gio_can_manual_save_sepidar and group.status != 'sending' %}
+          <button type="button" class="btn btn-sm btn-light-primary gio-manual-sepidar-open"
+                    data-group-key="{{ group.key }}" data-status="{{ group.status }}"
+                    data-invoice-id="{{ group.invoice.id|default_if_none:'' }}"
+                    data-invoice-number="{{ group.invoice.number|default_if_none:'' }}"
+                    data-receipt-id="{{ group.receipt.id|default_if_none:'' }}"
+                    data-receipt-number="{{ group.receipt.number|default_if_none:'' }}"
+                    data-voucher-id="{{ group.voucher.id|default_if_none:'' }}"
+                    data-voucher-number="{{ group.voucher.number|default_if_none:'' }}"
+                    data-bs-toggle="modal" data-bs-target="#gio-manual-sepidar-modal">
+              {% if group.status == 'success' %}اصلاح اطلاعات سپیدار{% else %}ثبت دستی اطلاعات سپیدار{% endif %}
+            </button>
+        {% endif %}
         {% if gio_reconcile_can_review and group.status == 'unknown' %}
           <button type="button" class="btn btn-outline-danger gio-review-unknown-group"
                   data-group-key="{{ group.key }}" data-bs-toggle="modal" data-bs-target="#gio-manual-review-modal">
