@@ -52,6 +52,55 @@ class GIOResponseTests(SimpleTestCase):
         )[0], 'unknown')
         self.assertEqual(parse_gio_response(None, '1___1')[0], 'unknown')
 
+    def test_selected_group_success_is_not_masked_by_unrelated_unknown_group(self):
+        import json
+        from django.test import RequestFactory
+        from order.views import OrderAndSepidar
+        groups = [
+            {'key': '201___1', 'status': 'success'},
+            {'key': '202___2', 'status': 'unknown'},
+        ]
+        request = RequestFactory().post(
+            '/order/ajax/order_and_sepidar/?view_name=trade_buy_factor',
+            data=json.dumps({'gio_id': 17, 'group_key': '201___1'}),
+            content_type='application/json',
+        )
+        request.user = SimpleNamespace(is_authenticated=True)
+        with patch('order.views.user_can_send_gio', return_value=True), patch(
+            'order.views.GIO.objects.filter',
+        ) as filtered, patch(
+            'order.views.send_gio_groups', return_value=groups,
+        ):
+            filtered.return_value.first.return_value = SimpleNamespace(pk=17)
+            response = OrderAndSepidar.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.content)['group_key'], '201___1')
+        self.assertEqual(json.loads(response.content)['res'], 'success')
+
+    def test_selected_group_unknown_is_still_blocked_even_if_others_succeeded(self):
+        import json
+        from django.test import RequestFactory
+        from order.views import OrderAndSepidar
+        groups = [
+            {'key': '201___1', 'status': 'success'},
+            {'key': '202___2', 'status': 'unknown'},
+        ]
+        request = RequestFactory().post(
+            '/order/ajax/order_and_sepidar/?view_name=trade_buy_factor',
+            data=json.dumps({'gio_id': 17, 'group_key': '202___2'}),
+            content_type='application/json',
+        )
+        request.user = SimpleNamespace(is_authenticated=True)
+        with patch('order.views.user_can_send_gio', return_value=True), patch(
+            'order.views.GIO.objects.filter',
+        ) as filtered, patch(
+            'order.views.send_gio_groups', return_value=groups,
+        ):
+            filtered.return_value.first.return_value = SimpleNamespace(pk=17)
+            response = OrderAndSepidar.as_view()(request)
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(json.loads(response.content)['group_key'], '202___2')
+
     def test_order_document_ledger_is_idempotent(self):
         from order.gio_sepidar import _record_order_documents
         document = SimpleNamespace(

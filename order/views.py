@@ -2478,15 +2478,27 @@ class OrderAndSepidar(View):
         except Exception as exc:
             # Never automatically repeat an uncertain remote operation.
             return JsonResponse({'error': str(exc)}, status=500)
-        if any(group['status'] != 'success' for group in states):
+        # A selected group's result must not be masked by the state of OTHER
+        # supplier/currency groups (which may be pending, rejected or unknown).
+        selected_key = payload.get('group_key')
+        relevant = [group for group in states if group['key'] == selected_key] if selected_key else states
+        if not relevant:
+            return JsonResponse({
+                'error': 'Selected GIO group was not found in the Sepidar result.',
+                'groups': states,
+            }, status=409)
+        if any(group['status'] != 'success' for group in relevant):
             status = 409 if any(
-                group['status'] in ('unknown', 'sending') for group in states
+                group['status'] in ('unknown', 'sending') for group in relevant
             ) else 502
             return JsonResponse({
-                'error': 'Some GIO groups need retry or manual reconciliation.',
+                'error': 'This GIO group needs retry or manual reconciliation.',
                 'groups': states,
+                'group_key': selected_key,
             }, status=status)
-        return JsonResponse({'res': 'success', 'groups': states})
+        return JsonResponse({
+            'res': 'success', 'group_key': selected_key, 'groups': states,
+        })
 
     def bazar_buy_factor(self, request, *args, **kwargs):
         from tools import utils

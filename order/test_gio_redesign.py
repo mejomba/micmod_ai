@@ -346,6 +346,24 @@ class GIORedesignTemplateTests(SimpleTestCase):
         self.assertIn("data-quantity=\"{{ gio.quantity }}\"", self.page)
         self.assertIn("field.value = maxQuantity", self.page)
 
+    def test_send_response_reloads_preview_and_shows_exact_group_status(self):
+        self.assertIn("function refreshGioSendResult(status)", self.page)
+        self.assertIn("target.searchParams.set('gio_send_notice', status)", self.page)
+        self.assertIn("window.location.replace(target.toString())", self.page)
+        self.assertIn("loadedUrl.searchParams.delete('gio_send_notice')", self.page)
+        self.assertIn("function gioGroupResult(response, key)", self.page)
+        self.assertIn("group.key === key", self.page)
+        self.assertIn("group && group.status === 'success'", self.page)
+        self.assertIn("group.status === 'failed' ? 'failed' : 'uncertain'", self.page)
+        self.assertIn("timeout:120000", self.page)
+        self.assertIn("بررسی وضعیت الزامی است", self.page)
+        self.assertNotIn("success:showUpdatedDocuments", self.page)
+
+    def test_success_receipt_warning_does_not_equate_api_id_to_visible_voucher(self):
+        self.assertIn("قابل‌مشاهده بودن سند حسابداری", self.page)
+        self.assertIn("وجود شناسه یا رکورد در دیتابیس", self.page)
+        self.assertIn("بدون بررسی ارسال مجدد نکنید", self.page)
+
     def test_each_group_has_three_docs_and_independent_retry(self):
         for label in ('فاکتور خرید', 'رسید انبار قبل از مرکزی', 'سند حسابداری'):
             self.assertIn(label, self.preview)
