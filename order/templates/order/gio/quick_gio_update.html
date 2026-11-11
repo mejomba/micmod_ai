@@ -375,6 +375,15 @@
     });
     setTab(window.location.hash.replace('#gio-', '') || 'editor', false);
 
+    // A successful update must load fresh server-rendered saved rows.
+    // Remove the one-time success flag so future saves still navigate to a new URL.
+    const loadedUrl = new URL(window.location.href);
+    if (loadedUrl.searchParams.get('gio_saved') === '1') {
+        notify('تغییرات GIO با موفقیت ذخیره شد.', false);
+        loadedUrl.searchParams.delete('gio_saved');
+        window.history.replaceState(null, '', loadedUrl.toString());
+    }
+
     function notify(text, error, containerId) {
         const element = document.getElementById(containerId || 'ajax-response');
         if (!element) return;
@@ -587,8 +596,21 @@
             contentType:'application/json; charset=utf-8',
             headers:{'X-CSRFToken':getCookie('csrftoken')},
             success:function (response) {
-                if (response.res && response.res.url) window.location.assign(response.res.url + '#gio-preview');
-                else notify('پاسخ ثبت سند قابل شناسایی نیست.', true);
+                if (response.res && response.res.url) {
+                    const target = new URL(response.res.url, window.location.origin);
+                    if (isSaved) {
+                        // Changing only the hash on the same GIO URL does not reload.
+                        // This query flag forces a full GET and keeps the editor visible.
+                        target.searchParams.set('gio_saved', '1');
+                        target.hash = '#gio-editor';
+                    } else {
+                        // First save navigates to the newly created GIO and its preview.
+                        target.hash = '#gio-preview';
+                    }
+                    window.location.assign(target.toString());
+                } else {
+                    notify('پاسخ ثبت سند قابل شناسایی نیست.', true);
+                }
             },
             error:function (xhr) {
                 const json = xhr.responseJSON || {};

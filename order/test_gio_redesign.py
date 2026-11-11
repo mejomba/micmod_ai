@@ -152,6 +152,19 @@ class GIORedesignTemplateTests(SimpleTestCase):
         self.assertIn("button.dataset.orderId", self.page)
         self.assertIn('button.dataset.maxQty', self.page)
 
+    def test_save_existing_gio_reloads_saved_rows_and_shows_success(self):
+        """A hash-only navigation on the same GIO does not refresh saved items."""
+        self.assertIn("if (isSaved) {", self.page)
+        self.assertIn("target.searchParams.set('gio_saved', '1')", self.page)
+        self.assertIn("target.hash = '#gio-editor'", self.page)
+        self.assertIn("target.hash = '#gio-preview'", self.page)
+        self.assertIn("window.location.assign(target.toString())", self.page)
+        self.assertIn("loadedUrl.searchParams.get('gio_saved') === '1'", self.page)
+        self.assertIn("تغییرات GIO با موفقیت ذخیره شد.", self.page)
+        self.assertIn("loadedUrl.searchParams.delete('gio_saved')", self.page)
+        self.assertIn("window.history.replaceState(null, '', loadedUrl.toString())", self.page)
+        self.assertNotIn("response.res.url + '#gio-preview'", self.page)
+
     def test_column_search_is_debounced_for_200ms(self):
         """Avoid a request on each keystroke in django-ajax-datatable column filters."""
         self.assertIn("installGioColumnSearchDebounce", self.page)
