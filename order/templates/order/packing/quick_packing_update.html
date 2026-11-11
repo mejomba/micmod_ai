@@ -66,7 +66,7 @@
                                     <legend>packing {{ form.instance.pk }}</legend>
                                     <div class="row row-cols-3" id="buy-factor-header">
                                         <input type="hidden" id="packing_id" name="packing_id" value="{{ form.instance.pk }}" />
-                                        {% render_field_by_order form form.packing_number form.currency form.shipment_type form.source form.destination form.transporter_company form.bl_number form.bl_date form.estimated_delivery_date form.description label='on-border' %}
+                                        {% render_field_by_order form form.packing_number form.currency form.shipment_type form.origin form.destination form.transportation_company form.bl_number form.bl_date form.estimated_delivery_date form.description label='on-border' %}
 
                                     {% with form.instance.files.all as packing_files %}
                                         <div class="d-flex flex-column gap-1 mb-3" style="">
