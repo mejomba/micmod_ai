@@ -7,6 +7,7 @@ from tools.utils import to_jalali_date
 import jdatetime
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
+from django.contrib.humanize.templatetags.humanize import intcomma
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
@@ -3627,8 +3628,9 @@ class QuickGIODataTableListView(AjaxDatatableView):
     def customize_row(self, row, obj):
         remaining = max(0, obj.final_quantity - obj.quantity_in_gio)
         part_number = getattr(obj.final_item, 'part_number', None) or '-'
-        row['quantity'] = obj.final_quantity
-        row['remaining_quantity'] = remaining
+        # Human-readable quantities only; leave picker data-max-qty numeric for JS.
+        row['quantity'] = intcomma(obj.final_quantity)
+        row['remaining_quantity'] = intcomma(remaining)
         row['item__part_number'] = escape(str(part_number))
         row['currency'] = escape(str(
             getattr(obj.currency, 'title_en', None)

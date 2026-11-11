@@ -252,6 +252,55 @@ class GIORedesignTemplateTests(SimpleTestCase):
         self.assertIn("panel.addEventListener('toggle'", self.page)
         self.assertIn('if (other !== panel && other.open) other.open = false', self.page)
 
+    def test_datatable_quantities_have_thousand_separators_but_picker_values_remain_raw(self):
+        order = SimpleNamespace(
+            pk=98765, order_number='PO-100200', final_quantity=1234567.5,
+            quantity_in_gio=567.25,
+            final_item=SimpleNamespace(part_number='ABC-12345'),
+            currency=SimpleNamespace(title_en='Dollar'),
+        )
+        row = {}
+        QuickGIODataTableListView().customize_row(row, order)
+        self.assertEqual(row['quantity'], '1,234,567.5')
+        self.assertEqual(row['remaining_quantity'], '1,234,000.25')
+        self.assertIn('data-order-id="98765"', row['buy_factor'])
+        self.assertIn('data-max-qty="1234000.25"', row['buy_factor'])
+        self.assertIn('PO-100200', row['buy_factor'])
+        self.assertIn('ABC-12345', row['buy_factor'])
+
+    def test_preview_quantity_separator_without_formatting_document_identifiers(self):
+        groups = [{
+            'key': '101___1', 'supplier': 'Supplier', 'currency': 'Dollar',
+            'supplier_ref': '101', 'currency_ref': '1',
+            'row_count': 1250, 'total_quantity': '1234567.125',
+            'status': 'success', 'can_send': False, 'error': '',
+            'invoice': {'id': 1234567, 'number': 'INV-1234567'},
+            'receipt': {'id': 5678, 'number': 'REC-5678'},
+            'voucher': {'id': 9012, 'number': 'ACC-9012'},
+            'items': [{'order_number': 'PO-1234567', 'part_number': 'PN-1234567',
+                       'quantity': '1234567.125'}],
+        }]
+        html = render_to_string(
+            'order/partial/sepidar/trade_buy_factor_preview.html',
+            {'groups': groups, 'gio_sepidar_can_send': True},
+        )
+        self.assertIn('1,250 ردیف سفارش', html)
+        self.assertIn('مجموع تعداد: 1,234,567.125', html)
+        self.assertIn('<td>1,234,567.125</td>', html)
+        self.assertIn('INV-1234567', html)
+        self.assertIn('PO-1234567', html)
+        self.assertIn('PN-1234567', html)
+        self.assertNotIn('INV-1,234,567', html)
+
+    def test_saved_and_mock_quantities_use_display_only_number_format(self):
+        self.assertIn("{{ gio.quantity|intcomma }}", self.page)
+        self.assertIn("{{ gios.count|intcomma }}", self.page)
+        self.assertIn("{{ group.row_count|intcomma }}", self.page)
+        self.assertIn("formatGioQuantity(item.quantity)", self.page)
+        self.assertIn("toLocaleString('en-US'", self.page)
+        self.assertIn("data-quantity=\"{{ gio.quantity }}\"", self.page)
+        self.assertIn("field.value = maxQuantity", self.page)
+
     def test_each_group_has_three_docs_and_independent_retry(self):
         for label in ('فاکتور خرید', 'رسید انبار قبل از مرکزی', 'سند حسابداری'):
             self.assertIn(label, self.preview)

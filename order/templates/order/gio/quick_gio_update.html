@@ -168,7 +168,7 @@
 
                 <div class="d-flex justify-content-between align-items-center mt-7 mb-3">
                   <h4 class="fs-5 fw-bold mb-0">ردیف‌های سند</h4>
-                  <span class="gio-state">{{ gios.count }} ردیف ثبت‌شده</span>
+                  <span class="gio-state">{{ gios.count|intcomma }} ردیف ثبت‌شده</span>
                 </div>
 
                 <div id="gio-saved-items">
@@ -191,7 +191,7 @@
                           <a class="cursor-pointer" aria-label="تاریخچه ردیف" title="تاریخچه" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg" data-model_name="{{ gio|model_name }}" data-object_id="{{ gio.pk }}" data-app_name="{{ gio|app_label }}" name="name_change_log"><i class="ki-duotone ki-book-open fs-2 text-primary"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span></i></a>
                         </div>
                       </div>
-                      <div class="gio-row-meta">تعداد: <strong>{{ gio.quantity|floatformat:'-2g' }}</strong>
+                      <div class="gio-row-meta">تعداد: <strong>{{ gio.quantity|intcomma }}</strong>
                         {% if gio.description %} · {{ gio.description }}{% endif %}
                       </div>
                     </article>
@@ -266,7 +266,7 @@
                   <div class="gio-group-head">
                     <div>
                       <h4>{{ group.supplier }} <span class="text-muted mx-1">/</span> {{ group.currency }}</h4>
-                      <p>گروه {{ forloop.counter }} · {{ group.row_count }} ردیف · شناسه تأمین‌کننده: {{ group.supplier_ref }}</p>
+                      <p>گروه {{ forloop.counter }} · {{ group.row_count|intcomma }} ردیف · شناسه تأمین‌کننده: {{ group.supplier_ref }}</p>
                     </div>
                     <span class="gio-state gio-state--{{ group.status }}">
                       {% if group.status == 'success' %}ثبت موفق{% elif group.status == 'unknown' %}نیازمند بررسی دستی{% elif group.status == 'failed' %}ارسال ناموفق{% elif group.status == 'sending' %}در حال ارسال{% else %}ارسال نشده{% endif %}
@@ -696,6 +696,14 @@
     if (mockData) {
         try { documentGroups = JSON.parse(mockData.textContent); } catch (e) { documentGroups = []; }
     }
+    // Group display-only quantities without changing order numbers, codes, or raw form inputs.
+    function formatGioQuantity(value) {
+        const raw = String(value ?? '').trim();
+        const parts = raw.match(/^(-?)(\d+)(\.\d+)?$/);
+        if (!parts) return raw || '—';
+        return parts[1] + parts[2].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (parts[3] || '');
+    }
+
     const types = {invoice:'فاکتور خرید', receipt:'رسید انبار قبل از مرکزی', voucher:'سند حسابداری'};
     document.querySelectorAll('.gio-document-open').forEach(function (button) {
         button.addEventListener('click', function () {
@@ -710,7 +718,7 @@
             const items = group ? group.items : [];
             items.forEach(function (item) {
                 const tr = document.createElement('tr');
-                [item.order_number, item.part_number, item.quantity].forEach(function (value) {
+                [item.order_number, item.part_number, formatGioQuantity(item.quantity)].forEach(function (value) {
                     const td = document.createElement('td');
                     td.textContent = value;
                     tr.appendChild(td);

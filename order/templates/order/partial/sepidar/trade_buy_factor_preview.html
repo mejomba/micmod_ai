@@ -7,8 +7,8 @@
           <span class="gio-eyebrow text-muted mb-1">گروه {{ forloop.counter }} · تأمین‌کننده / ارز</span>
           <span class="gio-accordion-title">{{ group.supplier }} <span class="mx-1 text-muted">/</span> {{ group.currency }}</span>
           <span class="gio-accordion-stats">
-            <span>{{ group.row_count }} ردیف سفارش</span>
-            <span>مجموع تعداد: {{ group.total_quantity }}</span>
+            <span>{{ group.row_count|intcomma }} ردیف سفارش</span>
+            <span>مجموع تعداد: {{ group.total_quantity|intcomma }}</span>
             <span>۳ سند سپیدار</span>
           </span>
           {% if group.status == 'success' and group.invoice.number %}
@@ -39,7 +39,7 @@
             <thead><tr><th>سفارش</th><th>پارت نامبر</th><th>تعداد</th></tr></thead>
             <tbody>
               {% for item in group.items %}
-                <tr><td>{{ item.order_number }}</td><td>{{ item.part_number }}</td><td>{{ item.quantity }}</td></tr>
+                <tr><td>{{ item.order_number }}</td><td>{{ item.part_number }}</td><td>{{ item.quantity|intcomma }}</td></tr>
               {% endfor %}
             </tbody>
           </table>
