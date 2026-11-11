@@ -145,7 +145,7 @@
         <nav class="gio-tabs" role="tablist" aria-label="بخش‌های GIO">
           <button type="button" role="tab" aria-selected="true" aria-controls="gio-stage-editor" data-gio-tab="editor">سند و اقلام</button>
           <button type="button" role="tab" aria-selected="false" aria-controls="gio-stage-preview" data-gio-tab="preview" {% if not form.instance.pk %}disabled title="ابتدا سند را ثبت کنید"{% endif %}>پیش‌نمایش سپیدار</button>
-          <button type="button" role="tab" aria-selected="false" aria-controls="gio-stage-documents" data-gio-tab="documents" {% if not form.instance.pk %}disabled title="ابتدا سند را ثبت کنید"{% endif %}>اسناد ثبت‌شده <span class="gio-tab-count{% if not gio_registered_document_count %} gio-tab-count--empty{% endif %}" aria-label="{{ gio_registered_document_count }} سند">{{ gio_registered_document_count|intcomma }}</span></button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="gio-stage-documents" data-gio-tab="documents" {% if not form.instance.pk %}disabled title="ابتدا سند را ثبت کنید"{% endif %}>اسناد ثبت‌شده <span class="gio-tab-count{% if not gio_registered_group_count %} gio-tab-count--empty{% endif %}" aria-label="{{ gio_registered_group_count }} گروه دارای اسناد ثبت‌شده">{{ gio_registered_group_count|intcomma }}</span></button>
         </nav>
 
         <section id="gio-stage-editor" class="gio-tab-pane" role="tabpanel" data-gio-panel="editor">

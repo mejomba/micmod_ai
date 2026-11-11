@@ -9,8 +9,8 @@ from django.conf import settings
 from django.template.loader import get_template, render_to_string
 from django.test import RequestFactory, SimpleTestCase
 
-from order.gio_sepidar import gio_preview_groups, gio_header_status, gio_registered_document_count
-from order.views import OrderAndSepidar, QuickGIODataTableListView
+from order.gio_sepidar import gio_preview_groups, gio_header_status, gio_registered_group_count
+from order.views import OrderAndSepidar, QuickGIODataTableListView, QuickGIOView
 
 
 def fake_order(order_id, supplier_ref, currency_ref, part_number):
@@ -37,6 +37,8 @@ class GIOHeaderPresentationTests(SimpleTestCase):
             (gio, ['pending'], 'info', 'ثبت‌شده در پرتال'),
             (gio, ['success'], 'success', 'ارسال کامل به سپیدار'),
             (gio, ['success', 'pending'], 'warning', 'ارسال بخشی از گروه‌ها'),
+            (gio, ['success', 'preview_error'], 'warning', 'بررسی گروه‌های سپیدار لازم است'),
+            (gio, ['preview_error'], 'warning', 'بررسی گروه‌های سپیدار لازم است'),
             (gio, ['sending'], 'warning', 'در حال ارسال به سپیدار'),
             (gio, ['reviewed'], 'warning', 'بررسی‌شده؛ آماده ارسال مجدد'),
             (gio, ['failed', 'success'], 'danger', 'ارسال ناموفق به سپیدار'),
@@ -54,21 +56,49 @@ class GIOHeaderPresentationTests(SimpleTestCase):
         )
         self.assertEqual(gio_header_status(legacy_gio, [])['tone'], 'success')
 
-    def test_registered_documents_badge_counts_real_ids_not_group_slots(self):
-        response = {
-            'purchase_invoice': [101, 201],
-            'before_central_wh_receipt': [102, 202],
-            'voucher': [103, 203],
-        }
-        self.assertEqual(gio_registered_document_count(response), 6)
-        self.assertEqual(gio_registered_document_count({
-            'purchase_invoice': [101, None],
-            'before_central_wh_receipt': [0],
-            'voucher': [],
-        }), 1)
-        self.assertEqual(gio_registered_document_count({}), 0)
-        self.assertEqual(gio_registered_document_count(None), 0)
-        self.assertEqual(gio_registered_document_count({'voucher': 'ACC-123'}), 0)
+    def test_registered_group_badge_counts_successful_groups_not_documents(self):
+        self.assertEqual(gio_registered_group_count(['success']), 1)
+        self.assertEqual(gio_registered_group_count(
+            ['success', 'pending', 'unknown', 'failed', 'reviewed']), 1)
+        self.assertEqual(gio_registered_group_count(['success', 'success']), 2)
+        self.assertEqual(gio_registered_group_count(['failed', 'pending']), 0)
+        self.assertEqual(gio_registered_group_count([]), 0)
+        self.assertEqual(gio_registered_group_count(None), 0)
+
+    def test_get_uses_planned_groups_for_header_and_persisted_success_for_badge(self):
+        # The missing pending group has no database record yet.
+        gio = SimpleNamespace(
+            pk=42,
+            sepidar_buy_factor_response_json=None,
+            sepidar_inventory_receipt_response_json=None,
+            sepidar_groups=SimpleNamespace(values_list=lambda *args, **kwargs: ['success']),
+        )
+        request = RequestFactory().get('/order/quick_gio/42/')
+        request.user = SimpleNamespace(
+            is_authenticated=True, is_superuser=False, is_active=True,
+        )
+        planned = [
+            {'key': '101___1', 'status': 'success'},
+            {'key': '202___1', 'status': 'pending'},
+        ]
+        with patch.object(QuickGIOView, 'get_object', return_value=gio), patch(
+            'order.views.gio_preview_groups', return_value=planned,
+        ), patch('order.views.gio_document_display', return_value={
+            'purchase_invoice': [11], 'before_central_wh_receipt': [12],
+            'voucher': [13],
+        }), patch('order.views.GIOForm'), patch(
+            'order.views.GIOItemFormSet',
+        ), patch('order.views.GIOItem.objects.filter'), patch(
+            'order.views.gio_is_locked', return_value=True,
+        ), patch('order.views.user_can_send_gio', return_value=True), patch(
+            'order.views.render',
+        ) as render_view:
+            QuickGIOView().get(request, pk=gio.pk)
+        context = render_view.call_args.args[2]
+        self.assertEqual(context['gio_hero_status']['tone'], 'warning')
+        self.assertEqual(context['gio_hero_status']['label'], 'ارسال بخشی از گروه‌ها')
+        self.assertEqual(context['gio_registered_group_count'], 1)
+        self.assertTrue(context['gio_has_group_submissions'])
 
 
 class GIORedesignPreviewTests(SimpleTestCase):
@@ -424,9 +454,10 @@ class GIORedesignTemplateTests(SimpleTestCase):
         self.assertNotIn('class="gio-steps"', self.page)
         self.assertNotIn('class="gio-step"', self.page)
         self.assertNotIn('.gio-steps {', self.page)
-        self.assertIn('gio_registered_document_count', self.page)
-        self.assertIn('aria-label="{{ gio_registered_document_count }} سند"', self.page)
-        self.assertIn('{{ gio_registered_document_count|intcomma }}', self.page)
+        self.assertIn('gio_registered_group_count', self.page)
+        self.assertIn('aria-label="{{ gio_registered_group_count }} گروه دارای اسناد ثبت‌شده"', self.page)
+        self.assertIn('{{ gio_registered_group_count|intcomma }}', self.page)
+        self.assertNotIn('gio_registered_document_count', self.page)
         self.assertIn('gio-tab-count--empty', self.page)
 
     def test_hero_status_uses_server_derived_severity_and_color(self):

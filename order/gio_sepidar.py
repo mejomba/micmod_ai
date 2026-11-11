@@ -273,6 +273,9 @@ def gio_header_status(gio, statuses):
         return {'tone': 'warning', 'label': 'در حال ارسال به سپیدار'}
     if 'reviewed' in statuses:
         return {'tone': 'warning', 'label': 'بررسی‌شده؛ آماده ارسال مجدد'}
+    if 'preview_error' in statuses:
+        # Never claim full registration when the current group plan is unavailable.
+        return {'tone': 'warning', 'label': 'بررسی گروه‌های سپیدار لازم است'}
     if statuses and statuses == {'success'}:
         return {'tone': 'success', 'label': 'ارسال کامل به سپیدار'}
     if 'success' in statuses:
@@ -283,16 +286,13 @@ def gio_header_status(gio, statuses):
     return {'tone': 'info', 'label': 'ثبت‌شده در پرتال'}
 
 
-def gio_registered_document_count(documents):
-    """Count documented IDs, not planned groups or placeholder documents."""
-    if not isinstance(documents, dict):
-        return 0
-    count = 0
-    for name in ('purchase_invoice', 'before_central_wh_receipt', 'voucher'):
-        ids = documents.get(name)
-        if isinstance(ids, (list, tuple)):
-            count += sum(1 for value in ids if value)
-    return count
+def gio_registered_group_count(recorded_statuses):
+    """Count confirmed successful GIO groups, not their three Sepidar documents.
+
+    Only durable group records count: older ungrouped document IDs cannot be
+    accurately assigned to supplier/currency groups.
+    """
+    return sum(1 for status in (recorded_statuses or []) if status == 'success')
 
 
 def gio_document_display(gio):
