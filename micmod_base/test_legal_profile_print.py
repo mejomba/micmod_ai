@@ -192,7 +192,7 @@ class QuotationCustomerPrintToolbarLayoutTests(SimpleTestCase):
     def test_customer_print_tools_are_not_absolute_or_separate(self):
         source = get_template('micmod-base/quotation/view-print-raw.html').template.source
         start = source.index('class="ptb-toolbar quotation-customer-print-toolbar noprint"')
-        end = source.index('</section>', start)
+        end = source.index('</details>', start)
         toolbar = source[start:end]
         self.assertNotIn('position-absolute', toolbar)
         self.assertIn('id="id_print_btn"', toolbar)
@@ -207,11 +207,11 @@ class QuotationCustomerPrintToolbarLayoutTests(SimpleTestCase):
     def test_expert_and_goods_links_preserve_profile_and_have_complete_href(self):
         source = get_template('micmod-base/quotation/view-print-raw.html').template.source
         self.assertIn(
-            '''?legal_profile={{ selected_legal_profile|default:''|urlencode }}"''',
+            '''?legal_profile={{ selected_legal_profile|default:''|urlencode }}&amp;print_settings=1"''',
             source,
         )
         self.assertIn(
-            '''&amp;legal_profile={{ selected_legal_profile|default:''|urlencode }}"''',
+            '''&amp;legal_profile={{ selected_legal_profile|default:''|urlencode }}&amp;print_settings=1"''',
             source,
         )
         self.assertNotIn(
@@ -233,7 +233,8 @@ class QuotationCustomerPrintToolbarLayoutTests(SimpleTestCase):
 
     def test_expert_toolbar_unifies_print_actions_and_profile_selection(self):
         source = get_template('micmod-base/quotation/view-print.html').template.source
-        self.assertIn('{% if not bulk_mode %}\n<section class="ptb-toolbar noprint"', source)
+        self.assertIn('{% if not bulk_mode %}\n<details class="ptb-drawer noprint"', source)
+        self.assertIn('<section class="ptb-toolbar noprint"', source)
         self.assertIn('id="id_print_btn"', source)
         self.assertIn("micmod_base:print_customer", source)
         self.assertIn('class="ptb-actions"', source)
@@ -259,3 +260,43 @@ class QuotationCustomerPrintToolbarLayoutTests(SimpleTestCase):
         self.assertIn('name="ids"', source)
         self.assertIn('class="ptb-profile-actions"', source)
         self.assertNotIn('onchange="this.form.submit()"', source)
+
+
+
+class PrintSettingsDrawerQuotationTests(SimpleTestCase):
+    """Quotation side drawer groups display controls and legal customer profiles."""
+
+    def test_single_quotation_drawers_are_native_collapsible(self):
+        for template in (
+            'micmod-base/quotation/view-print-raw.html',
+            'micmod-base/quotation/view-print.html',
+        ):
+            with self.subTest(template=template):
+                html = get_template(template).template.source
+                self.assertIn('<details class="ptb-drawer noprint"', html)
+                self.assertIn('<summary class="ptb-drawer-toggle"', html)
+                self.assertIn('ptb-section--actions', html)
+                self.assertIn('ptb-section--display', html)
+                self.assertIn('ptb-profile-zone', html)
+                self.assertIn('legal_profile_picker.html', html)
+                self.assertIn("request.GET.print_settings == '1'", html)
+
+    def test_single_profile_form_preserves_drawer_state(self):
+        picker = get_template('micmod-base/quotation/partial/legal_profile_picker.html').template.source
+        self.assertIn('name="print_settings" value="1"', picker)
+        self.assertIn('name="legal_profile"', picker)
+        self.assertIn('request.GET.comments_url_params', picker)
+        self.assertIn('request.GET.customer_goods_code_url_param', picker)
+        self.assertIn('request.GET.alt_code', picker)
+
+    def test_bulk_quotation_drawer_separates_type_and_customer_profile(self):
+        html = get_template('micmod-base/quotation/bulk_print.html').template.source
+        self.assertIn('<details class="ptb-drawer noprint"', html)
+        self.assertIn('ptb-section--actions', html)
+        self.assertIn('aria-label="نوع خروجی"', html)
+        self.assertIn('aria-label="پروفایل مشتری‌ها"', html)
+        self.assertIn('name="print_style"', html)
+        self.assertIn('name="{{ customer.field_name }}"', html)
+        self.assertIn('name="print_settings" value="1"', html)
+        self.assertIn('{% csrf_token %}', html)
+        self.assertIn('name="ids"', html)

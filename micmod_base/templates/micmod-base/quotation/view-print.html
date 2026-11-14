@@ -30,6 +30,13 @@
 <!-- ============================================================== -->
 {% endif %}
 {% if not bulk_mode %}
+<details class="ptb-drawer noprint"
+         {% if request.GET.print_settings == '1' or request.POST.print_settings == '1' %}open{% endif %}>
+    <summary class="ptb-drawer-toggle" aria-label="باز و بسته کردن تنظیمات چاپ">
+        <span class="ptb-toggle-icon" aria-hidden="true">⚙</span>
+        <span class="ptb-toggle-label">تنظیمات چاپ</span>
+        <span class="ptb-toggle-chevron" aria-hidden="true">⌄</span>
+    </summary>
 <section class="ptb-toolbar noprint" dir="rtl" aria-label="ابزارهای چاپ پیش‌فاکتور کارشناس">
     <div class="ptb-main">
         <div class="ptb-identity">
@@ -39,19 +46,27 @@
                 <span class="ptb-subtitle">نسخه کارشناس · P{{ data.id }}</span>
             </div>
         </div>
-        <div class="ptb-actions">
+        <section class="ptb-section ptb-section--actions" aria-label="عملیات چاپ و نمایش">
+            <h4 class="ptb-section-title">عملیات چاپ و نمایش</h4>
+            <div class="ptb-actions">
             <button type="button" class="ptb-button ptb-button--primary" id="id_print_btn" onclick="window.print()">چاپ پیش‌فاکتور</button>
-            <a href="{% url 'micmod_base:print_customer' id=data.id %}?legal_profile={{ selected_legal_profile|default:''|urlencode }}"
+                </div>
+            </section>
+            <section class="ptb-section ptb-section--display" aria-label="گزینه‌های نمایش">
+                <h4 class="ptb-section-title">گزینه‌های نمایش</h4>
+                <div class="ptb-actions">
+            <a href="{% url 'micmod_base:print_customer' id=data.id %}?legal_profile={{ selected_legal_profile|default:''|urlencode }}&amp;print_settings=1"
                class="ptb-button" target="_blank" rel="noopener">نسخه مشتری</a>
-            <a href="{% url 'micmod_base:quotations.print-view' id=data.pk %}?comments_url_params={{ comments_url_params }}&amp;legal_profile={{ selected_legal_profile|default:''|urlencode }}"
+            <a href="{% url 'micmod_base:quotations.print-view' id=data.pk %}?comments_url_params={{ comments_url_params }}&amp;legal_profile={{ selected_legal_profile|default:''|urlencode }}&amp;print_settings=1"
                class="ptb-button">
                 {% if comments_url_params == '0' %}بدون نظرات{% else %}با نظرات{% endif %}
             </a>
-            <a href="{% url 'micmod_base:quotations.print-view' id=data.pk %}?comments_url_params={{ comments_url_params }}&amp;alt_code={{ alt_code }}&amp;legal_profile={{ selected_legal_profile|default:''|urlencode }}"
+            <a href="{% url 'micmod_base:quotations.print-view' id=data.pk %}?comments_url_params={{ comments_url_params }}&amp;alt_code={{ alt_code }}&amp;legal_profile={{ selected_legal_profile|default:''|urlencode }}&amp;print_settings=1"
                class="ptb-button">
                 {% if alt_code == '0' %}بدون کد مشابه{% else %}با کد مشابه{% endif %}
             </a>
-        </div>
+            </div>
+        </section>
     </div>
     {% if legal_profile_options %}
     <div class="ptb-profile-zone">
@@ -60,6 +75,7 @@
     </div>
     {% endif %}
 </section>
+</details>
 {% endif %}
 <div class="main-content  mt-10 px-1" id="main-content" dir="rtl">
     <div class="page-content">

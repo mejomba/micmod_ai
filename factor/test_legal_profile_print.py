@@ -250,7 +250,8 @@ class FactorPrintToolbarStyleTests(SimpleTestCase):
 
     def test_invoice_toolbar_includes_print_profile_and_warehouse_action(self):
         html = get_template('factor/factor_print.html').template.source
-        self.assertIn('{% if not bulk_mode %}\n<section class="ptb-toolbar noprint"', html)
+        self.assertIn('{% if not bulk_mode %}\n<details class="ptb-drawer noprint"', html)
+        self.assertIn('<section class="ptb-toolbar noprint"', html)
         self.assertIn('id="id_print_btn"', html)
         self.assertIn('id="factor-legal-profile-form"', html)
         self.assertIn('id="factor-legal-profile-select"', html)
@@ -275,3 +276,44 @@ class FactorPrintToolbarStyleTests(SimpleTestCase):
         self.assertIn("factor/css/print_toolbar.css", html)
         self.assertIn('class="ptb-profile-actions"', html)
         self.assertNotIn('onchange="this.form.submit()"', html)
+
+
+
+class PrintSettingsDrawerFactorTests(SimpleTestCase):
+    """Invoice print side drawer opens natively and keeps the form selections."""
+
+    def test_single_invoice_drawer_has_print_and_profile_sections(self):
+        html = get_template('factor/factor_print.html').template.source
+        self.assertIn('<details class="ptb-drawer noprint"', html)
+        self.assertIn('<summary class="ptb-drawer-toggle"', html)
+        self.assertIn('ptb-section--actions', html)
+        self.assertIn('ptb-profile-zone', html)
+        self.assertIn('name="print_settings" value="1"', html)
+        self.assertIn("request.GET.print_settings == '1'", html)
+        self.assertIn('id="factor-legal-profile-select"', html)
+
+    def test_bulk_invoices_have_grouped_profile_section_inside_drawer(self):
+        html = get_template('factor/bulk_print.html').template.source
+        self.assertIn('<details class="ptb-drawer noprint"', html)
+        self.assertIn('ptb-subsection-title', html)
+        self.assertIn('name="{{ customer.field_name }}"', html)
+        self.assertIn('name="print_settings" value="1"', html)
+        self.assertIn("request.POST.print_settings == '1'", html)
+        self.assertIn('{% csrf_token %}', html)
+        self.assertIn('name="ids"', html)
+
+    def test_shared_drawer_css_scrolls_vertically_and_is_print_hidden(self):
+        from pathlib import Path
+        from django.conf import settings
+
+        css = (Path(settings.BASE_DIR) / 'factor/static/factor/css/print_toolbar.css').read_text(encoding='utf-8')
+        self.assertIn('.ptb-drawer:not([open])', css)
+        self.assertIn('.ptb-drawer[open]', css)
+        self.assertIn('position: fixed !important', css)
+        self.assertIn('right: 0;', css)
+        self.assertIn('overflow-y: auto;', css)
+        self.assertIn('max-height: calc(100dvh', css)
+        self.assertIn('overscroll-behavior: contain;', css)
+        self.assertIn('writing-mode: vertical-rl;', css)
+        self.assertIn('@media print', css)
+        self.assertIn('.ptb-drawer, .ptb-drawer *, .ptb-drawer[open] { display: none !important; }', css)

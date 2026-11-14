@@ -13,6 +13,13 @@
   </style>
 </head>
 <body>
+  <details class="ptb-drawer noprint"
+       {% if request.GET.print_settings == '1' or request.POST.print_settings == '1' %}open{% endif %}>
+  <summary class="ptb-drawer-toggle" aria-label="باز و بسته کردن تنظیمات چاپ">
+      <span class="ptb-toggle-icon" aria-hidden="true">⚙</span>
+      <span class="ptb-toggle-label">تنظیمات چاپ</span>
+      <span class="ptb-toggle-chevron" aria-hidden="true">⌄</span>
+  </summary>
   <section class="quotation-bulk-toolbar ptb-toolbar noprint" dir="rtl" aria-label="ابزارهای چاپ گروهی پیش‌فاکتورها">
     <div class="ptb-main">
       <div class="ptb-identity">
@@ -22,17 +29,23 @@
           <span class="ptb-subtitle">{{ documents|length }} پیش‌فاکتور آماده چاپ</span>
         </div>
       </div>
-      <div class="ptb-actions">
+      <section class="ptb-section ptb-section--actions" aria-label="عملیات چاپ">
+          <h4 class="ptb-section-title">عملیات چاپ</h4>
+          <div class="ptb-actions">
         <button type="button" class="ptb-button ptb-button--primary" onclick="window.print()">چاپ همه پیش‌فاکتورها</button>
-      </div>
+          </div>
+      </section>
     </div>
     <div class="ptb-profile-zone">
       <span class="ptb-profile-heading">تنظیمات خروجی و مشخصات خریداران</span>
       <form class="ptb-bulk-form" method="post" action="{% url 'micmod_base:quotation.bulk_print' %}">
         {% csrf_token %}
+        <input type="hidden" name="print_settings" value="1">
         {% for quotation_id in ids %}<input type="hidden" name="ids" value="{{ quotation_id }}">{% endfor %}
         <input type="hidden" name="q" value="{{ filter_q }}">
-        <div class="ptb-bulk-fields ptb-bulk-controls">
+        <div class="ptb-subsection" aria-label="نوع خروجی">
+          <span class="ptb-subsection-title">نوع خروجی</span>
+          <div class="ptb-bulk-fields ptb-bulk-controls">
           <label class="ptb-field">
             <span>نوع چاپ</span>
             <select name="print_style">
@@ -40,9 +53,12 @@
               <option value="expert" {% if print_style == 'expert' %}selected{% endif %}>نسخه کارشناس</option>
             </select>
           </label>
+          </div>
         </div>
         {% if customers %}
-        <div class="ptb-bulk-fields">
+        <div class="ptb-subsection" aria-label="پروفایل مشتری‌ها">
+          <span class="ptb-subsection-title">پروفایل حقوقی هر مشتری</span>
+          <div class="ptb-bulk-fields">
           {% for customer in customers %}
           <label class="ptb-field ptb-bulk-customer">
             <span>{{ customer.name }}</span>
@@ -54,6 +70,7 @@
             </select>
           </label>
           {% endfor %}
+          </div>
         </div>
         {% endif %}
         <div class="ptb-profile-actions">
@@ -63,6 +80,7 @@
       </form>
     </div>
   </section>
+  </details>
 
   {% for doc in documents %}
   <section class="quotation-bulk-document">

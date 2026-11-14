@@ -13,6 +13,13 @@
   </style>
 </head>
 <body>
+  <details class="ptb-drawer noprint"
+       {% if request.GET.print_settings == '1' or request.POST.print_settings == '1' %}open{% endif %}>
+  <summary class="ptb-drawer-toggle" aria-label="باز و بسته کردن تنظیمات چاپ">
+      <span class="ptb-toggle-icon" aria-hidden="true">⚙</span>
+      <span class="ptb-toggle-label">تنظیمات چاپ</span>
+      <span class="ptb-toggle-chevron" aria-hidden="true">⌄</span>
+  </summary>
   <section class="bulk-toolbar ptb-toolbar noprint" dir="rtl" aria-label="ابزارهای چاپ گروهی فاکتورها">
     <div class="ptb-main">
       <div class="ptb-identity">
@@ -22,18 +29,24 @@
           <span class="ptb-subtitle">{{ documents|length }} فاکتور آماده چاپ</span>
         </div>
       </div>
-      <div class="ptb-actions">
+      <section class="ptb-section ptb-section--actions" aria-label="عملیات چاپ">
+          <h4 class="ptb-section-title">عملیات چاپ</h4>
+          <div class="ptb-actions">
         <button type="button" class="ptb-button ptb-button--primary" onclick="window.print()">چاپ همه فاکتورها</button>
-      </div>
+          </div>
+      </section>
     </div>
     {% if customers %}
     <div class="ptb-profile-zone">
       <span class="ptb-profile-heading">مشخصات خریداران در خروجی چاپ</span>
       <form class="ptb-bulk-form" id="bulk-customer-profiles" method="post" action="{% url 'factor:factor.bulk_print' %}">
         {% csrf_token %}
+        <input type="hidden" name="print_settings" value="1">
         {% for invoice_id in ids %}<input type="hidden" name="ids" value="{{ invoice_id }}">{% endfor %}
         <input type="hidden" name="q" value="{{ filter_q }}">
-        <div class="ptb-bulk-fields">
+        <div class="ptb-subsection" aria-label="پروفایل مشتری‌ها">
+          <span class="ptb-subsection-title">پروفایل حقوقی هر مشتری</span>
+          <div class="ptb-bulk-fields">
           {% for customer in customers %}
           <label class="ptb-field ptb-bulk-customer">
             <span>{{ customer.name }}</span>
@@ -45,6 +58,7 @@
             </select>
           </label>
           {% endfor %}
+          </div>
         </div>
         <div class="ptb-profile-actions">
           <button type="submit" class="ptb-button ptb-button--primary">اعمال پروفایل‌ها</button>
@@ -54,6 +68,7 @@
     </div>
     {% endif %}
   </section>
+  </details>
   {% for doc in documents %}
   <section class="bulk-document">
     {% include 'factor/factor_print.html' with data=doc.data form=doc.form formset=doc.formset buyer_info=doc.buyer_info legal_profile_options=doc.legal_profile_options selected_legal_profile=doc.selected_legal_profile with_location=doc.with_location location_url_params=doc.location_url_params bulk_mode=True %}

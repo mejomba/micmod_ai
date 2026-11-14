@@ -1,6 +1,7 @@
 {% if not bulk_mode and legal_profile_options %}
 <form class="ptb-profile-form quotation-legal-profile-tools noprint" method="get" dir="rtl"
       aria-label="انتخاب پروفایل حقوقی خریدار">
+    <input type="hidden" name="print_settings" value="1">
     {% if request.GET.comments_url_params %}<input type="hidden" name="comments_url_params" value="{{ request.GET.comments_url_params }}">{% endif %}
     {% if request.GET.alt_code %}<input type="hidden" name="alt_code" value="{{ request.GET.alt_code }}">{% endif %}
     {% if request.GET.customer_goods_code_url_param %}<input type="hidden" name="customer_goods_code_url_param" value="{{ request.GET.customer_goods_code_url_param }}">{% endif %}
