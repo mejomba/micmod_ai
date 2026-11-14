@@ -156,3 +156,42 @@ class CustomerLegalProfileSalesStyleTests(SimpleTestCase):
         self.assertIn('cards.replaceChildren(fragment)', script)
         self.assertIn('textContent = profile.national_id', script)
         self.assertNotIn('cards.innerHTML', script)
+
+
+    def test_profile_row_matches_sale_conditions_remove_button(self):
+        """Remove button has the same glyph, styling and placement as payment rows."""
+        from django.conf import settings
+        from django.template.loader import get_template
+        from pathlib import Path
+
+        customer = get_template('extra_data/customer.html').template.source
+        self.assertNotIn('clp-row-subtitle', customer)
+        self.assertNotIn('data-legal-row-summary', customer)
+        self.assertNotIn('clp-row-identity', customer)
+        self.assertIn('class="clp-row-header"', customer)
+        self.assertIn('class="btn btn-sm btn-light-danger" data-legal-remove', customer)
+        self.assertIn('title="حذف پروفایل" aria-label="حذف پروفایل">×</button>', customer)
+
+        sales = (Path(settings.BASE_DIR) / 'factor/static/factor/js/sale_conditions.js').read_text(encoding='utf-8')
+        self.assertIn('class="btn btn-sm btn-light-danger" data-action="remove"', sales)
+        self.assertIn('aria-label="حذف شرط">×</button>', sales)
+
+    def test_profile_remove_button_css_and_js_regression(self):
+        """Removing the subtitle leaves a functioning remove control and JSON sync."""
+        from django.conf import settings
+        from pathlib import Path
+
+        root = Path(settings.BASE_DIR) / 'extra_data/static/extra_data'
+        css = (root / 'css/customer_legal_profiles.css').read_text(encoding='utf-8')
+        js = (root / 'js/customer_legal_profiles.js').read_text(encoding='utf-8')
+
+        self.assertNotIn('.clp-row-subtitle', css)
+        self.assertNotIn('.clp-remove', css)
+        self.assertIn('#customer-legal-profiles button[data-legal-remove]', css)
+        for expected in ('font-size: 17px', 'line-height: 1', 'padding: 1px 6px',
+                         'width: 27px', 'height: 25px'):
+            self.assertIn(expected, css)
+        self.assertNotIn('[data-legal-row-summary]', js)
+        self.assertIn("event.target.closest('[data-legal-remove]')", js)
+        self.assertIn("button.closest('[data-legal-profile-row]').remove()", js)
+        self.assertIn('hidden.value = JSON.stringify(activeProfiles())', js)

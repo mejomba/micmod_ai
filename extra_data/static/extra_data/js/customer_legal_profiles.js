@@ -58,8 +58,6 @@
       const profile = readRow(row);
       row.querySelector('[data-legal-profile-title]').textContent =
         profile.name || 'پروفایل ' + (index + 1);
-      row.querySelector('[data-legal-row-summary]').textContent =
-        [profile.type, profile.national_id].filter(Boolean).join(' · ') || 'در حال تکمیل';
       row.querySelector('[data-legal-remove]').setAttribute(
         'aria-label', 'حذف پروفایل ' + (index + 1));
     });

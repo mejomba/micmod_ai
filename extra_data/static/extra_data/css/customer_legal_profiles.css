@@ -192,7 +192,6 @@
   gap: 5px;
   min-width: 0;
 }
-#customer-legal-profiles .clp-row-identity { display: flex; flex-direction: column; gap: 3px; width: 100%; min-width: 0; }
 #customer-legal-profiles .clp-row-title {
   font-size: 11px;
   color: #102a43;
@@ -202,15 +201,14 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-#customer-legal-profiles .clp-row-subtitle {
-  font-size: 10px;
-  color: #788995;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* Match the exact remove-button dimensions and × glyph in multi-condition sales. */
+#customer-legal-profiles button[data-legal-remove] {
+  font-size: 17px;
+  line-height: 1;
+  padding: 1px 6px;
+  width: 27px;
+  height: 25px;
 }
-#customer-legal-profiles .clp-remove { min-width: 27px; min-height: 27px; padding: 3px 6px; font-size: 12px; }
 #customer-legal-profiles .clp-fields-grid {
   display: grid;
   grid-template-columns: minmax(130px,1.15fr) minmax(115px,.95fr) minmax(120px,1fr) minmax(125px,1fr) minmax(160px,1.5fr);
