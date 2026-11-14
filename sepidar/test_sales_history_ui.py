@@ -184,7 +184,16 @@ assert(calendarHeaderHTML().includes('aria-label="۱۲ سال قبل"'));
         self.assertIn("var data=new FormData(advancedForm)", self.source)
         self.assertIn("$('#sh-clear-table, #sh-clear-all').on('click',clearAllFilters)", self.source)
         self.assertNotIn("if(!p.toString())p.set('all_dates','1')", self.source)
-        self.assertIn("An empty query restores the same default seven-day window", self.source)
+        # Verify behavior, not a developer comment that can change wording.
+        # Clear-all must reset advanced and column controls in one request,
+        # dropping all_dates so Django restores its seven-day default.
+        self.assertIn("advancedForm.reset();", self.source)
+        self.assertIn("table.columns().search('');", self.source)
+        self.assertIn("search(new URLSearchParams());", self.source)
+        self.assertIn(
+            "new URLSearchParams(window.location.search).get('all_dates')==='1'",
+            self.source,
+        )
         self.assertIn('id="sh-clear-all"', self.source)
         self.assertIn('id="sh-clear-table"', self.source)
         self.assertNotIn('advancedParams=new URLSearchParams', self.source)
