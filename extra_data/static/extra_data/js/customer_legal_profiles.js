@@ -15,8 +15,11 @@
     const body = section.querySelector('#customer-legal-profiles-body');
     const count = section.querySelector('#customer-legal-profiles-count');
     const summary = section.querySelector('#customer-legal-profiles-summary');
+    const cards = section.querySelector('#customer-legal-profiles-cards');
+    const summaryEmpty = section.querySelector('#customer-legal-profiles-summary-empty');
+    const cardTemplate = document.getElementById('customer-legal-profile-card-template');
     if (!hidden || !list || !empty || !addButton || !template ||
-        !toggle || !body || !count || !summary) return;
+        !toggle || !body || !count || !summary || !cards || !summaryEmpty || !cardTemplate) return;
 
     const keys = ['name', 'national_id', 'type', 'postal_code', 'address'];
 
@@ -31,15 +34,29 @@
     function setExpanded(open) {
         toggle.setAttribute('aria-expanded', String(open));
         body.hidden = !open;
+        summary.hidden = open;
         section.classList.toggle('is-open', open);
     }
 
-    function profilePreview(profile) {
-        const name = profile.name || 'پروفایل بدون نام';
-        const details = [];
-        if (profile.type) details.push(profile.type);
-        if (profile.national_id) details.push('شناسه ملی: ' + profile.national_id);
-        return name + (details.length ? ' (' + details.join('، ') + ')' : ' (تکمیل نشده)');
+    function renderSummaryCards(profiles) {
+        const fragment = document.createDocumentFragment();
+        profiles.forEach(function (profile, index) {
+            const node = cardTemplate.content.cloneNode(true);
+            const card = node.querySelector('[data-legal-summary-card]');
+            card.querySelector('[data-card-name]').textContent =
+                profile.name || 'پروفایل ' + (index + 1);
+            card.querySelector('[data-card-type]').textContent =
+                profile.type || 'نوع مشخص نشده';
+            card.querySelector('[data-card-national-id]').textContent =
+                profile.national_id || '—';
+            card.querySelector('[data-card-postal-code]').textContent =
+                profile.postal_code || '—';
+            card.querySelector('[data-card-address]').textContent =
+                profile.address || 'آدرس ثبت نشده';
+            fragment.appendChild(node);
+        });
+        cards.replaceChildren(fragment);
+        summaryEmpty.hidden = profiles.length > 0;
     }
 
     function refresh() {
@@ -56,15 +73,12 @@
                 [profile.type, profile.national_id].filter(Boolean).join(' · ') || 'در حال تکمیل';
         });
         empty.classList.toggle('d-none', rows.length > 0);
-        count.textContent = rows.length + ' پروفایل';
-        if (!rows.length) {
-            summary.textContent = 'هنوز پروفایلی ثبت نشده است؛ برای افزودن کلیک کنید';
-        } else {
-            const previews = profiles.slice(0, 2).map(profilePreview);
-            const remaining = profiles.length - previews.length;
-            summary.textContent = previews.join('  •  ') +
-                (remaining > 0 ? '  •  +' + remaining + ' پروفایل دیگر' : '');
-        }
+        // Ignore completely empty editor rows: they are not persisted as profiles.
+        const nonEmptyProfiles = profiles.filter(function (profile) {
+            return keys.some(function (key) { return Boolean(profile[key]); });
+        });
+        count.textContent = nonEmptyProfiles.length + ' پروفایل';
+        renderSummaryCards(nonEmptyProfiles);
     }
 
     function sync() {

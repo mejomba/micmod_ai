@@ -114,6 +114,12 @@ class CustomerLegalProfileAccordionTests(SimpleTestCase):
         self.assertIn('id="customer-legal-profiles-body"', source)
         self.assertIn('{% if not form.legal_profiles.errors %}hidden{% endif %}', source)
         self.assertIn('id="customer-legal-profiles-summary"', source)
+        self.assertIn('id="customer-legal-profiles-cards"', source)
+        self.assertIn('id="customer-legal-profile-card-template"', source)
+        self.assertIn('data-card-name', source)
+        self.assertIn('data-card-national-id', source)
+        self.assertIn('data-card-postal-code', source)
+        self.assertIn('data-card-address', source)
         self.assertIn('id="customer-legal-profiles-count"', source)
         self.assertIn('{{ form.legal_profiles }}', source)
         self.assertIn('id="customer-legal-profile-add"', source)
@@ -128,9 +134,11 @@ class CustomerLegalProfileAccordionTests(SimpleTestCase):
         source = path.read_text(encoding='utf-8')
         self.assertIn("toggle.setAttribute('aria-expanded', String(open))", source)
         self.assertIn('body.hidden = !open', source)
-        self.assertIn('function profilePreview(profile)', source)
-        self.assertIn('profile.national_id', source)
-        self.assertIn('summary.textContent =', source)
+        self.assertIn('function renderSummaryCards(profiles)', source)
+        self.assertIn('summary.hidden = open', source)
+        self.assertIn('cards.replaceChildren(fragment)', source)
+        self.assertIn('cardTemplate.content.cloneNode(true)', source)
+        self.assertIn('card.querySelector(\'[data-card-national-id]\').textContent', source)
         self.assertIn('count.textContent =', source)
         self.assertIn("toggle.addEventListener('click'", source)
         self.assertIn("addButton.addEventListener('click'", source)
@@ -147,5 +155,38 @@ class CustomerLegalProfileAccordionTests(SimpleTestCase):
         source = path.read_text(encoding='utf-8')
         self.assertIn('.clp-accordion-body[hidden]', source)
         self.assertIn('display: none !important', source)
-        self.assertIn('.clp-summary', source)
+        self.assertIn('.clp-summary-grid', source)
+        self.assertIn('repeat(4, minmax(0, 1fr))', source)
+        self.assertIn('repeat(3, minmax(0, 1fr))', source)
+        self.assertIn('repeat(2, minmax(0, 1fr))', source)
+        self.assertIn('.clp-summary-panel[hidden]', source)
         self.assertIn('.clp-chevron', source)
+
+
+    def test_independent_cards_cover_all_profiles_and_use_safe_text_content(self):
+        from django.conf import settings
+        from pathlib import Path
+        from django.template.loader import get_template
+
+        template = get_template('extra_data/customer.html').template.source
+        self.assertIn('id="customer-legal-profiles-cards"', template)
+        self.assertIn('data-legal-summary-card', template)
+        self.assertIn('{% if form.legal_profiles.errors %}hidden{% endif %}', template)
+        self.assertIn('id="customer-legal-profiles-summary-empty"', template)
+
+        path = Path(settings.BASE_DIR) / 'extra_data/static/extra_data/js/customer_legal_profiles.js'
+        script = path.read_text(encoding='utf-8')
+        self.assertIn('profiles.forEach(function (profile, index)', script)
+        self.assertIn('renderSummaryCards(nonEmptyProfiles)', script)
+        self.assertIn('summaryEmpty.hidden = profiles.length > 0', script)
+        self.assertNotIn('cards.innerHTML', script)
+
+    def test_summary_grid_responsive_breakpoints(self):
+        from django.conf import settings
+        from pathlib import Path
+        path = Path(settings.BASE_DIR) / 'extra_data/static/extra_data/css/customer_legal_profiles.css'
+        css = path.read_text(encoding='utf-8')
+        for breakpoint in (1199, 991, 575):
+            self.assertIn('@media (max-width: ' + str(breakpoint) + 'px)', css)
+        self.assertIn('grid-template-columns: repeat(4, minmax(0, 1fr))', css)
+        self.assertIn('grid-template-columns: minmax(0, 1fr)', css)

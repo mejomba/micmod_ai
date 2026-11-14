@@ -59,14 +59,100 @@
     font-size: .73rem;
     white-space: nowrap;
 }
-#customer-legal-profiles .clp-summary {
-    color: #687789;
-    font-size: .79rem;
-    font-weight: normal;
-    max-width: 100%;
-    white-space: nowrap;
+/* The summary lives outside the editor and is shown only while collapsed. */
+#customer-legal-profiles .clp-summary-panel {
+    border-top: 1px solid #edf1f7;
+    padding: .6rem .85rem .8rem;
+}
+#customer-legal-profiles .clp-summary-panel[hidden],
+#customer-legal-profiles .clp-summary-empty[hidden] {
+    display: none !important;
+}
+#customer-legal-profiles .clp-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .65rem;
+}
+#customer-legal-profiles .clp-summary-card {
+    min-width: 0;
+    background: #fbfcff;
+    border: 1px solid #e2e9f3;
+    border-radius: .65rem;
+    padding: .7rem .8rem;
+    font-size: .78rem;
+    line-height: 1.5;
+}
+#customer-legal-profiles .clp-summary-card-heading {
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+    margin-bottom: .45rem;
+    min-height: 2.5rem;
+}
+#customer-legal-profiles .clp-card-name {
+    display: block;
+    font-size: .85rem;
+    color: #263a55;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+}
+#customer-legal-profiles .clp-card-type {
+    color: #667894;
+    font-size: .75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+#customer-legal-profiles .clp-card-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .4rem;
+    margin-top: .28rem;
+}
+#customer-legal-profiles .clp-card-meta-label {
+    color: #64748b;
+    white-space: nowrap;
+}
+#customer-legal-profiles .clp-card-meta-value {
+    color: #405574;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+#customer-legal-profiles .clp-card-address {
+    color: #778496;
+    border-top: 1px dashed #e1e8f0;
+    padding-top: .35rem;
+    margin: .5rem 0 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+#customer-legal-profiles .clp-summary-empty {
+    margin: 0;
+    color: #7b8797;
+    font-size: .8rem;
+    padding: .15rem .2rem;
+}
+@media (max-width: 1199px) {
+    #customer-legal-profiles .clp-summary-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+@media (max-width: 991px) {
+    #customer-legal-profiles .clp-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 575px) {
+    #customer-legal-profiles .clp-summary-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 #customer-legal-profiles .clp-chevron {
     flex: 0 0 auto;
@@ -152,7 +238,7 @@
     #customer-legal-profiles .clp-accordion-toggle { padding: .75rem; }
     #customer-legal-profiles .clp-accordion-body { padding: .75rem; }
     #customer-legal-profiles .customer-legal-profile-row { padding: .7rem; }
-    #customer-legal-profiles .clp-summary { font-size: .75rem; }
+    #customer-legal-profiles .clp-summary-panel { padding: .55rem; }
 }
 @media (prefers-reduced-motion: reduce) {
     #customer-legal-profiles .clp-chevron,

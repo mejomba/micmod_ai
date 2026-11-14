@@ -108,15 +108,19 @@
                         <span class="clp-section-title">پروفایل‌های حقوقی</span>
                         <span id="customer-legal-profiles-count" class="clp-count">۰ پروفایل</span>
                     </span>
-                    <span id="customer-legal-profiles-summary" class="clp-summary" aria-live="polite">
-                        هنوز پروفایلی ثبت نشده است
-                    </span>
                 </span>
                 <span class="clp-chevron" aria-hidden="true"></span>
             </button>
         </h4>
 
         {{ form.legal_profiles }}
+        <div id="customer-legal-profiles-summary" class="clp-summary-panel"
+             {% if form.legal_profiles.errors %}hidden{% endif %}>
+            <div id="customer-legal-profiles-cards" class="clp-summary-grid" aria-live="polite" aria-label="خلاصه پروفایل‌های حقوقی"></div>
+            <p id="customer-legal-profiles-summary-empty" class="clp-summary-empty" hidden>
+                هنوز پروفایل حقوقی ثبت نشده است. برای افزودن، این بخش را باز کنید.
+            </p>
+        </div>
         <div id="customer-legal-profiles-body" class="clp-accordion-body"
              {% if not form.legal_profiles.errors %}hidden{% endif %}>
             <div class="clp-editor-toolbar">
@@ -134,6 +138,23 @@
             <div id="customer-legal-profiles-list" class="d-grid gap-3" aria-live="polite"></div>
         </div>
 
+        <template id="customer-legal-profile-card-template">
+            <article class="clp-summary-card" data-legal-summary-card>
+                <div class="clp-summary-card-heading">
+                    <strong class="clp-card-name" data-card-name></strong>
+                    <span class="clp-card-type" data-card-type></span>
+                </div>
+                <div class="clp-card-meta">
+                    <span class="clp-card-meta-label">شناسه ملی</span>
+                    <b class="clp-card-meta-value" data-card-national-id dir="ltr"></b>
+                </div>
+                <div class="clp-card-meta">
+                    <span class="clp-card-meta-label">کد پستی</span>
+                    <b class="clp-card-meta-value" data-card-postal-code dir="ltr"></b>
+                </div>
+                <p class="clp-card-address" data-card-address></p>
+            </article>
+        </template>
         <template id="customer-legal-profile-template">
             <article class="customer-legal-profile-row" data-legal-profile-row>
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
