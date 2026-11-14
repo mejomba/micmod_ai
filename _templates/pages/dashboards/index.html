@@ -1,99 +1,136 @@
-<!--
-Define in dashboards/views.py file
-context.update({
-    'layout': KTTheme.setLayout('default.html', context),
-})
--->
 {% extends layout %}
+{% load i18n humanize %}
 
-{% load i18n %}
-
-{% block title %}{% translate "Dashboard" %}{% endblock %}
+{% block title %}گزارش عملیاتی{% endblock %}
 
 {% block content_ %}
-{% if request.user.is_superuser %}
-<!--begin::Row-->
-<div class="row g-5 g-xl-10 mb-5 mb-xl-10">
-    <!--begin::Col-->
-    <div class="col-md-6 col-lg-6 col-xl-6 col-xxl-3 mb-md-5 mb-xl-10">
-        {% include 'partials/widgets/cards/_widget-20.html' %}
+<div class="container-fluid op-dashboard" dir="rtl">
+  <style>
+    .op-dashboard { --op-border: #e7eaf0; --op-muted: #778099; }
+    .op-dashboard .op-title {font-weight: 800; color:#25314b; margin-bottom:.4rem}
+    .op-dashboard .op-subtitle {color:var(--op-muted);font-size:.91rem}
+    .op-dashboard .op-card {border:1px solid var(--op-border);border-radius:14px;box-shadow:0 2px 12px rgba(20,38,75,.035)}
+    .op-dashboard .op-kpi {font-size:1.8rem;font-weight:750;line-height:1.5}
+    .op-dashboard .op-label {color:var(--op-muted);font-size:.88rem}
+    .op-dashboard .op-table {min-width:650px;white-space:nowrap}
+    .op-dashboard .op-table th {font-weight:700;font-size:.87rem;color:#536077;background:#f7f8fb}
+    .op-dashboard .op-table td,.op-dashboard .op-table th {padding: .85rem 1rem;vertical-align:middle}
+    .op-dashboard .op-table tbody tr:hover {background:#f5f8fd}
+    .op-dashboard .op-name {font-weight:700}
+    .op-dashboard .op-money {font-variant-numeric:tabular-nums;direction:ltr;display:inline-block;text-align:left}
+    .op-dashboard .op-money-line {display:block;margin-bottom:3px}
+    .op-dashboard .op-empty {color:var(--op-muted);padding:1.5rem;text-align:center}
+    .op-dashboard details>summary {list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:1.25rem 1.5rem;font-weight:750}
+    .op-dashboard details>summary::-webkit-details-marker {display:none}
+    .op-dashboard details>summary:after {content:"⌄";font-size:1.25rem;color:#7b8499}
+    .op-dashboard details[open]>summary:after {content:"⌃"}
+  </style>
 
-        {% include 'partials/widgets/cards/_widget-7.html' %}
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-5">
+    <div>
+      <h1 class="op-title fs-2">گزارش عملکرد عملیاتی</h1>
+      <p class="op-subtitle mb-0">خلاصه عملکرد افراد در بازه زمانی انتخابی؛ بر پایه اسناد و رویدادهای ثبت‌شده پرتال</p>
     </div>
-    <!--end::Col-->
-    <!--begin::Col-->
-    <div class="col-md-6 col-lg-6 col-xl-6 col-xxl-3 mb-md-5 mb-xl-10">
-        {% include 'partials/widgets/cards/_widget-17.html' %}
+    <div class="badge badge-light-primary fs-7">
+      {% if report.scope == 'executive' %}نمای سازمانی{% elif report.scope == 'manager' %}نمای تیم{% else %}نمای شخصی{% endif %}
+    </div>
+  </div>
 
-        {% include 'partials/widgets/lists/_widget-26.html' %}
+  <form method="get" class="card op-card p-4 mb-5">
+    <div class="row g-3 align-items-end">
+      <div class="col-12 col-md-3">
+        <label for="op-days" class="form-label fw-semibold">بازه گزارش (روز گذشته)</label>
+        <input id="op-days" class="form-control" name="days" type="number" min="1" max="365" value="{{ report.days }}" required>
+      </div>
+      {% if report.scope != 'user' %}
+      <div class="col-12 col-md-5">
+        <label for="op-user" class="form-label fw-semibold">کاربر</label>
+        <select id="op-user" class="form-select" name="user_id">
+          <option value="">همه کاربران مجاز</option>
+          {% for user in report.user_options %}
+          <option value="{{ user.pk }}" {% if report.selected_user_id == user.pk %}selected{% endif %}>{{ user.get_full_name|default:user.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="col-12 col-md-auto">
+        <button class="btn btn-primary w-100" type="submit">نمایش گزارش</button>
+      </div>
     </div>
-    <!--end::Col-->
-    <!--begin::Col-->
-    <div class="col-xxl-6">
-        {% include 'partials/widgets/engage/_widget-10.html' %}
+  </form>
+
+  <div class="row g-3 mb-5">
+    <div class="col-6 col-xl-3"><div class="card op-card h-100 p-4"><div class="op-label">فاکتور و پیش‌فاکتور</div><div class="op-kpi">{{ report.total_documents|intcomma }}</div><div class="op-label">سند ثبت‌شده</div></div></div>
+    <div class="col-6 col-xl-3"><div class="card op-card h-100 p-4"><div class="op-label">استعلام‌های پاسخ‌داده‌شده</div><div class="op-kpi">{{ report.total_inquiries|intcomma }}</div><div class="op-label">استعلام یکتا به ازای کاربر</div></div></div>
+    <div class="col-6 col-xl-3"><div class="card op-card h-100 p-4"><div class="op-label">عملیات ثبت‌شده</div><div class="op-kpi">{{ report.total_operations|intcomma }}</div><div class="op-label">تأیید، رسید، ارسال و پرداخت</div></div></div>
+    <div class="col-6 col-xl-3"><div class="card op-card h-100 p-4"><div class="op-label">قرارداد فنی</div><div class="op-kpi">{{ report.total_contracts|intcomma }}</div><div class="op-label">قرارداد ثبت‌شده</div></div></div>
+  </div>
+
+  {% for section in report.sections %}
+  <details class="card op-card mb-4" {% if section.rows %}open{% endif %}>
+    <summary>
+      <span>{{ section.title }} <span class="badge badge-light ms-2">{{ section.rows|length }} نفر</span></span>
+    </summary>
+    {% if section.rows %}
+    <div class="table-responsive">
+      <table class="table table-row-bordered align-middle mb-0 op-table">
+        <thead><tr>
+          <th scope="col">کاربر</th>
+          {% if section.key == 'sales' %}
+            <th scope="col">فاکتور</th><th scope="col">مبلغ فاکتور (به تفکیک ارز)</th>
+            <th scope="col">پیش‌فاکتور</th><th scope="col">مبلغ پیش‌فاکتور (به تفکیک ارز)</th>
+            <th scope="col">مشتری یکتا</th>
+          {% elif section.key == 'sourcing' %}
+            <th scope="col">استعلام پاسخ‌داده‌شده</th>
+            <th scope="col">سفارش تبدیل‌شده به فاکتور خرید</th>
+          {% elif section.key == 'warehouse' %}
+            <th scope="col">فاکتور ارسال‌شده به مشتری</th>
+            <th scope="col">سفارش رسیدشده در انبار</th>
+          {% elif section.key == 'finance' %}
+            <th scope="col">فاکتور تأیید مالی‌شده</th>
+            <th scope="col">دستور پرداخت پرداخت‌شده</th>
+          {% elif section.key == 'technical' %}
+            <th scope="col">تعداد قرارداد</th><th scope="col">ارزش قرارداد (واحد مبلغ قرارداد)</th>
+          {% endif %}
+        </tr></thead>
+        <tbody>
+          {% for row in section.rows %}
+          <tr>
+            <th scope="row" class="op-name">{{ row.name }}</th>
+            {% if section.key == 'sales' %}
+              <td>{{ row.invoice_count|intcomma }}</td>
+              <td>{% for amount in row.invoice_amounts %}<span class="op-money-line"><span class="op-money">{{ amount.amount|floatformat:2|intcomma }}</span> {{ amount.currency }}</span>{% empty %}—{% endfor %}</td>
+              <td>{{ row.quotation_count|intcomma }}</td>
+              <td>{% for amount in row.quotation_amounts %}<span class="op-money-line"><span class="op-money">{{ amount.amount|floatformat:2|intcomma }}</span> {{ amount.currency }}</span>{% empty %}—{% endfor %}</td>
+              <td>{{ row.customers|intcomma }}</td>
+            {% elif section.key == 'sourcing' %}
+              <td>{{ row.inquiry_count|intcomma }}</td><td>{{ row.purchase_count|intcomma }}</td>
+            {% elif section.key == 'warehouse' %}
+              <td>{{ row.dispatch_count|intcomma }}</td><td>{{ row.receipt_count|intcomma }}</td>
+            {% elif section.key == 'finance' %}
+              <td>{{ row.finance_approval_count|intcomma }}</td><td>{{ row.paid_count|intcomma }}</td>
+            {% elif section.key == 'technical' %}
+              <td>{{ row.contract_count|intcomma }}</td><td><span class="op-money">{{ row.contract_amount|floatformat:0|intcomma }}</span></td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-    <!--end::Col-->
+    {% else %}
+      <p class="op-empty mb-0">در محدوده دسترسی شما، کاربری با این نقش یا فعالیت ثبت‌شده وجود ندارد.</p>
+    {% endif %}
+  </details>
+  {% endfor %}
+
+  <div class="alert alert-light border mt-5" role="note">
+    <strong>روش محاسبه:</strong>
+    فاکتور، پیش‌فاکتور و قرارداد بر اساس تاریخ ایجاد و کاربر ایجادکننده محاسبه می‌شوند.
+    مشتری یکتا بین فاکتورها و پیش‌فاکتورهای یک کاربر تکراری شمرده نمی‌شود.
+    استعلام بر اساس فایل استعلام یکتا با حداقل یک پاسخ ثبت‌شده توسط کاربر شمارش می‌شود.
+    سایر عملیات بر اساس تغییر وضعیت ثبت‌شده در تاریخچه، نه صرفاً وضعیت فعلی سند، محاسبه می‌شوند.
+    رویدادهای بدون کاربر قابل شناسایی یا تغییراتی که خارج از سیستم تاریخچه انجام شده‌اند قابل انتساب نیستند.
+    مبالغ با ارزهای متفاوت با هم جمع نمی‌شوند. ارزش قرارداد بر اساس فرمول فعلی مدل قرارداد است.
+  </div>
 </div>
-<!--end::Row-->
-
-<!--begin::Row-->
-<div class="row gx-5 gx-xl-10">
-    <!--begin::Col-->
-    <div class="col-xxl-6 mb-5 mb-xl-10">
-        {% include 'partials/widgets/charts/_widget-8.html' %}
-    </div>
-    <!--end::Col-->
-    <!--begin::Col-->
-    <div class="col-xl-6 mb-5 mb-xl-10">
-        {% include 'partials/widgets/tables/_widget-16.html' %}
-    </div>
-    <!--end::Col-->
-</div>
-<!--end::Row-->
-
-<!--begin::Row-->
-<div class="row g-5 g-xl-10 mb-5 mb-xl-10">
-    <!--begin::Col-->
-    <div class="col-xxl-6">
-        {% include 'partials/widgets/cards/_widget-18.html' %}
-    </div>
-    <!--end::Col-->
-    <!--begin::Col-->
-    <div class="col-xl-6">
-        {% include 'partials/widgets/charts/_widget-36.html' %}
-    </div>
-    <!--end::Col-->
-</div>
-<!--end::Row-->
-
-<!--begin::Row-->
-<div class="row g-5 g-xl-10 mb-5 mb-xl-10">
-    <!--begin::Col-->
-    <div class="col-xl-4">
-        {% include 'partials/widgets/charts/_widget-35.html' %}
-    </div>
-    <!--end::Col-->
-    <!--begin::Col-->
-    <div class="col-xl-8">
-        {% include 'partials/widgets/tables/_widget-14.html' %}
-    </div>
-    <!--end::Col-->
-</div>
-<!--end::Row-->
-
-<!--begin::Row-->
-<div class="row gx-5 gx-xl-10">
-    <!--begin::Col-->
-    <div class="col-xl-4">
-        {% include 'partials/widgets/charts/_widget-31.html' %}
-    </div>
-    <!--end::Col-->
-    <!--begin::Col-->
-    <div class="col-xl-8">
-        {% include 'partials/widgets/charts/_widget-24.html' %}
-    </div>
-    <!--end::Col-->
-</div>
-<!--end::Row-->
-{% endif %}
 {% endblock content_ %}
