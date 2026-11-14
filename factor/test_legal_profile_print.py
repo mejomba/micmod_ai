@@ -153,6 +153,8 @@ class BulkLegalProfileGroupingTests(SimpleTestCase):
         self.assertEqual(len(groups), 2)
         self.assertEqual(docs[0]['buyer_info']['name'], 'شرکت ب')
         self.assertEqual(docs[1]['buyer_info']['name'], 'شرکت ج')
+        self.assertEqual([option['selected'] for option in groups[0]['options']], [False, True])
+        self.assertEqual([option['selected'] for option in groups[1]['options']], [True])
 
     def test_other_customer_index_is_invalid(self):
         with self.assertRaises(ValueError):
@@ -172,7 +174,9 @@ class BulkLegalProfileGroupingTests(SimpleTestCase):
         self.assertIn('{% csrf_token %}', body)
         self.assertIn('name="ids"', body)
         self.assertIn('name="{{ customer.field_name }}"', body)
-        self.assertIn('{% if customer.selected %}selected{% endif %}', body)
+        self.assertIn('{% if not customer.selected %}selected{% endif %}', body)
+        self.assertIn('{% for profile in customer.options %}', body)
+        self.assertIn('{% if profile.selected %}selected{% endif %}', body)
 
 
 
