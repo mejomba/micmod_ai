@@ -8,8 +8,8 @@ from django.contrib.auth.models import AnonymousUser
 from django.template.loader import get_template
 from django.test import RequestFactory, SimpleTestCase
 
-from factor.print_customer import customer_print_context
-from factor.views import print_view
+from factor.print_customer import customer_print_context, apply_bulk_customer_profiles
+from factor.views import print_view, factor_bulk_print
 
 
 class LegalProfileFactorPrintTests(SimpleTestCase):
@@ -114,3 +114,125 @@ class LegalProfileFactorPrintTests(SimpleTestCase):
         request.user = AnonymousUser()
         result = print_view(request, id=73, context_only=True)
         self.assertEqual(result.status_code, 302)
+
+
+
+class BulkLegalProfileGroupingTests(SimpleTestCase):
+    """Each customer has one choice shared across their documents."""
+
+    def setUp(self):
+        self.first = SimpleNamespace(
+            pk=11, title='مشتری اول', national_code='100',
+            address='آدرس اول', phone='0211',
+            legal_profiles=[
+                {'name': 'شرکت الف', 'national_id': '11111111111',
+                 'postal_code': '1111111111', 'type': 'سهامی خاص', 'address': 'نشانی الف'},
+                {'name': 'شرکت ب', 'national_id': '22222222222',
+                 'postal_code': '2222222222', 'type': 'مسئولیت محدود', 'address': 'نشانی ب'},
+            ],
+        )
+        self.second = SimpleNamespace(
+            pk=22, title='مشتری دوم', national_code='200',
+            address='آدرس دوم', phone='0212',
+            legal_profiles=[{'name': 'شرکت ج', 'national_id': '33333333333',
+                             'postal_code': '3333333333', 'type': 'سهامی خاص',
+                             'address': 'نشانی ج'}],
+        )
+
+    def test_same_customer_one_selection_for_multiple_invoices(self):
+        docs = [{'print_customer': self.first}, {'print_customer': self.first}]
+        groups = apply_bulk_customer_profiles(docs, {'legal_profile_11': '1'})
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(groups[0]['field_name'], 'legal_profile_11')
+        self.assertEqual(docs[0]['buyer_info']['name'], 'شرکت ب')
+        self.assertEqual(docs[1]['buyer_info']['name'], 'شرکت ب')
+
+    def test_different_customers_independent_choices(self):
+        docs = [{'print_customer': self.first}, {'print_customer': self.second}]
+        groups = apply_bulk_customer_profiles(docs, {'legal_profile_11': '1', 'legal_profile_22': '0'})
+        self.assertEqual(len(groups), 2)
+        self.assertEqual(docs[0]['buyer_info']['name'], 'شرکت ب')
+        self.assertEqual(docs[1]['buyer_info']['name'], 'شرکت ج')
+
+    def test_other_customer_index_is_invalid(self):
+        with self.assertRaises(ValueError):
+            apply_bulk_customer_profiles([{'print_customer': self.second}], {'legal_profile_22': '1'})
+
+    def test_base_fallback_and_no_profiles(self):
+        without = SimpleNamespace(pk=33, title='بدون پروفایل', legal_profiles=[],
+                                  national_code='300', address='', phone='')
+        docs = [{'print_customer': self.first}, {'print_customer': without}]
+        groups = apply_bulk_customer_profiles(docs, {})
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(docs[0]['buyer_info']['name'], 'مشتری اول')
+        self.assertEqual(docs[1]['buyer_info']['name'], 'بدون پروفایل')
+
+    def test_bulk_form_preserves_invoice_ids_and_csrf(self):
+        body = get_template('factor/bulk_print.html').template.source
+        self.assertIn('{% csrf_token %}', body)
+        self.assertIn('name="ids"', body)
+        self.assertIn('name="{{ customer.field_name }}"', body)
+        self.assertIn('{% if customer.selected %}selected{% endif %}', body)
+
+
+
+class FactorBulkLegalProfileViewTests(SimpleTestCase):
+    """The bulk endpoint must apply independent selections after permission checks."""
+
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.first = SimpleNamespace(
+            pk=11, title='مشتری اول', legal_profiles=[
+                {'name': 'شرکت اول', 'national_id': '00123456789',
+                 'postal_code': '1111111111', 'type': 'سهامی خاص', 'address': 'آدرس اول'},
+            ], address='آدرس پایه اول', national_code='100', phone='0211',
+        )
+        self.second = SimpleNamespace(
+            pk=22, title='مشتری دوم', legal_profiles=[
+                {'name': 'شرکت دوم', 'national_id': '00123456780',
+                 'postal_code': '2222222222', 'type': 'مسئولیت محدود', 'address': 'آدرس دوم'},
+            ], address='آدرس پایه دوم', national_code='200', phone='0212',
+        )
+
+    def _call(self, params):
+        request = self.factory.post('/factor/factor/bulk-print/', params)
+        request.user = SimpleNamespace(is_authenticated=True)
+        by_id = {101: self.first, 102: self.second}
+
+        def document(request, id, context_only=False):
+            self.assertTrue(context_only)
+            return {'print_customer': by_id[id], 'data': SimpleNamespace(id=id)}
+
+        with (
+            patch('factor.views.FactorListDatatable') as table,
+            patch('factor.views.Factor.get_qs') as get_qs,
+            patch('factor.views.print_view', side_effect=document),
+            patch('factor.views.render') as render,
+        ):
+            table.return_value.get_initial_queryset.return_value.filter.return_value.values_list.return_value.distinct.return_value = [101, 102]
+            get_qs.return_value.filter.return_value.values_list.return_value.distinct.return_value = [101, 102]
+            response = factor_bulk_print(request)
+            if render.called:
+                return render.call_args.args[2]
+            return response
+
+    def test_independent_customer_selection_on_bulk_factor_print(self):
+        context = self._call({
+            'ids': ['101', '102'], 'legal_profile_11': '0', 'legal_profile_22': '',
+        })
+        self.assertEqual(len(context['customers']), 2)
+        self.assertEqual(context['documents'][0]['buyer_info']['name'], 'شرکت اول')
+        self.assertEqual(context['documents'][1]['buyer_info']['name'], 'مشتری دوم')
+
+    def test_invalid_customer_profile_on_bulk_factor_print_returns_400(self):
+        result = self._call({
+            'ids': ['101', '102'], 'legal_profile_11': '2',
+        })
+        self.assertEqual(result.status_code, 400)
+
+    def test_bulk_factor_print_keeps_id_order(self):
+        context = self._call({
+            'ids': ['102', '101'], 'legal_profile_22': '0',
+        })
+        self.assertEqual(context['ids'], [102, 101])
+        self.assertEqual(context['documents'][0]['buyer_info']['name'], 'شرکت دوم')

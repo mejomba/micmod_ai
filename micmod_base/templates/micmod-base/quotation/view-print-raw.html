@@ -7,6 +7,7 @@
 {% load more_tags %}
 
 {#<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700">#}
+{% if not bulk_mode or forloop.first %}
 <link href="/assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/global/plugins.bundle.rtl.css" rel="stylesheet" type="text/css">
@@ -26,18 +27,20 @@
         @media print {
 
            .noprint {
-              visibility: hidden;
+              display: none !important;
            }
            .button {
                display: block;
            }
         }
     </style>
+{% endif %}
 
+{% if not bulk_mode %}
 <div class="position-absolute" style="right: 0">
     <a href="javascript:window.print()" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
-    <a href="{% url "micmod_base:quotations.print-view" id=data.id %}" class="noprint btn btn-primary btn-bordered mb-5 mt-5"> پرینت پیش فاکتور کارشناس</a>
-    <a href="{% url "micmod_base:print_customer" id=data.id %}?customer_goods_code_url_param={{ customer_goods_code_url_param }}"
+    <a href="{% url "micmod_base:quotations.print-view" id=data.id %}?legal_profile={{ selected_legal_profile|default:'' }} class="noprint btn btn-primary btn-bordered mb-5 mt-5"> پرینت پیش فاکتور کارشناس</a>
+    <a href="{% url "micmod_base:print_customer" id=data.id %}?customer_goods_code_url_param={{ customer_goods_code_url_param }}&amp;legal_profile={{ selected_legal_profile|default:'' }}"
        class="noprint btn btn-primary btn-bordered mb-5 mt-5">
         {% if customer_goods_code_url_param == '0' %}
             بدون کد کالای مشتری
@@ -46,6 +49,8 @@
         {% endif %}
     </a>
 </div>
+{% endif %}
+{% include 'micmod-base/quotation/partial/legal_profile_picker.html' %}
 <div>
 <div class="container mt-10" dir="rtl">
     <div class="row">
@@ -125,8 +130,11 @@
                     <p data-key="address">نشانی: </p>
                 </div>
                 <div class="">
-                    <p class="">{{ data.customer_party_id.title|default_if_none:"-" }}</p>
-                    <p class="">{{ data.customer_party_id.address|default_if_none:"-" }}</p>
+                    <p class="">{{ buyer_info.name }}</p>
+                    <p class="">{{ buyer_info.address }}</p>
+                    {% if buyer_info.is_legal_profile %}
+                        <p data-key="buyer_legal_type" class="mb-0">نوع شخصیت حقوقی: {{ buyer_info.type }}</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -137,21 +145,21 @@
                     <p data-key="phone">تلفن:</p>
                 </div>
                 <div class="">
-                    <p class="">{{ data.customer_party_id.national_code|default_if_none:"-" }}</p>
-                    <p class="">{{ data.customer_party_id.phone|default_if_none:"-" }}</p>
+                    <p class="">{{ buyer_info.economical_number }}</p>
+                    <p class="">{{ buyer_info.phone }}</p>
                 </div>
             </div>
         </div>
         <div class="col-4">
         <div class="d-flex gap-3">
         <div class="">
-            <p data-key="national_number">شماره ثبت/شماره ملی : </p>
+            <p data-key="national_number">{% if buyer_info.is_legal_profile %}شناسه ملی{% else %}شماره ثبت/شماره ملی{% endif %} : </p>
             <p data-key="postal_code">کد پستی: </p>
 
         </div>
         <div class="">
-            <p data-key="national_number">{{ data.customer_party_id.national_code|default_if_none:"-" }} </p>
-            <p data-key="postal_code">-</p>
+            <p data-key="national_number">{{ buyer_info.national_number }} </p>
+            <p data-key="postal_code">{{ buyer_info.postal_code }}</p>
 
         </div>
             </div>
@@ -321,6 +329,7 @@
 {#<br>#}
 {#<br>#}
 {% block extra_js %}
+{% if not bulk_mode %}
     <script src="{% static 'js/base.js' %}"></script>
 
     <script>
@@ -341,4 +350,5 @@
             {#    rowTotalCount.innerHTML = numberWithCommas(parseFloat(count))#}
             //})
     </script>
+{% endif %}
 {% endblock extra_js %}

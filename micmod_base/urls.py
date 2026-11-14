@@ -49,6 +49,7 @@ urlpatterns = [
     path('quotationitem/list/sales_history/datatable', QuotationSalesHistoryDatatable.as_view(), name='quotationitem.sales.history.datatable'),
     path('get_sku/', get_sku, name='get_sku'),
     path('quotation/print/<int:id>/', print_view, name='print'),
+    path('quotation/bulk-print/', quotation_bulk_print, name='quotation.bulk_print'),
     path('quotationitem/inquiry/report/', inquiry_report, name='inquiry_report'),
     path('quotation/print/customer/<int:id>/', print_view, name='print_customer'),
     path('ajax/save_parent_item/', save_parent_item, name='save_parent_item'),

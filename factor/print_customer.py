@@ -45,3 +45,34 @@ def customer_print_context(customer, selected_index=None):
         'legal_profile_options': options,
         'selected_legal_profile': selected_index or None,
     }
+
+
+def apply_bulk_customer_profiles(documents, selections):
+    """Resolve one print-only profile selection per customer across documents.
+
+    Documents contain a print_customer reference to the actual customer.
+    Selected indices are validated against that customer's own JSON records.
+    """
+    groups = {}
+    for document in documents:
+        customer = document.get('print_customer')
+        if customer is None:
+            continue
+        key = str(customer.pk)
+        if key not in groups:
+            field_name = 'legal_profile_' + key
+            selection = selections.get(field_name)
+            context = customer_print_context(customer, selection)
+            groups[key] = {
+                'key': key,
+                'field_name': field_name,
+                'name': customer.title or ('مشتری ' + key),
+                'options': context['legal_profile_options'],
+                'selected': context['selected_legal_profile'],
+                'buyer_info': context['buyer_info'],
+            }
+        group = groups[key]
+        document['buyer_info'] = group['buyer_info']
+        document['selected_legal_profile'] = group['selected']
+        document['legal_profile_options'] = group['options']
+    return [group for group in groups.values() if group['options']]

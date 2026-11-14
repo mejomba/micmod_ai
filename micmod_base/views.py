@@ -5,6 +5,10 @@ import jdatetime
 from django.apps import apps
 from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.core.exceptions import PermissionDenied
+from factor.print_customer import customer_print_context, apply_bulk_customer_profiles
 from django.core.paginator import Paginator
 from django.template import TemplateDoesNotExist, loader
 from django.template.loader import render_to_string
@@ -507,7 +511,8 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         return context
 
 
-def print_view(request,id=-1):
+@login_required
+def print_view(request,id=-1, *, context_only=False):
     customer_print = reverse("micmod_base:print_customer", args=[id])
     if request.META.get('PATH_INFO') == customer_print:
         template_name = 'micmod-base/quotation/view-print-raw.html'
@@ -550,6 +555,14 @@ def print_view(request,id=-1):
     greeting['customer_goods_code_url_param'] = customer_goods_code_url_param
     greeting['with_customer_goods_code'] = with_customer_goods_code
     quotation = Quotation.objects.filter(id=id).first()
+    greeting['print_customer'] = quotation.customer_party_id if quotation else None
+    if quotation:
+        try:
+            greeting.update(customer_print_context(
+                quotation.customer_party_id, request.GET.get('legal_profile'),
+            ))
+        except ValueError as exc:
+            return HttpResponseBadRequest(str(exc))
     greeting['form'] = QuotationForm(instance=quotation)
     greeting['formset'] = formset(instance=quotation,
                                   form_kwargs={
@@ -628,7 +641,54 @@ def print_view(request,id=-1):
         quotation.created_date = datetime2jalali(quotation.created_date).strftime('%y/%m/%d-%H:%M')
         quotation.last_update_date = datetime2jalali(quotation.last_update_date).strftime('%y/%m/%d-%H:%M')
     greeting['data'] = quotation
+    if context_only:
+        return greeting
     return render(request, template_name, greeting)
+
+
+
+
+@login_required
+@require_POST
+def quotation_bulk_print(request):
+    """Print up to 30 quotations, selecting a legal profile independently per customer."""
+    values = request.POST.getlist('ids')
+    if not values or len(values) > 30:
+        return HttpResponseBadRequest('تعداد پیش‌فاکتورهای انتخاب‌شده نامعتبر است (حداکثر ۳۰).')
+    if any(not val.isascii() or not val.isdigit() or int(val) <= 0 for val in values):
+        return HttpResponseBadRequest('شناسه پیش‌فاکتور نامعتبر است.')
+    ids = [int(value) for value in values]
+    if len(ids) != len(set(ids)):
+        return HttpResponseBadRequest('شناسه پیش‌فاکتور تکراری است.')
+
+    print_style = request.POST.get('print_style', 'customer')
+    if print_style not in ('customer', 'expert'):
+        return HttpResponseBadRequest('نوع چاپ پیش‌فاکتور نامعتبر است.')
+
+    # Match the current list permissions and the model's role-based access.
+    table_view = QuotationListDatatable()
+    table_view.request = request
+    visible = set(table_view.get_initial_queryset(request)
+                  .filter(pk__in=ids).values_list('pk', flat=True).distinct())
+    permitted = set(Quotation.get_qs(request)
+                    .filter(pk__in=ids).values_list('pk', flat=True).distinct())
+    if visible != set(ids) or permitted != set(ids):
+        raise PermissionDenied('دسترسی چاپ یکی از پیش‌فاکتورها وجود ندارد.')
+
+    documents = [print_view(request, id=quotation_id, context_only=True)
+                 for quotation_id in ids]
+    try:
+        customers = apply_bulk_customer_profiles(documents, request.POST)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
+    return render(request, 'micmod-base/quotation/bulk_print.html', {
+        'documents': documents,
+        'customers': customers,
+        'ids': ids,
+        'filter_q': request.POST.get('q', ''),
+        'print_style': print_style,
+        'bulk_mode': True,
+    })
 
 
 class CurrencyExchangeView(LoginRequiredMixin, BaseView):
@@ -1167,6 +1227,9 @@ class QuotationListDatatable(CustomAjaxDatatableView):
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'bulk_select', 'visible': True, 'orderable': False,
+         'searchable': False, 'title': 'انتخاب چاپ',
+         'className': 'quotation-bulk-column text-center'},
         {'name': 'factor_create', 'orderable': False, 'visible': True, 'searchable': False, 'title': '<div class="px-0">ایجاد فاکتور</div>', 'className': 'py-1 border currency-search'},
         {'name': 'pk', 'visible': True, 'title': _('code'), 'className': 'py-1 border currency-search'},
         {'name': 'id', 'visible': False, },
@@ -1201,6 +1264,10 @@ class QuotationListDatatable(CustomAjaxDatatableView):
 
     # @timer
     def customize_row(self, row, obj):
+        row['bulk_select'] = (
+            f'<input type="checkbox" class="form-check-input js-quotation-bulk" '
+            f'value="{obj.pk}" aria-label="انتخاب پیش‌فاکتور {obj.pk} برای چاپ">'
+        )
         row['inquiry_duration'] = render_quotation_inquiry_timing(obj)
         qi_comments = [x.comments.all() for x in obj.quotation.all()]
         c = 0

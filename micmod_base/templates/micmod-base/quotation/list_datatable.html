@@ -21,7 +21,10 @@
     <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
 
     <style>
-
+      .quotation-bulk-toolbar {display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+          padding:10px 12px;margin-bottom:10px;background:#f4f8fc;border:1px solid #dbe5f0;border-radius:8px;}
+      #quotation_list .js-quotation-bulk {width:17px;height:17px;cursor:pointer;}
+      #quotation-bulk-counter {color:#315071;font-size:12px;font-weight:600;}
     </style>
 {% endblock %}
 
@@ -73,6 +76,19 @@
                 <div class="row">
                             <div class="col-12">
                                 <div class="container-fluid">
+                                    <div class="quotation-bulk-toolbar" dir="rtl" id="quotation-bulk-toolbar">
+                                        <label class="d-flex align-items-center gap-2 m-0">
+                                            <input type="checkbox" id="quotation-bulk-all" class="form-check-input">
+                                            انتخاب تمام ردیف‌های صفحه جاری
+                                        </label>
+                                        <span id="quotation-bulk-counter">۰ پیش‌فاکتور انتخاب‌شده</span>
+                                        <button id="quotation-bulk-print" type="button" class="btn btn-primary btn-sm" disabled>چاپ گروهی پیش‌فاکتورها</button>
+                                        <button id="quotation-bulk-clear" type="button" class="btn btn-light btn-sm">پاک کردن انتخاب‌ها</button>
+                                    </div>
+                                    <form id="quotation-bulk-form" method="post" target="_blank"
+                                          action="{% url 'micmod_base:quotation.bulk_print' %}" style="display:none;">
+                                        {% csrf_token %}
+                                    </form>
                                     <div class="table-responsive p-2">
                                         <table id="quotation_list" width="100%" class="m-table table-striped table-bordered w-100">
 
@@ -181,5 +197,59 @@
     <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
     <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
     <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
+
+
+    <script>
+    // Keep selected quotation IDs across server-side DataTable pages.
+    $(function () {
+        const selected = new Set();
+        const $table = $('#quotation_list');
+        const $all = $('#quotation-bulk-all');
+        const $print = $('#quotation-bulk-print');
+        function refresh() {
+            const $items = $table.find('tbody input.js-quotation-bulk');
+            $items.each(function () { this.checked = selected.has(String(this.value)); });
+            const all = $items.length > 0 && $items.toArray().every(el => el.checked);
+            const any = $items.toArray().some(el => el.checked);
+            $all.prop('checked', all).prop('indeterminate', any && !all);
+            $('#quotation-bulk-counter').text(
+                selected.size.toLocaleString('fa-IR') + ' پیش‌فاکتور انتخاب‌شده');
+            $print.prop('disabled', !selected.size);
+        }
+        $table.on('click', '.js-quotation-bulk', function (event) { event.stopPropagation(); });
+        $table.on('change', '.js-quotation-bulk', function () {
+            const id = String(this.value);
+            if (this.checked) selected.add(id); else selected.delete(id);
+            refresh();
+        });
+        $all.on('change', function () {
+            const checked = this.checked;
+            $table.find('tbody .js-quotation-bulk').each(function () {
+                if (checked) selected.add(String(this.value)); else selected.delete(String(this.value));
+            });
+            refresh();
+        });
+        $('#quotation-bulk-clear').on('click', function () { selected.clear(); refresh(); });
+        $table.on('init.dt draw.dt', refresh);
+        $print.on('click', function () {
+            if (!selected.size) return;
+            if (selected.size > 30) {
+                alert('حداکثر ۳۰ پیش‌فاکتور را می‌توان هم‌زمان چاپ کرد.');
+                return;
+            }
+            const form = document.getElementById('quotation-bulk-form');
+            form.querySelectorAll('.quotation-bulk-hidden').forEach(el => el.remove());
+            function add(name, value) {
+                const field = document.createElement('input');
+                field.type = 'hidden'; field.className = 'quotation-bulk-hidden';
+                field.name = name; field.value = value; form.appendChild(field);
+            }
+            selected.forEach(id => add('ids', id));
+            add('q', new URLSearchParams(location.search).get('q') || '');
+            form.submit();
+        });
+        refresh();
+    });
+    </script>
 
 {% endblock extra_js %}

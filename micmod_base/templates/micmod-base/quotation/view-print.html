@@ -7,6 +7,7 @@
 {% block extra_css %}
 {% endblock extra_css %}
 
+{% if not bulk_mode or forloop.first %}
 <link href="/assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/custom/datatables/print.style.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet" type="text/css">
@@ -26,14 +27,16 @@
 <!-- ============================================================== -->
 <!-- Start right Content here -->
 <!-- ============================================================== -->
+{% endif %}
+{% include 'micmod-base/quotation/partial/legal_profile_picker.html' %}
 <div class="main-content  mt-10 px-1" id="main-content" dir="rtl">
     <div class="page-content">
         <div class="container-fluid">
             <div class="replace-digits">
                 <a href="javascript:window.print()" class="button print btn btn-primary btn-bordered mb-10">پرینت</a>
-                <a href="{% url 'micmod_base:print_customer' id=data.id %}" class="button print btn btn-primary btn-bordered mb-10"
+                <a href="{% url 'micmod_base:print_customer' id=data.id %}?legal_profile={{ selected_legal_profile|default:'' }}" class="button print btn btn-primary btn-bordered mb-10"
                    target="_blank">پرینت پیش فاکتور مشتری</a>
-                <a href="{% url "micmod_base:quotations.print-view" id=data.pk %}?comments_url_params={{ comments_url_params }}"
+                <a href="{% url "micmod_base:quotations.print-view" id=data.pk %}?comments_url_params={{ comments_url_params }}&amp;legal_profile={{ selected_legal_profile|default:'' }}"
                    class="button print px-5 mx-5 btn btn-primary btn-bordered mb-10">
                     {% if comments_url_params == '0' %}
                         بدون نظرات
@@ -42,7 +45,7 @@
 
                     {% endif %}
                 </a>
-                <a href="{% url "micmod_base:quotations.print-view" id=data.pk %}?comments_url_params={{ comments_url_params }}&alt_code={{ alt_code }}"
+                <a href="{% url "micmod_base:quotations.print-view" id=data.pk %}?comments_url_params={{ comments_url_params }}&amp;alt_code={{ alt_code }}&amp;legal_profile={{ selected_legal_profile|default:'' }}"
                    class="button print px-5 mx-5 btn btn-primary btn-bordered mb-10">
                     {% if alt_code == '0' %}
                         بدون کد مشابه
@@ -145,7 +148,25 @@
                                                 {% endif %}
                                                 <div data-key="customer_title"></div>
                                                 <div class="px-2 bg-light-info p-0 text-black"
-                                                     id="customer_name">{{ customer.name }}</div>
+                                                     id="customer_name">{% if buyer_info.is_legal_profile %}{{ buyer_info.name }}{% else %}{{ customer.name }}{% endif %}</div>
+                                                {% if buyer_info.is_legal_profile %}
+                                                <div class="d-flex border w-100">
+                                                    <div class="w-40 bold">نوع شخصیت حقوقی</div>
+                                                    <div class="w-60">{{ buyer_info.type }}</div>
+                                                </div>
+                                                <div class="d-flex border w-100">
+                                                    <div class="w-40 bold">شناسه ملی</div>
+                                                    <div class="w-60" dir="ltr">{{ buyer_info.national_number }}</div>
+                                                </div>
+                                                <div class="d-flex border w-100">
+                                                    <div class="w-40 bold">کد پستی</div>
+                                                    <div class="w-60" dir="ltr">{{ buyer_info.postal_code }}</div>
+                                                </div>
+                                                <div class="d-flex border w-100">
+                                                    <div class="w-40 bold">آدرس</div>
+                                                    <div class="w-60">{{ buyer_info.address }}</div>
+                                                </div>
+                                                {% endif %}
                                                 </div>
 
                                                 </div>
@@ -234,6 +255,7 @@
 
 
 {% block extra_js %}
+{% if not bulk_mode %}
     <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
     <script src="/assets/lang/translate.js"></script>
     <script src="/assets/js/refresh_after_ajax.js"></script>
@@ -261,4 +283,5 @@
         // )
     </script>
 
+{% endif %}
 {% endblock extra_js %}

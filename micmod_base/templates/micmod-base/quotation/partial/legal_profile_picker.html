@@ -1,0 +1,19 @@
+{% if not bulk_mode and legal_profile_options %}
+<style>@media print { .quotation-legal-profile-tools { display:none!important; } }</style>
+<form class="quotation-legal-profile-tools noprint border rounded bg-light p-3 my-3 d-flex align-items-center flex-wrap gap-3"
+      method="get" dir="rtl" aria-label="انتخاب پروفایل حقوقی خریدار">
+    {% if request.GET.comments_url_params %}<input type="hidden" name="comments_url_params" value="{{ request.GET.comments_url_params }}">{% endif %}
+    {% if request.GET.alt_code %}<input type="hidden" name="alt_code" value="{{ request.GET.alt_code }}">{% endif %}
+    {% if request.GET.customer_goods_code_url_param %}<input type="hidden" name="customer_goods_code_url_param" value="{{ request.GET.customer_goods_code_url_param }}">{% endif %}
+    <label class="fw-bold mb-0" for="quotation-profile-choice">پروفایل حقوقی خریدار:</label>
+    <select class="form-select w-auto" name="legal_profile" id="quotation-profile-choice"
+            onchange="this.form.submit()">
+        <option value="" {% if not selected_legal_profile %}selected{% endif %}>اطلاعات پایه مشتری</option>
+        {% for option in legal_profile_options %}
+        <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.label }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm">اعمال پروفایل</button>
+    <span class="text-muted small">فقط اطلاعات چاپ تغییر می‌کند؛ پیش‌فاکتور ذخیره‌شده بدون تغییر است.</span>
+</form>
+{% endif %}

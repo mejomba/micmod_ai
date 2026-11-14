@@ -11,6 +11,10 @@
     .bulk-toolbar { background:#f1f5f9; padding:12px; text-align:center; }
     .bulk-toolbar button { padding:10px 20px; border:0; border-radius:7px;
                             color:white; background:#2563eb; cursor:pointer; }
+    .bulk-profiles {display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:12px 0;}
+    .bulk-profile-option {display:flex;align-items:center;gap:8px;padding:9px;border:1px solid #d7e2ee;border-radius:8px;background:white;}
+    .bulk-profile-customer {font-weight:700;}
+    .bulk-profile-option select {min-width:165px;padding:7px;border:1px solid #cbd5e1;border-radius:6px;background:white;}
     .bulk-document .noprint, .bulk-document #calculate-button,
     .bulk-document #id_print_btn { display:none!important; }
     @media print {
@@ -22,6 +26,28 @@
 <body>
   <div class="bulk-toolbar">
     <span>{{ documents|length }} فاکتور آماده چاپ</span>
+    {% if customers %}
+    <form id="bulk-customer-profiles" action="{% url 'factor:factor.bulk_print' %}" method="post">
+      {% csrf_token %}
+      {% for invoice_id in ids %}<input type="hidden" name="ids" value="{{ invoice_id }}">{% endfor %}
+      <input type="hidden" name="q" value="{{ filter_q }}">
+      <div class="bulk-profiles" dir="rtl">
+        {% for customer in customers %}
+        <label class="bulk-profile-option">
+          <span class="bulk-profile-customer">{{ customer.name }}</span>
+          <span>پروفایل حقوقی:</span>
+          <select name="{{ customer.field_name }}" onchange="this.form.submit()">
+            <option value="" {% if not customer.selected %}selected{% endif %}>اطلاعات پایه مشتری</option>
+            {% for profile in customer.options %}
+            <option value="{{ profile.value }}" {% if profile.selected %}selected{% endif %}>{{ profile.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        {% endfor %}
+      </div>
+      <button type="submit">اعمال پروفایل‌ها</button>
+    </form>
+    {% endif %}
     <button type="button" onclick="window.print()">چاپ همه فاکتورها</button>
   </div>
   {% for doc in documents %}

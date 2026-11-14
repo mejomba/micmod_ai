@@ -1,0 +1,72 @@
+{% load static %}
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>چاپ گروهی پیش‌فاکتورها</title>
+  <style>
+    body {margin:0;direction:rtl;background:#fff;}
+    .quotation-bulk-toolbar {background:#f1f5f9;padding:12px;text-align:center;}
+    .quotation-bulk-toolbar button {padding:9px 18px;border:0;border-radius:7px;color:white;background:#2563eb;cursor:pointer;}
+    .quotation-bulk-form {margin:10px 0;}
+    .quotation-bulk-controls {display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;margin:10px 0;}
+    .quotation-bulk-customer {display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+      border:1px solid #d7e2ee;border-radius:8px;background:#fff;padding:9px;font-size:13px;}
+    .quotation-bulk-customer strong {color:#315071;}
+    .quotation-bulk-toolbar select {border:1px solid #cbd5e1;border-radius:6px;padding:7px;background:#fff;min-width:145px;}
+    .quotation-bulk-document .noprint,
+    .quotation-bulk-document .button.print {display:none!important;}
+    @media print {
+      .quotation-bulk-toolbar {display:none!important;}
+      .quotation-bulk-document:not(:last-child) {break-after:page;page-break-after:always;}
+    }
+  </style>
+</head>
+<body>
+  <div class="quotation-bulk-toolbar">
+    <span>{{ documents|length }} پیش‌فاکتور آماده چاپ</span>
+    <form class="quotation-bulk-form" method="post" action="{% url 'micmod_base:quotation.bulk_print' %}">
+      {% csrf_token %}
+      {% for quotation_id in ids %}<input type="hidden" name="ids" value="{{ quotation_id }}">{% endfor %}
+      <input type="hidden" name="q" value="{{ filter_q }}">
+      <div class="quotation-bulk-controls">
+        <label>نوع چاپ:
+          <select name="print_style" onchange="this.form.submit()">
+            <option value="customer" {% if print_style == 'customer' %}selected{% endif %}>نسخه مشتری</option>
+            <option value="expert" {% if print_style == 'expert' %}selected{% endif %}>نسخه کارشناس</option>
+          </select>
+        </label>
+      </div>
+      {% if customers %}
+      <div class="quotation-bulk-controls">
+        {% for customer in customers %}
+        <label class="quotation-bulk-customer">
+          <strong>{{ customer.name }}</strong>
+          <span>پروفایل حقوقی:</span>
+          <select name="{{ customer.field_name }}" onchange="this.form.submit()">
+            <option value="" {% if not customer.selected %}selected{% endif %}>اطلاعات پایه مشتری</option>
+            {% for profile in customer.options %}
+            <option value="{{ profile.value }}" {% if profile.selected %}selected{% endif %}>{{ profile.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <button type="submit">اعمال انتخاب‌ها</button>
+    </form>
+    <button type="button" onclick="window.print()">چاپ همه پیش‌فاکتورها</button>
+  </div>
+
+  {% for doc in documents %}
+  <section class="quotation-bulk-document">
+    {% if print_style == 'expert' %}
+    {% include 'micmod-base/quotation/view-print.html' with data=doc.data form=doc.form formset=doc.formset with_comments=doc.with_comments comments_url_params=doc.comments_url_params with_alt_code=doc.with_alt_code alt_code=doc.alt_code has_sales_description=doc.has_sales_description buyer_info=doc.buyer_info bulk_mode=True %}
+    {% else %}
+    {% include 'micmod-base/quotation/view-print-raw.html' with data=doc.data form=doc.form formset=doc.formset customer_goods_code_url_param=doc.customer_goods_code_url_param with_customer_goods_code=doc.with_customer_goods_code has_sales_description=doc.has_sales_description buyer_info=doc.buyer_info bulk_mode=True %}
+    {% endif %}
+  </section>
+  {% endfor %}
+</body>
+</html>
