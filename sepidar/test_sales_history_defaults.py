@@ -151,3 +151,25 @@ class SalesHistoryDefaultWindowTests(SimpleTestCase):
                 response = SalesHistory().get(request)
         self.assertEqual(json.loads(response.content)['summary'], cached)
         aggregate.assert_not_called()
+
+    def test_ajax_scroll_passes_exhausted_source_flags(self):
+        request = RequestFactory().get(
+            '/sepidar/sales-history/',
+            {'sep_offset': '75', 'portal_offset': '120',
+             'sep_done': '1', 'portal_done': '0'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        with patch('sepidar.sales_history_service.get_sales_history_page',
+                   return_value={
+                       'rows': [], 'row_count': 0,
+                       'offsets': {'sepidar': 75, 'portal': 120},
+                       'has_more': False, 'truncated': False,
+                       'done': {'sepidar': True, 'portal': True},
+                   }) as page:
+            with patch('django.template.loader.render_to_string', return_value=''):
+                result = SalesHistory().get(request)
+        self.assertEqual(result.status_code, 200)
+        self.assertTrue(page.call_args.kwargs['sepidar_done'])
+        self.assertFalse(page.call_args.kwargs['portal_done'])
+        import json
+        self.assertTrue(json.loads(result.content)['done']['sepidar'])

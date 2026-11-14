@@ -493,7 +493,8 @@ class SalesHistory(LoginRequiredMixin, View):
         data, truncated, error = [], False, ''
         page = {'rows': [], 'row_count': 0,
                 'offsets': {'sepidar': 0, 'portal': 0},
-                'has_more': False, 'truncated': False}
+                'has_more': False, 'truncated': False,
+                'done': {'sepidar': True, 'portal': True}}
         status = 200
         try:
             if summary_request:
@@ -503,7 +504,8 @@ class SalesHistory(LoginRequiredMixin, View):
                 identity = str(identity or 'anonymous')
                 key_data = repr((identity, sorted(
                     (key, tuple(values)) for key, values in filters.lists()
-                    if key not in ('sh_summary', 'sh_page', 'sep_offset', 'portal_offset')
+                    if key not in ('sh_summary', 'sh_page', 'sep_offset', 'portal_offset',
+                                   'sep_done', 'portal_done')
                 )))
                 cache_key = 'sales-history-summary:' + hashlib.sha256(
                     key_data.encode('utf-8')
@@ -523,10 +525,18 @@ class SalesHistory(LoginRequiredMixin, View):
                     raise ValueError('موقعیت اسکرول معتبر نیست.')
                 return offset
 
+            def source_done(key):
+                value = str(request.GET.get(key) or '0')
+                if value not in ('0', '1'):
+                    raise ValueError('وضعیت صفحه‌بندی معتبر نیست.')
+                return value == '1'
+
             page = get_sales_history_page(
                 filters,
                 sepidar_offset=page_offset('sep_offset') if ajax else 0,
                 portal_offset=page_offset('portal_offset') if ajax else 0,
+                sepidar_done=source_done('sep_done') if ajax else False,
+                portal_done=source_done('portal_done') if ajax else False,
             )
             data, truncated = page['rows'], page['truncated']
         except ValueError as exc:
@@ -542,6 +552,7 @@ class SalesHistory(LoginRequiredMixin, View):
         context['sales_page'] = {
             'offsets': page['offsets'],
             'has_more': page['has_more'],
+            'done': page.get('done', {'sepidar': False, 'portal': False}),
             'truncated': page['truncated'],
             'row_count': page['row_count'],
         }
@@ -557,6 +568,7 @@ class SalesHistory(LoginRequiredMixin, View):
                 'row_count': page['row_count'],
                 'offsets': page['offsets'],
                 'has_more': page['has_more'],
+                'done': page.get('done', {'sepidar': False, 'portal': False}),
                 'truncated': truncated,
                 'active_chips': active_chips,
                 'recent_default': recent_default,

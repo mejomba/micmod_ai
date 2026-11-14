@@ -1375,7 +1375,10 @@
     var state=document.getElementById('sh-query-status');
     var truncation=document.getElementById('sh-truncated-note');
     var timer=null,controller=null,sequence=0;
-    var initialPage={offsets:{sepidar:0,portal:0},has_more:false,truncated:false,row_count:0};
+    var initialPage={
+      offsets:{sepidar:0,portal:0},done:{sepidar:false,portal:false},
+      has_more:false,truncated:false,row_count:0
+    };
     try{initialPage=JSON.parse(document.getElementById('sh-initial-page').textContent)||initialPage;}catch(e){}
     var pageState=initialPage, scrollParams=new URLSearchParams(window.location.search);
     var pendingScroll=false,loadedCount=Number(initialPage.row_count||0);
@@ -1454,6 +1457,7 @@
       }
       pageState={
         offsets:result.offsets||{sepidar:0,portal:0},
+        done:result.done||{sepidar:false,portal:false},
         has_more:!!result.has_more,
         truncated:!!result.truncated||(append&&!!pageState.truncated)
       };
@@ -1479,6 +1483,8 @@
       p.set('sh_page','1');
       p.set('sep_offset',String(offsets.sepidar||0));
       p.set('portal_offset',String(offsets.portal||0));
+      p.set('sep_done',pageState.done&&pageState.done.sepidar?'1':'0');
+      p.set('portal_done',pageState.done&&pageState.done.portal?'1':'0');
       return window.location.pathname+'?'+p.toString();
     }
     function search(explicitParams){
@@ -1493,6 +1499,8 @@
       var id=++sequence;
       controller=new AbortController();
       setBusy(true);
+      pageState={offsets:{sepidar:0,portal:0},done:{sepidar:false,portal:false},
+        has_more:false,truncated:false};
       fetch(getPageUrl(params,{sepidar:0,portal:0}),{
         credentials:'same-origin',headers:{
           'X-Requested-With':'XMLHttpRequest','Accept':'application/json'
