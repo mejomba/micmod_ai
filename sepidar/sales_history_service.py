@@ -17,6 +17,7 @@ from micmod_base.models import Quotation, QuotationItem, SaleType
 
 
 MAX_ROWS_PER_SOURCE = 3000
+SALES_HISTORY_PAGE_SIZE = 60
 # From this day forward Portal is the authoritative source for invoice lines.
 PORTAL_INVOICE_START = jdatetime.date(1405, 2, 10).togregorian()
 # Mapping from the existing HTML selector: Sepidar FiscalYearRef -> Jalali year.
@@ -311,7 +312,7 @@ def _read_sepidar_unique_rows(sql, params, linked_ids):
     return result
 
 
-def _sepidar_history(filters):
+def _sepidar_history(filters, *, offset=0, page_size=None):
     conditions = []
     params = []
 
@@ -380,8 +381,12 @@ def _sepidar_history(filters):
             f"docs.sepidar_doc_id NOT IN ({placeholders}))"
         )
         params.extend(sorted(linked_ids))
+    paged = page_size is not None
+    if paged and (offset < 0 or page_size < 1 or page_size > SALES_HISTORY_PAGE_SIZE
+                  or offset > MAX_ROWS_PER_SOURCE):
+        raise ValueError('درخواست صفحه فروش معتبر نیست.')
     sql_top = (f'TOP ({MAX_ROWS_PER_SOURCE + 1})'
-               if not linked_ids or use_sql_exclusion else '')
+               if not paged and (not linked_ids or use_sql_exclusion) else '')
     query = f"""
     SELECT {sql_top}
         docs.Date,
@@ -513,15 +518,30 @@ def _sepidar_history(filters):
     WHERE 1 = 1
     {where_sql}
 
-    ORDER BY docs.Date DESC, docs.itemId DESC
+    ORDER BY docs.Date DESC, docs.itemId DESC, docs.doc_type DESC
     """
-    # The first bound argument belongs to the invoice source-level cutoff.
+    # SQL Server pages are applied inside the database, before transferring
+    # rows to Django. The extra row detects whether another page exists.
+    if paged:
+        fetch_size = min(page_size + 1, MAX_ROWS_PER_SOURCE + 1 - offset)
+        if linked_ids and not use_sql_exclusion:
+            # SQL Server's parameter limit prevents an IN list of these IDs.
+            # Keep the proven deduplicating cursor fallback; only requested
+            # rows are sent to the client, even in this uncommon case.
+            return _read_sepidar_unique_rows(
+                query, [PORTAL_INVOICE_START] + params, linked_ids
+            )[offset:offset + fetch_size]
+        query += "\nOFFSET %s ROWS FETCH NEXT %s ROWS ONLY"
+        page = _rows('sepidar', query, [PORTAL_INVOICE_START] + params
+                     + [offset, fetch_size])
+        return [_normalize_result(record, 'sepidar') for record in page]
+    # Legacy bulk contract retained for full backend summary/export and tests.
     return _read_sepidar_unique_rows(
         query, [PORTAL_INVOICE_START] + params, linked_ids
     )[:MAX_ROWS_PER_SOURCE + 1]
 
 
-def _portal_history(filters):
+def _portal_history(filters, *, offset=0, page_size=None):
     """Portal DB uses PostgreSQL (as configured through PG_ENGIN).
 
     Important financial mapping:
@@ -686,7 +706,14 @@ def _portal_history(filters):
     params.extend(more_params)
 
     # Invoice cutoff was applied directly to Factor.created_date before JOINs.
-    sql += f'\nORDER BY "Date" DESC, "itemId" DESC LIMIT {MAX_ROWS_PER_SOURCE}'
+    # Pagination runs in PostgreSQL rather than slicing a fetched result set.
+    if page_size is None:
+        sql += f'\nORDER BY "Date" DESC, "itemId" DESC, doc_type DESC LIMIT {MAX_ROWS_PER_SOURCE}'
+    else:
+        if offset < 0 or offset > MAX_ROWS_PER_SOURCE or not 1 <= page_size <= SALES_HISTORY_PAGE_SIZE:
+            raise ValueError('درخواست صفحه فروش معتبر نیست.')
+        sql += '\nORDER BY "Date" DESC, "itemId" DESC, doc_type DESC LIMIT %s OFFSET %s'
+        params.extend([min(page_size + 1, MAX_ROWS_PER_SOURCE + 1 - offset), offset])
     result = [_normalize_result(rec, 'portal') for rec in _rows('default', sql, params)]
     return _apply_portal_finance(result)
 
@@ -924,3 +951,47 @@ def get_sales_history_list(filters):
     truncated = (len(sepidar) > MAX_ROWS_PER_SOURCE or
                  len(portal) >= MAX_ROWS_PER_SOURCE)
     return results, truncated
+
+
+def get_sales_history_page(filters, *, sepidar_offset=0, portal_offset=0,
+                           page_size=SALES_HISTORY_PAGE_SIZE):
+    """Fetch one globally sorted page, with independent offsets per database.
+
+    Each source loads at most page_size+1 rows from SQL, and only consumed
+    rows advance that source's cursor. Unconsumed source rows are fetched by
+    the next scroll request, so interleaved dates never skip or repeat rows.
+    The 3000-per-source safety cap remains explicit and detectable.
+    """
+    if (not isinstance(page_size, int) or not 1 <= page_size <= SALES_HISTORY_PAGE_SIZE
+            or any(not isinstance(n, int) or n < 0 or n > MAX_ROWS_PER_SOURCE
+                   for n in (sepidar_offset, portal_offset))):
+        raise ValueError('درخواست صفحه فروش معتبر نیست.')
+
+    sepidar = _sepidar_history(filters, offset=sepidar_offset, page_size=page_size)
+    portal = _portal_history(filters, offset=portal_offset, page_size=page_size)
+
+    def order_key(row):
+        return (row.get('Date') or date.min, int(row.get('itemId') or 0),
+                row.get('doc_type') or '', row.get('source') or '')
+
+    combined = sorted(sepidar + portal, key=order_key, reverse=True)
+    page = combined[:page_size]
+    sep_used = sum(row['source'] == 'sepidar' for row in page)
+    portal_used = len(page) - sep_used
+    next_sep = sepidar_offset + sep_used
+    next_portal = portal_offset + portal_used
+    truncated = (
+        (next_sep >= MAX_ROWS_PER_SOURCE and len(sepidar) > sep_used)
+        or (next_portal >= MAX_ROWS_PER_SOURCE and len(portal) > portal_used)
+    )
+    has_more = (
+        (next_sep < MAX_ROWS_PER_SOURCE and len(sepidar) > sep_used)
+        or (next_portal < MAX_ROWS_PER_SOURCE and len(portal) > portal_used)
+    )
+    return {
+        'rows': page,
+        'row_count': len(page),
+        'offsets': {'sepidar': next_sep, 'portal': next_portal},
+        'has_more': has_more,
+        'truncated': truncated,
+    }

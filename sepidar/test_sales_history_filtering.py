@@ -281,3 +281,54 @@ class SalesHistorySourceOptimizationTests(SimpleTestCase):
         self.assertNotIn("docs.doc_type <> 'invoice' OR docs.Date < %s", sql)
         self.assertIn('WHERE 1 = 0', sql)  # Other UNION arms are planner-prunable.
         self.assertEqual(linked, set())
+
+class SalesHistoryIncrementalPageTests(SimpleTestCase):
+    @staticmethod
+    def _row(source, date_value, item_id, doc_type='invoice'):
+        return {'source': source, 'Date': date_value, 'itemId': item_id,
+                'doc_type': doc_type}
+
+    def test_interleaved_sources_have_stable_offsets_without_duplicate_rows(self):
+        sep = [self._row('sepidar', date(2026, 11, 13), 9),
+               self._row('sepidar', date(2026, 11, 10), 8),
+               self._row('sepidar', date(2026, 11, 7), 7)]
+        portal = [self._row('portal', date(2026, 11, 14), 10),
+                  self._row('portal', date(2026, 11, 12), 9),
+                  self._row('portal', date(2026, 11, 8), 8)]
+        from sepidar.sales_history_service import get_sales_history_page
+        with patch('sepidar.sales_history_service._sepidar_history',
+                   side_effect=lambda f, offset, page_size: sep[offset:offset+page_size+1]):
+            with patch('sepidar.sales_history_service._portal_history',
+                       side_effect=lambda f, offset, page_size: portal[offset:offset+page_size+1]):
+                first = get_sales_history_page({}, page_size=2)
+                self.assertEqual(first['offsets'], {'sepidar': 1, 'portal': 1})
+                second = get_sales_history_page({}, page_size=2, sepidar_offset=1, portal_offset=1)
+                self.assertEqual(second['offsets'], {'sepidar': 2, 'portal': 2})
+                third = get_sales_history_page({}, page_size=2, sepidar_offset=2, portal_offset=2)
+                self.assertFalse(third['has_more'])
+        combined = first['rows'] + second['rows'] + third['rows']
+        self.assertEqual([r['Date'].day for r in combined], [14,13,12,10,8,7])
+        self.assertEqual(len({(r['source'],r['itemId']) for r in combined}), 6)
+
+    def test_rejects_invalid_page_parameters(self):
+        from sepidar.sales_history_service import get_sales_history_page
+        for options in ({'page_size': 61}, {'page_size': 0},
+                        {'sepidar_offset': -1}, {'portal_offset': 3001}):
+            with self.subTest(options=options), self.assertRaises(ValueError):
+                get_sales_history_page({}, **options)
+
+    def test_postgres_uses_limit_and_offset_before_data_transfer(self):
+        with patch('sepidar.sales_history_service._rows', return_value=[]) as rows:
+            _portal_history({'doc_type': 'invoice'}, offset=120, page_size=60)
+        alias, sql, params = rows.call_args.args
+        self.assertEqual(alias, 'default')
+        self.assertIn('LIMIT %s OFFSET %s', sql)
+        self.assertEqual(params[-2:], [61, 120])
+
+    def test_sepidar_uses_offset_fetch_in_database(self):
+        with patch('sepidar.sales_history_service._rows', return_value=[]) as rows:
+            _sepidar_history({'doc_type': 'invoice'}, offset=120, page_size=60)
+        alias, sql, params = rows.call_args.args
+        self.assertEqual(alias, 'sepidar')
+        self.assertIn('OFFSET %s ROWS FETCH NEXT %s ROWS ONLY', sql)
+        self.assertEqual(params[-2:], [120, 61])
