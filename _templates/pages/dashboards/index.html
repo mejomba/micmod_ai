@@ -1,136 +1,249 @@
 {% extends layout %}
 {% load i18n humanize %}
 
-{% block title %}گزارش عملیاتی{% endblock %}
+{% block title %}داشبورد عملکرد | پرتال{% endblock %}
+{% block custom_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="/assets/css/operational-dashboard.css">
+{% endblock custom_css %}
 
 {% block content_ %}
-<div class="container-fluid op-dashboard" dir="rtl">
-  <style>
-    .op-dashboard { --op-border: #e7eaf0; --op-muted: #778099; }
-    .op-dashboard .op-title {font-weight: 800; color:#25314b; margin-bottom:.4rem}
-    .op-dashboard .op-subtitle {color:var(--op-muted);font-size:.91rem}
-    .op-dashboard .op-card {border:1px solid var(--op-border);border-radius:14px;box-shadow:0 2px 12px rgba(20,38,75,.035)}
-    .op-dashboard .op-kpi {font-size:1.8rem;font-weight:750;line-height:1.5}
-    .op-dashboard .op-label {color:var(--op-muted);font-size:.88rem}
-    .op-dashboard .op-table {min-width:650px;white-space:nowrap}
-    .op-dashboard .op-table th {font-weight:700;font-size:.87rem;color:#536077;background:#f7f8fb}
-    .op-dashboard .op-table td,.op-dashboard .op-table th {padding: .85rem 1rem;vertical-align:middle}
-    .op-dashboard .op-table tbody tr:hover {background:#f5f8fd}
-    .op-dashboard .op-name {font-weight:700}
-    .op-dashboard .op-money {font-variant-numeric:tabular-nums;direction:ltr;display:inline-block;text-align:left}
-    .op-dashboard .op-money-line {display:block;margin-bottom:3px}
-    .op-dashboard .op-empty {color:var(--op-muted);padding:1.5rem;text-align:center}
-    .op-dashboard details>summary {list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:1.25rem 1.5rem;font-weight:750}
-    .op-dashboard details>summary::-webkit-details-marker {display:none}
-    .op-dashboard details>summary:after {content:"⌄";font-size:1.25rem;color:#7b8499}
-    .op-dashboard details[open]>summary:after {content:"⌃"}
-  </style>
-
-  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-5">
-    <div>
-      <h1 class="op-title fs-2">گزارش عملکرد عملیاتی</h1>
-      <p class="op-subtitle mb-0">خلاصه عملکرد افراد در بازه زمانی انتخابی؛ بر پایه اسناد و رویدادهای ثبت‌شده پرتال</p>
+<main id="op-dashboard" class="op-dashboard" dir="rtl">
+  <header class="op-hero">
+    <div class="op-hero-copy">
+      <span class="op-eyebrow"><span class="op-live-dot" aria-hidden="true"></span> گزارش عملکرد پرتال</span>
+      <h1>در {{ report.days }} روز گذشته چه کرده‌ایم؟</h1>
+      <p>از ثبت سند تا پاسخ استعلام و تحویل سفارش؛ عملکرد را ساده و به تفکیک هر تیم ببینید.</p>
     </div>
-    <div class="badge badge-light-primary fs-7">
-      {% if report.scope == 'executive' %}نمای سازمانی{% elif report.scope == 'manager' %}نمای تیم{% else %}نمای شخصی{% endif %}
+    <div class="op-hero-meta">
+      <div class="op-scope">
+        <span class="op-scope-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.3"/><path d="M5 20v-1.5a7 7 0 0 1 14 0V20"/></svg>
+        </span>
+        <span>
+          <small>محدوده گزارش</small>
+          <strong>{% if report.scope == 'executive' %}همه کاربران سازمان{% elif report.scope == 'manager' %}اعضای تیم شما{% else %}عملکرد شخصی شما{% endif %}</strong>
+        </span>
+      </div>
+      <span class="op-hero-footnote">{{ report.users_count|intcomma }} کاربر در گزارش انتخابی</span>
     </div>
-  </div>
+  </header>
 
-  <form method="get" class="card op-card p-4 mb-5">
-    <div class="row g-3 align-items-end">
-      <div class="col-12 col-md-3">
-        <label for="op-days" class="form-label fw-semibold">بازه گزارش (روز گذشته)</label>
-        <input id="op-days" class="form-control" name="days" type="number" min="1" max="365" value="{{ report.days }}" required>
-      </div>
-      {% if report.scope != 'user' %}
-      <div class="col-12 col-md-5">
-        <label for="op-user" class="form-label fw-semibold">کاربر</label>
-        <select id="op-user" class="form-select" name="user_id">
-          <option value="">همه کاربران مجاز</option>
-          {% for user in report.user_options %}
-          <option value="{{ user.pk }}" {% if report.selected_user_id == user.pk %}selected{% endif %}>{{ user.get_full_name|default:user.username }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      {% endif %}
-      <div class="col-12 col-md-auto">
-        <button class="btn btn-primary w-100" type="submit">نمایش گزارش</button>
+  <section class="op-filterbar" aria-label="تنظیم بازه و کاربر گزارش">
+    <div class="op-filter-intro">
+      <span class="op-filter-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg>
+      </span>
+      <div>
+        <strong>بازه زمانی گزارش</strong>
+        <small>تعداد روزهای گذشته را انتخاب کنید</small>
       </div>
     </div>
-  </form>
+    <div class="op-filter-content">
+      <nav class="op-periods" aria-label="بازه‌های سریع">
+        <a href="?days=7{% if report.selected_user_id %}&amp;user_id={{ report.selected_user_id }}{% endif %}" class="op-period{% if report.days == 7 %} is-current{% endif %}" {% if report.days == 7 %}aria-current="page"{% endif %}>۷ روز</a>
+        <a href="?days=30{% if report.selected_user_id %}&amp;user_id={{ report.selected_user_id }}{% endif %}" class="op-period{% if report.days == 30 %} is-current{% endif %}" {% if report.days == 30 %}aria-current="page"{% endif %}>۳۰ روز</a>
+        <a href="?days=90{% if report.selected_user_id %}&amp;user_id={{ report.selected_user_id }}{% endif %}" class="op-period{% if report.days == 90 %} is-current{% endif %}" {% if report.days == 90 %}aria-current="page"{% endif %}>۹۰ روز</a>
+      </nav>
+      <form method="get" class="op-filter-form">
+        <div class="op-form-field op-form-days">
+          <label for="op-days">روز دلخواه</label>
+          <input id="op-days" type="number" name="days" min="1" max="365" value="{{ report.days }}" inputmode="numeric" required aria-describedby="op-days-help">
+        </div>
+        {% if report.scope != 'user' %}
+        <div class="op-form-field op-form-person">
+          <label for="op-user">نمایش عملکرد</label>
+          <select id="op-user" name="user_id">
+            <option value="">تمام افراد مجاز</option>
+            {% for user in report.user_options %}
+              <option value="{{ user.pk }}" {% if report.selected_user_id == user.pk %}selected{% endif %}>{{ user.get_full_name|default:user.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+        <button type="submit" class="op-apply">نمایش نتیجه <span aria-hidden="true">←</span></button>
+      </form>
+    </div>
+    <span id="op-days-help" class="op-filter-hint">بازه‌ها از امروز به عقب محاسبه می‌شوند.</span>
+  </section>
 
-  <div class="row g-3 mb-5">
-    <div class="col-6 col-xl-3"><div class="card op-card h-100 p-4"><div class="op-label">فاکتور و پیش‌فاکتور</div><div class="op-kpi">{{ report.total_documents|intcomma }}</div><div class="op-label">سند ثبت‌شده</div></div></div>
-    <div class="col-6 col-xl-3"><div class="card op-card h-100 p-4"><div class="op-label">استعلام‌های پاسخ‌داده‌شده</div><div class="op-kpi">{{ report.total_inquiries|intcomma }}</div><div class="op-label">استعلام یکتا به ازای کاربر</div></div></div>
-    <div class="col-6 col-xl-3"><div class="card op-card h-100 p-4"><div class="op-label">عملیات ثبت‌شده</div><div class="op-kpi">{{ report.total_operations|intcomma }}</div><div class="op-label">تأیید، رسید، ارسال و پرداخت</div></div></div>
-    <div class="col-6 col-xl-3"><div class="card op-card h-100 p-4"><div class="op-label">قرارداد فنی</div><div class="op-kpi">{{ report.total_contracts|intcomma }}</div><div class="op-label">قرارداد ثبت‌شده</div></div></div>
-  </div>
+  {% if report.visible_sections %}
+    <section class="op-workspace" aria-labelledby="op-workspace-title">
+      <div class="op-workspace-heading">
+        <div>
+          <span class="op-section-eyebrow">گزارش تیم‌ها</span>
+          <h2 id="op-workspace-title">کدام بخش را می‌خواهید بررسی کنید؟</h2>
+          <p>یک بخش را انتخاب کنید تا آمار کلی و سپس عملکرد هر نفر را ببینید.</p>
+        </div>
+      </div>
 
-  {% for section in report.sections %}
-  <details class="card op-card mb-4" {% if section.rows %}open{% endif %}>
-    <summary>
-      <span>{{ section.title }} <span class="badge badge-light ms-2">{{ section.rows|length }} نفر</span></span>
-    </summary>
-    {% if section.rows %}
-    <div class="table-responsive">
-      <table class="table table-row-bordered align-middle mb-0 op-table">
-        <thead><tr>
-          <th scope="col">کاربر</th>
-          {% if section.key == 'sales' %}
-            <th scope="col">فاکتور</th><th scope="col">مبلغ فاکتور (به تفکیک ارز)</th>
-            <th scope="col">پیش‌فاکتور</th><th scope="col">مبلغ پیش‌فاکتور (به تفکیک ارز)</th>
-            <th scope="col">مشتری یکتا</th>
-          {% elif section.key == 'sourcing' %}
-            <th scope="col">استعلام پاسخ‌داده‌شده</th>
-            <th scope="col">سفارش تبدیل‌شده به فاکتور خرید</th>
-          {% elif section.key == 'warehouse' %}
-            <th scope="col">فاکتور ارسال‌شده به مشتری</th>
-            <th scope="col">سفارش رسیدشده در انبار</th>
-          {% elif section.key == 'finance' %}
-            <th scope="col">فاکتور تأیید مالی‌شده</th>
-            <th scope="col">دستور پرداخت پرداخت‌شده</th>
-          {% elif section.key == 'technical' %}
-            <th scope="col">تعداد قرارداد</th><th scope="col">ارزش قرارداد (واحد مبلغ قرارداد)</th>
-          {% endif %}
-        </tr></thead>
-        <tbody>
-          {% for row in section.rows %}
-          <tr>
-            <th scope="row" class="op-name">{{ row.name }}</th>
+      <div class="op-unit-tabs" role="tablist" aria-label="انتخاب بخش سازمانی">
+        {% for section in report.visible_sections %}
+        <button type="button" class="op-unit-tab{% if forloop.first %} is-active{% endif %}"
+                role="tab" id="op-tab-{{ section.key }}" aria-controls="op-panel-{{ section.key }}"
+                aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+                tabindex="{% if forloop.first %}0{% else %}-1{% endif %}"
+                data-op-tab data-op-target="op-panel-{{ section.key }}">
+          <span class="op-unit-icon" aria-hidden="true">
             {% if section.key == 'sales' %}
-              <td>{{ row.invoice_count|intcomma }}</td>
-              <td>{% for amount in row.invoice_amounts %}<span class="op-money-line"><span class="op-money">{{ amount.amount|floatformat:2|intcomma }}</span> {{ amount.currency }}</span>{% empty %}—{% endfor %}</td>
-              <td>{{ row.quotation_count|intcomma }}</td>
-              <td>{% for amount in row.quotation_amounts %}<span class="op-money-line"><span class="op-money">{{ amount.amount|floatformat:2|intcomma }}</span> {{ amount.currency }}</span>{% empty %}—{% endfor %}</td>
-              <td>{{ row.customers|intcomma }}</td>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19h16M6 16V9m6 7V5m6 11v-4"/><circle cx="6" cy="7" r="1"/><circle cx="12" cy="3" r="1"/><circle cx="18" cy="10" r="1"/></svg>
             {% elif section.key == 'sourcing' %}
-              <td>{{ row.inquiry_count|intcomma }}</td><td>{{ row.purchase_count|intcomma }}</td>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 5h14v14H5zM8 9h8M8 13h8M8 17h5"/></svg>
             {% elif section.key == 'warehouse' %}
-              <td>{{ row.dispatch_count|intcomma }}</td><td>{{ row.receipt_count|intcomma }}</td>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9 12 4l9 5v11H3zM3 9h18M9 20v-7h6v7"/></svg>
             {% elif section.key == 'finance' %}
-              <td>{{ row.finance_approval_count|intcomma }}</td><td>{{ row.paid_count|intcomma }}</td>
-            {% elif section.key == 'technical' %}
-              <td>{{ row.contract_count|intcomma }}</td><td><span class="op-money">{{ row.contract_amount|floatformat:0|intcomma }}</span></td>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>
+            {% else %}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m4 20 8-16 8 16H4zM8 13h8M12 4v16"/></svg>
             {% endif %}
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-      <p class="op-empty mb-0">در محدوده دسترسی شما، کاربری با این نقش یا فعالیت ثبت‌شده وجود ندارد.</p>
-    {% endif %}
-  </details>
-  {% endfor %}
+          </span>
+          <span class="op-unit-title">{{ section.title }}</span>
+          <span class="op-unit-fig"><b>{{ section.nav_total|intcomma }}</b><small>{{ section.primary_unit }}</small></span>
+          <span class="op-unit-people">{{ section.rows|length }} نفر</span>
+        </button>
+        {% endfor %}
+      </div>
 
-  <div class="alert alert-light border mt-5" role="note">
-    <strong>روش محاسبه:</strong>
-    فاکتور، پیش‌فاکتور و قرارداد بر اساس تاریخ ایجاد و کاربر ایجادکننده محاسبه می‌شوند.
-    مشتری یکتا بین فاکتورها و پیش‌فاکتورهای یک کاربر تکراری شمرده نمی‌شود.
-    استعلام بر اساس فایل استعلام یکتا با حداقل یک پاسخ ثبت‌شده توسط کاربر شمارش می‌شود.
-    سایر عملیات بر اساس تغییر وضعیت ثبت‌شده در تاریخچه، نه صرفاً وضعیت فعلی سند، محاسبه می‌شوند.
-    رویدادهای بدون کاربر قابل شناسایی یا تغییراتی که خارج از سیستم تاریخچه انجام شده‌اند قابل انتساب نیستند.
-    مبالغ با ارزهای متفاوت با هم جمع نمی‌شوند. ارزش قرارداد بر اساس فرمول فعلی مدل قرارداد است.
-  </div>
-</div>
+      {% for section in report.visible_sections %}
+      <section id="op-panel-{{ section.key }}" class="op-panel" role="tabpanel"
+               aria-labelledby="op-tab-{{ section.key }}" tabindex="0"
+               data-op-panel data-section="{{ section.key }}">
+        <div class="op-panel-heading">
+          <div class="op-panel-heading-copy">
+            <span class="op-section-eyebrow">نمای کلی بخش</span>
+            <h2>عملکرد {{ section.title }}</h2>
+            <p>{{ section.description }}</p>
+          </div>
+          <span class="op-panel-period">در {{ report.days }} روز گذشته</span>
+        </div>
+
+        <div class="op-metric-grid">
+          {% for metric in section.metrics %}
+          <div class="op-metric">
+            <span class="op-metric-mark" aria-hidden="true"></span>
+            <div class="op-metric-label">{{ metric.label }}</div>
+            <div class="op-metric-number" dir="ltr">{{ metric.value|floatformat:0|intcomma }}</div>
+            <p>{{ metric.hint }}</p>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="op-members-head">
+          <div>
+            <h3>عملکرد هر نفر</h3>
+            <p>آمار زیر مربوط به فعالیت ثبت‌شده هر کاربر است، نه تعداد وظایف محول‌شده.</p>
+          </div>
+          {% if section.rows|length > 4 %}
+          <div class="op-search-box">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+            <label for="op-search-{{ section.key }}" class="visually-hidden">جستجوی نام کاربر</label>
+            <input id="op-search-{{ section.key }}" type="search" placeholder="جستجوی نام همکار..." autocomplete="off" data-op-search>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="op-people-grid" data-op-people>
+          {% for row in section.rows %}
+          <article class="op-person-card" data-op-person data-op-name="{{ row.name|lower }}">
+            <div class="op-person-top">
+              <span class="op-avatar" aria-hidden="true">{{ row.name|slice:":1" }}</span>
+              <div class="op-person-identity">
+                <h4>{{ row.name }}</h4>
+                <span>عملکرد ثبت‌شده در این بازه</span>
+              </div>
+              <span class="op-person-indicator" aria-hidden="true"></span>
+            </div>
+
+            {% if section.key == 'sales' %}
+              <dl class="op-person-stats op-person-stats--three">
+                <div><dt>فاکتور</dt><dd>{{ row.invoice_count|intcomma }} <small>عدد</small></dd></div>
+                <div><dt>پیش‌فاکتور</dt><dd>{{ row.quotation_count|intcomma }} <small>عدد</small></dd></div>
+                <div><dt>مشتری متفاوت</dt><dd>{{ row.customers|intcomma }} <small>مشتری</small></dd></div>
+              </dl>
+              <div class="op-money-details">
+                <div class="op-money-row">
+                  <span class="op-money-label">ارزش فاکتورها</span>
+                  <div class="op-money-tokens">
+                    {% for amount in row.invoice_amounts %}
+                      <span class="op-value-token"><b dir="ltr">{{ amount.amount|floatformat:2|intcomma }}</b> <span>{{ amount.currency }}</span></span>
+                    {% empty %}
+                      <span class="op-zero-note">بدون فاکتور</span>
+                    {% endfor %}
+                  </div>
+                </div>
+                <div class="op-money-row">
+                  <span class="op-money-label">ارزش پیش‌فاکتورها</span>
+                  <div class="op-money-tokens">
+                    {% for amount in row.quotation_amounts %}
+                      <span class="op-value-token"><b dir="ltr">{{ amount.amount|floatformat:2|intcomma }}</b> <span>{{ amount.currency }}</span></span>
+                    {% empty %}
+                      <span class="op-zero-note">بدون پیش‌فاکتور</span>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+            {% elif section.key == 'sourcing' %}
+              <dl class="op-person-stats">
+                <div><dt>استعلام پاسخ‌داده‌شده</dt><dd>{{ row.inquiry_count|intcomma }} <small>استعلام</small></dd></div>
+                <div><dt>سفارش تبدیل‌شده به فاکتور خرید</dt><dd>{{ row.purchase_count|intcomma }} <small>سفارش</small></dd></div>
+              </dl>
+            {% elif section.key == 'warehouse' %}
+              <dl class="op-person-stats">
+                <div><dt>فاکتور ارسال‌شده به مشتری</dt><dd>{{ row.dispatch_count|intcomma }} <small>فاکتور</small></dd></div>
+                <div><dt>سفارش رسیدشده در انبار</dt><dd>{{ row.receipt_count|intcomma }} <small>سفارش</small></dd></div>
+              </dl>
+            {% elif section.key == 'finance' %}
+              <dl class="op-person-stats">
+                <div><dt>فاکتور تأیید مالی‌شده</dt><dd>{{ row.finance_approval_count|intcomma }} <small>فاکتور</small></dd></div>
+                <div><dt>دستور پرداخت پرداخت‌شده</dt><dd>{{ row.paid_count|intcomma }} <small>دستور</small></dd></div>
+              </dl>
+            {% elif section.key == 'technical' %}
+              <dl class="op-person-stats">
+                <div><dt>قرارداد ثبت‌شده</dt><dd>{{ row.contract_count|intcomma }} <small>قرارداد</small></dd></div>
+                <div><dt>ارزش محاسباتی قراردادها</dt><dd class="op-person-amount" dir="ltr">{{ row.contract_amount|floatformat:0|intcomma }}</dd></div>
+              </dl>
+            {% endif %}
+          </article>
+          {% endfor %}
+        </div>
+        <div class="op-no-results" data-op-no-results hidden>
+          نامی مطابق جستجوی شما پیدا نشد؛ عبارت دیگری امتحان کنید.
+        </div>
+      </section>
+      {% endfor %}
+    </section>
+  {% else %}
+    <section class="op-empty-state" aria-labelledby="op-empty-title">
+      <span class="op-empty-illustration" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 15v-3m4 3V8m4 7v-5"/></svg>
+      </span>
+      <h2 id="op-empty-title">هنوز اطلاعاتی برای نمایش نیست</h2>
+      <p>برای این بازه و محدوده دسترسی، فعالیتی در تیم‌های گزارش‌شده پیدا نشد. بازه زمانی بزرگ‌تری انتخاب کنید.</p>
+      <a href="?days=90" class="op-empty-action">نمایش ۹۰ روز گذشته</a>
+    </section>
+  {% endif %}
+
+  <details class="op-help">
+    <summary>
+      <span class="op-help-icon" aria-hidden="true">؟</span>
+      <span>این عددها دقیقاً چطور محاسبه شده‌اند؟</span>
+      <span class="op-help-chevron" aria-hidden="true">⌄</span>
+    </summary>
+    <div class="op-help-body">
+      <p>برای اینکه نتیجه قابل اتکا باشد، هر عدد بر اساس رویداد مرتبط با همان کاربر و در بازه انتخابی محاسبه می‌شود:</p>
+      <ul>
+        <li><strong>فروش و قرارداد:</strong> تاریخ ایجاد سند و کاربر ایجادکننده؛ مشتریان تکراری یک کارشناس فقط یک‌بار شمرده می‌شوند.</li>
+        <li><strong>استعلام:</strong> هر فایل استعلام با حداقل یک پاسخ ثبت‌شده توسط همان کاربر، یک‌بار شمرده می‌شود.</li>
+        <li><strong>ارسال، رسید، خرید و مالی:</strong> زمان تغییر وضعیت ثبت‌شده در تاریخچه، نه آخرین ویرایش سند.</li>
+        <li><strong>مبالغ:</strong> ارزش فاکتورها و پیش‌فاکتورها بر اساس واحد پول جداگانه نشان داده می‌شود؛ ارزهای متفاوت جمع نمی‌شوند.</li>
+      </ul>
+      <p class="op-help-note">رویدادهایی که کاربر انجام‌دهنده آن‌ها در تاریخچه مشخص نیست، به شخصی نسبت داده نمی‌شوند.</p>
+    </div>
+  </details>
+</main>
 {% endblock content_ %}
+
+{% block custom_js %}
+  {{ block.super }}
+  <script src="/assets/js/operational-dashboard.js" defer></script>
+{% endblock custom_js %}

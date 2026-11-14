@@ -184,3 +184,90 @@ class OperationalTransitionTests(TestCase):
         self.assertEqual(row['paid_count'], 0)
         self.assertEqual(row['receipt_count'], 0)
         self.assertEqual(row['purchase_count'], 0)
+
+
+class OperationalPresentationTests(TestCase):
+    """The first screen must explain the metrics without overwhelming users."""
+
+    def setUp(self):
+        self.viewer = get_user_model().objects.create_user(
+            username='dashboard_viewer', password='pass'
+        )
+        self.client.force_login(self.viewer)
+
+    def sample_report(self, section_key='sales'):
+        row = {
+            'id': self.viewer.pk, 'name': 'کارشناس نمونه',
+            'invoice_count': 3, 'quotation_count': 5, 'customers': 2,
+            'invoice_amounts': [{'amount': 12500, 'currency': 'Dollar'}],
+            'quotation_amounts': [{'amount': 4500, 'currency': 'RMB'}],
+            'inquiry_count': 0, 'purchase_count': 0, 'dispatch_count': 0,
+            'receipt_count': 0, 'finance_approval_count': 0,
+            'paid_count': 0, 'contract_count': 0, 'contract_amount': 0,
+        }
+        section = {
+            'key': section_key, 'title': 'فروش',
+            'description': 'فاکتورها و مشتریان ثبت‌شده توسط کارشناس.',
+            'rows': [row], 'nav_total': 8, 'primary_unit': 'سند فروش',
+            'metrics': [
+                {'label': 'فاکتور ثبت‌شده', 'value': 3, 'hint': 'تاریخ ایجاد'},
+                {'label': 'پیش‌فاکتور ثبت‌شده', 'value': 5, 'hint': 'تاریخ ایجاد'},
+            ],
+        }
+        return {
+            'days': 30, 'scope': 'user', 'selected_user_id': None,
+            'user_options': [self.viewer], 'users_count': 1,
+            'visible_sections': [section],
+        }
+
+    @patch('dashboards.operational_reports.build_report')
+    def test_first_screen_has_department_navigation_and_person_cards(self, mock):
+        mock.return_value = self.sample_report()
+        response = self.client.get(reverse('dashboards:index'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'در 30 روز گذشته چه کرده‌ایم؟')
+        self.assertContains(response, 'عملکرد هر نفر')
+        self.assertContains(response, 'کارشناس نمونه')
+        self.assertContains(response, 'مشتری متفاوت')
+        self.assertContains(response, 'Dollar')
+        self.assertContains(response, 'RMB')
+        self.assertContains(response, 'role="tablist"')
+        self.assertContains(response, 'data-op-person')
+        self.assertContains(response, '/assets/css/operational-dashboard.css')
+        self.assertContains(response, '/assets/js/operational-dashboard.js')
+        self.assertNotContains(response, 'عملکرد مالی')
+        self.assertNotContains(response, 'op-table')
+
+    @patch('dashboards.operational_reports.build_report')
+    def test_filter_and_manager_scope_are_visible(self, mock):
+        report = self.sample_report()
+        report['days'] = 7
+        report['scope'] = 'manager'
+        report['selected_user_id'] = self.viewer.pk
+        mock.return_value = report
+        response = self.client.get(reverse('dashboards:index'))
+        self.assertContains(response, 'اعضای تیم شما')
+        self.assertContains(response, 'نمایش عملکرد')
+        self.assertContains(response, 'تمام افراد مجاز')
+        self.assertContains(response, 'name="user_id"')
+        self.assertContains(response, 'aria-current="page"')
+        self.assertContains(response, 'min="1" max="365"')
+
+    @patch('dashboards.operational_reports.build_report')
+    def test_empty_state_guides_user_instead_of_opening_empty_teams(self, mock):
+        report = self.sample_report()
+        report['visible_sections'] = []
+        mock.return_value = report
+        response = self.client.get(reverse('dashboards:index'))
+        self.assertContains(response, 'هنوز اطلاعاتی برای نمایش نیست')
+        self.assertContains(response, 'نمایش ۹۰ روز گذشته')
+        self.assertNotContains(response, 'data-op-tab')
+        self.assertNotContains(response, 'کارشناس نمونه')
+
+    def test_visible_sections_are_restricted_to_relevant_departments(self):
+        group, _ = Group.objects.get_or_create(name='sales_user')
+        self.viewer.groups.add(group)
+        result = build_report(self.viewer)
+        self.assertEqual([s['key'] for s in result['visible_sections']], ['sales'])
+        self.assertEqual(result['visible_sections'][0]['nav_total'], 0)
+        self.assertEqual(result['visible_sections'][0]['metrics'][0]['value'], 0)

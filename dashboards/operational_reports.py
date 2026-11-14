@@ -292,9 +292,76 @@ def build_report(viewer, days=30, selected_user_id=None):
          'rows': [r for r in rows.values() if 'technical' in r['roles']
                   or r['contract_count']]},
     ]
+    # Presentation metadata keeps the page focused on the selected department,
+    # rather than putting unrelated KPIs in front of every employee.
+    section_specs = {
+        'sales': {
+            'description': 'فاکتورها، پیش‌فاکتورها و مشتریانی که هر کارشناس فروش با آن‌ها کار کرده است.',
+            'primary_fields': ('invoice_count', 'quotation_count'),
+            'primary_unit': 'سند فروش',
+            'metrics': (
+                ('invoice_count', 'فاکتور ثبت‌شده', 'بر اساس تاریخ ایجاد سند'),
+                ('quotation_count', 'پیش‌فاکتور ثبت‌شده', 'بر اساس تاریخ ایجاد سند'),
+            ),
+        },
+        'sourcing': {
+            'description': 'پاسخ استعلام‌های قیمت و سفارش‌هایی که به فاکتور خرید تبدیل شده‌اند.',
+            'primary_fields': ('inquiry_count', 'purchase_count'),
+            'primary_unit': 'اقدام',
+            'metrics': (
+                ('inquiry_count', 'استعلام پاسخ‌داده‌شده', 'هر استعلام برای هر کاربر یک‌بار'),
+                ('purchase_count', 'تبدیل به فاکتور خرید', 'تغییر ثبت‌شده در تاریخچه سفارش'),
+            ),
+        },
+        'warehouse': {
+            'description': 'فاکتورهای ارسال‌شده برای مشتری و سفارش‌های رسیدشده در انبار.',
+            'primary_fields': ('dispatch_count', 'receipt_count'),
+            'primary_unit': 'اقدام انبار',
+            'metrics': (
+                ('dispatch_count', 'ارسال به مشتری', 'ثبت تغییر وضعیت فاکتور'),
+                ('receipt_count', 'رسید در انبار', 'ثبت تغییر وضعیت سفارش'),
+            ),
+        },
+        'finance': {
+            'description': 'فاکتورهای تأیید مالی‌شده و دستورهای پرداختی که پرداختشان ثبت شده است.',
+            'primary_fields': ('finance_approval_count', 'paid_count'),
+            'primary_unit': 'اقدام مالی',
+            'metrics': (
+                ('finance_approval_count', 'تأیید مالی فاکتور', 'تغییر وضعیت تأیید مالی'),
+                ('paid_count', 'دستور پرداخت پرداخت‌شده', 'ثبت وضعیت پرداخت‌شده'),
+            ),
+        },
+        'technical': {
+            'description': 'قراردادهای ثبت‌شده توسط هر کارشناس و ارزش محاسباتی آن‌ها.',
+            'primary_fields': ('contract_count',),
+            'primary_unit': 'قرارداد',
+            'metrics': (
+                ('contract_count', 'قرارداد ثبت‌شده', 'بر اساس تاریخ ایجاد قرارداد'),
+                ('contract_amount', 'ارزش محاسباتی قراردادها', 'بدون تبدیل واحد مبلغ'),
+            ),
+        },
+    }
+    for section in sections:
+        spec = section_specs[section['key']]
+        section['description'] = spec['description']
+        section['primary_unit'] = spec['primary_unit']
+        section['nav_total'] = sum(
+            sum(row[field] for field in spec['primary_fields'])
+            for row in section['rows']
+        )
+        section['metrics'] = [
+            {
+                'label': label,
+                'value': sum(row[field] for row in section['rows']),
+                'hint': hint,
+            }
+            for field, label, hint in spec['metrics']
+        ]
+
     return {
         'days': days, 'scope': scope, 'selected_user_id': selected_user_id,
         'user_options': selector_users, 'sections': sections,
+        'visible_sections': [section for section in sections if section['rows']],
         'users_count': len(rows),
         'total_documents': sum(r['invoice_count'] + r['quotation_count']
                                for r in rows.values()),
