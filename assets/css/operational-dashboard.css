@@ -320,3 +320,134 @@
 @media (prefers-reduced-motion: reduce) {
   #op-dashboard *, #op-dashboard *::before, #op-dashboard *::after { transition:none !important; }
 }
+
+/* Sales totals: one Rial total for all counted invoices/quotations. */
+#op-dashboard .op-sales-totals {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;
+  margin-top:15px; padding-top:15px; border-top:1px solid #e8edf5;
+}
+#op-dashboard .op-sales-total {
+  display:flex; flex-direction:column; align-items:flex-start; gap:4px;
+  min-width:0; padding:14px 13px; border:1px solid #e7eef9;
+  border-radius:12px; background:#f6f9ff;
+}
+#op-dashboard .op-sales-total > span {
+  font-weight:760; color:#587093; font-size:12px;
+}
+#op-dashboard .op-sales-total-amount {
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:6px;
+  font-variant-numeric:tabular-nums;
+}
+#op-dashboard .op-sales-total-amount strong {
+  display:inline-block; unicode-bidi:isolate; color:#244990; font-size:20px;
+  font-weight:850; overflow-wrap:anywhere; text-align:right;
+}
+#op-dashboard .op-sales-total-amount b {
+  color:#6a7c9b; font-size:11px; font-weight:730;
+}
+#op-dashboard .op-amount-warning {
+  display:block; margin-top:4px; font-size:11px;
+  line-height:1.8; color:#9b621e;
+}
+#op-dashboard .op-active-block {
+  margin-top:18px; padding-top:16px; border-top:1px dashed #e0e7f1;
+}
+#op-dashboard .op-active-heading { margin-bottom:12px; }
+#op-dashboard .op-active-heading strong { display:block; font-size:13px; font-weight:800; color:#273b59; }
+#op-dashboard .op-active-heading small { display:block; font-size:11px; margin-top:2px; color:#8b9bb0; }
+#op-dashboard .op-active-columns { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+#op-dashboard .op-active-column { min-width:0; border:1px solid #e9edf4; border-radius:12px; padding:10px; background:#fcfdff; }
+#op-dashboard .op-active-column-title {
+  display:flex; align-items:center; justify-content:space-between;
+  color:#4e6687; font-weight:800; font-size:12px; margin-bottom:8px;
+}
+#op-dashboard .op-active-column-title span {
+  display:inline-flex; min-width:25px; padding:2px 7px; justify-content:center;
+  border-radius:7px; background:#edf3ff; color:#3d62b6; font-size:11px;
+}
+#op-dashboard .op-task-link {
+  display:flex; align-items:center; gap:7px; min-height:35px;
+  border-radius:7px; padding:7px 8px; margin:0 -3px;
+  text-decoration:none; color:#2b4f91;
+  transition:background .15s;
+}
+#op-dashboard .op-task-link:hover { color:#244a9f; background:#eff4fe; }
+#op-dashboard .op-task-id { flex-shrink:0; font-weight:770; font-size:11px; }
+#op-dashboard .op-task-state {
+  display:block; flex:1; font-size:10px; color:#8190a6;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
+}
+#op-dashboard .op-task-arrow { color:#6e89b3; font-size:13px; }
+#op-dashboard .op-active-empty {
+  margin:0; padding:10px 1px; color:#a2adbb; line-height:1.9; font-size:11px;
+}
+#op-dashboard .op-task-more {
+  display:block; padding:9px 5px 2px; text-decoration:none;
+  color:#355ec0; font-weight:760; font-size:11px;
+}
+#op-dashboard .op-task-more:hover { text-decoration:underline; }
+
+/* Dedicated, paginated list for cases with more than five open documents. */
+#op-dashboard .op-work-back { display:inline-flex; margin:0 0 18px; font-size:13px; text-decoration:none; color:#3661ba; font-weight:740; }
+#op-dashboard .op-work-back:hover { text-decoration:underline; }
+#op-dashboard .op-subpage-header {
+  display:flex; justify-content:space-between; align-items:flex-start; gap:15px;
+  border:1px solid var(--op-line); background:#fff; border-radius:17px;
+  padding:25px; margin-bottom:16px;
+}
+#op-dashboard .op-subpage-header h1 {
+  font-size:23px; font-weight:850; color:#1b2c48; margin:0 0 7px;
+}
+#op-dashboard .op-subpage-header p {
+  font-size:12px; color:#71819b; line-height:2; margin:0;
+}
+#op-dashboard .op-doc-kind-tabs { display:flex; gap:9px; flex-wrap:wrap; margin:0 0 15px; }
+#op-dashboard .op-doc-kind-tabs a {
+  display:inline-flex; align-items:center; gap:9px; text-decoration:none;
+  padding:11px 16px; background:#fff; border:1px solid #e5eaf2;
+  border-radius:11px; font-size:13px; color:#62738e; font-weight:720;
+}
+#op-dashboard .op-doc-kind-tabs a b { padding:2px 7px; border-radius:7px; background:#eff3f9; font-size:11px; font-weight:850; }
+#op-dashboard .op-doc-kind-tabs a.is-active { background:#f1f5ff; border-color:#8caaeb; color:#294eaa; }
+#op-dashboard .op-work-list { display:flex; flex-direction:column; gap:8px; }
+#op-dashboard .op-work-row {
+  display:flex; align-items:center; gap:14px; justify-content:space-between;
+  padding:16px 21px; border:1px solid var(--op-line); border-radius:12px;
+  background:#fff; text-decoration:none; color:#283d5a;
+  transition:border-color .15s, background .15s;
+}
+#op-dashboard .op-work-row:hover { border-color:#a6bff0; background:#f8faff; color:#254b9d; }
+#op-dashboard .op-work-row-main { flex:1; min-width:0; }
+#op-dashboard .op-work-row-main strong { display:block; font-size:13px; font-weight:800; }
+#op-dashboard .op-work-row-main small { display:block; color:#8695aa; font-size:11px; margin-top:2px; }
+#op-dashboard .op-work-row-status { padding:6px 11px; border-radius:8px; background:#f1f5fc; color:#577098; font-size:11px; font-weight:720; }
+#op-dashboard .op-work-row-link { color:#325eb5; font-weight:760; font-size:12px; white-space:nowrap; }
+#op-dashboard .op-work-pagination {
+  display:flex; justify-content:center; align-items:center; gap:16px;
+  flex-wrap:wrap; margin:22px 0 0; color:#78879e; font-size:12px;
+}
+#op-dashboard .op-work-pagination a {
+  color:#3159b5; text-decoration:none; border:1px solid #e0e8f5;
+  background:#fff; border-radius:9px; padding:9px 13px; font-weight:730;
+}
+#op-dashboard .op-work-pagination a:hover { background:#f1f5ff; }
+@media (max-width:650px) {
+  #op-dashboard .op-sales-totals { grid-template-columns:1fr; }
+  #op-dashboard .op-active-columns { grid-template-columns:1fr; }
+  #op-dashboard .op-sales-total-amount strong { font-size:19px; }
+  #op-dashboard .op-subpage-header { flex-direction:column; padding:18px; }
+  #op-dashboard .op-subpage-header h1 { font-size:19px; }
+  #op-dashboard .op-work-row { flex-wrap:wrap; gap:7px; padding:13px; }
+  #op-dashboard .op-work-row-main { flex-basis:100%; }
+  #op-dashboard .op-doc-kind-tabs a { flex:1; justify-content:center; font-size:11px; }
+}
+[data-bs-theme="dark"] #op-dashboard .op-sales-total,
+[data-bs-theme="dark"] #op-dashboard .op-active-column,
+[data-bs-theme="dark"] #op-dashboard .op-subpage-header,
+[data-bs-theme="dark"] #op-dashboard .op-work-row,
+[data-bs-theme="dark"] #op-dashboard .op-doc-kind-tabs a { background:#202c3f; border-color:#35465c; }
+[data-bs-theme="dark"] #op-dashboard .op-sales-total > span,
+[data-bs-theme="dark"] #op-dashboard .op-active-heading strong,
+[data-bs-theme="dark"] #op-dashboard .op-subpage-header h1,
+[data-bs-theme="dark"] #op-dashboard .op-work-row-main strong { color:#e5edf8; }
+[data-bs-theme="dark"] #op-dashboard .op-sales-total-amount strong { color:#9fc3ff; }

@@ -160,25 +160,57 @@
                 <div><dt>پیش‌فاکتور</dt><dd>{{ row.quotation_count|intcomma }} <small>عدد</small></dd></div>
                 <div><dt>مشتری متفاوت</dt><dd>{{ row.customers|intcomma }} <small>مشتری</small></dd></div>
               </dl>
-              <div class="op-money-details">
-                <div class="op-money-row">
-                  <span class="op-money-label">ارزش فاکتورها</span>
-                  <div class="op-money-tokens">
-                    {% for amount in row.invoice_amounts %}
-                      <span class="op-value-token"><b dir="ltr">{{ amount.amount|floatformat:2|intcomma }}</b> <span>{{ amount.currency }}</span></span>
-                    {% empty %}
-                      <span class="op-zero-note">بدون فاکتور</span>
-                    {% endfor %}
-                  </div>
+              <div class="op-sales-totals" aria-label="جمع کل مبالغ اسناد فروش">
+                <div class="op-sales-total">
+                  <span>جمع مبلغ {{ row.invoice_count|intcomma }} فاکتور</span>
+                  <div class="op-sales-total-amount"><strong dir="ltr">{{ row.invoice_total_rial|floatformat:0|intcomma }}</strong><b>ریال</b></div>
+                  {% if row.invoice_unconverted %}
+                    <small class="op-amount-warning">مبلغ {{ row.invoice_unconverted|intcomma }} فاکتور فاقد نرخ معتبر در این جمع نیست.</small>
+                  {% endif %}
                 </div>
-                <div class="op-money-row">
-                  <span class="op-money-label">ارزش پیش‌فاکتورها</span>
-                  <div class="op-money-tokens">
-                    {% for amount in row.quotation_amounts %}
-                      <span class="op-value-token"><b dir="ltr">{{ amount.amount|floatformat:2|intcomma }}</b> <span>{{ amount.currency }}</span></span>
+                <div class="op-sales-total">
+                  <span>جمع مبلغ {{ row.quotation_count|intcomma }} پیش‌فاکتور</span>
+                  <div class="op-sales-total-amount"><strong dir="ltr">{{ row.quotation_total_rial|floatformat:0|intcomma }}</strong><b>ریال</b></div>
+                  {% if row.quotation_unconverted %}
+                    <small class="op-amount-warning">مبلغ {{ row.quotation_unconverted|intcomma }} پیش‌فاکتور فاقد نرخ معتبر در این جمع نیست.</small>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="op-active-block">
+                <div class="op-active-heading">
+                  <strong>فاکتورها و پیش‌فاکتورهای در حال انجام این کاربر</strong>
+                  <small>کارهای باز فعلی؛ مستقل از بازه تاریخی گزارش</small>
+                </div>
+                <div class="op-active-columns">
+                  <div class="op-active-column">
+                    <div class="op-active-column-title">فاکتورها <span>{{ row.active_factor_count|intcomma }}</span></div>
+                    {% for doc in row.active_factors %}
+                      <a class="op-task-link" href="{{ doc.url }}" target="_blank" rel="noopener noreferrer" title="باز کردن فاکتور شماره {{ doc.id }}">
+                        <span class="op-task-id">فاکتور #{{ doc.id }}</span>
+                        <span class="op-task-state">{{ doc.state }}</span>
+                        <span aria-hidden="true" class="op-task-arrow">↗</span>
+                      </a>
                     {% empty %}
-                      <span class="op-zero-note">بدون پیش‌فاکتور</span>
+                      <p class="op-active-empty">فاکتور بازی به این کاربر محول نشده است.</p>
                     {% endfor %}
+                    {% if row.active_factor_count > row.active_factors|length %}
+                      <a class="op-task-more" href="{{ row.active_factor_more_url }}&amp;days={{ report.days }}">همه {{ row.active_factor_count|intcomma }} فاکتور باز ←</a>
+                    {% endif %}
+                  </div>
+                  <div class="op-active-column">
+                    <div class="op-active-column-title">پیش‌فاکتورها <span>{{ row.active_quotation_count|intcomma }}</span></div>
+                    {% for doc in row.active_quotations %}
+                      <a class="op-task-link" href="{{ doc.url }}" target="_blank" rel="noopener noreferrer" title="باز کردن پیش‌فاکتور شماره {{ doc.id }}">
+                        <span class="op-task-id">پیش‌فاکتور #{{ doc.id }}</span>
+                        <span class="op-task-state">{{ doc.state }}</span>
+                        <span aria-hidden="true" class="op-task-arrow">↗</span>
+                      </a>
+                    {% empty %}
+                      <p class="op-active-empty">پیش‌فاکتور بازی به این کاربر محول نشده است.</p>
+                    {% endfor %}
+                    {% if row.active_quotation_count > row.active_quotations|length %}
+                      <a class="op-task-more" href="{{ row.active_quotation_more_url }}&amp;days={{ report.days }}">همه {{ row.active_quotation_count|intcomma }} پیش‌فاکتور باز ←</a>
+                    {% endif %}
                   </div>
                 </div>
               </div>
@@ -235,7 +267,8 @@
         <li><strong>فروش و قرارداد:</strong> تاریخ ایجاد سند و کاربر ایجادکننده؛ مشتریان تکراری یک کارشناس فقط یک‌بار شمرده می‌شوند.</li>
         <li><strong>استعلام:</strong> هر فایل استعلام با حداقل یک پاسخ ثبت‌شده توسط همان کاربر، یک‌بار شمرده می‌شود.</li>
         <li><strong>ارسال، رسید، خرید و مالی:</strong> زمان تغییر وضعیت ثبت‌شده در تاریخچه، نه آخرین ویرایش سند.</li>
-        <li><strong>مبالغ:</strong> ارزش فاکتورها و پیش‌فاکتورها بر اساس واحد پول جداگانه نشان داده می‌شود؛ ارزهای متفاوت جمع نمی‌شوند.</li>
+        <li><strong>جمع مبالغ فروش:</strong> مبلغ نهایی تمام فاکتورها و پیش‌فاکتورهای ثبت‌شده در بازه، با نرخ ذخیره‌شده همان سند به ریال تبدیل و برای هر نوع سند جمع می‌شود. اسناد بدون نرخ معتبر به‌صورت جداگانه اعلام می‌شوند.</li>
+        <li><strong>اسناد در حال انجام:</strong> متعلق به مسئول فعلی گردش‌کار هستند، هنوز به مرحله نهایی نرسیده‌اند و مستقل از بازه زمانی محاسبه می‌شوند.</li>
       </ul>
       <p class="op-help-note">رویدادهایی که کاربر انجام‌دهنده آن‌ها در تاریخچه مشخص نیست، به شخصی نسبت داده نمی‌شوند.</p>
     </div>

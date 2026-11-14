@@ -3,6 +3,7 @@
 Run with: python manage.py test dashboards.test_operational_reports
 """
 from datetime import date, timedelta
+from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
@@ -20,7 +21,7 @@ from micmod_base.models import Month, Quotation, SaleType
 from extra_data.models import Customer
 from order.models import Order, OrderBazar
 from payment.models import PaymentOrder
-from workflow.models import FlowAdminGroup
+from workflow.models import FlowAdminGroup, WorkFlow
 from django.utils import timezone
 from unittest.mock import patch
 
@@ -108,11 +109,13 @@ class OperationalSalesMetricsTests(TestCase):
 
         Quotation.objects.create(
             creator_user=sales, sale_type=sale_type, request_date=date.today(),
-            currency_ref=currency, final_price=100.5, customer_party_id=customer,
+            currency_ref=currency, rate=30000, final_price=100.5,
+            customer_party_id=customer,
         )
         Factor.objects.create(
             creator_user=sales, sale_type=sale_type, currency_ref=currency,
-            final_price=300.25, customer_party_id=customer,
+            final_price=300.25, currency_amount=Decimal('50000'),
+            customer_party_id=customer,
         )
         Factor.objects.create(
             creator_user=other, sale_type=sale_type, currency_ref=currency,
@@ -124,9 +127,10 @@ class OperationalSalesMetricsTests(TestCase):
         self.assertEqual(sales_row['invoice_count'], 1)
         self.assertEqual(sales_row['quotation_count'], 1)
         self.assertEqual(sales_row['customers'], 1)
-        self.assertEqual(sales_row['invoice_amounts'][0]['currency'], 'Dollar')
-        self.assertAlmostEqual(sales_row['invoice_amounts'][0]['amount'], 300.25)
-        self.assertAlmostEqual(sales_row['quotation_amounts'][0]['amount'], 100.5)
+        self.assertEqual(sales_row['invoice_total_rial'], Decimal('15012500'))
+        self.assertEqual(sales_row['quotation_total_rial'], Decimal('3015000'))
+        self.assertEqual(sales_row['invoice_unconverted'], 0)
+        self.assertEqual(sales_row['quotation_unconverted'], 0)
 
 
 class OperationalTransitionTests(TestCase):
@@ -199,8 +203,17 @@ class OperationalPresentationTests(TestCase):
         row = {
             'id': self.viewer.pk, 'name': 'کارشناس نمونه',
             'invoice_count': 3, 'quotation_count': 5, 'customers': 2,
-            'invoice_amounts': [{'amount': 12500, 'currency': 'Dollar'}],
-            'quotation_amounts': [{'amount': 4500, 'currency': 'RMB'}],
+            'invoice_total_rial': Decimal('12500'),
+            'quotation_total_rial': Decimal('4500'),
+            'invoice_unconverted': 0, 'quotation_unconverted': 0,
+            'active_factors': [
+                {'id': 84, 'url': '/factor/view/84/',
+                 'state': 'جمع‌آوری', 'customer': 'مشتری'}
+            ],
+            'active_quotations': [], 'active_factor_count': 1,
+            'active_quotation_count': 0,
+            'active_factor_more_url': '/work-items/1/?type=factor',
+            'active_quotation_more_url': '',
             'inquiry_count': 0, 'purchase_count': 0, 'dispatch_count': 0,
             'receipt_count': 0, 'finance_approval_count': 0,
             'paid_count': 0, 'contract_count': 0, 'contract_amount': 0,
@@ -229,8 +242,13 @@ class OperationalPresentationTests(TestCase):
         self.assertContains(response, 'عملکرد هر نفر')
         self.assertContains(response, 'کارشناس نمونه')
         self.assertContains(response, 'مشتری متفاوت')
-        self.assertContains(response, 'Dollar')
-        self.assertContains(response, 'RMB')
+        self.assertContains(response, '12,500')
+        self.assertContains(response, '4,500')
+        self.assertContains(response, 'فاکتور #84')
+        self.assertContains(response, 'در حال انجام این کاربر')
+        self.assertContains(response, 'ریال')
+        self.assertNotContains(response, 'Dollar')
+        self.assertNotContains(response, 'RMB')
         self.assertContains(response, 'role="tablist"')
         self.assertContains(response, 'data-op-person')
         self.assertContains(response, '/assets/css/operational-dashboard.css')
@@ -271,3 +289,178 @@ class OperationalPresentationTests(TestCase):
         self.assertEqual([s['key'] for s in result['visible_sections']], ['sales'])
         self.assertEqual(result['visible_sections'][0]['nav_total'], 0)
         self.assertEqual(result['visible_sections'][0]['metrics'][0]['value'], 0)
+
+
+class OperationalSalesTotalsAndLinksTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.sales = User.objects.create_user(
+            username='op_sales_total', password='pass'
+        )
+        self.other = User.objects.create_user(
+            username='op_other_total', password='pass'
+        )
+        self.manager = User.objects.create_user(
+            username='op_manager_total', password='pass'
+        )
+        self.sales.head = self.manager
+        self.sales.save(update_fields=['head'])
+        self.group, _ = Group.objects.get_or_create(name='sales_user')
+        self.sales.groups.add(self.group)
+        self.rial = Currency.objects.create(title='ریال', title_en='Rial')
+        self.usd = Currency.objects.create(title='دلار', title_en='Dollar')
+        self.month = Month.objects.create(title='ماه تست', month=11)
+        self.sale_type = SaleType.objects.create(
+            title='تست', number=2, month=self.month, currency=self.rial
+        )
+        self.customer = Customer.objects.create(
+            title='مشتری داشبورد', sepidar_party_id=880001
+        )
+
+    def factor(self, creator=None, **kwargs):
+        return Factor.objects.create(
+            creator_user=creator or self.sales,
+            sale_type=self.sale_type,
+            customer_party_id=self.customer, **kwargs
+        )
+
+    def quotation(self, creator=None, **kwargs):
+        return Quotation.objects.create(
+            creator_user=creator or self.sales,
+            sale_type=self.sale_type,
+            customer_party_id=self.customer,
+            request_date=date.today(), **kwargs
+        )
+
+    def assign(self, document, user, state):
+        flow = WorkFlow.objects.create(
+            from_user=self.sales, to_user=user,
+            action='next', wf_status=3, current_state_name=state,
+            content_type=ContentType.objects.get_for_model(type(document)),
+            object_id=document.pk,
+        )
+        type(document).objects.filter(pk=document.pk).update(last_work_flow=flow)
+
+    def test_mixed_currency_sales_totals_are_in_rial(self):
+        self.factor(currency_ref=self.rial, final_price=125000)
+        self.factor(currency_ref=self.usd, final_price=10,
+                    currency_amount=Decimal('60000'))
+        self.quotation(currency_ref=self.rial, final_price=50000)
+        self.quotation(currency_ref=self.usd, final_price=2, rate=70000)
+        row = build_report(self.sales)['sections'][0]['rows'][0]
+        self.assertEqual(row['invoice_count'], 2)
+        self.assertEqual(row['quotation_count'], 2)
+        self.assertEqual(row['invoice_total_rial'], Decimal('725000'))
+        self.assertEqual(row['quotation_total_rial'], Decimal('190000'))
+        self.assertEqual(row['invoice_unconverted'], 0)
+        self.assertEqual(row['quotation_unconverted'], 0)
+
+    def test_missing_historical_rate_does_not_get_made_up(self):
+        self.factor(currency_ref=self.usd, final_price=300)
+        self.quotation(currency_ref=self.usd, final_price=400)
+        row = build_report(self.sales)['sections'][0]['rows'][0]
+        self.assertEqual(row['invoice_count'], 1)
+        self.assertEqual(row['quotation_count'], 1)
+        self.assertEqual(row['invoice_unconverted'], 1)
+        self.assertEqual(row['quotation_unconverted'], 1)
+        self.assertEqual(row['invoice_total_rial'], Decimal('0'))
+        self.assertEqual(row['quotation_total_rial'], Decimal('0'))
+
+    def test_current_assignment_links_are_separate_from_created_totals(self):
+        open_factor = self.factor(
+            creator=self.other, currency_ref=self.rial, final_price=800
+        )
+        open_quote = self.quotation(
+            creator=self.other, currency_ref=self.rial, final_price=900
+        )
+        finished_factor = self.factor(
+            currency_ref=self.rial, final_price=100
+        )
+        other_factor = self.factor(
+            currency_ref=self.rial, final_price=200
+        )
+        self.assign(open_factor, self.sales, 'جمع‌‌آوری')
+        self.assign(open_quote, self.sales, 'استعلام قیمت')
+        self.assign(finished_factor, self.sales, 'مرحله نهایی')
+        self.assign(other_factor, self.other, 'تایید مدیر فروش')
+
+        row = build_report(self.sales)['sections'][0]['rows'][0]
+        self.assertEqual(row['invoice_count'], 2)
+        self.assertEqual(row['quotation_count'], 0)
+        self.assertEqual(row['active_factor_count'], 1)
+        self.assertEqual(row['active_quotation_count'], 1)
+        self.assertEqual([doc['id'] for doc in row['active_factors']],
+                         [open_factor.pk])
+        self.assertEqual([doc['id'] for doc in row['active_quotations']],
+                         [open_quote.pk])
+        self.assertEqual(row['active_factors'][0]['url'],
+                         reverse('factor:factor.view', kwargs={'pk': open_factor.pk}))
+        self.assertEqual(row['active_quotations'][0]['url'],
+                         reverse('micmod_base:quotations.view',
+                                 kwargs={'pk': open_quote.pk}))
+
+    def test_all_open_documents_page_is_scope_checked(self):
+        open_factor = self.factor(currency_ref=self.rial, final_price=50)
+        self.assign(open_factor, self.sales, 'جمع‌‌آوری')
+        url = reverse('dashboards:sales_work_items',
+                      kwargs={'user_id': self.sales.pk})
+
+        self.client.force_login(self.sales)
+        response = self.client.get(url + '?type=factor')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'فاکتور شماره {open_factor.pk}')
+        self.assertContains(response, reverse('factor:factor.view',
+                                               kwargs={'pk': open_factor.pk}))
+
+        self.client.force_login(self.other)
+        self.assertEqual(self.client.get(url).status_code, 404)
+
+        self.client.force_login(self.manager)
+        self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_closed_documents_and_cancelled_documents_are_excluded(self):
+        ended = self.quotation(currency_ref=self.rial, final_price=30)
+        cancelled = self.factor(
+            currency_ref=self.rial, final_price=20, cancel=True
+        )
+        self.assign(ended, self.sales, 'مرحله نهایی')
+        self.assign(cancelled, self.sales, 'جمع‌‌آوری')
+        row = build_report(self.sales)['sections'][0]['rows'][0]
+        self.assertEqual(row['active_factor_count'], 0)
+        self.assertEqual(row['active_quotation_count'], 0)
+
+    def test_historical_amount_and_count_use_the_same_time_window(self):
+        recent = self.factor(currency_ref=self.rial, final_price=300)
+        older = self.factor(currency_ref=self.rial, final_price=700)
+        older_quote = self.quotation(currency_ref=self.rial, final_price=2000)
+        Factor.objects.filter(pk=older.pk).update(
+            created_date=timezone.now() - timedelta(days=45)
+        )
+        Quotation.objects.filter(pk=older_quote.pk).update(
+            created_date=timezone.now() - timedelta(days=45)
+        )
+        row = build_report(self.sales, days=30)['sections'][0]['rows'][0]
+        self.assertEqual(row['invoice_count'], 1)
+        self.assertEqual(row['invoice_total_rial'], Decimal('300'))
+        self.assertEqual(row['quotation_count'], 0)
+        self.assertEqual(row['quotation_total_rial'], Decimal('0'))
+
+    def test_open_document_preview_is_limited_but_full_list_is_complete(self):
+        for _ in range(7):
+            doc = self.factor(currency_ref=self.rial, final_price=100)
+            self.assign(doc, self.sales, 'جمع‌‌آوری')
+        row = build_report(self.sales)['sections'][0]['rows'][0]
+        self.assertEqual(row['active_factor_count'], 7)
+        self.assertEqual(len(row['active_factors']), 5)
+        self.assertIn(
+            reverse('dashboards:sales_work_items',
+                    kwargs={'user_id': self.sales.pk}),
+            row['active_factor_more_url']
+        )
+        self.client.force_login(self.sales)
+        response = self.client.get(
+            reverse('dashboards:sales_work_items',
+                    kwargs={'user_id': self.sales.pk}) + '?type=factor'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['documents']), 7)

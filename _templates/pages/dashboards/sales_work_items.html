@@ -1,0 +1,57 @@
+{% extends layout %}
+{% load i18n humanize %}
+
+{% block title %}کارهای در جریان | پرتال{% endblock %}
+{% block custom_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="/assets/css/operational-dashboard.css">
+{% endblock custom_css %}
+
+{% block content_ %}
+<main id="op-dashboard" class="op-dashboard" dir="rtl">
+  <a href="{{ back_url }}" class="op-work-back">← بازگشت به داشبورد عملکرد</a>
+  <header class="op-subpage-header">
+    <div>
+      <span class="op-section-eyebrow">کارهای باز فعلی</span>
+      <h1>اسناد در حال انجام {{ subject_user.get_full_name|default:subject_user.username }}</h1>
+      <p>فهرست سندهایی که اکنون در گردش‌کار به این کاربر محول شده‌اند. این فهرست مستقل از بازه زمانی گزارش عملکرد است.</p>
+    </div>
+    <span class="op-panel-period">مسئول فعلی سند</span>
+  </header>
+
+  <nav class="op-doc-kind-tabs" aria-label="نوع اسناد در حال انجام">
+    <a href="{{ factor_tab_url }}" {% if kind == 'factor' %}class="is-active" aria-current="page"{% endif %}>فاکتورهای در جریان <b>{{ factor_count|intcomma }}</b></a>
+    <a href="{{ quotation_tab_url }}" {% if kind == 'quotation' %}class="is-active" aria-current="page"{% endif %}>پیش‌فاکتورهای در جریان <b>{{ quotation_count|intcomma }}</b></a>
+  </nav>
+
+  <section class="op-work-list" aria-label="فهرست اسناد در جریان">
+    {% for doc in documents %}
+      <a class="op-work-row" href="{{ doc.url }}" target="_blank" rel="noopener noreferrer" aria-label="باز کردن {% if kind == 'factor' %}فاکتور{% else %}پیش‌فاکتور{% endif %} شماره {{ doc.id }}">
+        <span class="op-work-row-main">
+          <strong>{% if kind == 'factor' %}فاکتور{% else %}پیش‌فاکتور{% endif %} شماره {{ doc.id }}</strong>
+          {% if doc.customer %}<small>مشتری: {{ doc.customer }}</small>{% endif %}
+        </span>
+        <span class="op-work-row-status">{{ doc.state }}</span>
+        <span class="op-work-row-link">مشاهده سند ↗</span>
+      </a>
+    {% empty %}
+      <div class="op-empty-state">
+        <h2>سند در حال انجامی وجود ندارد</h2>
+        <p>در حال حاضر هیچ {% if kind == 'factor' %}فاکتور{% else %}پیش‌فاکتور{% endif %} بازی به این کاربر محول نشده است.</p>
+      </div>
+    {% endfor %}
+  </section>
+
+  {% if page_obj.has_other_pages %}
+    <nav class="op-work-pagination" aria-label="صفحه‌بندی اسناد">
+      {% if page_obj.has_previous %}
+        <a href="?type={{ kind }}&amp;days={{ days }}&amp;page={{ page_obj.previous_page_number }}">صفحه قبل</a>
+      {% endif %}
+      <span>صفحه {{ page_obj.number|intcomma }} از {{ page_obj.paginator.num_pages|intcomma }}</span>
+      {% if page_obj.has_next %}
+        <a href="?type={{ kind }}&amp;days={{ days }}&amp;page={{ page_obj.next_page_number }}">صفحه بعد</a>
+      {% endif %}
+    </nav>
+  {% endif %}
+</main>
+{% endblock content_ %}
