@@ -187,22 +187,22 @@ class QuotationBulkLegalProfilePrintTests(SimpleTestCase):
 
 
 class QuotationCustomerPrintToolbarLayoutTests(SimpleTestCase):
-    """The customer print tools share a responsive, print-hidden in-flow toolbar."""
+    """Customer and expert previews use the same accessible print toolbar."""
 
     def test_customer_print_tools_are_not_absolute_or_separate(self):
         source = get_template('micmod-base/quotation/view-print-raw.html').template.source
-        start = source.index('class="quotation-customer-print-toolbar noprint"')
-        end = source.index('\n</div>\n{% endif %}', start)
+        start = source.index('class="ptb-toolbar quotation-customer-print-toolbar noprint"')
+        end = source.index('</section>', start)
         toolbar = source[start:end]
         self.assertNotIn('position-absolute', toolbar)
         self.assertIn('id="id_print_btn"', toolbar)
         self.assertIn("micmod_base:quotations.print-view", toolbar)
         self.assertIn("micmod_base:print_customer", toolbar)
         self.assertIn("{% include 'micmod-base/quotation/partial/legal_profile_picker.html' %}", toolbar)
-        self.assertLess(toolbar.index('quotation-customer-print-actions'),
+        self.assertLess(toolbar.index('ptb-actions'),
                         toolbar.index('legal_profile_picker.html'))
         self.assertEqual(source.count('legal_profile_picker.html'), 1)
-        self.assertIn('class="quotation-customer-print-toolbar noprint"', source)
+        self.assertIn('class="ptb-toolbar quotation-customer-print-toolbar noprint"', source)
 
     def test_expert_and_goods_links_preserve_profile_and_have_complete_href(self):
         source = get_template('micmod-base/quotation/view-print-raw.html').template.source
@@ -219,10 +219,43 @@ class QuotationCustomerPrintToolbarLayoutTests(SimpleTestCase):
         )
 
     def test_toolbar_is_responsive_and_hidden_in_print(self):
+        from django.conf import settings
+        from pathlib import Path
         source = get_template('micmod-base/quotation/view-print-raw.html').template.source
-        self.assertIn('.quotation-customer-print-toolbar {', source)
-        self.assertIn('display: flex;', source)
-        self.assertIn('flex-wrap: wrap;', source)
-        self.assertIn('@media (max-width: 767px)', source)
-        self.assertIn('class="quotation-customer-print-toolbar noprint"', source)
-        self.assertIn('.noprint {\\n              display: none !important;', source)
+        css = (Path(settings.BASE_DIR) / 'factor/static/factor/css/print_toolbar.css').read_text(encoding='utf-8')
+        self.assertIn("factor/css/print_toolbar.css", source)
+        self.assertIn('class="ptb-toolbar quotation-customer-print-toolbar noprint"', source)
+        self.assertIn('.ptb-toolbar .ptb-main {', css)
+        self.assertIn('flex-wrap: wrap;', css)
+        self.assertIn('@media (max-width: 767px)', css)
+        self.assertIn('@media print', css)
+        self.assertIn('.ptb-toolbar', css)
+
+    def test_expert_toolbar_unifies_print_actions_and_profile_selection(self):
+        source = get_template('micmod-base/quotation/view-print.html').template.source
+        self.assertIn('{% if not bulk_mode %}\n<section class="ptb-toolbar noprint"', source)
+        self.assertIn('id="id_print_btn"', source)
+        self.assertIn("micmod_base:print_customer", source)
+        self.assertIn('class="ptb-actions"', source)
+        self.assertIn("legal_profile_picker.html", source)
+        self.assertNotIn('class="button print', source)
+        self.assertIn('factor/css/print_toolbar.css', source)
+
+    def test_picker_is_an_in_flow_form_with_preserved_print_parameters(self):
+        source = get_template('micmod-base/quotation/partial/legal_profile_picker.html').template.source
+        self.assertIn('class="ptb-profile-form quotation-legal-profile-tools noprint"', source)
+        self.assertIn('name="legal_profile"', source)
+        self.assertIn('request.GET.comments_url_params', source)
+        self.assertIn('request.GET.alt_code', source)
+        self.assertIn('request.GET.customer_goods_code_url_param', source)
+        self.assertNotIn('border rounded bg-light', source)
+
+    def test_bulk_quotation_toolbar_keeps_independent_customer_form(self):
+        source = get_template('micmod-base/quotation/bulk_print.html').template.source
+        self.assertIn('class="quotation-bulk-toolbar ptb-toolbar noprint"', source)
+        self.assertIn('name="print_style"', source)
+        self.assertIn('name="{{ customer.field_name }}"', source)
+        self.assertIn('{% csrf_token %}', source)
+        self.assertIn('name="ids"', source)
+        self.assertIn('class="ptb-profile-actions"', source)
+        self.assertNotIn('onchange="this.form.submit()"', source)

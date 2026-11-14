@@ -23,106 +23,43 @@
 <link href="{% static 'custom_libs/toastr/toastr.min.css' %}" rel="stylesheet"/>
 <link href="{% static 'css/style.bundle.css_v7.2.9.css' %}" rel="stylesheet" type="text/css">
 <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
-<style>
-
-    /* Single customer quotation: one in-flow toolbar, also suitable for narrow screens. */
-    .quotation-customer-print-toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 10px 14px;
-        padding: 12px 14px;
-        margin: 12px auto 14px;
-        max-width: 1180px;
-        border: 1px solid #dde6f2;
-        border-radius: 10px;
-        background: #f5f8fc;
-        box-sizing: border-box;
-        position: relative;
-    }
-    .quotation-customer-print-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        align-items: center;
-        min-width: 0;
-    }
-    .quotation-customer-print-actions .btn {
-        white-space: normal;
-        margin: 0 !important;
-        line-height: 1.5;
-    }
-    .quotation-customer-print-toolbar .quotation-legal-profile-tools {
-        display: flex;
-        flex: 1 1 340px;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 8px !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        border: 0 !important;
-        border-radius: 0 !important;
-        background: transparent !important;
-        box-shadow: none !important;
-        min-width: 0;
-    }
-    .quotation-customer-print-toolbar .quotation-legal-profile-tools .form-select {
-        width: auto !important;
-        min-width: 165px;
-        max-width: 100%;
-        height: 34px;
-    }
-    .quotation-customer-print-toolbar .quotation-legal-profile-tools .btn {
-        margin: 0 !important;
-    }
-    .quotation-customer-print-toolbar .quotation-legal-profile-tools .text-muted {
-        flex-basis: 100%;
-        font-size: 11px;
-        line-height: 1.5;
-    }
-    @media (max-width: 767px) {
-        .quotation-customer-print-toolbar {
-            align-items: stretch;
-            padding: 10px;
-            gap: 12px;
-        }
-        .quotation-customer-print-actions,
-        .quotation-customer-print-toolbar .quotation-legal-profile-tools {
-            width: 100%;
-            flex: 1 1 100%;
-        }
-    }
-        @media print {
-
-           .noprint {
-              display: none !important;
-           }
-           .button {
-               display: block;
-           }
-        }
-    </style>
+<link href="{% static 'factor/css/print_toolbar.css' %}" rel="stylesheet">
+<style>@media print {.noprint{display:none!important;}}</style>
 {% endif %}
 
 {% if not bulk_mode %}
-<div class="quotation-customer-print-toolbar noprint" dir="rtl"
-     role="group" aria-label="ابزارهای چاپ پیش‌فاکتور مشتری">
-    <div class="quotation-customer-print-actions">
-        <button type="button" class="btn btn-primary btn-sm" id="id_print_btn"
-                onclick="window.print()">چاپ پیش‌فاکتور</button>
-        <a href="{% url 'micmod_base:quotations.print-view' id=data.id %}?legal_profile={{ selected_legal_profile|default:''|urlencode }}"
-           class="btn btn-light-primary btn-sm">نسخه کارشناس</a>
-        <a href="{% url 'micmod_base:print_customer' id=data.id %}?customer_goods_code_url_param={{ customer_goods_code_url_param }}&amp;legal_profile={{ selected_legal_profile|default:''|urlencode }}"
-           class="btn btn-light-primary btn-sm">
-            {% if customer_goods_code_url_param == '0' %}
-                بدون کد کالای مشتری
-            {% elif customer_goods_code_url_param == '1' %}
-                با کد کالای مشتری
-            {% endif %}
-        </a>
+<section class="ptb-toolbar quotation-customer-print-toolbar noprint" dir="rtl"
+         aria-label="ابزارهای چاپ پیش‌فاکتور مشتری">
+    <div class="ptb-main">
+        <div class="ptb-identity">
+            <span class="ptb-icon" aria-hidden="true">▣</span>
+            <div>
+                <h3 class="ptb-title">تنظیمات چاپ پیش‌فاکتور</h3>
+                <span class="ptb-subtitle">نسخه مشتری · P{{ data.id }}</span>
+            </div>
+        </div>
+        <div class="ptb-actions">
+            <button type="button" class="ptb-button ptb-button--primary" id="id_print_btn"
+                    onclick="window.print()">چاپ پیش‌فاکتور</button>
+            <a href="{% url 'micmod_base:quotations.print-view' id=data.id %}?legal_profile={{ selected_legal_profile|default:''|urlencode }}"
+               class="ptb-button">نسخه کارشناس</a>
+            <a href="{% url 'micmod_base:print_customer' id=data.id %}?customer_goods_code_url_param={{ customer_goods_code_url_param }}&amp;legal_profile={{ selected_legal_profile|default:''|urlencode }}"
+               class="ptb-button">
+                {% if customer_goods_code_url_param == '0' %}
+                    بدون کد کالای مشتری
+                {% elif customer_goods_code_url_param == '1' %}
+                    با کد کالای مشتری
+                {% endif %}
+            </a>
+        </div>
     </div>
-    {% include 'micmod-base/quotation/partial/legal_profile_picker.html' %}
-</div>
+    {% if legal_profile_options %}
+    <div class="ptb-profile-zone">
+        <span class="ptb-profile-heading">پروفایل حقوقی خریدار</span>
+        {% include 'micmod-base/quotation/partial/legal_profile_picker.html' %}
+    </div>
+    {% endif %}
+</section>
 {% endif %}
 <div>
 <div class="container mt-10" dir="rtl">

@@ -5,51 +5,55 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>چاپ گروهی فاکتورها</title>
+  <link href="{% static 'factor/css/print_toolbar.css' %}" rel="stylesheet">
   <style>
-    /* factor-bulk-2026-v1 */
     body { margin:0; background:#fff; direction:rtl; }
-    .bulk-toolbar { background:#f1f5f9; padding:12px; text-align:center; }
-    .bulk-toolbar button { padding:10px 20px; border:0; border-radius:7px;
-                            color:white; background:#2563eb; cursor:pointer; }
-    .bulk-profiles {display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:12px 0;}
-    .bulk-profile-option {display:flex;align-items:center;gap:8px;padding:9px;border:1px solid #d7e2ee;border-radius:8px;background:white;}
-    .bulk-profile-customer {font-weight:700;}
-    .bulk-profile-option select {min-width:165px;padding:7px;border:1px solid #cbd5e1;border-radius:6px;background:white;}
-    .bulk-document .noprint, .bulk-document #calculate-button,
-    .bulk-document #id_print_btn { display:none!important; }
-    @media print {
-      .bulk-toolbar { display:none!important; }
-      .bulk-document:not(:last-child) { break-after:page; page-break-after:always; }
-    }
+    .bulk-document .noprint, .bulk-document #calculate-button, .bulk-document #id_print_btn { display:none!important; }
+    @media print { .bulk-document:not(:last-child) { break-after:page; page-break-after:always; } }
   </style>
 </head>
 <body>
-  <div class="bulk-toolbar">
-    <span>{{ documents|length }} فاکتور آماده چاپ</span>
-    {% if customers %}
-    <form id="bulk-customer-profiles" action="{% url 'factor:factor.bulk_print' %}" method="post">
-      {% csrf_token %}
-      {% for invoice_id in ids %}<input type="hidden" name="ids" value="{{ invoice_id }}">{% endfor %}
-      <input type="hidden" name="q" value="{{ filter_q }}">
-      <div class="bulk-profiles" dir="rtl">
-        {% for customer in customers %}
-        <label class="bulk-profile-option">
-          <span class="bulk-profile-customer">{{ customer.name }}</span>
-          <span>پروفایل حقوقی:</span>
-          <select name="{{ customer.field_name }}" onchange="this.form.submit()">
-            <option value="" {% if not customer.selected %}selected{% endif %}>اطلاعات پایه مشتری</option>
-            {% for profile in customer.options %}
-            <option value="{{ profile.value }}" {% if profile.selected %}selected{% endif %}>{{ profile.label }}</option>
-            {% endfor %}
-          </select>
-        </label>
-        {% endfor %}
+  <section class="bulk-toolbar ptb-toolbar noprint" dir="rtl" aria-label="ابزارهای چاپ گروهی فاکتورها">
+    <div class="ptb-main">
+      <div class="ptb-identity">
+        <span class="ptb-icon" aria-hidden="true">▣</span>
+        <div>
+          <h3 class="ptb-title">چاپ گروهی فاکتورها</h3>
+          <span class="ptb-subtitle">{{ documents|length }} فاکتور آماده چاپ</span>
+        </div>
       </div>
-      <button type="submit">اعمال پروفایل‌ها</button>
-    </form>
+      <div class="ptb-actions">
+        <button type="button" class="ptb-button ptb-button--primary" onclick="window.print()">چاپ همه فاکتورها</button>
+      </div>
+    </div>
+    {% if customers %}
+    <div class="ptb-profile-zone">
+      <span class="ptb-profile-heading">مشخصات خریداران در خروجی چاپ</span>
+      <form class="ptb-bulk-form" id="bulk-customer-profiles" method="post" action="{% url 'factor:factor.bulk_print' %}">
+        {% csrf_token %}
+        {% for invoice_id in ids %}<input type="hidden" name="ids" value="{{ invoice_id }}">{% endfor %}
+        <input type="hidden" name="q" value="{{ filter_q }}">
+        <div class="ptb-bulk-fields">
+          {% for customer in customers %}
+          <label class="ptb-field ptb-bulk-customer">
+            <span>{{ customer.name }}</span>
+            <select name="{{ customer.field_name }}">
+              <option value="" {% if not customer.selected %}selected{% endif %}>اطلاعات پایه مشتری</option>
+              {% for profile in customer.options %}
+              <option value="{{ profile.value }}" {% if profile.selected %}selected{% endif %}>{{ profile.label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="ptb-profile-actions">
+          <button type="submit" class="ptb-button ptb-button--primary">اعمال پروفایل‌ها</button>
+          <p class="ptb-help">هر مشتری انتخاب مستقل دارد. همه انتخاب‌ها با هم اعمال می‌شوند.</p>
+        </div>
+      </form>
+    </div>
     {% endif %}
-    <button type="button" onclick="window.print()">چاپ همه فاکتورها</button>
-  </div>
+  </section>
   {% for doc in documents %}
   <section class="bulk-document">
     {% include 'factor/factor_print.html' with data=doc.data form=doc.form formset=doc.formset buyer_info=doc.buyer_info legal_profile_options=doc.legal_profile_options selected_legal_profile=doc.selected_legal_profile with_location=doc.with_location location_url_params=doc.location_url_params bulk_mode=True %}

@@ -71,7 +71,9 @@ class LegalProfileFactorPrintTests(SimpleTestCase):
             self.assertIn('{{ buyer_info.' + key + ' }}', html)
         self.assertNotIn('data.q.customer_party_id', html)
         self.assertIn('id="factor-legal-profile-select"', html)
-        self.assertIn('{% if not bulk_mode and legal_profile_options %}', html)
+        self.assertIn('{% if not bulk_mode %}', html)
+        self.assertIn('{% if legal_profile_options %}', html)
+        self.assertIn('class="ptb-toolbar noprint"', html)
         bulk = get_template('factor/bulk_print.html').template.source
         self.assertIn('buyer_info=doc.buyer_info', bulk)
 
@@ -240,3 +242,36 @@ class FactorBulkLegalProfileViewTests(SimpleTestCase):
         })
         self.assertEqual(context['ids'], [102, 101])
         self.assertEqual(context['documents'][0]['buyer_info']['name'], 'شرکت دوم')
+
+
+
+class FactorPrintToolbarStyleTests(SimpleTestCase):
+    """Invoice print controls are in the same compact shared toolbar as quotations."""
+
+    def test_invoice_toolbar_includes_print_profile_and_warehouse_action(self):
+        html = get_template('factor/factor_print.html').template.source
+        self.assertIn('{% if not bulk_mode %}\n<section class="ptb-toolbar noprint"', html)
+        self.assertIn('id="id_print_btn"', html)
+        self.assertIn('id="factor-legal-profile-form"', html)
+        self.assertIn('id="factor-legal-profile-select"', html)
+        self.assertIn('id="calculate-button"', html)
+        self.assertIn('class="ptb-actions"', html)
+        self.assertIn('class="ptb-profile-zone"', html)
+        self.assertIn('factor/css/print_toolbar.css', html)
+        self.assertNotIn('class="noprint border rounded p-3', html)
+
+    def test_invoice_warehouse_handler_only_attaches_if_button_exists(self):
+        html = get_template('factor/factor_print.html').template.source
+        self.assertIn("document.getElementById('calculate-button')?.addEventListener", html)
+        self.assertNotIn('    debugger\n', html)
+
+    def test_invoice_bulk_toolbar_uses_same_styles_and_preserves_customer_ids(self):
+        html = get_template('factor/bulk_print.html').template.source
+        self.assertIn('class="bulk-toolbar ptb-toolbar noprint"', html)
+        self.assertIn('name="{{ customer.field_name }}"', html)
+        self.assertIn('name="ids"', html)
+        self.assertIn('name="q"', html)
+        self.assertIn('{% csrf_token %}', html)
+        self.assertIn("factor/css/print_toolbar.css", html)
+        self.assertIn('class="ptb-profile-actions"', html)
+        self.assertNotIn('onchange="this.form.submit()"', html)
