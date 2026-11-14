@@ -102,91 +102,57 @@ class CustomerLegalProfileFormTests(TestCase):
 
 
 
-class CustomerLegalProfileAccordionTests(SimpleTestCase):
-    """The customer editor stays compact but keeps editable JSON data."""
 
-    def test_accordion_markup_defaults_closed_and_is_accessible(self):
+class CustomerLegalProfileSalesStyleTests(SimpleTestCase):
+    """Match the shared multi-condition invoice/quotation design language."""
+
+    def test_native_details_and_metronic_card_match_sales_editor(self):
         from django.template.loader import get_template
-        source = get_template('extra_data/customer.html').template.source
-        self.assertIn('id="customer-legal-profiles-toggle"', source)
-        self.assertIn('aria-controls="customer-legal-profiles-body"', source)
-        self.assertIn('aria-expanded="{% if form.legal_profiles.errors %}true{% else %}false{% endif %}"', source)
-        self.assertIn('id="customer-legal-profiles-body"', source)
-        self.assertIn('{% if not form.legal_profiles.errors %}hidden{% endif %}', source)
-        self.assertIn('id="customer-legal-profiles-summary"', source)
-        self.assertIn('id="customer-legal-profiles-cards"', source)
-        self.assertIn('id="customer-legal-profile-card-template"', source)
-        self.assertIn('data-card-name', source)
-        self.assertIn('data-card-national-id', source)
-        self.assertIn('data-card-postal-code', source)
-        self.assertIn('data-card-address', source)
-        self.assertIn('id="customer-legal-profiles-count"', source)
-        self.assertIn('{{ form.legal_profiles }}', source)
-        self.assertIn('id="customer-legal-profile-add"', source)
-        self.assertIn('data-legal-remove', source)
+
+        customer = get_template('extra_data/customer.html').template.source
+        sales = get_template('factor/partial/sale_conditions_editor.html').template.source
+        for marker in ('class="card shadow-sm', '<details class=', '<summary class='):
+            self.assertIn(marker, sales)
+        self.assertIn('class="card shadow-sm clp-card"', customer)
+        self.assertIn('<details class="clp-accordion"', customer)
+        self.assertIn('class="card-header border-0 clp-header"', customer)
+        self.assertIn('symbol symbol-30px bg-light-primary', customer)
+        self.assertIn('class="card-body clp-body"', customer)
+        self.assertIn('class="btn btn-sm btn-primary clp-add-profile"', customer)
+        self.assertIn('{% if form.legal_profiles.errors %}open{% endif %}', customer)
+        self.assertIn('{{ form.legal_profiles }}', customer)
+
+    def test_separate_summary_cards_and_fields_remain_available(self):
+        from django.template.loader import get_template
+
+        customer = get_template('extra_data/customer.html').template.source
+        self.assertIn('id="customer-legal-profiles-cards"', customer)
+        self.assertIn('data-legal-summary-card', customer)
+        self.assertIn('id="customer-legal-profile-add"', customer)
+        self.assertIn('data-legal-remove', customer)
         for field in ('name', 'national_id', 'type', 'postal_code', 'address'):
-            self.assertIn('data-legal-field="' + field + '"', source)
+            self.assertIn('data-legal-field="' + field + '"', customer)
 
-    def test_accordion_javascript_updates_summary_and_preserves_form_submission(self):
+    def test_styles_match_sales_accent_and_responsive_columns(self):
         from django.conf import settings
         from pathlib import Path
-        path = Path(settings.BASE_DIR) / 'extra_data/static/extra_data/js/customer_legal_profiles.js'
-        source = path.read_text(encoding='utf-8')
-        self.assertIn("toggle.setAttribute('aria-expanded', String(open))", source)
-        self.assertIn('body.hidden = !open', source)
-        self.assertIn('function renderSummaryCards(profiles)', source)
-        self.assertIn('summary.hidden = open', source)
-        self.assertIn('cards.replaceChildren(fragment)', source)
-        self.assertIn('cardTemplate.content.cloneNode(true)', source)
-        self.assertIn('card.querySelector(\'[data-card-national-id]\').textContent', source)
-        self.assertIn('count.textContent =', source)
-        self.assertIn("toggle.addEventListener('click'", source)
-        self.assertIn("addButton.addEventListener('click'", source)
-        self.assertIn('setExpanded(true)', source)
-        self.assertIn("list.addEventListener('input'", source)
-        self.assertIn("list.addEventListener('click'", source)
-        self.assertIn('hidden.value = JSON.stringify(profiles)', source)
-        self.assertIn("form.addEventListener('submit', sync)", source)
 
-    def test_accordion_css_hides_panel_when_collapsed(self):
+        css = (Path(settings.BASE_DIR) / 'extra_data/static/extra_data/css/customer_legal_profiles.css').read_text(encoding='utf-8')
+        for value in ('#e1e9ef', '#087f78', '#fbfdfd', '#81a8d6'):
+            self.assertIn(value, css)
+        for grid in ('repeat(4, minmax(0, 1fr))',
+                     'repeat(3, minmax(0, 1fr))',
+                     'repeat(2, minmax(0, 1fr))'):
+            self.assertIn(grid, css)
+        self.assertIn('.clp-accordion:not([open])', css)
+
+    def test_javascript_preserves_json_and_safe_card_rendering(self):
         from django.conf import settings
         from pathlib import Path
-        path = Path(settings.BASE_DIR) / 'extra_data/static/extra_data/css/customer_legal_profiles.css'
-        source = path.read_text(encoding='utf-8')
-        self.assertIn('.clp-accordion-body[hidden]', source)
-        self.assertIn('display: none !important', source)
-        self.assertIn('.clp-summary-grid', source)
-        self.assertIn('repeat(4, minmax(0, 1fr))', source)
-        self.assertIn('repeat(3, minmax(0, 1fr))', source)
-        self.assertIn('repeat(2, minmax(0, 1fr))', source)
-        self.assertIn('.clp-summary-panel[hidden]', source)
-        self.assertIn('.clp-chevron', source)
 
-
-    def test_independent_cards_cover_all_profiles_and_use_safe_text_content(self):
-        from django.conf import settings
-        from pathlib import Path
-        from django.template.loader import get_template
-
-        template = get_template('extra_data/customer.html').template.source
-        self.assertIn('id="customer-legal-profiles-cards"', template)
-        self.assertIn('data-legal-summary-card', template)
-        self.assertIn('{% if form.legal_profiles.errors %}hidden{% endif %}', template)
-        self.assertIn('id="customer-legal-profiles-summary-empty"', template)
-
-        path = Path(settings.BASE_DIR) / 'extra_data/static/extra_data/js/customer_legal_profiles.js'
-        script = path.read_text(encoding='utf-8')
-        self.assertIn('profiles.forEach(function (profile, index)', script)
-        self.assertIn('renderSummaryCards(nonEmptyProfiles)', script)
-        self.assertIn('summaryEmpty.hidden = profiles.length > 0', script)
+        script = (Path(settings.BASE_DIR) / 'extra_data/static/extra_data/js/customer_legal_profiles.js').read_text(encoding='utf-8')
+        self.assertIn("details.open = true", script)
+        self.assertIn('hidden.value = JSON.stringify(activeProfiles())', script)
+        self.assertIn('cards.replaceChildren(fragment)', script)
+        self.assertIn('textContent = profile.national_id', script)
         self.assertNotIn('cards.innerHTML', script)
-
-    def test_summary_grid_responsive_breakpoints(self):
-        from django.conf import settings
-        from pathlib import Path
-        path = Path(settings.BASE_DIR) / 'extra_data/static/extra_data/css/customer_legal_profiles.css'
-        css = path.read_text(encoding='utf-8')
-        for breakpoint in (1199, 991, 575):
-            self.assertIn('@media (max-width: ' + str(breakpoint) + 'px)', css)
-        self.assertIn('grid-template-columns: repeat(4, minmax(0, 1fr))', css)
-        self.assertIn('grid-template-columns: minmax(0, 1fr)', css)

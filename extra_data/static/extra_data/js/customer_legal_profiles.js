@@ -1,141 +1,118 @@
-/* Compact accordion editor for Customer.legal_profiles.
-   One hidden JSON field is posted with the customer form. */
+/* Legal-profile editor. Native <details> mirrors sale-conditions UI in invoice and quotation. */
 (function () {
-    'use strict';
+  'use strict';
 
-    const section = document.getElementById('customer-legal-profiles');
-    if (!section) return;
+  const root = document.getElementById('customer-legal-profiles');
+  if (!root) return;
+  const details = root.querySelector('#customer-legal-profiles-details');
+  const hidden = root.querySelector('#id_legal_profiles');
+  const rows = root.querySelector('#customer-legal-profiles-list');
+  const empty = root.querySelector('#customer-legal-profiles-empty');
+  const addButton = root.querySelector('#customer-legal-profile-add');
+  const rowTemplate = root.querySelector('#customer-legal-profile-template');
+  const cardTemplate = root.querySelector('#customer-legal-profile-card-template');
+  const count = root.querySelector('#customer-legal-profiles-count');
+  const cards = root.querySelector('#customer-legal-profiles-cards');
+  const summaryEmpty = root.querySelector('#customer-legal-profiles-summary-empty');
 
-    const hidden = section.querySelector('#id_legal_profiles');
-    const list = section.querySelector('#customer-legal-profiles-list');
-    const empty = section.querySelector('#customer-legal-profiles-empty');
-    const addButton = section.querySelector('#customer-legal-profile-add');
-    const template = document.getElementById('customer-legal-profile-template');
-    const toggle = section.querySelector('#customer-legal-profiles-toggle');
-    const body = section.querySelector('#customer-legal-profiles-body');
-    const count = section.querySelector('#customer-legal-profiles-count');
-    const summary = section.querySelector('#customer-legal-profiles-summary');
-    const cards = section.querySelector('#customer-legal-profiles-cards');
-    const summaryEmpty = section.querySelector('#customer-legal-profiles-summary-empty');
-    const cardTemplate = document.getElementById('customer-legal-profile-card-template');
-    if (!hidden || !list || !empty || !addButton || !template ||
-        !toggle || !body || !count || !summary || !cards || !summaryEmpty || !cardTemplate) return;
+  if (!details || !hidden || !rows || !empty || !addButton || !rowTemplate ||
+      !cardTemplate || !count || !cards || !summaryEmpty) return;
 
-    const keys = ['name', 'national_id', 'type', 'postal_code', 'address'];
+  const fields = ['name', 'national_id', 'type', 'postal_code', 'address'];
 
-    function readRow(row) {
-        const data = {};
-        row.querySelectorAll('[data-legal-field]').forEach(function (field) {
-            data[field.dataset.legalField] = field.value.trim();
-        });
-        return data;
-    }
-
-    function setExpanded(open) {
-        toggle.setAttribute('aria-expanded', String(open));
-        body.hidden = !open;
-        summary.hidden = open;
-        section.classList.toggle('is-open', open);
-    }
-
-    function renderSummaryCards(profiles) {
-        const fragment = document.createDocumentFragment();
-        profiles.forEach(function (profile, index) {
-            const node = cardTemplate.content.cloneNode(true);
-            const card = node.querySelector('[data-legal-summary-card]');
-            card.querySelector('[data-card-name]').textContent =
-                profile.name || 'پروفایل ' + (index + 1);
-            card.querySelector('[data-card-type]').textContent =
-                profile.type || 'نوع مشخص نشده';
-            card.querySelector('[data-card-national-id]').textContent =
-                profile.national_id || '—';
-            card.querySelector('[data-card-postal-code]').textContent =
-                profile.postal_code || '—';
-            card.querySelector('[data-card-address]').textContent =
-                profile.address || 'آدرس ثبت نشده';
-            fragment.appendChild(node);
-        });
-        cards.replaceChildren(fragment);
-        summaryEmpty.hidden = profiles.length > 0;
-    }
-
-    function refresh() {
-        const rows = Array.from(list.querySelectorAll('[data-legal-profile-row]'));
-        const profiles = rows.map(readRow);
-        rows.forEach(function (row, index) {
-            const profile = profiles[index];
-            row.querySelector('[data-legal-profile-title]').textContent =
-                profile.name || 'پروفایل ' + (index + 1);
-            row.querySelector('[data-legal-remove]').setAttribute(
-                'aria-label', 'حذف پروفایل ' + (index + 1)
-            );
-            row.querySelector('[data-legal-row-summary]').textContent =
-                [profile.type, profile.national_id].filter(Boolean).join(' · ') || 'در حال تکمیل';
-        });
-        empty.classList.toggle('d-none', rows.length > 0);
-        // Ignore completely empty editor rows: they are not persisted as profiles.
-        const nonEmptyProfiles = profiles.filter(function (profile) {
-            return keys.some(function (key) { return Boolean(profile[key]); });
-        });
-        count.textContent = nonEmptyProfiles.length + ' پروفایل';
-        renderSummaryCards(nonEmptyProfiles);
-    }
-
-    function sync() {
-        const profiles = Array.from(list.querySelectorAll('[data-legal-profile-row]'))
-            .map(readRow)
-            .filter(function (profile) {
-                return keys.some(function (key) { return Boolean(profile[key]); });
-            });
-        hidden.value = JSON.stringify(profiles);
-        refresh();
-    }
-
-    function appendProfile(data, focus) {
-        const fragment = template.content.cloneNode(true);
-        const row = fragment.querySelector('[data-legal-profile-row]');
-        row.querySelectorAll('[data-legal-field]').forEach(function (field) {
-            const value = data && data[field.dataset.legalField];
-            field.value = typeof value === 'string' ? value : '';
-        });
-        list.appendChild(fragment);
-        refresh();
-        if (focus) row.querySelector('[data-legal-field="name"]').focus();
-    }
-
-    let initial = [];
-    try {
-        const parsed = JSON.parse(hidden.value || '[]');
-        if (Array.isArray(parsed)) initial = parsed;
-    } catch (error) {
-        // Server-side validation error is displayed and accordion opens automatically.
-    }
-    initial.forEach(function (profile) {
-        if (profile && typeof profile === 'object' && !Array.isArray(profile)) {
-            appendProfile(profile, false);
-        }
+  function readRow(row) {
+    const result = {};
+    row.querySelectorAll('[data-legal-field]').forEach(function (input) {
+      result[input.dataset.legalField] = input.value.trim();
     });
+    return result;
+  }
 
-    // Invalid form submissions open the editor; valid forms start compact.
-    setExpanded(toggle.getAttribute('aria-expanded') === 'true');
+  function activeProfiles() {
+    return Array.from(rows.querySelectorAll('[data-legal-profile-row]'))
+      .map(readRow)
+      .filter(function (profile) {
+        return fields.some(function (key) { return Boolean(profile[key]); });
+      });
+  }
+
+  function renderSummary(profiles) {
+    const fragment = document.createDocumentFragment();
+    profiles.forEach(function (profile, index) {
+      const card = cardTemplate.content.cloneNode(true);
+      card.querySelector('[data-card-name]').textContent =
+        profile.name || 'پروفایل ' + (index + 1);
+      card.querySelector('[data-card-type]').textContent = profile.type || 'نوع مشخص نشده';
+      card.querySelector('[data-card-national-id]').textContent = profile.national_id || '—';
+      card.querySelector('[data-card-postal-code]').textContent = profile.postal_code || '—';
+      card.querySelector('[data-card-address]').textContent = profile.address || 'آدرس ثبت نشده';
+      fragment.appendChild(card);
+    });
+    cards.replaceChildren(fragment);
+    summaryEmpty.hidden = profiles.length !== 0;
+  }
+
+  function refresh() {
+    const elements = Array.from(rows.querySelectorAll('[data-legal-profile-row]'));
+    elements.forEach(function (row, index) {
+      const profile = readRow(row);
+      row.querySelector('[data-legal-profile-title]').textContent =
+        profile.name || 'پروفایل ' + (index + 1);
+      row.querySelector('[data-legal-row-summary]').textContent =
+        [profile.type, profile.national_id].filter(Boolean).join(' · ') || 'در حال تکمیل';
+      row.querySelector('[data-legal-remove]').setAttribute(
+        'aria-label', 'حذف پروفایل ' + (index + 1));
+    });
+    const nonEmpty = activeProfiles();
+    count.textContent = nonEmpty.length + ' پروفایل';
+    empty.hidden = elements.length > 0;
+    renderSummary(nonEmpty);
+  }
+
+  function sync() {
+    hidden.value = JSON.stringify(activeProfiles());
     refresh();
+  }
 
-    toggle.addEventListener('click', function () {
-        setExpanded(toggle.getAttribute('aria-expanded') !== 'true');
+  function addRow(profile, focus) {
+    const fragment = rowTemplate.content.cloneNode(true);
+    const row = fragment.querySelector('[data-legal-profile-row]');
+    row.querySelectorAll('[data-legal-field]').forEach(function (input) {
+      const value = profile && profile[input.dataset.legalField];
+      input.value = typeof value === 'string' ? value : '';
     });
-    addButton.addEventListener('click', function () {
-        setExpanded(true);
-        appendProfile({}, true);
-    });
-    list.addEventListener('input', function (event) {
-        if (event.target.matches('[data-legal-field]')) sync();
-    });
-    list.addEventListener('click', function (event) {
-        const removeButton = event.target.closest('[data-legal-remove]');
-        if (!removeButton) return;
-        removeButton.closest('[data-legal-profile-row]').remove();
-        sync();
-    });
-    const form = hidden.closest('form');
-    if (form) form.addEventListener('submit', sync);
+    rows.appendChild(fragment);
+    refresh();
+    if (focus) row.querySelector('[data-legal-field="name"]').focus();
+  }
+
+  let initial = [];
+  try {
+    const parsed = JSON.parse(hidden.value || '[]');
+    if (Array.isArray(parsed)) initial = parsed;
+  } catch (_) {
+    // Server validation displays the error; <details open> exposes the editor.
+  }
+  initial.forEach(function (profile) {
+    if (profile && typeof profile === 'object' && !Array.isArray(profile)) {
+      addRow(profile, false);
+    }
+  });
+  refresh();
+
+  addButton.addEventListener('click', function () {
+    details.open = true;
+    addRow({}, true);
+  });
+  rows.addEventListener('input', function (event) {
+    if (event.target.matches('[data-legal-field]')) sync();
+  });
+  rows.addEventListener('click', function (event) {
+    const button = event.target.closest('[data-legal-remove]');
+    if (!button) return;
+    button.closest('[data-legal-profile-row]').remove();
+    sync();
+  });
+  const form = hidden.closest('form');
+  if (form) form.addEventListener('submit', sync);
 })();
