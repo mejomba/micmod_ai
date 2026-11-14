@@ -68,7 +68,7 @@ class SalesHistoryInteractionTests(SimpleTestCase):
         self.assertIn("table.columns().search('')", self.source)
         self.assertIn("search(new URLSearchParams())", self.source)
         self.assertIn("new URLSearchParams(window.location.search).get('all_dates')==='1'", self.source)
-        self.assertIn("$('#sh-clear-table, #sh-clear-all').on('click',clearAllFilters)", self.source)
+        self.assertIn("$('#sh-clear-all').on('click',clearAllFilters)", self.source)
         self.assertNotIn('<h1 class="sh-title">مرور فروش</h1>', self.source)
 
     def test_document_wheel_restored_and_can_scroll_above_table(self):
@@ -182,7 +182,7 @@ assert(calendarHeaderHTML().includes('aria-label="۱۲ سال قبل"'));
         self.assertIn("advancedForm.addEventListener('change'", self.source)
         self.assertIn("advancedForm.addEventListener('submit'", self.source)
         self.assertIn("var data=new FormData(advancedForm)", self.source)
-        self.assertIn("$('#sh-clear-table, #sh-clear-all').on('click',clearAllFilters)", self.source)
+        self.assertIn("$('#sh-clear-all').on('click',clearAllFilters)", self.source)
         self.assertNotIn("if(!p.toString())p.set('all_dates','1')", self.source)
         # Verify behavior, not a developer comment that can change wording.
         # Clear-all must reset advanced and column controls in one request,
@@ -195,7 +195,9 @@ assert(calendarHeaderHTML().includes('aria-label="۱۲ سال قبل"'));
             self.source,
         )
         self.assertIn('id="sh-clear-all"', self.source)
-        self.assertIn('id="sh-clear-table"', self.source)
+        self.assertNotIn('id="sh-clear-table"', self.source)
+        self.assertNotIn('class="sh-table-panel-heading"', self.source)
+        self.assertIn('aria-label="جدول جزئیات فروش"', self.source)
         self.assertNotIn('advancedParams=new URLSearchParams', self.source)
         self.assertNotIn('sh-filter-actions a', self.source)
 
