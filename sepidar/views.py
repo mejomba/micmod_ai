@@ -481,12 +481,54 @@ class SalesHistory(LoginRequiredMixin, View):
                 active_chips.append({'key': key, 'label': label, 'value': value})
         context['active_chips'] = active_chips
 
+        # The page endpoint always retrieves a bounded SQL batch. Financial
+        # aggregation is fetched independently after the first rows render.
+        from sepidar.sales_history_service import get_sales_history_page
+        from sepidar.sales_history_summary import get_sales_history_summary
+        from django.core.cache import cache
+        import hashlib
+
+        ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        summary_request = ajax and request.GET.get('sh_summary') == '1'
         data, truncated, error = [], False, ''
+        page = {'rows': [], 'row_count': 0,
+                'offsets': {'sepidar': 0, 'portal': 0},
+                'has_more': False, 'truncated': False}
         status = 200
         try:
-            data, truncated = Dl.get_sales_history_list(
-                filters, include_portal=True
-            ) or ([], False)
+            if summary_request:
+                # Cache only this user's exact filters; scroll offsets are not
+                # included in financial aggregation and don't change totals.
+                identity = getattr(getattr(request, 'user', None), 'pk', None)
+                identity = str(identity or 'anonymous')
+                key_data = repr((identity, sorted(
+                    (key, tuple(values)) for key, values in filters.lists()
+                    if key not in ('sh_summary', 'sh_page', 'sep_offset', 'portal_offset')
+                )))
+                cache_key = 'sales-history-summary:' + hashlib.sha256(
+                    key_data.encode('utf-8')
+                ).hexdigest()
+                summary = cache.get(cache_key)
+                if summary is None:
+                    summary = get_sales_history_summary(filters)
+                    cache.set(cache_key, summary, 90)
+                return JsonResponse({'summary': summary})
+
+            def page_offset(key):
+                value = str(request.GET.get(key) or '0')
+                if not value.isascii() or not value.isdecimal() or len(value) > 4:
+                    raise ValueError('موقعیت اسکرول معتبر نیست.')
+                offset = int(value)
+                if offset > 3000:
+                    raise ValueError('موقعیت اسکرول معتبر نیست.')
+                return offset
+
+            page = get_sales_history_page(
+                filters,
+                sepidar_offset=page_offset('sep_offset') if ajax else 0,
+                portal_offset=page_offset('portal_offset') if ajax else 0,
+            )
+            data, truncated = page['rows'], page['truncated']
         except ValueError as exc:
             error, status = str(exc), 400
         except Exception:
@@ -496,30 +538,25 @@ class SalesHistory(LoginRequiredMixin, View):
         context['list'] = data
         context['truncated'] = truncated
         context['report_error'] = error
-        context['row_count'] = len(data)
-        context['total_price'] = sum(
-            (
-                Decimal(str(row.get('Fee') or 0))
-                * Decimal(str(row.get('Quantity') or 0))
-            ) for row in data
-        )
-        context['total_quantity'] = sum(
-            Decimal(str(row.get('Quantity') or 0))
-            for row in data
-        )
-        # Return just the table rows for in-place DataTable refreshes.
-        # Requests without AJAX continue to render the complete initial page.
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        context['row_count'] = page['row_count']
+        context['sales_page'] = {
+            'offsets': page['offsets'],
+            'has_more': page['has_more'],
+            'truncated': page['truncated'],
+            'row_count': page['row_count'],
+        }
+        if ajax:
             if error:
                 return JsonResponse({'error': error}, status=status)
             from django.template.loader import render_to_string
             return JsonResponse({
                 'rows_html': render_to_string(
                     'sepidar/partial/sales_history_rows.html',
-                    {'list': data},
-                    request=request,
+                    {'list': data}, request=request,
                 ),
-                'row_count': len(data),
+                'row_count': page['row_count'],
+                'offsets': page['offsets'],
+                'has_more': page['has_more'],
                 'truncated': truncated,
                 'active_chips': active_chips,
                 'recent_default': recent_default,

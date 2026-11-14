@@ -17,8 +17,12 @@ class SalesHistoryDefaultWindowTests(SimpleTestCase):
         request = RequestFactory().get('/sepidar/sales-history/', params or {}, **options)
         with (
             patch('django.utils.timezone.localdate', return_value=self.TODAY),
-            patch('sepidar.views.Dl.get_sales_history_list',
-                  return_value=([], False)) as report,
+            patch('sepidar.sales_history_service.get_sales_history_page',
+                  return_value={
+                      'rows': [], 'row_count': 0,
+                      'offsets': {'sepidar': 0, 'portal': 0},
+                      'has_more': False, 'truncated': False,
+                  }) as report,
             patch('sepidar.views.render', return_value=HttpResponse('OK')) as page,
             patch('django.template.loader.render_to_string', return_value=''),
         ):
@@ -64,6 +68,40 @@ class SalesHistoryDefaultWindowTests(SimpleTestCase):
         self.assertFalse(context['recent_default'])
         self.assertNotIn('date_from', filters)
         self.assertNotIn('date_to', filters)
+
+    def test_initial_page_reads_only_one_bounded_sql_chunk(self):
+        filters, context, _ = self._get()
+        self.assertEqual(context['sales_page']['offsets'], {'sepidar': 0, 'portal': 0})
+        self.assertFalse(context['sales_page']['has_more'])
+
+    def test_ajax_invalid_offset_returns_400_without_query(self):
+        request = RequestFactory().get(
+            '/sepidar/sales-history/',
+            {'sep_offset': '-5'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        with patch('sepidar.sales_history_service.get_sales_history_page') as page:
+            response = SalesHistory().get(request)
+        self.assertEqual(response.status_code, 400)
+        page.assert_not_called()
+
+    def test_ajax_scroll_passes_each_source_offset_separately(self):
+        request = RequestFactory().get(
+            '/sepidar/sales-history/',
+            {'sep_offset': '60', 'portal_offset': '30'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        with patch('sepidar.sales_history_service.get_sales_history_page',
+                   return_value={
+                       'rows': [], 'row_count': 0,
+                       'offsets': {'sepidar': 60, 'portal': 30},
+                       'has_more': False, 'truncated': False,
+                   }) as page:
+            with patch('django.template.loader.render_to_string', return_value=''):
+                response = SalesHistory().get(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(page.call_args.kwargs['sepidar_offset'], 60)
+        self.assertEqual(page.call_args.kwargs['portal_offset'], 30)
 
     def test_ajax_default_includes_correct_seven_and_thirty_day_dates(self):
         import json
