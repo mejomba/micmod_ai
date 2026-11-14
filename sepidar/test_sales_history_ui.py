@@ -62,6 +62,7 @@ class SalesHistoryInteractionTests(SimpleTestCase):
     def test_backend_summary_and_atomic_clear_all(self):
         self.assertIn("query.set('sh_summary','1')", self.source)
         self.assertIn("currentSummary=data.summary;", self.source)
+        self.assertIn("known=currentSummary?Number(currentSummary.row_count):null", self.source)
         self.assertNotIn("table.rows({search:'applied',page:'all'}).nodes()", self.source)
         self.assertIn("advancedForm.reset()", self.source)
         self.assertIn("table.columns().search('')", self.source)

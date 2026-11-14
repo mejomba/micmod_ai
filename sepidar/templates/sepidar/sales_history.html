@@ -1308,6 +1308,7 @@
       });
       updateHeaderMoney('sh-top-fee',totals,'avg','میانگین موزون در بک‌اند');
       updateHeaderMoney('sh-top-amount',totals,'total','جمع در بک‌اند');
+      updateScrollStatus();
       if(currentSummary.truncated && truncation)truncation.hidden=false;
       requestAnimationFrame(refreshSticky);
     }
@@ -1454,7 +1455,7 @@
       pageState={
         offsets:result.offsets||{sepidar:0,portal:0},
         has_more:!!result.has_more,
-        truncated:!!result.truncated
+        truncated:!!result.truncated||(append&&!!pageState.truncated)
       };
       loadedCount=append?loadedCount+rows.length:rows.length;
       scrollParams=new URLSearchParams(params.toString());
@@ -1789,8 +1790,10 @@
     if(footer){footer.appendChild(scrollStatus);footer.appendChild(loadMore);}
     function updateScrollStatus(){
       var total=loadedCount;
+      var known=currentSummary?Number(currentSummary.row_count):null;
+      var summary=(known===null?' ردیف بارگذاری‌شده':' از '+known.toLocaleString('fa-IR')+' ردیف مطابق فیلتر');
       scrollStatus.textContent=total===0?'نتیجه‌ای وجود ندارد':
-        ('نمایش '+total.toLocaleString('fa-IR')+' ردیف بارگذاری‌شده · '+
+        ('نمایش '+total.toLocaleString('fa-IR')+summary+' · '+
           (pageState.has_more?'با اسکرول ادامه دهید':'پایان نتایج'));
       loadMore.hidden=!pageState.has_more;
       loadMore.disabled=pendingScroll;
