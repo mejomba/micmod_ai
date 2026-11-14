@@ -25,7 +25,7 @@
         @media print {
 
            .noprint {
-              visibility: hidden;
+              display: none !important;
            }
            .button {
                display: block;
@@ -38,6 +38,25 @@
     <div>
         <a href="javascript:window.print()" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
     </div>
+    {% if not bulk_mode and legal_profile_options %}
+    <form method="get" class="noprint border rounded p-3 mb-4 bg-light d-flex flex-wrap align-items-center gap-3"
+          id="factor-legal-profile-form" aria-label="انتخاب پروفایل حقوقی خریدار">
+        <input type="hidden" name="action" value="factor_print">
+        {% if request.GET.location_url_params %}
+            <input type="hidden" name="location_url_params" value="{{ request.GET.location_url_params }}">
+        {% endif %}
+        <label for="factor-legal-profile-select" class="fw-bold">مشخصات خریدار برای چاپ:</label>
+        <select name="legal_profile" id="factor-legal-profile-select" class="form-select w-auto"
+                onchange="this.form.submit()">
+            <option value="" {% if not selected_legal_profile %}selected{% endif %}>اطلاعات پایه مشتری</option>
+            {% for option in legal_profile_options %}
+                <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">اعمال پروفایل</button>
+        <span class="text-muted small">این انتخاب فقط روی چاپ اثر دارد و در فاکتور ذخیره نمی‌شود.</span>
+    </form>
+    {% endif %}
     <div>
     {% if request.user.base_group == 'wh' %}
         <span class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="calculate-button">پرینت لیبل کالا</span>
@@ -123,8 +142,11 @@
                     <p data-key="address">نشانی: </p>
                 </div>
                 <div class="">
-                    <p class="">{{ data.q.customer_party_id.title|default_if_none:"-" }}</p>
-                    <p class="">{{ data.q.customer_party_id.address|default_if_none:"-" }}</p>
+                    <p class="">{{ buyer_info.name }}</p>
+                    <p class="">{{ buyer_info.address }}
+                    {% if buyer_info.is_legal_profile %}
+                        <p data-key="buyer_legal_type" class="mb-0">نوع شخصیت حقوقی: {{ buyer_info.type }}</p>
+                    {% endif %}</p>
                 </div>
             </div>
         </div>
@@ -135,21 +157,21 @@
                     <p data-key="phone">تلفن:</p>
                 </div>
                 <div class="">
-                    <p class="">{{ data.q.customer_party_id.national_code|default_if_none:"-" }}</p>
-                    <p class="">{{ data.q.customer_party_id.phone|default_if_none:"-" }}</p>
+                    <p class="">{{ buyer_info.economical_number }}</p>
+                    <p class="">{{ buyer_info.phone }}</p>
                 </div>
             </div>
         </div>
         <div class="col-4">
         <div class="d-flex gap-3">
         <div class="">
-            <p data-key="national_number">شماره ثبت/شماره ملی : </p>
+            <p data-key="national_number">{% if buyer_info.is_legal_profile %}شناسه ملی{% else %}شماره ثبت/شماره ملی{% endif %} : </p>
             <p data-key="postal_code">کد پستی: </p>
 
         </div>
         <div class="">
-            <p data-key="national_number">{{ data.q.customer_party_id.national_code|default_if_none:"-" }} </p>
-            <p data-key="postal_code">-</p>
+            <p data-key="national_number">{{ buyer_info.national_number }} </p>
+            <p data-key="postal_code">{{ buyer_info.postal_code }}</p>
 
         </div>
             </div>

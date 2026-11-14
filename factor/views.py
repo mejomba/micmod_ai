@@ -54,6 +54,7 @@ from factor.forms import FactorModelForm, FactorItemFormset, FactorItemModelForm
     FACTOR_FIELDS_BY_PERMISSION, \
     FACTOR_ITEM_FIELDS_BY_PERMISSION, FactorItemForm, FactorEditForm, FactorItemInlineFormSetBase
 from factor.models import Factor, FactorItem, Delivery, FactorItemSupplyLocation
+from factor.print_customer import customer_print_context
 from micmod_base.models import Quotation, QuotationItem, CustomerRequest
 from tools.utils import to_jalali_date, show_error, timer, is_ajax, parse_number
 import json
@@ -886,6 +887,7 @@ class FactorListDatatable(AjaxDatatableView):
         self.cols = unique_cols
 
 
+@login_required
 def print_view(request, id=-1, *, context_only=False):
 
     action_ = request.GET.get('action')
@@ -909,6 +911,13 @@ def print_view(request, id=-1, *, context_only=False):
     greeting['heading'] = _("create")
     greeting['pageview'] = _("quotation")
     factor = Factor.objects.filter(id=id).first()
+    if factor and template_name == 'factor/factor_print.html':
+        try:
+            greeting.update(customer_print_context(
+                factor.get_customer_party_id, request.GET.get('legal_profile'),
+            ))
+        except ValueError as exc:
+            return HttpResponseBadRequest(str(exc))
     greeting['form'] = FactorModelForm(instance=factor)
     greeting['with_location'] = with_location
     greeting['location_url_params'] = location_url_params

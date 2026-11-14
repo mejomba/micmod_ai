@@ -26,7 +26,7 @@
   </div>
   {% for doc in documents %}
   <section class="bulk-document">
-    {% include 'factor/factor_print.html' with data=doc.data form=doc.form formset=doc.formset with_location=doc.with_location location_url_params=doc.location_url_params bulk_mode=True %}
+    {% include 'factor/factor_print.html' with data=doc.data form=doc.form formset=doc.formset buyer_info=doc.buyer_info legal_profile_options=doc.legal_profile_options selected_legal_profile=doc.selected_legal_profile with_location=doc.with_location location_url_params=doc.location_url_params bulk_mode=True %}
   </section>
   {% endfor %}
 </body>
