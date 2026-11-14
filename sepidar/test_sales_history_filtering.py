@@ -332,3 +332,28 @@ class SalesHistoryIncrementalPageTests(SimpleTestCase):
         self.assertEqual(alias, 'sepidar')
         self.assertIn('OFFSET %s ROWS FETCH NEXT %s ROWS ONLY', sql)
         self.assertEqual(params[-2:], [120, 61])
+
+    def test_exhausted_source_is_not_queried_on_next_scroll(self):
+        from sepidar.sales_history_service import get_sales_history_page
+        with patch('sepidar.sales_history_service._sepidar_history') as remote:
+            with patch('sepidar.sales_history_service._portal_history',
+                       return_value=[self._row('portal', date(2026, 11, 14), 12)]) as portal:
+                page = get_sales_history_page(
+                    {}, sepidar_done=True, portal_offset=10, page_size=2,
+                )
+        remote.assert_not_called()
+        portal.assert_called_once()
+        self.assertTrue(page['done']['sepidar'])
+        self.assertTrue(page['done']['portal'])
+        self.assertFalse(page['has_more'])
+
+    def test_source_finished_flag_after_first_short_batch(self):
+        from sepidar.sales_history_service import get_sales_history_page
+        with patch('sepidar.sales_history_service._sepidar_history', return_value=[]):
+            with patch('sepidar.sales_history_service._portal_history',
+                       return_value=[self._row('portal', date(2026, 11, 14), 12),
+                                     self._row('portal', date(2026, 11, 13), 11)]):
+                page = get_sales_history_page({}, page_size=1)
+        self.assertTrue(page['done']['sepidar'])
+        self.assertFalse(page['done']['portal'])
+        self.assertTrue(page['has_more'])

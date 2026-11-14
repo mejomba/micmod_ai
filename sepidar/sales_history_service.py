@@ -954,6 +954,7 @@ def get_sales_history_list(filters):
 
 
 def get_sales_history_page(filters, *, sepidar_offset=0, portal_offset=0,
+                           sepidar_done=False, portal_done=False,
                            page_size=SALES_HISTORY_PAGE_SIZE):
     """Fetch one globally sorted page, with independent offsets per database.
 
@@ -964,11 +965,15 @@ def get_sales_history_page(filters, *, sepidar_offset=0, portal_offset=0,
     """
     if (not isinstance(page_size, int) or not 1 <= page_size <= SALES_HISTORY_PAGE_SIZE
             or any(not isinstance(n, int) or n < 0 or n > MAX_ROWS_PER_SOURCE
-                   for n in (sepidar_offset, portal_offset))):
+                   for n in (sepidar_offset, portal_offset))
+            or not isinstance(sepidar_done, bool) or not isinstance(portal_done, bool)):
         raise ValueError('درخواست صفحه فروش معتبر نیست.')
 
-    sepidar = _sepidar_history(filters, offset=sepidar_offset, page_size=page_size)
-    portal = _portal_history(filters, offset=portal_offset, page_size=page_size)
+    # A consumed source need not be queried again for every subsequent scroll.
+    sepidar = ([] if sepidar_done else _sepidar_history(
+        filters, offset=sepidar_offset, page_size=page_size))
+    portal = ([] if portal_done else _portal_history(
+        filters, offset=portal_offset, page_size=page_size))
 
     def order_key(row):
         return (row.get('Date') or date.min, int(row.get('itemId') or 0),
@@ -984,14 +989,17 @@ def get_sales_history_page(filters, *, sepidar_offset=0, portal_offset=0,
         (next_sep >= MAX_ROWS_PER_SOURCE and len(sepidar) > sep_used)
         or (next_portal >= MAX_ROWS_PER_SOURCE and len(portal) > portal_used)
     )
-    has_more = (
-        (next_sep < MAX_ROWS_PER_SOURCE and len(sepidar) > sep_used)
-        or (next_portal < MAX_ROWS_PER_SOURCE and len(portal) > portal_used)
-    )
+    done = {
+        'sepidar': sepidar_done or next_sep >= MAX_ROWS_PER_SOURCE
+                   or len(sepidar) <= sep_used,
+        'portal': portal_done or next_portal >= MAX_ROWS_PER_SOURCE
+                  or len(portal) <= portal_used,
+    }
     return {
         'rows': page,
         'row_count': len(page),
         'offsets': {'sepidar': next_sep, 'portal': next_portal},
-        'has_more': has_more,
+        'done': done,
+        'has_more': not all(done.values()),
         'truncated': truncated,
     }
