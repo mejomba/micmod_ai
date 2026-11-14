@@ -183,3 +183,46 @@ class QuotationBulkLegalProfilePrintTests(SimpleTestCase):
         self.assertIn('id="quotation-bulk-form"', html)
         self.assertIn('quotation.bulk_print', html)
         self.assertIn('js-quotation-bulk', html)
+
+
+
+class QuotationCustomerPrintToolbarLayoutTests(SimpleTestCase):
+    """The customer print tools share a responsive, print-hidden in-flow toolbar."""
+
+    def test_customer_print_tools_are_not_absolute_or_separate(self):
+        source = get_template('micmod-base/quotation/view-print-raw.html').template.source
+        start = source.index('class="quotation-customer-print-toolbar noprint"')
+        end = source.index('\n</div>\n{% endif %}', start)
+        toolbar = source[start:end]
+        self.assertNotIn('position-absolute', toolbar)
+        self.assertIn('id="id_print_btn"', toolbar)
+        self.assertIn("micmod_base:quotations.print-view", toolbar)
+        self.assertIn("micmod_base:print_customer", toolbar)
+        self.assertIn("{% include 'micmod-base/quotation/partial/legal_profile_picker.html' %}", toolbar)
+        self.assertLess(toolbar.index('quotation-customer-print-actions'),
+                        toolbar.index('legal_profile_picker.html'))
+        self.assertEqual(source.count('legal_profile_picker.html'), 1)
+        self.assertIn('class="quotation-customer-print-toolbar noprint"', source)
+
+    def test_expert_and_goods_links_preserve_profile_and_have_complete_href(self):
+        source = get_template('micmod-base/quotation/view-print-raw.html').template.source
+        self.assertIn(
+            '''?legal_profile={{ selected_legal_profile|default:''|urlencode }}"''',
+            source,
+        )
+        self.assertIn(
+            '''&amp;legal_profile={{ selected_legal_profile|default:''|urlencode }}"''',
+            source,
+        )
+        self.assertNotIn(
+            '''?legal_profile={{ selected_legal_profile|default:'' }} class=''', source,
+        )
+
+    def test_toolbar_is_responsive_and_hidden_in_print(self):
+        source = get_template('micmod-base/quotation/view-print-raw.html').template.source
+        self.assertIn('.quotation-customer-print-toolbar {', source)
+        self.assertIn('display: flex;', source)
+        self.assertIn('flex-wrap: wrap;', source)
+        self.assertIn('@media (max-width: 767px)', source)
+        self.assertIn('class="quotation-customer-print-toolbar noprint"', source)
+        self.assertIn('.noprint {\\n              display: none !important;', source)
