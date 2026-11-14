@@ -1,0 +1,48 @@
+#customer-legal-profiles {
+    direction: rtl;
+    padding: 1.5rem;
+}
+#customer-legal-profiles .customer-legal-profile-row {
+    border: 1px solid #e7e9f0;
+    border-radius: 0.85rem;
+    background-color: #fafbfd;
+    padding: 1.25rem;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+#customer-legal-profiles .customer-legal-profile-row:focus-within {
+    border-color: #9abcf5;
+    box-shadow: 0 0 0 2px rgba(55, 125, 235, .08);
+}
+#customer-legal-profiles .customer-legal-profile-label {
+    display: block;
+    margin-bottom: .4rem;
+    font-size: .9rem;
+    font-weight: 600;
+    color: #45516b;
+}
+#customer-legal-profiles .customer-legal-profile-row .form-control {
+    border: 1px solid #dce1eb;
+    border-radius: .55rem;
+    background: #fff;
+}
+#customer-legal-profiles .customer-legal-profile-row textarea {
+    min-height: 75px;
+    resize: vertical;
+}
+#customer-legal-profiles .customer-legal-profile-digits {
+    direction: ltr;
+    text-align: left;
+    font-variant-numeric: tabular-nums;
+}
+#customer-legal-profiles-empty {
+    border: 1px dashed #c8d1df;
+    border-radius: .8rem;
+    padding: 1.25rem;
+    color: #657187;
+    text-align: center;
+    background: #fbfcff;
+}
+@media (max-width: 767px) {
+    #customer-legal-profiles { padding: 1rem; }
+    #customer-legal-profiles .customer-legal-profile-row { padding: .85rem; }
+}

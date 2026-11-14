@@ -10,6 +10,7 @@
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
 {#    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">#}
     <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'extra_data/css/customer_legal_profiles.css' %}" rel="stylesheet" type="text/css" />
 
 <script src="{% static 'js/base_define.js' %}"></script>
     <script src="{% static 'js/m2mselector.js' %}" type="text/javascript" ></script>
@@ -94,6 +95,64 @@
             </div>
         </div>
     </div>
+
+    {# Customer legal profiles are edited here and stored as a JSON list on Customer. #}
+    <section id="customer-legal-profiles" class="bg-white rounded border my-10 shadow-sm" aria-labelledby="customer-legal-profiles-heading" dir="rtl">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-5">
+            <div>
+                <h4 id="customer-legal-profiles-heading" class="mb-2">پروفایل‌های حقوقی</h4>
+                <div class="text-muted small">اطلاعات هر شخصیت حقوقی را جداگانه ثبت کنید. تمام پروفایل‌ها با ذخیره مشتری ثبت می‌شوند.</div>
+            </div>
+            <button id="customer-legal-profile-add" type="button" class="btn btn-sm btn-light-primary">
+                <i class="fas fa-plus me-1" aria-hidden="true"></i> افزودن پروفایل
+            </button>
+        </div>
+        {{ form.legal_profiles }}
+        {% if form.legal_profiles.errors %}
+            <div class="alert alert-danger mb-4" role="alert" id="customer-legal-profiles-errors">
+                {{ form.legal_profiles.errors }}
+            </div>
+        {% endif %}
+        <div id="customer-legal-profiles-empty">هنوز پروفایل حقوقی ثبت نشده است. برای شروع «افزودن پروفایل» را بزنید.</div>
+        <div id="customer-legal-profiles-list" class="d-grid gap-4" aria-live="polite"></div>
+        <template id="customer-legal-profile-template">
+            <article class="customer-legal-profile-row" data-legal-profile-row>
+                <div class="d-flex justify-content-between align-items-center gap-2 mb-4">
+                    <strong data-legal-profile-title>پروفایل</strong>
+                    <button type="button" class="btn btn-sm btn-light-danger" data-legal-remove aria-label="حذف پروفایل">
+                        <i class="fas fa-trash-alt me-1" aria-hidden="true"></i> حذف
+                    </button>
+                </div>
+                <div class="row g-3">
+                    <div class="col-lg-4 col-md-6">
+                        <label class="customer-legal-profile-label">نام <span class="text-danger" aria-hidden="true">*</span>
+                            <input type="text" class="form-control" data-legal-field="name" maxlength="255" autocomplete="organization" placeholder="نام شخصیت حقوقی">
+                        </label>
+                    </div>
+                    <div class="col-lg-4 col-md-6">
+                        <label class="customer-legal-profile-label">شناسه ملی <span class="text-danger" aria-hidden="true">*</span>
+                            <input type="text" class="form-control customer-legal-profile-digits" data-legal-field="national_id" maxlength="11" inputmode="numeric" autocomplete="off" placeholder="۱۱ رقم">
+                        </label>
+                    </div>
+                    <div class="col-lg-4 col-md-6">
+                        <label class="customer-legal-profile-label">نوع <span class="text-danger" aria-hidden="true">*</span>
+                            <input type="text" class="form-control" data-legal-field="type" maxlength="100" placeholder="مثلاً سهامی خاص یا مسئولیت محدود">
+                        </label>
+                    </div>
+                    <div class="col-lg-4 col-md-6">
+                        <label class="customer-legal-profile-label">کد پستی <span class="text-danger" aria-hidden="true">*</span>
+                            <input type="text" class="form-control customer-legal-profile-digits" data-legal-field="postal_code" maxlength="10" inputmode="numeric" autocomplete="postal-code" placeholder="۱۰ رقم">
+                        </label>
+                    </div>
+                    <div class="col-lg-8 col-md-6">
+                        <label class="customer-legal-profile-label">آدرس <span class="text-danger" aria-hidden="true">*</span>
+                            <textarea class="form-control" data-legal-field="address" maxlength="1000" rows="2" placeholder="آدرس کامل شخصیت حقوقی"></textarea>
+                        </label>
+                    </div>
+                </div>
+            </article>
+        </template>
+    </section>
 
     <div class="row row-cols-6 bg-white rounded border my-10 pt-10 position-relative shadow">
         <h4 class="position-absolute" style="top: -10px">اطلاعات مالی</h4>
@@ -574,6 +633,7 @@
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
     <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'extra_data/js/customer_legal_profiles.js' %}"></script>
 
 
 

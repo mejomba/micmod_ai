@@ -8,6 +8,7 @@ from .models import ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, 
     CustomerFields, CustomerContract, ItemPackage, AccountingUser, CustomerGroup, CustomerAddress
 from django_select2 import forms as s2forms
 from django import forms
+from .customer_legal_profiles import normalize_customer_legal_profiles
 from tools.utils import c_get
 from translator import get_text as _
 
@@ -48,6 +49,9 @@ class HsForm(CustomBaseModelForm):
 
 class CustomerForm(CustomBaseModelForm):
     has_comment = True
+    legal_profiles = forms.JSONField(
+        label='پروفایل‌های حقوقی', required=False, widget=forms.HiddenInput(),
+    )
 
     class Meta:
         model = Customer
@@ -56,7 +60,7 @@ class CustomerForm(CustomBaseModelForm):
                   'introduction_method', 'introducer', 'marketer', 'description', 'lat', 'long', 'meet_in_person',
                   'z_no', 'z_cheque_ns', 'z_cheque_s', 'z_safte', 'z_max_credit_rafi', 'cheque_to_delivery',
                   'extra_credit', 'i_type1_target', 'customer_sale_type', 'official_name', 'customer_grade', 'accounting_user',
-                  'risk_status', 'shop_id', 'pcb', 'assembly', 'item']
+                  'risk_status', 'shop_id', 'pcb', 'assembly', 'item', 'legal_profiles']
 
     def __init__(self, *args, **kwargs):
         access = None
@@ -77,6 +81,12 @@ class CustomerForm(CustomBaseModelForm):
         self.fields['extra_credit'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
 
         self.fields['customer_field'] = forms.ModelMultipleChoiceField(queryset=CustomerFields.objects.all(), required=False)
+
+    def clean_legal_profiles(self):
+        # Older API/forms that omit this new field must not erase saved profiles.
+        if self.is_bound and 'legal_profiles' not in self.data and self.instance.pk:
+            return self.instance.legal_profiles or []
+        return normalize_customer_legal_profiles(self.cleaned_data.get('legal_profiles'))
 
     #
     #     if not access:
