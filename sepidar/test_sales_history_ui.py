@@ -49,6 +49,26 @@ class SalesHistoryInteractionTests(SimpleTestCase):
         self.assertIn("if(th)th.classList.add('sh-searching-column')", self.source)
         self.assertNotIn('th.sh-searching-column::after', self.source)
 
+    def test_scroll_requests_real_sql_pages_not_preloaded_table_rows(self):
+        self.assertIn('function loadNextPage()', self.source)
+        self.assertIn("p.set('sep_offset'", self.source)
+        self.assertIn("p.set('portal_offset'", self.source)
+        self.assertIn("p.set('sh_page','1')", self.source)
+        self.assertIn('fetch(getPageUrl(params,pageState.offsets)', self.source)
+        self.assertIn("table.rows.add($(rows))", self.source)
+        self.assertNotIn('table.page.len(Math.min(filtered,shown+CHUNK_SIZE))', self.source)
+        self.assertIn("loadMore.addEventListener('click',loadNextPage)", self.source)
+
+    def test_backend_summary_and_atomic_clear_all(self):
+        self.assertIn("query.set('sh_summary','1')", self.source)
+        self.assertIn("currentSummary=data.summary;", self.source)
+        self.assertNotIn("table.rows({search:'applied',page:'all'}).nodes()", self.source)
+        self.assertIn("advancedForm.reset()", self.source)
+        self.assertIn("table.columns().search('')", self.source)
+        self.assertIn("search(new URLSearchParams())", self.source)
+        self.assertIn("$('#sh-clear-table, #sh-clear-all').on('click',clearAllFilters)", self.source)
+        self.assertNotIn('<h1 class="sh-title">مرور فروش</h1>', self.source)
+
     def test_document_wheel_restored_and_can_scroll_above_table(self):
         self.assertIn('document.scrollingElement||document.documentElement', self.source)
         self.assertIn("if(destination==='page')", self.source)

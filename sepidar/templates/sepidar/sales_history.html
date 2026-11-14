@@ -620,6 +620,17 @@
 .sh-report .sh-active-filters .sh-period-extend:focus-visible {
   color:#174785;background:#eaf2ff;border-color:#78a5e0;outline-offset:2px
 }
+
+/* Lazy rows: compact initial layout and an explicit load-more fallback. */
+.sh-report .sh-top{margin:0 0 4px!important;padding:0!important}
+.sh-report .sh-top-detail{margin:0;font-size:11px}
+.sh-report .sh-load-more{
+  background:#edf4ff;border:1px solid #a9c8f3;border-radius:9px;
+  color:#26599c;font-size:11px;font-weight:800;
+  padding:6px 13px;min-height:30px;cursor:pointer
+}
+.sh-report .sh-load-more:hover{background:#dceaff}
+.sh-report .sh-load-more[hidden]{display:none!important}
 </style>
 {% endblock extra_css %}
 
@@ -631,7 +642,6 @@
   <div class="page-content sh-main-page">
     <div class="container-fluid sh-report" id="sales-history-report">
       <header class="sh-top">
-        <h1 class="sh-title">مرور فروش</h1>
         <p class="sh-top-detail">با فیلترهای بالای هر ستون، سوابق را در پرتال و سپیدار جست‌وجو کنید؛ جست‌وجو به نتایج دریافت‌شده محدود نیست.</p>
       </header>
 
@@ -706,6 +716,7 @@
       </section>
       </details>
       {{ column_filters|json_script:"sh-server-filters" }}
+      {{ sales_page|json_script:"sh-initial-page" }}
       <div class="sh-active-filters" role="group" aria-label="فیلترهای فعال">
         {% if recent_default %}
           <span class="sh-period-chip" title="در ورود اولیه یا پس از پاک‌سازی فیلترها؛ جست‌وجوی جدید می‌تواند تمام تاریخچه را بررسی کند">نمایش خودکار ۷ روز اخیر: {{ recent_from }} تا {{ recent_to }}</span>
@@ -721,7 +732,7 @@
       {% if report_error %}<div class="sh-state-message sh-state-message--error" role="alert">{{ report_error }}</div>{% endif %}
       <div class="sh-state-message" role="status" aria-live="polite" id="sh-query-status" {% if recent_default or report_error %}hidden{% endif %}>{{ row_count }} ردیف دریافت شد.</div>
 
-      <div class="sh-help" id="sh-truncated-note" {% if not truncated %}hidden{% endif %}>توجه: نتایج به سقف ۳۰۰۰ ردیف از هر منبع رسیده‌اند؛ جمع‌ها تنها داده‌های دریافت‌شده را پوشش می‌دهند.</div>
+      <div class="sh-help" id="sh-truncated-note" {% if not truncated %}hidden{% endif %}>توجه: گزارش در هر منبع به ۳۰۰۰ ردیف محدود است؛ خلاصه مالی نیز بر همین مبنا محاسبه شده است.</div>
 
       <section class="sh-panel" aria-labelledby="sh-table-heading">
         <div class="sh-table-panel-heading">
@@ -769,7 +780,7 @@
 {% include 'sepidar/partial/sales_history_rows.html' %}
 </tbody>
         </table>
-        <p class="sh-caption" id="sh-table-caption"></p>
+        <p class="sh-caption" id="sh-table-caption">بارگذاری نتایج با اسکرول انجام می‌شود. خروجی کپی، Excel و چاپ فقط ردیف‌های بارگذاری‌شده را شامل می‌شوند.</p>
       </section>
     </div>
   </div>
@@ -1040,17 +1051,23 @@
     var table = $.fn.dataTable.isDataTable(tableEl) ? $(tableEl).DataTable() : $(tableEl).DataTable({
       // DataTable فقط یک بار روی این جدول initialize می‌شود.
       orderCellsTop: true,
-      order: [[7, 'desc']],
-      pageLength: 60,
-      lengthChange: false, // نمایش تدریجی ۶۰ ردیف؛ همه نتایج برای جست‌وجو و خروجی‌گیری حفظ می‌شوند.
+      // SQL returns the globally sorted order. Browser-side sorting or
+      // filtering would apply only to loaded pages and would be misleading.
+      ordering: false,
+      order: [],
+      searching: false,
+      paging: false,
+      info: false,
+      pageLength: -1,
+      lengthChange: false,
       autoWidth: false,
       responsive: false,
       searchDelay: 150,
       dom: "<'sh-dt-header'<'sh-dt-header-middle'><'sh-dt-header-right'B>><'sh-table-scroll't><'sh-dt-footer'<'sh-dt-info'i>>",
       buttons: [
-        {extend:'copyHtml5',text:'کپی',exportOptions:{columns:':visible',modifier:{search:'applied',order:'applied',page:'all'},format:{header:cleanExportHeader}}},
-        {extend:'excelHtml5',text:'Excel',title:'sales_history',exportOptions:{columns:':visible',modifier:{search:'applied',order:'applied',page:'all'},format:{header:cleanExportHeader}}},
-        {extend:'print',text:'چاپ',title:'گزارش مرور فروش',exportOptions:{columns:':visible',modifier:{search:'applied',order:'applied',page:'all'},format:{header:cleanExportHeader}}},
+        {extend:'copyHtml5',text:'کپی (بارگذاری‌شده)',exportOptions:{columns:':visible',modifier:{search:'applied',order:'applied',page:'all'},format:{header:cleanExportHeader}}},
+        {extend:'excelHtml5',text:'Excel (بارگذاری‌شده)',title:'sales_history',exportOptions:{columns:':visible',modifier:{search:'applied',order:'applied',page:'all'},format:{header:cleanExportHeader}}},
+        {extend:'print',text:'چاپ (بارگذاری‌شده)',title:'گزارش مرور فروش',exportOptions:{columns:':visible',modifier:{search:'applied',order:'applied',page:'all'},format:{header:cleanExportHeader}}},
         {text:'ستون‌ها',className:'buttons-colvis',action:function(e,dt,node){toggleColumnPanel(node)}}
       ],
       language: {
@@ -1269,43 +1286,71 @@
       el.setAttribute('aria-label',el.title);
     }
 
-    function updateSummary() {
-      var totals=new Map(), totalQty=0n, sepidarCount=0, portalCount=0;
-      var distinct={document:new Set(),customer:new Set(),item:new Set(),purchase:new Set(),sales:new Set()};
-      table.rows({search:'applied',page:'all'}).nodes().each(function (tr) {
-        var source=String(tr.getAttribute('data-source')||'').trim().toLowerCase();
-        if(source==='sepidar')sepidarCount++;
-        else if(source==='portal')portalCount++;
-        var docNumber=normalizedUnique(tr.getAttribute('data-doc-number'));
-        if(docNumber)distinct.document.add([source,normalizedUnique(tr.getAttribute('data-doc-type')),normalizedUnique(tr.getAttribute('data-doc-year')),docNumber].join('|'));
-        ['customer','item','purchase','sales'].forEach(function(name){
-          var attr={'customer':'data-customer-code','item':'data-item-code','purchase':'data-purchase-group','sales':'data-sales-group'}[name];
-          var value=normalizedUnique(tr.getAttribute(attr));
-          if(value)distinct[name].add(value);
+    // Financial results are calculated by Django over the filtered source
+    // snapshot, never by traversing currently loaded DataTables rows.
+    var currentSummary=null, summaryController=null, summarySequence=0;
+    function updateSummary(){
+      if(!currentSummary)return;
+      var totals=new Map();
+      (currentSummary.currencies||[]).forEach(function(b){
+        totals.set(b.key,{
+          key:b.key,label:b.label,
+          value:BigInt(b.value),weight:BigInt(b.weight),
+          feeWeighted:BigInt(b.feeWeighted)
         });
-        var qty=scaledDecimal(tr.getAttribute('data-row-qty'));
-        var price=scaledDecimal(tr.getAttribute('data-row-price'));
-        var fee=scaledDecimal(tr.getAttribute('data-row-fee'));
-        totalQty+=qty;
-        var currency=normalizeCurrency(tr.getAttribute('data-currency'));
-        var bucket=totals.get(currency.key)||{key:currency.key,label:currency.label,value:0n,feeSum:0n,count:0,weight:0n,feeWeighted:0n};
-        bucket.value+=price;
-        bucket.feeSum+=fee;bucket.count++;
-        bucket.weight+=absolute(qty);
-        bucket.feeWeighted+=fee*absolute(qty);
-        totals.set(currency.key,bucket);
       });
-      write('sh-stat-quantity',formatScaled(totalQty));
-      write('sh-header-quantity','جمع: '+formatScaled(totalQty));
-      write('sh-count-sepidar',sepidarCount.toLocaleString('fa-IR'));
-      write('sh-count-portal',portalCount.toLocaleString('fa-IR'));
-      Object.keys(distinct).forEach(function(key){write('sh-distinct-'+key,distinct[key].size.toLocaleString('fa-IR'));});
-      updateHeaderMoney('sh-top-fee',totals,'avg','میانگین موزون');
-      updateHeaderMoney('sh-top-amount',totals,'total','جمع');
-      // No separate financial summary above the table. All totals are in column headers.
-
+      write('sh-header-quantity','جمع: '+formatScaled(BigInt(currentSummary.quantity_scaled||'0')));
+      write('sh-stat-quantity',formatScaled(BigInt(currentSummary.quantity_scaled||'0')));
+      write('sh-count-sepidar',Number(currentSummary.sources.sepidar||0).toLocaleString('fa-IR'));
+      write('sh-count-portal',Number(currentSummary.sources.portal||0).toLocaleString('fa-IR'));
+      Object.keys(currentSummary.distinct||{}).forEach(function(key){
+        write('sh-distinct-'+key,Number(currentSummary.distinct[key]).toLocaleString('fa-IR'));
+      });
+      updateHeaderMoney('sh-top-fee',totals,'avg','میانگین موزون در بک‌اند');
+      updateHeaderMoney('sh-top-amount',totals,'total','جمع در بک‌اند');
+      if(currentSummary.truncated && truncation)truncation.hidden=false;
+      requestAnimationFrame(refreshSticky);
     }
-
+    function resetSummary(){
+      currentSummary=null;
+      write('sh-top-fee','در حال محاسبه…');
+      write('sh-top-amount','در حال محاسبه…');
+      ['sh-header-quantity','sh-distinct-document','sh-distinct-customer',
+       'sh-distinct-item','sh-distinct-purchase','sh-distinct-sales'].forEach(function(id){
+        write(id,'—');
+      });
+      if(summaryController){summaryController.abort();summaryController=null;}
+      summarySequence++;
+    }
+    function fetchSummary(params){
+      if(summaryController)summaryController.abort();
+      var id=++summarySequence;
+      summaryController=new AbortController();
+      var query=new URLSearchParams(params.toString());
+      query.set('sh_summary','1');
+      return fetch(window.location.pathname+'?'+query.toString(),{
+        credentials:'same-origin',headers:{
+          'X-Requested-With':'XMLHttpRequest','Accept':'application/json'
+        },signal:summaryController.signal
+      }).then(function(r){
+        return r.json().then(function(data){
+          if(!r.ok)throw Error(data.error||'خطا در محاسبه خلاصه');
+          return data;
+        });
+      }).then(function(data){
+        if(id===summarySequence){
+          currentSummary=data.summary;
+          updateSummary();
+        }
+      }).catch(function(err){
+        if(err.name!=='AbortError'&&id===summarySequence){
+          write('sh-top-fee','خلاصه در دسترس نیست');
+          write('sh-top-amount','خلاصه در دسترس نیست');
+        }
+      }).finally(function(){
+        if(id===summarySequence)summaryController=null;
+      });
+    }
     // SQL-backed search uses AJAX, without navigating or recreating DataTable.
     var initialColumnFilters={};
     try{initialColumnFilters=JSON.parse(document.getElementById('sh-server-filters').textContent)||{};}catch(e){}
@@ -1329,6 +1374,10 @@
     var state=document.getElementById('sh-query-status');
     var truncation=document.getElementById('sh-truncated-note');
     var timer=null,controller=null,sequence=0;
+    var initialPage={offsets:{sepidar:0,portal:0},has_more:false,truncated:false,row_count:0};
+    try{initialPage=JSON.parse(document.getElementById('sh-initial-page').textContent)||initialPage;}catch(e){}
+    var pageState=initialPage, scrollParams=new URLSearchParams(window.location.search);
+    var pendingScroll=false,loadedCount=Number(initialPage.row_count||0);
     function getParams(){
       var p=new URLSearchParams();
       if(advancedForm){
@@ -1387,39 +1436,112 @@
         activeArea.insertBefore(el,busy);
       });
     }
-    function receiveResults(result,params){
+    function receiveResults(result,params,append){
       var body=document.createElement('tbody');
       body.innerHTML=result.rows_html||'';
       var rows=Array.from(body.children).filter(function(el){return el.tagName==='TR';});
       var horizontal=scrollArea?scrollArea.scrollLeft:0;
-      table.clear();
-      table.rows.add($(rows));
-      table.page.len(60).draw();
-      if(scrollArea){scrollArea.scrollLeft=horizontal;scrollArea.scrollTop=0;}
-      history.replaceState(history.state,'',window.location.pathname+(params.toString()?'?'+params:''));
-      refreshChips(result);
-      if(truncation)truncation.hidden=!result.truncated;
-      message(result.row_count?
-        'نمایش '+Number(result.row_count).toLocaleString('fa-IR')+' ردیف مطابق فیلترها':
-        result.recent_default?'در ۷ روز اخیر سابقه‌ای یافت نشد.':'هیچ نتیجه‌ای با فیلترهای فعلی پیدا نشد.',false);
-      updateSummary();requestAnimationFrame(refreshSticky);
+      var vertical=scrollArea?scrollArea.scrollTop:0;
+      if(!append)table.clear();
+      if(rows.length)table.rows.add($(rows));
+      table.draw(false);
+      if(scrollArea){
+        scrollArea.scrollLeft=horizontal;
+        scrollArea.scrollTop=append?vertical:0;
+      }
+      pageState={
+        offsets:result.offsets||{sepidar:0,portal:0},
+        has_more:!!result.has_more,
+        truncated:!!result.truncated
+      };
+      loadedCount=append?loadedCount+rows.length:rows.length;
+      scrollParams=new URLSearchParams(params.toString());
+      if(!append){
+        history.replaceState(history.state,'',window.location.pathname+
+          (params.toString()?'?'+params:''));
+        refreshChips(result);
+      }
+      if(truncation)truncation.hidden=!(pageState.truncated||currentSummary&&currentSummary.truncated);
+      if(!append){
+        message(loadedCount?'نمایش '+loadedCount.toLocaleString('fa-IR')+' ردیف دریافت‌شده':
+          result.recent_default?'در ۷ روز اخیر سابقه‌ای یافت نشد.':'هیچ نتیجه‌ای با فیلترهای فعلی پیدا نشد.',false);
+      }else{
+        message('نمایش '+loadedCount.toLocaleString('fa-IR')+' ردیف دریافت‌شده',false);
+      }
+      updateScrollStatus();
+      requestAnimationFrame(refreshSticky);
     }
-    function search(){
+    function getPageUrl(params,offsets){
+      var p=new URLSearchParams(params.toString());
+      p.set('sh_page','1');
+      p.set('sep_offset',String(offsets.sepidar||0));
+      p.set('portal_offset',String(offsets.portal||0));
+      return window.location.pathname+'?'+p.toString();
+    }
+    function search(explicitParams){
       updateDateInputs();
       if(invalidRange){setBusy(false);return;}
-      var params=getParams(),target=window.location.pathname+(params.toString()?'?'+params:'');
+      var params=explicitParams instanceof URLSearchParams ?
+        new URLSearchParams(explicitParams.toString()):getParams();
+      clearTimeout(timer);
       if(controller)controller.abort();
-      controller=new AbortController();var current=controller,id=++sequence;
+      pendingScroll=false;
+      resetSummary();
+      var id=++sequence;
+      controller=new AbortController();
       setBusy(true);
-      fetch(target,{credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'},signal:current.signal})
-      .then(function(r){return r.json().then(function(d){if(!r.ok)throw Error(d.error||'خطا در دریافت اطلاعات');return d;});})
-      .then(function(d){if(id===sequence)receiveResults(d,params);})
-      .catch(function(e){if(e.name!=='AbortError'&&id===sequence)message(e.message||'ارتباط با سرور برقرار نشد.',true);})
-      .finally(function(){if(id===sequence){controller=null;setBusy(false);}});
+      fetch(getPageUrl(params,{sepidar:0,portal:0}),{
+        credentials:'same-origin',headers:{
+          'X-Requested-With':'XMLHttpRequest','Accept':'application/json'
+        },signal:controller.signal
+      }).then(function(r){
+        return r.json().then(function(data){
+          if(!r.ok)throw Error(data.error||'خطا در دریافت اطلاعات');
+          return data;
+        });
+      }).then(function(data){
+        if(id===sequence){
+          receiveResults(data,params,false);
+          fetchSummary(params);
+        }
+      }).catch(function(err){
+        if(err.name!=='AbortError'&&id===sequence)
+          message(err.message||'ارتباط با سرور برقرار نشد.',true);
+      }).finally(function(){
+        if(id===sequence){controller=null;setBusy(false);}
+      });
+    }
+    function loadNextPage(){
+      if(!scrollArea||!pageState.has_more||pendingScroll||controller)return;
+      pendingScroll=true;
+      var id=sequence,params=new URLSearchParams(scrollParams.toString());
+      controller=new AbortController();
+      setBusy(true);
+      fetch(getPageUrl(params,pageState.offsets),{
+        credentials:'same-origin',headers:{
+          'X-Requested-With':'XMLHttpRequest','Accept':'application/json'
+        },signal:controller.signal
+      }).then(function(r){
+        return r.json().then(function(data){
+          if(!r.ok)throw Error(data.error||'خطا در دریافت ردیف‌های بعدی');
+          return data;
+        });
+      }).then(function(data){
+        if(id===sequence)receiveResults(data,params,true);
+      }).catch(function(err){
+        if(err.name!=='AbortError'&&id===sequence)
+          message(err.message||'خطا در بارگذاری ردیف‌های بعدی',true);
+      }).finally(function(){
+        if(id===sequence){
+          controller=null;pendingScroll=false;setBusy(false);
+          updateScrollStatus();
+        }
+      });
     }
     function cancelPendingSearch(){
       clearTimeout(timer);
       if(controller){controller.abort();controller=null;sequence++;}
+      pendingScroll=false;
       setBusy(false);
     }
     function columnSearchDelay(tag,value){
@@ -1452,13 +1574,27 @@
       if(invalidRange)cancelPendingSearch();
       else schedule(ev.type==='change'?0:520);
     });
-    function clearAllFilters(){
-      document.querySelectorAll('#sales-history-report thead .sh-col-search').forEach(function(el){el.value='';});
-      if(advancedForm)advancedForm.querySelectorAll('[name]').forEach(function(el){
-        if(el.type==='radio')el.checked=el.value==='';else el.value='';
+    function clearAllFilters(e){
+      if(e){e.preventDefault();e.stopPropagation();}
+      // One atomic reset of all filter sources (including DataTables'
+      // internal global/column search state); then exactly one AJAX request.
+      cancelPendingSearch();
+      if(advancedForm){
+        advancedForm.reset();
+        advancedForm.querySelectorAll('[name]').forEach(function(el){
+          if(el.type==='radio')el.checked=el.value==='';
+          else el.value='';
+        });
+      }
+      tableEl.querySelectorAll('thead .sh-col-search').forEach(function(el){
+        el.value='';
       });
-      fromInput.value='';toInput.value='';hideCalendar();updateDateInputs();
-      schedule(0);
+      table.search('');
+      table.columns().search('');
+      fromInput.value='';toInput.value='';
+      hideCalendar();updateDateInputs();
+      showColumnSpinner(null);
+      search(new URLSearchParams());
     }
     $('#sh-clear-table, #sh-clear-all').on('click',clearAllFilters);
     if(activeArea)activeArea.addEventListener('click',function(e){
@@ -1637,42 +1773,41 @@
       });
       setPinnedTotal(pinnedDesired);
     }
-    var CHUNK_SIZE=60, pendingScroll=false, scrollStatus=document.createElement('span');
+    var scrollStatus=document.createElement('span');
     scrollStatus.className='sh-scroll-status';scrollStatus.setAttribute('role','status');
     var footer=document.querySelector('#sales-history-report .sh-dt-footer');
-    if(footer)footer.appendChild(scrollStatus);
+    var loadMore=document.createElement('button');
+    loadMore.type='button';loadMore.className='sh-load-more';
+    loadMore.textContent='بارگذاری ردیف‌های بیشتر';
+    loadMore.addEventListener('click',loadNextPage);
+    if(footer){footer.appendChild(scrollStatus);footer.appendChild(loadMore);}
     function updateScrollStatus(){
-      var filtered=table.rows({search:'applied',page:'all'}).count();
-      var displayed=Math.min(table.page.len(),filtered);
-      scrollStatus.textContent=filtered===0 ? 'نتیجه‌ای وجود ندارد' :
-        ('نمایش '+displayed.toLocaleString('fa-IR')+' از '+filtered.toLocaleString('fa-IR')+' ردیف · '+
-          (displayed<filtered?'برای ادامه پایین بروید':'پایان نتایج دریافت‌شده'));
+      var total=loadedCount;
+      scrollStatus.textContent=total===0?'نتیجه‌ای وجود ندارد':
+        ('نمایش '+total.toLocaleString('fa-IR')+' ردیف بارگذاری‌شده · '+
+          (pageState.has_more?'با اسکرول ادامه دهید':'پایان نتایج'));
+      loadMore.hidden=!pageState.has_more;
+      loadMore.disabled=pendingScroll;
     }
     function loadIfNearEnd(){
-      if(!scrollArea||pendingScroll)return;
+      if(!scrollArea||pendingScroll||!pageState.has_more||controller)return;
       var remaining=scrollArea.scrollHeight-scrollArea.clientHeight-scrollArea.scrollTop;
       if(remaining>170)return;
-      var filtered=table.rows({search:'applied',page:'all'}).count();
-      var shown=table.page.len();
-      if(shown>=filtered)return;
-      pendingScroll=true;
-      // No network requests. DataTables reveals 60 more of the already-received rows.
-      table.page.len(Math.min(filtered,shown+CHUNK_SIZE)).draw(false);
-      pendingScroll=false;
+      loadNextPage();
     }
-    if(scrollArea){scrollArea.addEventListener('scroll',loadIfNearEnd,{passive:true});}
+    if(scrollArea)scrollArea.addEventListener('scroll',loadIfNearEnd,{passive:true});
     table.on('column-visibility.dt',function(){requestAnimationFrame(refreshSticky);});
     window.addEventListener('resize',function(){requestAnimationFrame(refreshSticky);});
     table.on('draw.dt',function(){
       updateSummary();updateScrollStatus();requestAnimationFrame(refreshSticky);
     });
     refreshSticky();updateScrollStatus();
-    // A short result set may not fill the viewport after filtering.
-    // Avoid forced loading while the user has not scrolled: redraw is demand driven.
-
+    // The initial HTML contains only 60 rows; fetch server summary separately.
+    // A short result set gets a manual load-more fallback below the table.
     updateDateInputs();
-    updateSummary();
-    requestAnimationFrame(refreshSticky); // Header height changes as currency / diversity totals render.
+    resetSummary();
+    fetchSummary(getParams());
+    requestAnimationFrame(refreshSticky);
   });
 })(jQuery);
 </script>
