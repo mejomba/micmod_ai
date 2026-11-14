@@ -99,3 +99,53 @@ class CustomerLegalProfileFormTests(TestCase):
         form.save()
         customer.refresh_from_db()
         self.assertEqual(customer.legal_profiles, [PROFILE])
+
+
+
+class CustomerLegalProfileAccordionTests(SimpleTestCase):
+    """The customer editor stays compact but keeps editable JSON data."""
+
+    def test_accordion_markup_defaults_closed_and_is_accessible(self):
+        from django.template.loader import get_template
+        source = get_template('extra_data/customer.html').template.source
+        self.assertIn('id="customer-legal-profiles-toggle"', source)
+        self.assertIn('aria-controls="customer-legal-profiles-body"', source)
+        self.assertIn('aria-expanded="{% if form.legal_profiles.errors %}true{% else %}false{% endif %}"', source)
+        self.assertIn('id="customer-legal-profiles-body"', source)
+        self.assertIn('{% if not form.legal_profiles.errors %}hidden{% endif %}', source)
+        self.assertIn('id="customer-legal-profiles-summary"', source)
+        self.assertIn('id="customer-legal-profiles-count"', source)
+        self.assertIn('{{ form.legal_profiles }}', source)
+        self.assertIn('id="customer-legal-profile-add"', source)
+        self.assertIn('data-legal-remove', source)
+        for field in ('name', 'national_id', 'type', 'postal_code', 'address'):
+            self.assertIn('data-legal-field="' + field + '"', source)
+
+    def test_accordion_javascript_updates_summary_and_preserves_form_submission(self):
+        from django.conf import settings
+        from pathlib import Path
+        path = Path(settings.BASE_DIR) / 'extra_data/static/extra_data/js/customer_legal_profiles.js'
+        source = path.read_text(encoding='utf-8')
+        self.assertIn("toggle.setAttribute('aria-expanded', String(open))", source)
+        self.assertIn('body.hidden = !open', source)
+        self.assertIn('function profilePreview(profile)', source)
+        self.assertIn('profile.national_id', source)
+        self.assertIn('summary.textContent =', source)
+        self.assertIn('count.textContent =', source)
+        self.assertIn("toggle.addEventListener('click'", source)
+        self.assertIn("addButton.addEventListener('click'", source)
+        self.assertIn('setExpanded(true)', source)
+        self.assertIn("list.addEventListener('input'", source)
+        self.assertIn("list.addEventListener('click'", source)
+        self.assertIn('hidden.value = JSON.stringify(profiles)', source)
+        self.assertIn("form.addEventListener('submit', sync)", source)
+
+    def test_accordion_css_hides_panel_when_collapsed(self):
+        from django.conf import settings
+        from pathlib import Path
+        path = Path(settings.BASE_DIR) / 'extra_data/static/extra_data/css/customer_legal_profiles.css'
+        source = path.read_text(encoding='utf-8')
+        self.assertIn('.clp-accordion-body[hidden]', source)
+        self.assertIn('display: none !important', source)
+        self.assertIn('.clp-summary', source)
+        self.assertIn('.clp-chevron', source)

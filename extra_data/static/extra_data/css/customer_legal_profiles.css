@@ -1,32 +1,137 @@
+/* Compact, accessible legal-profile accordion in the customer form. */
 #customer-legal-profiles {
     direction: rtl;
-    padding: 1.5rem;
+    padding: 0;
+    overflow: hidden;
+    margin-top: 1rem !important;
+    margin-bottom: 1rem !important;
+}
+#customer-legal-profiles .clp-heading {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: normal;
+}
+#customer-legal-profiles .clp-accordion-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    text-align: right;
+    color: inherit;
+    background: #fff;
+    padding: .85rem 1rem;
+    border: 0;
+    cursor: pointer;
+    transition: background-color .15s ease;
+}
+#customer-legal-profiles .clp-accordion-toggle:hover,
+#customer-legal-profiles .clp-accordion-toggle:focus-visible {
+    background: #f7faff;
+}
+#customer-legal-profiles .clp-accordion-toggle:focus-visible {
+    outline: 2px solid #6f9bde;
+    outline-offset: -3px;
+}
+#customer-legal-profiles .clp-heading-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+    gap: .2rem;
+}
+#customer-legal-profiles .clp-heading-main {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    max-width: 100%;
+}
+#customer-legal-profiles .clp-section-title {
+    font-weight: 700;
+    font-size: .95rem;
+}
+#customer-legal-profiles .clp-count {
+    border-radius: 1rem;
+    padding: .13rem .55rem;
+    background: #edf3fd;
+    color: #2b5ba8;
+    font-size: .73rem;
+    white-space: nowrap;
+}
+#customer-legal-profiles .clp-summary {
+    color: #687789;
+    font-size: .79rem;
+    font-weight: normal;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#customer-legal-profiles .clp-chevron {
+    flex: 0 0 auto;
+    width: .55rem;
+    height: .55rem;
+    margin: 0 .4rem;
+    border-right: 2px solid #69778a;
+    border-bottom: 2px solid #69778a;
+    transform: rotate(45deg);
+    transition: transform .2s ease;
+}
+#customer-legal-profiles.is-open .clp-chevron {
+    transform: rotate(225deg);
+}
+#customer-legal-profiles .clp-accordion-body {
+    border-top: 1px solid #e7edf5;
+    padding: .85rem 1rem 1rem;
+}
+#customer-legal-profiles .clp-accordion-body[hidden] {
+    display: none !important;
+}
+#customer-legal-profiles .clp-editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .7rem;
+    margin-bottom: .85rem;
 }
 #customer-legal-profiles .customer-legal-profile-row {
-    border: 1px solid #e7e9f0;
-    border-radius: 0.85rem;
-    background-color: #fafbfd;
-    padding: 1.25rem;
-    transition: border-color .15s ease, box-shadow .15s ease;
+    padding: .85rem 1rem;
+    border: 1px solid #e5ebf3;
+    border-radius: .6rem;
+    background: #fbfcfe;
+    transition: border-color .15s ease;
 }
 #customer-legal-profiles .customer-legal-profile-row:focus-within {
-    border-color: #9abcf5;
-    box-shadow: 0 0 0 2px rgba(55, 125, 235, .08);
+    border-color: #8fb5e8;
+}
+#customer-legal-profiles .clp-row-heading {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+#customer-legal-profiles .clp-row-subtitle {
+    color: #768397;
+    font-size: .78rem;
+    font-weight: normal;
 }
 #customer-legal-profiles .customer-legal-profile-label {
     display: block;
-    margin-bottom: .4rem;
-    font-size: .9rem;
-    font-weight: 600;
+    margin-bottom: .2rem;
     color: #45516b;
+    font-size: .84rem;
+    font-weight: 600;
 }
 #customer-legal-profiles .customer-legal-profile-row .form-control {
     border: 1px solid #dce1eb;
-    border-radius: .55rem;
+    border-radius: .4rem;
     background: #fff;
+    padding: .45rem .65rem;
 }
 #customer-legal-profiles .customer-legal-profile-row textarea {
-    min-height: 75px;
+    min-height: 60px;
     resize: vertical;
 }
 #customer-legal-profiles .customer-legal-profile-digits {
@@ -36,13 +141,21 @@
 }
 #customer-legal-profiles-empty {
     border: 1px dashed #c8d1df;
-    border-radius: .8rem;
-    padding: 1.25rem;
+    border-radius: .55rem;
+    padding: .85rem;
     color: #657187;
     text-align: center;
     background: #fbfcff;
+    font-size: .85rem;
 }
 @media (max-width: 767px) {
-    #customer-legal-profiles { padding: 1rem; }
-    #customer-legal-profiles .customer-legal-profile-row { padding: .85rem; }
+    #customer-legal-profiles .clp-accordion-toggle { padding: .75rem; }
+    #customer-legal-profiles .clp-accordion-body { padding: .75rem; }
+    #customer-legal-profiles .customer-legal-profile-row { padding: .7rem; }
+    #customer-legal-profiles .clp-summary { font-size: .75rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    #customer-legal-profiles .clp-chevron,
+    #customer-legal-profiles .clp-accordion-toggle,
+    #customer-legal-profiles .customer-legal-profile-row { transition: none; }
 }

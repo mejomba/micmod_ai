@@ -96,34 +96,56 @@
         </div>
     </div>
 
-    {# Customer legal profiles are edited here and stored as a JSON list on Customer. #}
-    <section id="customer-legal-profiles" class="bg-white rounded border my-10 shadow-sm" aria-labelledby="customer-legal-profiles-heading" dir="rtl">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-5">
-            <div>
-                <h4 id="customer-legal-profiles-heading" class="mb-2">پروفایل‌های حقوقی</h4>
-                <div class="text-muted small">اطلاعات هر شخصیت حقوقی را جداگانه ثبت کنید. تمام پروفایل‌ها با ذخیره مشتری ثبت می‌شوند.</div>
-            </div>
-            <button id="customer-legal-profile-add" type="button" class="btn btn-sm btn-light-primary">
-                <i class="fas fa-plus me-1" aria-hidden="true"></i> افزودن پروفایل
+    {# Compact accordion editor: hidden input is always in the customer form. #}
+    <section id="customer-legal-profiles" class="bg-white rounded border my-6 shadow-sm" aria-labelledby="customer-legal-profiles-heading" dir="rtl">
+        <h4 id="customer-legal-profiles-heading" class="clp-heading">
+            <button id="customer-legal-profiles-toggle" type="button"
+                    class="clp-accordion-toggle"
+                    aria-controls="customer-legal-profiles-body"
+                    aria-expanded="{% if form.legal_profiles.errors %}true{% else %}false{% endif %}">
+                <span class="clp-heading-content">
+                    <span class="clp-heading-main">
+                        <span class="clp-section-title">پروفایل‌های حقوقی</span>
+                        <span id="customer-legal-profiles-count" class="clp-count">۰ پروفایل</span>
+                    </span>
+                    <span id="customer-legal-profiles-summary" class="clp-summary" aria-live="polite">
+                        هنوز پروفایلی ثبت نشده است
+                    </span>
+                </span>
+                <span class="clp-chevron" aria-hidden="true"></span>
             </button>
-        </div>
+        </h4>
+
         {{ form.legal_profiles }}
-        {% if form.legal_profiles.errors %}
-            <div class="alert alert-danger mb-4" role="alert" id="customer-legal-profiles-errors">
-                {{ form.legal_profiles.errors }}
+        <div id="customer-legal-profiles-body" class="clp-accordion-body"
+             {% if not form.legal_profiles.errors %}hidden{% endif %}>
+            <div class="clp-editor-toolbar">
+                <span class="text-muted small">برای هر شخصیت حقوقی اطلاعات را ثبت کنید؛ تغییرات با ذخیره فرم مشتری اعمال می‌شوند.</span>
+                <button id="customer-legal-profile-add" type="button" class="btn btn-sm btn-light-primary">
+                    <i class="fas fa-plus me-1" aria-hidden="true"></i> افزودن پروفایل
+                </button>
             </div>
-        {% endif %}
-        <div id="customer-legal-profiles-empty">هنوز پروفایل حقوقی ثبت نشده است. برای شروع «افزودن پروفایل» را بزنید.</div>
-        <div id="customer-legal-profiles-list" class="d-grid gap-4" aria-live="polite"></div>
+            {% if form.legal_profiles.errors %}
+                <div class="alert alert-danger mb-3" role="alert" id="customer-legal-profiles-errors">
+                    {{ form.legal_profiles.errors }}
+                </div>
+            {% endif %}
+            <div id="customer-legal-profiles-empty">هنوز پروفایلی وجود ندارد. با دکمه «افزودن پروفایل» شروع کنید.</div>
+            <div id="customer-legal-profiles-list" class="d-grid gap-3" aria-live="polite"></div>
+        </div>
+
         <template id="customer-legal-profile-template">
             <article class="customer-legal-profile-row" data-legal-profile-row>
-                <div class="d-flex justify-content-between align-items-center gap-2 mb-4">
-                    <strong data-legal-profile-title>پروفایل</strong>
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <div class="clp-row-heading">
+                        <strong data-legal-profile-title>پروفایل</strong>
+                        <span class="clp-row-subtitle" data-legal-row-summary></span>
+                    </div>
                     <button type="button" class="btn btn-sm btn-light-danger" data-legal-remove aria-label="حذف پروفایل">
                         <i class="fas fa-trash-alt me-1" aria-hidden="true"></i> حذف
                     </button>
                 </div>
-                <div class="row g-3">
+                <div class="row g-2">
                     <div class="col-lg-4 col-md-6">
                         <label class="customer-legal-profile-label">نام <span class="text-danger" aria-hidden="true">*</span>
                             <input type="text" class="form-control" data-legal-field="name" maxlength="255" autocomplete="organization" placeholder="نام شخصیت حقوقی">
@@ -136,7 +158,7 @@
                     </div>
                     <div class="col-lg-4 col-md-6">
                         <label class="customer-legal-profile-label">نوع <span class="text-danger" aria-hidden="true">*</span>
-                            <input type="text" class="form-control" data-legal-field="type" maxlength="100" placeholder="مثلاً سهامی خاص یا مسئولیت محدود">
+                            <input type="text" class="form-control" data-legal-field="type" maxlength="100" placeholder="مثلاً سهامی خاص">
                         </label>
                     </div>
                     <div class="col-lg-4 col-md-6">

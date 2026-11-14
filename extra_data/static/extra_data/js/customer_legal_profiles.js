@@ -1,4 +1,5 @@
-/* Editor for Customer.legal_profiles: the JSON hidden field is the only posted value. */
+/* Compact accordion editor for Customer.legal_profiles.
+   One hidden JSON field is posted with the customer form. */
 (function () {
     'use strict';
 
@@ -10,7 +11,12 @@
     const empty = section.querySelector('#customer-legal-profiles-empty');
     const addButton = section.querySelector('#customer-legal-profile-add');
     const template = document.getElementById('customer-legal-profile-template');
-    if (!hidden || !list || !empty || !addButton || !template) return;
+    const toggle = section.querySelector('#customer-legal-profiles-toggle');
+    const body = section.querySelector('#customer-legal-profiles-body');
+    const count = section.querySelector('#customer-legal-profiles-count');
+    const summary = section.querySelector('#customer-legal-profiles-summary');
+    if (!hidden || !list || !empty || !addButton || !template ||
+        !toggle || !body || !count || !summary) return;
 
     const keys = ['name', 'national_id', 'type', 'postal_code', 'address'];
 
@@ -22,13 +28,43 @@
         return data;
     }
 
+    function setExpanded(open) {
+        toggle.setAttribute('aria-expanded', String(open));
+        body.hidden = !open;
+        section.classList.toggle('is-open', open);
+    }
+
+    function profilePreview(profile) {
+        const name = profile.name || 'پروفایل بدون نام';
+        const details = [];
+        if (profile.type) details.push(profile.type);
+        if (profile.national_id) details.push('شناسه ملی: ' + profile.national_id);
+        return name + (details.length ? ' (' + details.join('، ') + ')' : ' (تکمیل نشده)');
+    }
+
     function refresh() {
         const rows = Array.from(list.querySelectorAll('[data-legal-profile-row]'));
+        const profiles = rows.map(readRow);
         rows.forEach(function (row, index) {
-            row.querySelector('[data-legal-profile-title]').textContent = 'پروفایل ' + (index + 1);
-            row.querySelector('[data-legal-remove]').setAttribute('aria-label', 'حذف پروفایل ' + (index + 1));
+            const profile = profiles[index];
+            row.querySelector('[data-legal-profile-title]').textContent =
+                profile.name || 'پروفایل ' + (index + 1);
+            row.querySelector('[data-legal-remove]').setAttribute(
+                'aria-label', 'حذف پروفایل ' + (index + 1)
+            );
+            row.querySelector('[data-legal-row-summary]').textContent =
+                [profile.type, profile.national_id].filter(Boolean).join(' · ') || 'در حال تکمیل';
         });
         empty.classList.toggle('d-none', rows.length > 0);
+        count.textContent = rows.length + ' پروفایل';
+        if (!rows.length) {
+            summary.textContent = 'هنوز پروفایلی ثبت نشده است؛ برای افزودن کلیک کنید';
+        } else {
+            const previews = profiles.slice(0, 2).map(profilePreview);
+            const remaining = profiles.length - previews.length;
+            summary.textContent = previews.join('  •  ') +
+                (remaining > 0 ? '  •  +' + remaining + ' پروفایل دیگر' : '');
+        }
     }
 
     function sync() {
@@ -58,18 +94,23 @@
         const parsed = JSON.parse(hidden.value || '[]');
         if (Array.isArray(parsed)) initial = parsed;
     } catch (error) {
-        // The form will show the server-side invalid JSON error near the section.
+        // Server-side validation error is displayed and accordion opens automatically.
     }
     initial.forEach(function (profile) {
         if (profile && typeof profile === 'object' && !Array.isArray(profile)) {
             appendProfile(profile, false);
         }
     });
-    // Do not replace the submitted JSON on a failed form before the user edits.
-    // Normal form submissions always serialize the visible rows.
+
+    // Invalid form submissions open the editor; valid forms start compact.
+    setExpanded(toggle.getAttribute('aria-expanded') === 'true');
     refresh();
 
+    toggle.addEventListener('click', function () {
+        setExpanded(toggle.getAttribute('aria-expanded') !== 'true');
+    });
     addButton.addEventListener('click', function () {
+        setExpanded(true);
         appendProfile({}, true);
     });
     list.addEventListener('input', function (event) {
