@@ -66,6 +66,7 @@ class SalesHistoryInteractionTests(SimpleTestCase):
         self.assertIn("advancedForm.reset()", self.source)
         self.assertIn("table.columns().search('')", self.source)
         self.assertIn("search(new URLSearchParams())", self.source)
+        self.assertIn("new URLSearchParams(window.location.search).get('all_dates')==='1'", self.source)
         self.assertIn("$('#sh-clear-table, #sh-clear-all').on('click',clearAllFilters)", self.source)
         self.assertNotIn('<h1 class="sh-title">مرور فروش</h1>', self.source)
 

@@ -118,3 +118,36 @@ class SalesHistoryDefaultWindowTests(SimpleTestCase):
             payload['recent_to'],
             jdatetime.date.fromgregorian(date=self.TODAY).strftime('%Y/%m/%d'),
         )
+
+    def test_ajax_backend_summary_skips_page_query(self):
+        import json
+        request = RequestFactory().get(
+            '/sepidar/sales-history/',
+            {'sh_summary': '1', 'col_4': '899'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        summary = {'currencies': [], 'row_count': 13}
+        with patch('sepidar.sales_history_service.get_sales_history_page') as page:
+            with patch('sepidar.sales_history_summary.get_sales_history_summary',
+                       return_value=summary) as aggregate:
+                with patch('django.core.cache.cache.get', return_value=None):
+                    with patch('django.core.cache.cache.set'):
+                        response = SalesHistory().get(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.content)['summary'], summary)
+        page.assert_not_called()
+        self.assertEqual(aggregate.call_args.args[0]['col_4'], '899')
+
+    def test_ajax_summary_reuses_cached_backend_totals(self):
+        import json
+        request = RequestFactory().get(
+            '/sepidar/sales-history/',
+            {'sh_summary': '1'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        cached = {'currencies': [], 'row_count': 2}
+        with patch('sepidar.sales_history_summary.get_sales_history_summary') as aggregate:
+            with patch('django.core.cache.cache.get', return_value=cached):
+                response = SalesHistory().get(request)
+        self.assertEqual(json.loads(response.content)['summary'], cached)
+        aggregate.assert_not_called()

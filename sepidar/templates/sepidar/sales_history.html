@@ -1392,8 +1392,10 @@
       });
       if(fromInput.value.trim())p.set('date_from',fromInput.value.trim());
       if(toInput.value.trim())p.set('date_to',toInput.value.trim());
-      // An empty query restores the same default seven-day window as first load.
-      // Real filters continue searching all historical dates unless dates are set.
+      // Preserve an explicit historical URL until the user searches or resets.
+      // Clearing filters calls search(emptyParams), removing all_dates atomically.
+      if(!p.toString() && new URLSearchParams(window.location.search).get('all_dates')==='1')
+        p.set('all_dates','1');
       return p;
     }
     function message(text,isError){
@@ -1776,6 +1778,10 @@
     var scrollStatus=document.createElement('span');
     scrollStatus.className='sh-scroll-status';scrollStatus.setAttribute('role','status');
     var footer=document.querySelector('#sales-history-report .sh-dt-footer');
+    if(!footer){
+      footer=document.createElement('div');footer.className='sh-dt-footer';
+      tableEl.closest('.sh-panel').appendChild(footer);
+    }
     var loadMore=document.createElement('button');
     loadMore.type='button';loadMore.className='sh-load-more';
     loadMore.textContent='بارگذاری ردیف‌های بیشتر';
