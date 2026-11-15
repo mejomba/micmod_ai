@@ -1,0 +1,157 @@
+{% load static jalali_tags %}
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ document.title }} - {{ document.number }}</title>
+    <link rel="stylesheet" href="{% static 'factor/css/modern_print.css' %}">
+</head>
+<body>
+<aside class="modern-print-drawer no-print" aria-label="ابزارهای نسخه جدید چاپ">
+    <details {% if request.GET.print_settings == '1' %}open{% endif %}>
+        <summary>تنظیمات چاپ <span aria-hidden="true">⚙</span></summary>
+        <div class="drawer-content">
+            <h2>چاپ {{ document.title }}</h2>
+            <p class="drawer-help">طرح جدید A4. نسخه قدیمی بدون تغییر باقی مانده است.</p>
+            <button type="button" class="print-action" onclick="window.print()">چاپ سند</button>
+            <a class="drawer-link" href="{{ document.legacy_url }}">مشاهده نسخه قدیمی</a>
+            {% if document.profile_options %}
+            <section class="drawer-section" aria-label="پروفایل حقوقی خریدار">
+                <h3>مشخصات خریدار</h3>
+                <form method="get">
+                    <input type="hidden" name="print_settings" value="1">
+                    <label for="modern-legal-profile">پروفایل برای چاپ</label>
+                    <select id="modern-legal-profile" name="legal_profile">
+                        <option value="" {% if not document.selected_profile %}selected{% endif %}>اطلاعات اصلی مشتری</option>
+                        {% for profile in document.profile_options %}
+                        <option value="{{ profile.value }}" {% if profile.selected %}selected{% endif %}>{{ profile.label }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="apply-action">اعمال پروفایل</button>
+                </form>
+            </section>
+            {% endif %}
+        </div>
+    </details>
+</aside>
+
+<main class="sheet">
+    <header class="sheet-header">
+        <div class="header-info">
+            <h1>{{ document.title }}</h1>
+            <dl>
+                <div><dt>{% if document.invoice %}شماره فاکتور{% else %}شماره پیش‌فاکتور{% endif %}:</dt>
+                    <dd dir="ltr">{{ document.number }}</dd></div>
+                <div><dt>تاریخ:</dt>
+                    <dd>{% if document.invoice %}{{ document.date }}{% else %}{{ document.date|to_jalali:'%Y/%m/%d'|default:'-' }}{% endif %}</dd></div>
+                {% if document.expiry %}
+                <div><dt>تاریخ اعتبار:</dt><dd>{{ document.expiry|to_jalali:'%Y/%m/%d' }}</dd></div>
+                {% endif %}
+            </dl>
+        </div>
+        <div class="qr-box">
+            {% if document.qr_url %}
+            <img src="{{ document.qr_url }}" alt="کد QR پیوند مشاهده سند" width="88" height="88">
+            {% endif %}
+        </div>
+    </header>
+
+    <section class="party-grid" aria-label="مشخصات طرفین سند">
+        <div class="party">
+            <h2>مشخصات فروشنده</h2>
+            <div class="party-detail">
+                <div class="party-line"><strong>{{ document.seller.name }}</strong>
+                    {% if document.seller.phone %}<span dir="ltr">{{ document.seller.phone }}</span>{% endif %}</div>
+                {% if document.seller.address %}<p>{{ document.seller.address }}</p>{% endif %}
+                {% if document.seller.economic_number %}<p>شماره اقتصادی: <bdi>{{ document.seller.economic_number }}</bdi></p>{% endif %}
+            </div>
+        </div>
+        <div class="party">
+            <h2>مشخصات خریدار</h2>
+            <div class="party-detail">
+                <div class="party-line"><strong>{{ document.buyer.name|default:'-' }}</strong>
+                    {% if document.buyer.phone %}<span dir="ltr">{{ document.buyer.phone }}</span>{% endif %}</div>
+                <p>{{ document.buyer.address|default:'-'|linebreaksbr }}</p>
+                {% if document.buyer.is_legal_profile %}
+                <p>شناسه ملی: <bdi>{{ document.buyer.national_number }}</bdi>
+                    {% if document.buyer.postal_code and document.buyer.postal_code != '-' %}
+                    | کد پستی: <bdi>{{ document.buyer.postal_code }}</bdi>{% endif %}</p>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section class="items-section" aria-label="اقلام سند">
+        <table class="items-table">
+            <colgroup>
+                <col class="col-index"><col class="col-code"><col class="col-desc">
+                <col class="col-count"><col class="col-price"><col class="col-discount"><col class="col-total">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th scope="col">ردیف</th>
+                    <th scope="col">کد کالا</th>
+                    <th scope="col">مشخصات کالا یا خدمات</th>
+                    <th scope="col">تعداد</th>
+                    <th scope="col">قیمت واحد</th>
+                    <th scope="col">تخفیف</th>
+                    <th scope="col">مبلغ کل ({{ document.currency_label }})</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in document.rows %}
+                <tr>
+                    <td class="text-center">{{ forloop.counter }}</td>
+                    <td class="text-center"><bdi>{{ row.code }}</bdi></td>
+                    <td class="item-description">
+                        <span class="item-name" dir="auto">{{ row.name }}</span>
+                        {% if row.description %}<small>{{ row.description }}</small>{% endif %}
+                    </td>
+                    <td class="text-center"><bdi>{{ row.quantity }}</bdi></td>
+                    <td class="number"><bdi>{{ row.unit_price }}</bdi></td>
+                    <td class="number"><bdi>{% if row.has_discount %}{{ row.discount }}{% else %}-{% endif %}</bdi></td>
+                    <td class="number amount-cell">
+                        {% if row.has_discount %}<del><bdi>{{ row.before_discount }}</bdi></del>{% endif %}
+                        <strong><bdi>{{ row.total }}</bdi></strong>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="no-items">کالایی برای نمایش وجود ندارد.</td></tr>
+                {% endfor %}
+                {% if document.has_additions %}
+                <tr class="extra-line">
+                    <td class="text-center">{{ document.rows|length|add:1 }}</td>
+                    <td></td><td>هزینه‌های اضافی / حمل</td><td colspan="3"></td>
+                    <td class="number"><bdi>{{ document.additions }}</bdi></td>
+                </tr>
+                {% endif %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3">مجموع اقلام</td>
+                    <td colspan="3" class="summary-explain">
+                        {% if document.has_discount %}تخفیف کل: <bdi>{{ document.discount }}</bdi>{% endif %}
+                        {% if document.has_tax %} | مالیات: <bdi>{{ document.tax }}</bdi>{% endif %}
+                    </td>
+                    <td class="number"><strong><bdi>{{ document.total }}</bdi></strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </section>
+
+    <section class="payable">
+        <div class="payable-main">
+            <strong>مبلغ قابل پرداخت:</strong>
+            <div class="payable-value"><bdi>{{ document.total }}</bdi>
+                <small>({{ document.currency_label }})</small></div>
+        </div>
+        {% if document.notes %}<p><strong>توضیحات:</strong> {{ document.notes|linebreaksbr }}</p>{% endif %}
+    </section>
+    <footer class="signatures">
+        <div>مهر و امضای فروشنده</div>
+        <div>مهر و امضای خریدار</div>
+    </footer>
+</main>
+</body>
+</html>

@@ -2,6 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from . import views
+from . import modern_print
 from .select2 import select2_search, select2_create_factor_from_quotation
 from .views import CustomerRequestFactorViewSet, supply_fragment_view
 
@@ -35,6 +36,7 @@ urlpatterns = [
 
     path('factor/list/datatable/', views.FactorListDatatable.as_view(), name='factor.list.datatable'),
     path('factor/print/<int:id>/', views.print_view, name='factor.print'),
+    path('factor/print/modern/<int:id>/', modern_print.factor_modern_print, name='factor.print.modern'),
     path('factor/bulk-print/', views.factor_bulk_print, name='factor.bulk_print'),
     path('delivery/', views.DeliveryList.as_view(), name='delivery.view'),
     path('delivery/<int:pk>/', views.DeliveryList.as_view(), name='delivery.update'),
