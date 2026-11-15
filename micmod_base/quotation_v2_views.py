@@ -32,8 +32,12 @@ def _access(request, quote):
     )
     if not can_view:
         raise PermissionDenied
+    current_state = getattr(getattr(quote, "last_work_flow", None), "current_state_name", None)
+    editable_states = {"پیش فاکتور اولیه", "استعلام قیمت", "تایید پیش فاکتور"}
     editable = (
         not quote.cancel and not quote.is_deleted
+        and not quote.sepidar_quotation_id and not quote.sepidar_number
+        and (current_state is None or current_state in editable_states)
         and (user.is_superuser or (user.has_perm("micmod_base.change_quotation") and owner))
         and not Factor.objects.filter(q_id=quote.pk, is_deleted=False).exists()
     )

@@ -213,3 +213,55 @@ class PricingV2Compatibility(SimpleTestCase):
         self.assertIn("system_price_index", source)
         self.assertIn("manager_price", source)
         self.assertIn("name=\"action\" value=\"add\"", source)
+
+
+class PricingV2HistoricalSafety(SimpleTestCase):
+    def test_historical_manager_discount_is_still_applied_in_version_one(self):
+        # The 62 historical manager-priced/discounted rows must use the old math.
+        old_row = SimpleNamespace(
+            pricing_version=1, net_price=2000, quantity=2,
+            discount_per_item=50, pk=100,
+            quotation=SimpleNamespace(self_discount=10, official_value=0),
+        )
+        self.assertEqual(
+            QuotationItem.discount_tuple.fget(old_row),
+            (0, 200, 100),
+        )
+
+    def test_v2_editor_cannot_modify_a_document_already_in_sepidar(self):
+        from micmod_base.quotation_v2_views import _access
+        user = SimpleNamespace(pk=1, is_superuser=True)
+        request = SimpleNamespace(user=user)
+        quoted = SimpleNamespace(
+            creator_user_id=1, last_work_flow=SimpleNamespace(
+                to_user_id=1, current_state_name="تایید پیش فاکتور",
+            ), cancel=False, is_deleted=False, sepidar_quotation_id=1234,
+            sepidar_number=909, pk=17,
+        )
+        with patch("micmod_base.quotation_v2_views.Factor.objects.filter") as factors:
+            factors.return_value.exists.return_value = False
+            self.assertFalse(_access(request, quoted))
+            quoted.sepidar_quotation_id = None
+            quoted.sepidar_number = None
+            self.assertTrue(_access(request, quoted))
+
+    def test_v2_system_price_never_changes_when_manager_price_changes(self):
+        row = fake_row()
+        row.system_price = Decimal("1000")
+        row.system_price_method = "express"
+        row.system_price_snapshot = {
+            "currency_id": 1, "unique_title": "express", "value": "1000",
+        }
+        _save_price(
+            row,
+            {
+                "system_price_index": "keep",
+                "manager_approved": "1",
+                "manager_price": "1800",
+                "discount_per_item": "50",
+            },
+        )
+        self.assertEqual(row.system_price, Decimal("1000"))
+        self.assertEqual(row.manager_approved_price, Decimal("1800"))
+        self.assertEqual(row.manager_positive_difference, Decimal("1600.0000"))
+        self.assertEqual(row.price_method, "sales_admin")
