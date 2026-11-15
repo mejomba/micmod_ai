@@ -127,10 +127,14 @@ def generate_direct_factor(request, quotation: Quotation):
                     'qi': qi,
                     'goods_code': qi.goods_code_fk,
                     'part_number_show': qi.goods_code_fk.part_number,
-                    'price': qi.fee,
+                    'price': qi.sepidar_fee if qi.pricing_version == 2 else qi.fee,
                     'quantity': qi.quantity,
                     'delivery_time': qi.delivery_time,
-                    'discount_per_item': qi.discount_per_item,
+                    'discount_per_item': (
+                        float(qi.v2_pricing.unit_discount / qi.v2_pricing.quantity)
+                        if qi.pricing_version == 2 and qi.v2_pricing is not None
+                        else qi.discount_per_item
+                    ),
                     # 'supply_locations': order,
                     "creator_user": request.user,
                     "editor_user": request.user,

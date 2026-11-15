@@ -680,8 +680,8 @@
                         <div class="d-flex flex-column">
                             <span class="d-flex">
 {#                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-lead_time" placeholder="روز به عدد" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.lead_time }}" >#}
-                                <input type="text" onkeyup="check_price(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 comma-seperator" value="{{ qi.fee|default_if_none:0 }}" >
-                                <input type="text" onkeyup="factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-discount_per_item" value="{{ qi.discount_per_item|default_if_falsy:0 }}" class="LTR-RTL w-100 rounded font-size-11 text-center comma-seperator">
+                                <input type="text" onkeyup="check_price(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 comma-seperator" value="{% if qi.pricing_version == 2 %}{{ qi.sepidar_fee|default_if_none:0 }}{% else %}{{ qi.fee|default_if_none:0 }}{% endif %}" >
+                                <input type="text" onkeyup="factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-discount_per_item" value="{% if qi.pricing_version == 2 %}{{ qi.v2_unit_discount|default_if_none:0 }}{% else %}{{ qi.discount_per_item|default_if_falsy:0 }}{% endif %}" class="LTR-RTL w-100 rounded font-size-11 text-center comma-seperator">
                                 </span>
                             <span class="d-flex gap-1 justify-content-center mt-1">
                                 <span class="row-discount pt-1 text-success"></span>

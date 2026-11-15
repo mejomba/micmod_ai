@@ -469,6 +469,17 @@ class FactorItem(BaseModel):
 
     @property
     def discount_tuple(self):
+        # Only version-2 manager-approved rows bypass the quotation-wide
+        # commercial discount. Legacy FactorItems remain byte-for-byte equivalent.
+        if self.qi_id and self.qi.pricing_version == 2 and self.qi.manager_approved_price is not None:
+            net_price = self.net_price
+            row_discount = self.quantity * (self.discount_per_item or 0)
+            tax_discount = 0
+            if self.factor.is_official and self.factor.official_value:
+                tax_discount = (net_price - row_discount) * (
+                    1 - ((100 + settings.TAX_VALUE - self.factor.official_value) / (100 + settings.TAX_VALUE))
+                )
+            return tax_discount, 0, row_discount
         try:
             net_price = self.net_price
             row_discount = self.quantity * (self.discount_per_item or 0)
@@ -481,6 +492,10 @@ class FactorItem(BaseModel):
 
     @property
     def discount_value(self):
+        if self.qi_id and self.qi.pricing_version == 2:
+            value = sum(self.discount_tuple)
+            currency = self.factor.currency_ref.title_en if self.factor.currency_ref else ""
+            return int(value) if currency == "Rial" else value
         x = sum(self.discount_tuple)
         try:
             return int(x)

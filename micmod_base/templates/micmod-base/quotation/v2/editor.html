@@ -1,0 +1,168 @@
+{% load static humanize %}
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>قیمت‌گذاری پیش‌فاکتور {{ quote.pk }} | نسخه ۲</title>
+<link rel="stylesheet" href="{% static 'micmod_base/css/quotation_v2.css' %}">
+<script defer src="{% static 'micmod_base/js/quotation_v2.js' %}"></script>
+</head>
+<body>
+<main class="v2-shell" data-self-discount="{{ quote.self_discount|default_if_none:0 }}" data-official="{% if quote.is_official %}1{% else %}0{% endif %}" data-official-value="{{ quote.official_value|default_if_none:0 }}" data-tax-rate="{{ tax_rate }}">
+    <header class="v2-header">
+        <div>
+            <p class="v2-eyebrow">پرتال فروش / قیمت‌گذاری</p>
+            <h1>پیش‌فاکتور <span class="v2-id">{{ quote.pk }}</span></h1>
+            <p>مدیریت مستقل قیمت مرجع، تخفیف و قیمت مصوب مدیر</p>
+        </div>
+        <nav class="v2-header-actions" aria-label="مسیرهای سند">
+            <a href="{{ legacy_url }}">صفحه کامل پیش‌فاکتور و گردش کار</a>
+            <a href="{{ print_url }}" target="_blank" rel="noopener">چاپ نسخه جدید</a>
+        </nav>
+    </header>
+    {% if messages %}
+        <div class="v2-notices" aria-live="polite">
+        {% for message in messages %}
+            <div class="v2-notice {% if message.tags == 'error' %}is-error{% endif %}">{{ message }}</div>
+        {% endfor %}
+        </div>
+    {% endif %}
+
+    <section class="v2-summary" aria-label="خلاصه سند">
+        <div class="v2-stat"><small>مشتری</small><strong>{{ quote.customer_party_id|default:"—" }}</strong></div>
+        <div class="v2-stat"><small>واحد پول</small><strong>{{ quote.currency_ref|default:"—" }}</strong></div>
+        <div class="v2-stat"><small>تخفیف کل پیش‌فاکتور</small><strong><bdi>{{ quote.self_discount|default_if_none:0 }}%</bdi></strong></div>
+        <div class="v2-stat v2-stat-total"><small>مبلغ نهایی با مالیات</small><strong><bdi>{{ payment.4|floatformat:"-2g" }}</bdi></strong></div>
+    </section>
+
+    <section class="v2-guidance" aria-label="قوانین قیمت‌گذاری">
+        <strong>تخفیف کلی فقط روی ردیف‌های بدون قیمت مصوب مدیر اعمال می‌شود.</strong>
+        <p>در حالت مصوب مدیر، تخفیف دستی ردیف غیرفعال است. اگر مبلغ مصوب از قیمت مرجع کمتر باشد، اختلاف به‌عنوان تخفیف ردیف ثبت می‌شود؛ اگر بیشتر باشد، مشتری فقط مبلغ مصوب را می‌بیند و قیمت مرجع بدون تغییر باقی می‌ماند.</p>
+        <p>ردیف‌های تاریخی نسخه ۱ با قواعد قدیمی محاسبه می‌شوند و بدون تأیید شما تغییر نمی‌کنند.</p>
+    </section>
+    {% if not editable %}
+        <div class="v2-readonly" role="status">این پیش‌فاکتور در وضعیت فقط‌خواندنی است. برای گردش کار یا تغییر وضعیت به صفحه اصلی مراجعه کنید.</div>
+    {% endif %}
+    <section class="v2-items" aria-labelledby="v2-rows-title">
+        <div class="v2-section-heading">
+            <div><h2 id="v2-rows-title">ردیف‌های پیش‌فاکتور</h2><span>{{ rows|length }} ردیف</span></div>
+        </div>
+        {% for row in rows %}
+            <article class="v2-row {% if row.is_legacy %}is-legacy{% endif %}" data-v2-row>
+                <div class="v2-row-head">
+                    <div class="v2-row-name">
+                        <span class="v2-row-index">{{ forloop.counter }}</span>
+                        <div>
+                            <h3>{{ row.obj.goods_code_fk.part_number|default:row.obj.goods_name|default:"کالای بدون عنوان" }}</h3>
+                            <p>کد <bdi>{{ row.obj.goods_code }}</bdi> · تعداد <bdi>{{ row.obj.quantity|intcomma }}</bdi></p>
+                        </div>
+                    </div>
+                    <div class="v2-row-status">
+                        {% if row.is_legacy %}
+                            <span class="v2-status v2-status-legacy">نسخه ۱ · تاریخی</span>
+                        {% else %}
+                            <span class="v2-status">نسخه ۲</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="v2-row-bottom">
+                    <div><small>فی فعلی</small><strong><bdi>{{ row.price|default_if_none:"—"|floatformat:"-4g" }}</bdi></strong></div>
+                    <div><small>تخفیف ردیف</small><strong><bdi>{{ row.discount|floatformat:"-2g" }}</bdi></strong></div>
+                    <div><small>مبلغ ردیف با مالیات</small><strong><bdi>{{ row.final_total|floatformat:"-2g" }}</bdi></strong></div>
+                </div>
+                {% if editable %}
+                <details class="v2-editor" {% if not row.is_legacy and not row.obj.system_price %}open{% endif %}>
+                    <summary>{% if row.is_legacy %}بررسی و تبدیل آگاهانه به قیمت‌گذاری نسخه ۲{% else %}ویرایش قیمت‌گذاری ردیف{% endif %}<span aria-hidden="true">⌄</span></summary>
+                    <div class="v2-editor-body">
+                        {% if row.is_legacy %}
+                        <p class="v2-warning">این ردیف با قوانین نسخه قدیم ثبت شده است؛ از جمله تخفیف روی مصوب مدیر. مبلغ تاریخی تا زمانی که تبدیل را تأیید نکنید، تغییر نمی‌کند.</p>
+                        {% endif %}
+                        <form action="{% url 'micmod_base:quotation.v2' pk=quote.pk %}" method="post" class="v2-pricing-form" data-pricing-form>
+                            {% csrf_token %}
+                            <input type="hidden" name="row_id" value="{{ row.obj.pk }}">
+                            <input type="hidden" name="action" value="{% if row.is_legacy %}upgrade{% else %}save{% endif %}">
+                            <div class="v2-fields">
+                                <label class="v2-field">
+                                    <span>قیمت مرجع سیستم (از استعلام)</span>
+                                    <select name="system_price_index" data-system-select required>
+                                        <option value="">انتخاب قیمت از فهرست استعلام</option>
+                                        {% if not row.is_legacy and row.obj.system_price is not None %}
+                                        <option value="keep" data-price="{{ row.obj.system_price }}" selected>حفظ قیمت مرجع ثبت‌شده: {{ row.obj.system_price|floatformat:"-4g" }} · {{ row.selected_method }}</option>
+                                        {% endif %}
+                                        {% for option in row.options %}
+                                        <option value="{{ option.index }}" data-price="{{ option.price }}" {% if option.selected and row.is_legacy %}selected{% endif %}>{{ option.name }} — {{ option.price }} {% if option.updated %}· {{ option.updated }}{% endif %}{% if option.access == 'QUESTION' %} · نیازمند هماهنگی{% endif %}</option>
+                                        {% endfor %}
+                                    </select>
+                                    {% if not row.options %}<small class="v2-hint">گزینه‌ای در Snapshot این ردیف وجود ندارد. در ردیف‌های نسخه ۲ «دریافت استعلام» را بزنید.</small>{% endif %}
+                                </label>
+                                <div class="v2-field v2-field-mode">
+                                    <span>روش فروش</span>
+                                    <label class="v2-check">
+                                        <input type="checkbox" name="manager_approved" value="1" data-manager-toggle {% if row.is_manager %}checked{% endif %}>
+                                        استفاده از فی مصوب مدیر
+                                    </label>
+                                    <small>با انتخاب این گزینه، تخفیف کلی و تخفیف دستی این ردیف اعمال نمی‌شوند.</small>
+                                </div>
+                                <label class="v2-field" data-manager-field>
+                                    <span>قیمت مصوب مدیر</span>
+                                    <input type="number" step="0.0001" min="0" name="manager_price" value="{% if row.is_legacy and row.is_manager %}{{ row.obj.final_price }}{% elif row.obj.manager_approved_price is not None %}{{ row.obj.manager_approved_price }}{% endif %}" inputmode="decimal">
+                                </label>
+                                <label class="v2-field" data-discount-field>
+                                    <span>تخفیف دستی هر واحد</span>
+                                    <input type="number" step="0.0001" min="0" name="discount_per_item" value="{{ row.obj.discount_per_item|default_if_none:0 }}" {% if not can_discount %}readonly{% endif %} inputmode="decimal">
+                                </label>
+                            </div>
+                            <div class="v2-preview" data-preview aria-live="polite">
+                                <span>پیش‌نمایش فی پس از تخفیف</span>
+                                <strong data-preview-price>—</strong>
+                                <small data-preview-hint>قیمت مرجع را انتخاب کنید.</small>
+                            </div>
+                            {% if row.is_legacy %}
+                            <label class="v2-upgrade-check"><input type="checkbox" name="confirm_upgrade" value="1" required>
+                                می‌پذیرم که قانون مالی این ردیف به نسخه ۲ تبدیل شود و مبلغ آن ممکن است تغییر کند.
+                            </label>
+                            {% endif %}
+                            <div class="v2-action-row">
+                                <button class="v2-primary" type="submit">{% if row.is_legacy %}تبدیل به نسخه ۲ و ثبت{% else %}ثبت قیمت‌گذاری{% endif %}</button>
+                            </div>
+                        </form>
+                        {% if not row.is_legacy %}
+                        <form action="{% url 'micmod_base:quotation.v2' pk=quote.pk %}" method="post" class="v2-refresh-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="row_id" value="{{ row.obj.pk }}">
+                            <input type="hidden" name="action" value="refresh">
+                            <button type="submit">دریافت استعلام جدید از بازرگانی</button>
+                            <span>این عملیات فقط فهرست قیمت‌های قابل انتخاب را تازه می‌کند و قیمت مرجع قبلی را تغییر نمی‌دهد.</span>
+                        </form>
+                        {% endif %}
+                    </div>
+                </details>
+                {% endif %}
+            </article>
+        {% empty %}
+        <div class="v2-empty">هنوز ردیفی برای این پیش‌فاکتور ثبت نشده است.</div>
+        {% endfor %}
+    </section>
+    {% if editable %}
+    <section class="v2-add" aria-labelledby="v2-add-title">
+        <div>
+            <h2 id="v2-add-title">افزودن ردیف جدید</h2>
+            <p>حتی برای پیش‌فاکتورهای قدیمی، تمام ردیف‌های ایجادشده در این صفحه نسخه ۲ هستند.</p>
+        </div>
+        <form method="post" action="{% url 'micmod_base:quotation.v2' pk=quote.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            <label>کد کالا یا SKU<input type="text" name="sku" maxlength="40" required placeholder="کد کالا"></label>
+            <label>تعداد<input type="number" name="quantity" min="1" step="1" value="1" required></label>
+            <button type="submit" class="v2-primary">افزودن ردیف نسخه ۲</button>
+        </form>
+    </section>
+    {% endif %}
+    <footer class="v2-footer">
+        <p>محاسبات قطعی هنگام ذخیره در سرور انجام می‌شوند. پیش‌نمایش صرفاً جهت راهنمایی است.</p>
+        <a href="{{ legacy_url }}">بازگشت به نمای کامل و عملیات گردش کار</a>
+    </footer>
+</main>
+</body>
+</html>

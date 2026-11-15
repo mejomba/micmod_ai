@@ -1655,8 +1655,8 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
                         'goods_code': row.goods_code_fk.pk,  # FK → فقط pk بده
                         'part_number_show': row.goods_code_fk.part_number or "",
                         'quantity': row.quantity or 0,
-                        'price': row.final_price or 0,
-                        'discount_per_item': row.discount_per_item or 0,
+                        'price': (row.sepidar_fee if row.pricing_version == 2 else row.final_price) or 0,
+                        'discount_per_item': row.v2_unit_discount if row.pricing_version == 2 else (row.discount_per_item or 0),
                         'qi': row.pk,
                         'DELETE': True,
                         # ... سایر فیلدهای FactorItem
@@ -1842,8 +1842,8 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
                         {
                             'goods_code': row.goods_code_fk.pk,  # FK → فقط pk بده
                             'quantity': row.quantity,
-                            'price': row.final_price,
-                            'discount_per_item': row.discount_per_item,
+                            'price': row.sepidar_fee if row.pricing_version == 2 else row.final_price,
+                            'discount_per_item': row.v2_unit_discount if row.pricing_version == 2 else row.discount_per_item,
                             'part_number_show': row.goods_code_fk.part_number,
                         }
                         for row in qis
@@ -1868,8 +1868,8 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
                     "goods_code_id": r.goods_code_fk.pk,
                     "part_number_show": str(r.goods_code_fk.part_number) if r.goods_code_fk else "",
                     "quantity": num(r.quantity),
-                    "price": num(r.final_price),
-                    "discount_per_item": num(getattr(r, "discount_per_item", 0)),
+                    "price": num(r.sepidar_fee if r.pricing_version == 2 else r.final_price),
+                    "discount_per_item": num(r.v2_unit_discount if r.pricing_version == 2 else getattr(r, "discount_per_item", 0)),
                 }
                 for r in quotation.q.all()
             ],
@@ -1982,8 +1982,8 @@ def prefactor_json(request, pk):
                 "goods_id": r.goods_code_fk.pk,
                 "part_number_show": str(r.goods_code_fk.part_number) if r.goods_code_fk else "",
                 "quantity": num(r.quantity),
-                "price": num(r.final_price),
-                "discount_per_item": num(getattr(r, "discount_per_item", 0)),
+                "price": num(r.sepidar_fee if r.pricing_version == 2 else r.final_price),
+                "discount_per_item": num(r.v2_unit_discount if r.pricing_version == 2 else getattr(r, "discount_per_item", 0)),
                 "qi": r.pk,
             }
             for r in quotation.quotation.all()

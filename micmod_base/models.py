@@ -807,6 +807,17 @@ class QuotationItem(BaseModel):
     sepidar_id = models.BigIntegerField(null=True, blank=True)
     is_approved = models.BooleanField(default=False)
 
+    # Quotation pricing v2 is additive: all legacy fields and historical semantics remain.
+    pricing_version = models.PositiveSmallIntegerField(default=1, db_index=True, verbose_name="نسخه قیمت‌گذاری")
+    system_price = models.DecimalField(max_digits=22, decimal_places=4, null=True, blank=True, verbose_name="قیمت مرجع سیستم")
+    system_price_method = models.CharField(max_length=128, null=True, blank=True, verbose_name="روش قیمت مرجع")
+    system_price_snapshot = models.JSONField(null=True, blank=True, verbose_name="تصویر قیمت مرجع")
+    manager_approved_price = models.DecimalField(max_digits=22, decimal_places=4, null=True, blank=True, verbose_name="قیمت مصوب مدیر")
+    effective_unit_price = models.DecimalField(max_digits=22, decimal_places=4, null=True, blank=True, verbose_name="فی پس از تخفیف")
+    calculated_row_discount = models.DecimalField(max_digits=24, decimal_places=4, null=True, blank=True, verbose_name="تخفیف محاسباتی ردیف")
+    manager_price_difference = models.DecimalField(max_digits=22, decimal_places=4, null=True, blank=True, verbose_name="اختلاف فی مصوب با سیستم")
+    manager_positive_difference = models.DecimalField(max_digits=24, decimal_places=4, null=True, blank=True, verbose_name="عملکرد مثبت فروش کل ردیف")
+
     objects = QuotationItemManager()
 
     # def __str__(self):
@@ -1343,7 +1354,24 @@ class QuotationItem(BaseModel):
         self.price_json = price_list_json
         self.save()
 
+    @property
+    def v2_pricing(self):
+        if self.pricing_version != 2:
+            return None
+        if self.system_price is None:
+            return None
+        from .pricing_v2 import from_quotation_item
+        return from_quotation_item(self)
+
+    @property
+    def v2_unit_discount(self):
+        result = self.v2_pricing
+        return float(result.unit_discount / result.quantity) if result is not None else (self.discount_per_item or 0)
+
     def fee_(self):
+        if self.pricing_version == 2:
+            result = self.v2_pricing
+            return float(result.customer_unit_price) if result is not None else None
         # final_fee = max(self.final_price, self.final_price2)
         # if final_fee:
         #     return final_fee
@@ -1383,6 +1411,9 @@ class QuotationItem(BaseModel):
 
     @property
     def net_price(self):
+        if self.pricing_version == 2:
+            result = self.v2_pricing
+            return float(result.gross) if result is not None else 0
         try:
             return (self.fee_()) * self.quantity if self.pk and self.fee_() else 0
         except Exception as e:
@@ -1402,6 +1433,9 @@ class QuotationItem(BaseModel):
 
     @property
     def net_price_after_tax_discount(self):
+        if self.pricing_version == 2:
+            result = self.v2_pricing
+            return float(result.gross - result.official_adjustment) if result else 0
         x = self.net_price
         value = self.net_price
         if self.quotation.is_official:
@@ -1410,6 +1444,9 @@ class QuotationItem(BaseModel):
 
     @property
     def fee(self):
+        if self.pricing_version == 2:
+            result = self.v2_pricing
+            return float(result.effective_unit_price) if result is not None else 0
         return self.final_price or 0
         if self.quotation.is_official:
             official_value = settings.TAX_VALUE if self.quotation.official_value >= 12 else self.quotation.official_value
@@ -1428,6 +1465,9 @@ class QuotationItem(BaseModel):
 
     @property
     def sepidar_discount(self):
+        if self.pricing_version == 2:
+            result = self.v2_pricing
+            return float(result.row_discount / result.quantity) if result else 0
         if self.quotation.is_official:
             official_value = settings.TAX_VALUE if self.quotation.official_value >= 12 else self.quotation.official_value
             total_ = official_value / 100
@@ -1442,6 +1482,9 @@ class QuotationItem(BaseModel):
 
     @property
     def sepidar_fee(self):
+        if self.pricing_version == 2:
+            result = self.v2_pricing
+            return float(result.customer_unit_price) if result else 0
         fee_price = self.fee_()
         if fee_price is None:
             return 0
@@ -1450,10 +1493,16 @@ class QuotationItem(BaseModel):
 
     @property
     def row_price(self):
+        if self.pricing_version == 2:
+            result = self.v2_pricing
+            return float(result.gross) if result else 0
         return round_rial(float(self.net_price))
 
     @property
     def price(self):
+        if self.pricing_version == 2:
+            # Match the exact public/payment components after currency rounding.
+            return self.row_price - self.discount_value + self.tax
         try:
             if self.quotation.currency_ref.title == 'ریال':
                 return round_rial(int(self.net_price - self.discount_value + self.tax))
@@ -1478,6 +1527,11 @@ class QuotationItem(BaseModel):
 
     @property
     def tax(self):
+        if self.pricing_version == 2:
+            result = self.v2_pricing
+            if result is None:
+                return 0
+            return int(result.tax) if self.quotation.currency_ref.title_en == 'Rial' else float(result.tax)
         try:
             if self.quotation.is_official:
                 x = (self.net_price - sum(self.discount_tuple)) * (settings.TAX_VALUE / 100)
@@ -1494,6 +1548,13 @@ class QuotationItem(BaseModel):
 
     @property
     def discount_tuple(self):
+        if self.pricing_version == 2:
+            result = self.v2_pricing
+            if result is None:
+                return (0, 0, 0)
+            return tuple(float(value) for value in (
+                result.official_adjustment, result.document_discount, result.unit_discount,
+            ))
         try:
             net_price = self.net_price
             row_discount = self.quantity * self.discount_per_item
@@ -1506,6 +1567,11 @@ class QuotationItem(BaseModel):
 
     @property
     def discount_value(self):
+        if self.pricing_version == 2:
+            result = self.v2_pricing
+            if result is None:
+                return 0
+            return int(result.row_discount) if self.quotation.currency_ref.title_en == 'Rial' else float(result.row_discount)
         x = sum(self.discount_tuple)
         try:
             return int(x)
