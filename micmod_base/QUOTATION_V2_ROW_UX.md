@@ -125,3 +125,35 @@ changed. Responsive layout preserves the DOM column order on mobile.
 - Expanded product, price, secondary panels, input heights, whitespace and footers are more compact while retaining all fields.
 - Every row, including the last one and cloned rows, is sortable. The existing SortableJS instance and persisted QuotationItem.index field remain authoritative. Move the drag handle into the always-visible header; ArrowUp/ArrowDown on the handle also reorder and persist indexes. The hidden Django formset index and .counter identities remain untouched.
 - Formulas, workflows and database schema are unchanged.
+
+## Final compactness and empty-form fix (November 2026)
+
+1. Backend: BaseQIFormsetV2 checks for unused new rows before regular
+   formset and nested inquiry validation. It filters these placeholders
+   before invoking the original production save loop, preserving every
+   existing item and every partially entered (potentially invalid) row.
+2. Browser: the formset submit handler removes only trailing empty extras
+   with consecutive indices, adjusts TOTAL_FORMS, and recomputes the
+   correct count from real form prefixes. It deliberately retains a
+   blank first form when the document has zero rows because the production
+   view uses forms[0]; the backend does not save it.
+3. Product Select2: a row-scoped open handler measures its right edge and
+   anchors the dropdown there. Width is min(90% viewport, space to left
+   viewport margin). Position is recalculated on scroll/resize. This
+   applies only to the primary goods selector in the new quotation page.
+4. Actual opened-row layout: new quotation_v2_dense.css makes the SKU,
+   name and quantity share one 12-column row; availability and stock
+   buttons share the following row. Four financial totals are arranged
+   horizontally. Inquiries, optional fields and three secondary
+   accordions stay accessible without occupying full vertical blocks.
+5. No migration, existing quotation pricing or workflow change.
+
+Run: python manage.py test micmod_base.test_quotation_v2_compact
+     micmod_base.test_quotation_v2_row_ux micmod_base.test_pricing_v2_full
+
+Manual: create a quotation with a fully blank last row; save and confirm
+no empty QuotationItem exists, including when there are zero actual items.
+Add multiple items, leave the last one empty and verify TOTAL_FORMS and
+nested inquiries. Test a partially filled last item: it must not disappear
+silently and must show validation errors. Verify the Select2 menu in a
+scrolled viewport and compare the open row's actual rendered height.

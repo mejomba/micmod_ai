@@ -22,6 +22,58 @@ from .pricing_v2 import (
 from .quotation_v2_views import _fetch_prices, _select_reference
 
 
+# Values supplied automatically by price widgets/Sortable must not make an
+# otherwise empty trailing extra form count as a real quotation item.
+# Only meaningful user-entered content makes an unsaved row active.
+_MEANINGFUL_ITEM_FIELDS = (
+    "goods_code", "itemid", "quantity", "customer_goods_code",
+    "customer_goods_name", "goods_code_alt", "description",
+    "sales_description", "price_target", "pre_paid_amount",
+    "assigned_trade_user", "assigned_trade_user2", "supply_date",
+    "need_local_price_inquiry", "need_foreign_price_inquiry",
+    "selected_price_code", "customer_request_item", "goods_name",
+    "item_in_china", "task_start", "task_start2", "has_delay",
+)
+_MEANINGFUL_NESTED_FIELDS = (
+    "description", "supplier", "price", "quantity",
+    "need_local_price_inquiry", "need_foreign_price_inquiry",
+)
+
+
+def is_unused_quotation_extra(form):
+    """Whether this *new* bound row is merely the empty extra-row placeholder.
+
+    Do not use form.has_changed(): automatic index/default/price fields can
+    change without any item actually having been entered. A field that the
+    user did enter (including a note on the nested inquiry) must be validated
+    rather than silently discarded.
+    """
+    if form.instance.pk or not form.is_bound:
+        return False
+    data = form.data
+    for name in _MEANINGFUL_ITEM_FIELDS:
+        value = data.get(f"{form.prefix}-{name}", "")
+        if str(value).strip() and str(value).strip().lower() not in ("false", "off"):
+            return False
+    nested = getattr(form, "nested", None)
+    if nested is not None:
+        prefix = nested.prefix + "-"
+        for key in data:
+            if not key.startswith(prefix):
+                continue
+            if key.rsplit("-", 1)[-1] not in _MEANINGFUL_NESTED_FIELDS:
+                continue
+            value = str(data.get(key, "")).strip()
+            # Nested price/quantity fields may be populated with zero by the
+            # legacy AJAX initializer even when the extra row has no item.
+            if key.rsplit("-", 1)[-1] in ("price", "quantity") and value in ("0", "0.0", "0.00"):
+                continue
+            if value and value.lower() not in ("false", "off"):
+                return False
+    return True
+
+
+
 class QuotationItemFormV2(QuotationItemForm2):
     """Legacy fields/constraints plus independent manager and system pricing."""
     v2_system_method = forms.CharField(
@@ -50,9 +102,41 @@ class QuotationItemFormV2(QuotationItemForm2):
                 self.initial["v2_system_method"] = self.instance.system_price_method or ""
                 self.initial["v2_manager_price"] = self.instance.manager_approved_price
 
+    def has_changed(self):
+        if is_unused_quotation_extra(self):
+            return False
+        return super().has_changed()
+
 
 class BaseQIFormsetV2(BaseQIFormset):
-    """Preserve the nested legacy formset and validate v2 monetary input early."""
+    """Preserve nested inquiry forms but exclude empty new rows at every stage."""
+
+    def is_valid(self):
+        # Invoke Django's own BaseInlineFormSet validation, bypassing only the
+        # BaseQIFormset override which validates *all* nested inquiries,
+        # including the unused placeholder. Keep validation for active rows.
+        valid = super(BaseQIFormset, self).is_valid()
+        if self.is_bound:
+            for form in self.forms:
+                if is_unused_quotation_extra(form):
+                    continue
+                if hasattr(form, "nested"):
+                    nested_valid = form.nested.is_valid()
+                    valid = valid and nested_valid
+        return valid
+
+    def save(self, commit=True, request=None, related_name_fk=None):
+        # Legacy BaseQIFormset.save unconditionally calls form.save() on EVERY
+        # extra form; that can create empty quotation items. Exclude placeholders
+        # from the save loop while preserving original nested inquiry handling.
+        forms = self.forms
+        self.forms = [f for f in forms if not is_unused_quotation_extra(f)]
+        try:
+            return super().save(
+                commit=commit, request=request, related_name_fk=related_name_fk,
+            )
+        finally:
+            self.forms = forms
 
     def clean(self):
         super().clean()
@@ -60,6 +144,8 @@ class BaseQIFormsetV2(BaseQIFormset):
             return
 
         for form in self.forms:
+            if is_unused_quotation_extra(form):
+                continue
             if not form.cleaned_data or form.cleaned_data.get("DELETE"):
                 continue
 

@@ -321,6 +321,8 @@
             panel.addEventListener("toggle", () => syncDetailToggle(row));
         });
 
+        attachWideGoodsDropdown(row);
+
         // The legacy Select2 AJAX/search handlers remain authoritative.
         // The dropdown has the row as its dropdownParent, so raise this row
         // above sticky bars and neighbouring cards only while it is open.
@@ -346,6 +348,152 @@
         syncDetailToggle(row);
         syncCollapsedSummaries(row);
         scheduleHeading(row);
+    }
+
+
+
+    function attachWideGoodsDropdown(row) {
+        if (!window.jQuery) return;
+        const $row = window.jQuery(row);
+        const field = row.querySelector(".qv3-product-selector .goods_code");
+        if (!field) return;
+        let dropdown = null;
+        let rafId = null;
+        let observing = false;
+
+        function positionDropdown() {
+            if (!dropdown || !row.contains(dropdown)) return;
+            const selection = field.querySelector(".select2-container") || field;
+            const rect = selection.getBoundingClientRect();
+            const viewportWidth = document.documentElement.clientWidth;
+            const viewportHeight = window.innerHeight;
+            const gap = 10;
+            const right = Math.max(gap, viewportWidth - rect.right);
+            const width = Math.max(0, Math.min(viewportWidth * 0.9, viewportWidth - right - gap));
+            const panelHeight = Math.min(320, dropdown.getBoundingClientRect().height || 250);
+            const below = Math.max(0, viewportHeight - rect.bottom - gap);
+            const above = Math.max(0, rect.top - gap);
+            const openAbove = below < Math.min(230, panelHeight) && above > below;
+            const top = openAbove ? Math.max(gap, rect.top - panelHeight - 3) : rect.bottom + 3;
+
+            dropdown.style.setProperty("--qv5-goods-top", Math.round(top) + "px");
+            dropdown.style.setProperty("--qv5-goods-right", Math.round(right) + "px");
+            dropdown.style.setProperty("--qv5-goods-width", Math.round(width) + "px");
+            dropdown.style.setProperty("--qv5-goods-max-height",
+                Math.round(Math.max(110, openAbove ? above : below)) + "px");
+        }
+
+        function schedulePosition() {
+            if (rafId !== null) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => {
+                rafId = null;
+                positionDropdown();
+            });
+        }
+
+        function stop() {
+            if (dropdown) {
+                dropdown.classList.remove("qv5-wide-goods-dropdown");
+            }
+            dropdown = null;
+            if (observing) {
+                window.removeEventListener("resize", schedulePosition);
+                document.removeEventListener("scroll", schedulePosition, true);
+                observing = false;
+            }
+            if (rafId !== null) {
+                cancelAnimationFrame(rafId);
+                rafId = null;
+            }
+        }
+
+        $row.on("select2:open", ".qv3-product-selector .goods_code", () => {
+            // dropdownParent is the current row; Select2 creates an absolute
+            // dropdown container inside it. The v2-only CSS switches that
+            // container to viewport-fixed positioning using these variables.
+            dropdown = Array.from(row.querySelectorAll(".select2-container--open"))
+                .find(el => el.querySelector(".select2-dropdown")) || null;
+            if (!dropdown) return;
+            dropdown.classList.add("qv5-wide-goods-dropdown");
+            positionDropdown();
+            if (!observing) {
+                window.addEventListener("resize", schedulePosition);
+                document.addEventListener("scroll", schedulePosition, true);
+                observing = true;
+            }
+        });
+        $row.on("select2:close", ".qv3-product-selector .goods_code", stop);
+    }
+
+    function isEmptyExtraRow(row) {
+        // Only exclude *unused* new items. Do not drop a partially completed
+        // row: server validation must still report its missing requirements.
+        if (row.querySelector('input[name$="-id"]')?.value?.trim()) return false;
+        const meaningful = [
+            "goods_code", "itemid", "quantity", "customer_goods_code",
+            "customer_goods_name", "goods_code_alt", "description",
+            "sales_description", "price_target", "pre_paid_amount",
+            "assigned_trade_user", "assigned_trade_user2", "supply_date",
+            "need_local_price_inquiry", "need_foreign_price_inquiry",
+            "selected_price_code", "customer_request_item", "goods_name",
+            "item_in_china", "task_start", "task_start2", "has_delay"
+        ];
+        const prefix = row.dataset.qv3Row + "-";
+        for (const suffix of meaningful) {
+            const field = Array.from(row.querySelectorAll("[name]"))
+                .find(el => el.name === prefix + suffix);
+            if (!field) continue;
+            if (field.type === "checkbox") {
+                if (field.checked) return false;
+            } else if (String(field.value || "").trim() &&
+                       !["false", "off"].includes(String(field.value).trim().toLowerCase())) {
+                return false;
+            }
+        }
+        const nestedPrefix = "qir-" + row.dataset.qv3Row + "-";
+        for (const field of row.querySelectorAll("[name]")) {
+            if (!field.name.startsWith(nestedPrefix)) continue;
+            if (!/(?:-description|-supplier|-price|-quantity)$/.test(field.name)) continue;
+            const value = String(field.value || "").trim();
+            if (/(?:-price|-quantity)$/.test(field.name) && ["0", "0.0", "0.00"].includes(value)) {
+                continue; // legacy initializer's numeric zero is not user data
+            }
+            if (field.type === "checkbox" ? field.checked : value) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function trimUnusedExtraRowsBeforeSubmit() {
+        const total = document.querySelector('input[name$="-TOTAL_FORMS"]');
+        const initial = document.querySelector('input[name$="-INITIAL_FORMS"]');
+        if (!total || !initial) return;
+
+        const prefix = total.name.slice(0, -"-TOTAL_FORMS".length);
+        let count = Number(total.value);
+        const initialCount = Number(initial.value);
+        if (!Number.isInteger(count) || !Number.isInteger(initialCount)) return;
+        // Some workflow submit buttons are not handled by the legacy formset
+        // button-click counter. Recompute the highest real prefix index so
+        // dynamically added items are never lost, even after reordering.
+        const indices = Array.from(list.querySelectorAll(".qv3-item"))
+            .map(el => el.dataset.qv3Row || "")
+            .filter(prefixValue => prefixValue.startsWith(prefix + "-"))
+            .map(prefixValue => Number(prefixValue.slice(prefix.length + 1)))
+            .filter(n => Number.isInteger(n) && n >= 0);
+        count = Math.max(initialCount, 1, ...indices.map(n => n + 1));
+        // Keep a single placeholder when there are no other forms: production
+        // core/views.py still reads self.formset.forms[0] to detect nested forms.
+        const minimum = Math.max(1, initialCount);
+        while (count > minimum) {
+            const row = Array.from(list.querySelectorAll(".qv3-item"))
+                .find(el => el.dataset.qv3Row === prefix + "-" + (count - 1));
+            if (!row || !isEmptyExtraRow(row)) break;
+            row.remove();
+            count -= 1;
+        }
+        total.value = String(count);
     }
 
     const attachAll = () => {
@@ -389,8 +537,10 @@
         });
     });
 
-    // Standard formset submit does the actual save. Never intercept form POST.
+    // Preserve contiguous parent formset indices after trimming *only* the
+    // unused trailing extra(s). Server still guards against empty placeholders.
     document.querySelector("#main-form")?.addEventListener("submit", () => {
         list.querySelectorAll(".qv3-item").forEach(syncHeading);
+        trimUnusedExtraRowsBeforeSubmit();
     }, { capture: true });
 })();
