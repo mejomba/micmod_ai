@@ -200,8 +200,12 @@ class PricingV2Compatibility(SimpleTestCase):
 
     def test_v2_editor_has_independent_route_and_template(self):
         path = reverse("micmod_base:quotation.v2", kwargs={"pk": 17})
-        self.assertEqual(resolve(path).func, quotation_v2_editor)
+        from micmod_base.quotation_v2_full import QuotationsV2FullView
+        self.assertIs(resolve(path).func.view_class, QuotationsV2FullView)
+        pricing_path = reverse("micmod_base:quotation.v2.pricing", kwargs={"pk": 17})
+        self.assertEqual(resolve(pricing_path).func, quotation_v2_editor)
         self.assertNotEqual(path, reverse("micmod_base:quotations.view", kwargs={"pk": 17}))
+        self.assertIsNotNone(get_template("micmod-base/quotation/v2/full.html"))
         self.assertIsNotNone(get_template("micmod-base/quotation/v2/editor.html"))
         self.assertIsNotNone(get_template("micmod-base/quotation/view.html"))
         self.assertIsNotNone(get_template("micmod-base/quotation/view-print-raw.html"))

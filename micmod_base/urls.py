@@ -3,6 +3,7 @@ from django.urls import path, include
 from .views import *
 from factor.modern_print import quotation_modern_print
 from .quotation_v2_views import quotation_v2_editor
+from .quotation_v2_full import QuotationsV2FullView
 
 from rest_framework.routers import DefaultRouter
 
@@ -55,7 +56,9 @@ urlpatterns = [
     path('quotationitem/inquiry/report/', inquiry_report, name='inquiry_report'),
     path('quotation/print/customer/<int:id>/', print_view, name='print_customer'),
     path('quotation/print/modern/<int:id>/', quotation_modern_print, name='quotation.print.modern'),
-    path('quotation/v2/<int:pk>/', quotation_v2_editor, name='quotation.v2'),
+    path('quotation/v2/create/', QuotationsV2FullView.as_view(), name='quotation.v2.create'),
+    path('quotation/v2/<int:pk>/', QuotationsV2FullView.as_view(), name='quotation.v2'),
+    path('quotation/v2/pricing/<int:pk>/', quotation_v2_editor, name='quotation.v2.pricing'),
     path('ajax/save_parent_item/', save_parent_item, name='save_parent_item'),
     path('sale_user_report/', sale_user_report, name='sale_user_report'),
     path('repeated/goods_code/', repeated_goods_code_view, name='repeated_goods_code'),

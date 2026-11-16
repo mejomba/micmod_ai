@@ -9,15 +9,21 @@ QuotationItem and uses a separate price editor.
 1. Deploy code and run `python manage.py migrate micmod_base`.
 2. Existing rows receive `pricing_version=1` (including historic manager-approved
    prices with a discount). **No price or discount is migrated or recalculated.**
-3. Open `/micmod_base/quotation/v2/<quotation_id>/` using the current project's
-   URL prefix. There is also a link on the original quotation screen.
-4. Add any new rows via this editor: they are created with `pricing_version=2`,
-   even if the parent quotation contains version-1 rows.
-5. Refresh the inquiry on a v2 row, select the reference, then save. The server
-   selects the reference amount from its persisted snapshot (not the submitted
-   amount).
-6. Version-1 rows show their legacy financial totals. Upgrading one requires
-   explicitly selecting a system reference and checking the acknowledgement.
+3. For a **complete** new quotation, open `/micmod_base/quotation/v2/create/`.
+   For editing, open `/micmod_base/quotation/v2/<quotation_id>/`.
+   Both screens use QuotationsView's existing workflow/formset/comment/payment,
+   inquiry and Sepidar paths, with an updated layout.
+4. Add new item rows using the same formset toolbar. The new rows are
+   `pricing_version=2`, even when the parent contains old `pricing_version=1`
+   entries. Existing rows never change version automatically.
+5. Use the row's regular price-method selector and, for a manager-priced row,
+   choose an **independent system-price reference** and enter manager price.
+   Server-side validation queries the current pricing endpoint and discards
+   any untrusted posted price. Manager rows ignore both commercial discounts.
+6. Version-1 rows show their legacy financial totals. To upgrade a legacy row
+   explicitly, use the optional `/micmod_base/quotation/v2/pricing/<id>/`
+   reference editor and check its confirmation box. This route is not the
+   complete quotation view.
 7. Verify with:
    `python manage.py test micmod_base.test_pricing_v2 factor.test_modern_print`
 
@@ -73,3 +79,16 @@ Verify quotation-to-Sepidar totals, quote-to-factor totals, and BI queries using
 a mix of v1, v2 regular, v2 manager-below, and v2 manager-above rows. Do not
 enable production rollout without running migrations and end-to-end integration
 tests with the actual Sepidar and database environment.
+
+## Full screen compatibility
+
+The complete v2 screen reuses the production QuotationForm, an inherited
+QuotationItemForm2, BaseQIFormset (including InquiryResult nested formsets),
+and the production QuotationsView workflow. Both editing and creation use the
+new full template. The old pricing-only editor remains under
+`quotation/v2/pricing/<id>/` for explicit legacy upgrades.
+
+New v2 source selections are revalidated against the server-generated inquiry
+list before any workflow commit. Unpriced items can be saved in draft/inquiry
+states, but cannot progress beyond inquiry or receive a manager price without
+a system reference. No new database migration is required for the full UI.

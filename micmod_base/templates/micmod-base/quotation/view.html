@@ -29,7 +29,7 @@
                     خروجی اکسل
                 </button>
                 <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="cursor-pointer border border-primary rounded text-black p-2 bg-light-primary">بازگشت به لیست</a>
-                {% if form.instance.pk %}<a href="{% url 'micmod_base:quotation.v2' pk=form.instance.pk %}" class="cursor-pointer border border-primary rounded text-black p-2 bg-light-primary">قیمت‌گذاری جدید (نسخه ۲)</a>{% endif %}
+                {% if form.instance.pk %}<a href="{% url 'micmod_base:quotation.v2' pk=form.instance.pk %}" class="cursor-pointer border border-primary rounded text-black p-2 bg-light-primary">پیش‌فاکتور کامل (نسخه ۲)</a>{% endif %}
                 <a class="border border-primary rounded text-black p-2 bg-light-primary cursor-pointer" href="{% url 'factor:factor.view' %}?q_id={{ form.instance.pk }}" target="_blank">ایجاد فاکتور</a>
                 <span class="tooltip_">
                     <a class="fw-bold" href="{% url 'micmod_base:quotations.create' %}" target="_blank">

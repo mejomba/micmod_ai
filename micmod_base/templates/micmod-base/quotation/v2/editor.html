@@ -78,7 +78,7 @@
                         {% if row.is_legacy %}
                         <p class="v2-warning">این ردیف با قوانین نسخه قدیم ثبت شده است؛ از جمله تخفیف روی مصوب مدیر. مبلغ تاریخی تا زمانی که تبدیل را تأیید نکنید، تغییر نمی‌کند.</p>
                         {% endif %}
-                        <form action="{% url 'micmod_base:quotation.v2' pk=quote.pk %}" method="post" class="v2-pricing-form" data-pricing-form>
+                        <form action="{% url 'micmod_base:quotation.v2.pricing' pk=quote.pk %}" method="post" class="v2-pricing-form" data-pricing-form>
                             {% csrf_token %}
                             <input type="hidden" name="row_id" value="{{ row.obj.pk }}">
                             <input type="hidden" name="action" value="{% if row.is_legacy %}upgrade{% else %}save{% endif %}">
@@ -128,7 +128,7 @@
                             </div>
                         </form>
                         {% if not row.is_legacy %}
-                        <form action="{% url 'micmod_base:quotation.v2' pk=quote.pk %}" method="post" class="v2-refresh-form">
+                        <form action="{% url 'micmod_base:quotation.v2.pricing' pk=quote.pk %}" method="post" class="v2-refresh-form">
                             {% csrf_token %}
                             <input type="hidden" name="row_id" value="{{ row.obj.pk }}">
                             <input type="hidden" name="action" value="refresh">
@@ -150,7 +150,7 @@
             <h2 id="v2-add-title">افزودن ردیف جدید</h2>
             <p>حتی برای پیش‌فاکتورهای قدیمی، تمام ردیف‌های ایجادشده در این صفحه نسخه ۲ هستند.</p>
         </div>
-        <form method="post" action="{% url 'micmod_base:quotation.v2' pk=quote.pk %}">
+        <form method="post" action="{% url 'micmod_base:quotation.v2.pricing' pk=quote.pk %}">
             {% csrf_token %}
             <input type="hidden" name="action" value="add">
             <label>کد کالا یا SKU<input type="text" name="sku" maxlength="40" required placeholder="کد کالا"></label>

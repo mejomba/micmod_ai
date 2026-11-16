@@ -308,7 +308,7 @@ def quotation_v2_editor(request, pk):
             messages.error(request, str(exc))
         except (ValueError, TypeError, OverflowError):
             messages.error(request, "اطلاعات ارسال‌شده معتبر نیست.")
-        return redirect("micmod_base:quotation.v2", pk=pk)
+        return redirect("micmod_base:quotation.v2.pricing", pk=pk)
 
     rows = _view_rows(quote)
     return render(request, "micmod-base/quotation/v2/editor.html", {
