@@ -5,480 +5,460 @@
 {% load more_tags %}
 {% load accounts_tag %}
 
-<div class="card item qv2-item p-0 my-2 {% if not forloop.last %} sortable-item {% endif %}" dir="rtl" data-qv2-version="{% if form_s.instance.pk %}{{ form_s.instance.pricing_version }}{% else %}2{% endif %}" data-qv2-system-price="{{ form_s.instance.system_price|default_if_none:'' }}" data-qv2-system-method="{{ form_s.instance.system_price_method|default_if_none:'' }}">
-{% if form_s.errors %}
-    <div class="position-fixed fixed-top w-50 p-3 mx-auto bg-light-danger text-danger bold">خطا در ردیف های پیش فاکتور !</div>
-<div class="bg-light-danger"><span>row ({{ forloop.counter }}) {{ form_s.errors }}</span></div>
-{% endif %}
-{% if nested.errors %}
-    <div class="position-fixed fixed-top w-50 p-3 mx-auto bg-light-danger text-danger bold">خطا در ردیف های پیش فاکتور !</div>
-<div class="bg-secondary"><span>row ({{ forloop.counter }})</span> {{ nested.errors }}</div>
-{% endif %}
-    {% for hidden in form_s.hidden_fields %}
-        {{ hidden }}
-    {% endfor %}
-{{ nested_manage.management_form }}
-{{ nested_manage.non_form_errors }}
-    {% for h in nested.hidden_fields %}
-        {{ h }}
-    {% endfor %}
-    <div class="card-body p-0">
-        <div class="ribbon ribbon-start ribbon-clip" style="top: 13px">
-            <div class="ribbon-label text-black px-6 d-flex justify-content-between" style="padding-bottom: 2px; padding-top: 2px; width: 10%">
-            {% with form_s.instance.not_over as not_over %}
-                <span class="me-2">
-                {% if not_over.0 %}
-                    انبار کامل
-                {% elif not_over.1 %}
-                    سفارش کامل
-                {% elif not_over.2 %}
-                    انبار + سفارش (کامل)
-                {% elif not_over.3 %}
-                    انبار ناقص
-                {% elif not_over.4 %}
-                    سفارش ناقص
-                {% elif not_over.5 %}
-                    انبار + سفارش (ناقص)
-                {% elif not_over.6 %}
-                    بدون فاکتور
-                {% endif %}
-                </span>
-                <span class="ribbon-inner
-                {% if not_over.0 %}
-                bg-success
-                {% elif not_over.1 %}
-                bg-light-success
-                {% elif not_over.2 %}
-                bg-light-success
-                {% elif not_over.3 %}
-                bg-light-warning
-                {% elif not_over.4 %}
-                bg-light-danger
-                {% elif not_over.5 %}
-                bg-light-danger
-                {% elif not_over.6 %}
-                bg-white
-                {% endif %}">
-                </span>
-                {% if not not_over.6 %}
-                    <i class="ki-outline ki-information-2 fs-3 text-black cursor-pointer tooltip_">
-                <span class="tooltiptext-fit">
-                    <table class="table table-stripe  table-dar m-0">
-                        <thead>
-                          <tr class="bold">
-                            <th scope="col" class="font-size-13">فاکتور</th>
-                            <th scope="col" class="font-size-13">سفارش</th>
-                            <th scope="col" class="font-size-13">تعداد</th>
-                            <th scope="col" class="font-size-13">تقریب زمان تحویل</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                        {% for supply_location in not_over.7 %}
-                        <tr class="border-top">
-                        <th scope="row">{{ supply_location.0 }}</th>
-{#                            <td>{{ supply_location.0 }}</td>#}
-                            <td>{{ supply_location.1 }}</td>
-                            <td>{{ supply_location.2 }}</td>
-                            <td>{{ supply_location.3 }}</td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                      </table>
+{# Full row redesign. Preserve field names, nested inline formset, and legacy JS hooks. #}
+<div class="card item qv2-item qv3-item {% if not forloop.last %}sortable-item{% endif %}"
+     dir="rtl"
+     data-qv2-version="{% if form_s.instance.pk %}{{ form_s.instance.pricing_version }}{% else %}2{% endif %}"
+     data-qv2-system-price="{{ form_s.instance.system_price|default_if_none:'' }}"
+     data-qv2-system-method="{{ form_s.instance.system_price_method|default_if_none:'' }}"
+     data-qv3-row="{{ form_s.prefix }}">
 
-                </span>
-                </i>
-                {% endif %}
-            {% endwith %}
-            </div>
-        </div>
-        <div class="row-counter rounded d-flex align-items-center question-btn active-form" style="padding-right: 10%">
-            <span class="counter">{{ forloop.counter }}</span>
-            <div class="col-1 col ms-4">
-                <span class="me-2">کد کالا:</span>
-                <span class="code_h" name="code_h">{{ form_s.instance.goods_code }}</span>
-            </div>
-            <div class="col-5 col">
-                <span class="me-2">نام کالا:</span>
-                <span name="name_h">{{ form_s.instance.goods_name }}</span>
-            </div>
-            <div class="col-1 col">
-                <span class="me-2">تعداد:</span>
-                <span name="quantity_h">{{ form_s.instance.quantity }}</span>
-            </div>
-            <div class="col-2 col">
-                <span class="me-2">قیمت واحد:</span>
-                <span name="unit-price_h">{{ form_s.instance.goods_q_last_price }}</span>
-            </div>
-            <div class="col-3 col">
-                <span class="me-2">قیمت کل:</span>
-                {% if form_s %}
-                    <span name="total-price_h">{{ form_s.instance.goods_q_last_price|mul:form_s.instance.quantity|intcomma }} </span>
-                {% endif %}
-            </div>
-            {% if form_s.has_alt_code %}
-                <span class="bg-info text-white px-2 py-1 rounded position-absolute font-size-12 me-8" style="left: 0">آیتم مشابه دارد</span>
-            {% endif %}
-        </div>
-        <div class="row answer m-0">
-            <div class="col-lg-2 rounded" style="border-bottom: 1px solid #f1f1f2">
-                <div class="d-flex">
-                    <div class="w-50 mt-3">{% render_field_by_order form_s form_s.quantity label='on-border' %}</div>
-                    <div class="w-50 replace-digits">
-                        <label class="card-title-desc text-center bold ms-1"
-                               data-key="stock_amount">موجودی:</label>
-                        {% render_field_by_order nested nested.stock_amount nested.stock_amount_res no_input=True %}
+    {% if form_s.errors or nested.errors or nested_manage.non_form_errors %}
+    <div class="qv3-row-errors" role="alert">
+        <strong><i class="ki-outline ki-information-4"></i> خطا در اطلاعات این ردیف</strong>
+        {% if form_s.errors %}<div>{{ form_s.errors }}</div>{% endif %}
+        {% if nested.errors %}<div>{{ nested.errors }}</div>{% endif %}
+        {% if nested_manage.non_form_errors %}<div>{{ nested_manage.non_form_errors }}</div>{% endif %}
+    </div>
+    {% endif %}
 
-                    </div>
-                    <div>{% render_field_by_order nested nested.description label='on-border' %}</div>
-                </div>
-                <div class="d-flex gap-2 mb-1 d-non">
-                    <span> تعداد در بسته: </span>
-                    <span id="moq">{{ form_s.instance.goods_code_fk.batch_count|floatformat:"-2g"|default_if_falsy:'-' }}</span>/
-                    <span id="moq_box">{{ form_s.instance.goods_code_fk.count_in_box|floatformat:"-2g"|default_if_falsy:'-' }}</span>/
-                    <span id="moq_main_box">{{ form_s.instance.goods_code_fk.count_in_main_box|floatformat:"-2g"|default_if_falsy:'-' }}</span>
-                </div>
-                <div class="d-flex gap-2">
-                    <span>اولویت: </span>
-                    <span>{{ form_s.instance.goods_code_fk.items_raked.first }}</span>
-                </div>
-                <div class="d-flex mt-4">
-                    <div class="w-35">
-{#                        <input value="{{ form_s.instance.customer_goods_code.sku }}" placeholder="کد کالا مشتری" type="text" name="quotation-{{ forloop.counter0 }}-customer_goods_code" maxlength="100" class="form-control narrow-input font-size-12" id="id_quotation-{{ forloop.counter0 }}-customer_goods_code">#}
-                        {% render_field_by_order form_s form_s.customer_goods_code label='on-border' %}
-                    </div>
-                    <div class="w-65">
-                        {% render_field_by_order form_s form_s.customer_goods_name label='on-border' margin_b=1 %}
-                    </div>
-                </div>
-                <div>
-                </div>
-                {% if form_s.instance.need_local_price_inquiry %}
-                    <span class="position-absolute" data-bs-toggle="tooltip" data-bs-placement="top" title="{% get_inquiry_result_description quotation_item=form_s.instance %}" style="bottom: 0; right: 30px;">
-                    <i class="ki-outline ki-message-notif fs-2x"></i>
-                    </span>
-                {% endif %}
+    {# These must remain inside the submitted document form, even if details are collapsed. #}
+    {% for hidden in form_s.hidden_fields %}{{ hidden }}{% endfor %}
+    {{ nested_manage.management_form }}
+    {% for hidden in nested.hidden_fields %}{{ hidden }}{% endfor %}
 
-                <div class="mb-1">
-                    <input value="{{ form_s.instance.price_target|default_if_none:"" }}" type="text" placeholder="تارگت قیمت" name="quotation-{{ forloop.counter0 }}-price_target" class="form-control narrow-input" id="id_quotation-{{ forloop.counter0 }}-price_target">
-{#                    {% render_field_by_order form_s form_s.price_target label='on-border' %}#}
-                </div>
-                {% get_comment_user_list form_s request.user %}
-{#                {% get_payment_list form_s request.user %}#}
-            </div>
-            <div class="col-lg-3 p-0" style="border-bottom: 1px solid #f1f1f2">
-                <div class="d-flex px-1 align-items-start">
-                    <div class="w-25 mt-3 on-border">
-                        {% if form_s.enable and not form_s.goods_code.field.disabled %}
-                            <div class="select2 goods_code " name="goods_code"></div>
-                            <label>کد کالا</label>
-                            {% if form_s.instance.old_goods_code %}
-                                <small style="font-size: 0.7rem;">{{ form_s.instance.old_goods_code }} ({{ form_s.instance.item_editor_user }})</small>
-                                <br>
-                                <small style="font-size: 0.6rem;">{{ form_s.instance.old_goods_name }}</small>
-                            {% endif %}
-                        {% else %}
-                            <label>کد کالا</label>
-                            <div class="mt-4 select2-selection__rendered">
-                            {{ form_s.instance.goods_code }}
-                            {% if form_s.instance.old_goods_code %}
-                                <small>{{ form_s.instance.old_goods_code }} ({{ form_s.instance.item_editor_user }})</small>
-                                <br>
-                                <small style="font-size: 0.6rem;">{{ form_s.instance.old_goods_name }}</small>
-                            {% endif %}
-                            </div>
+    <div class="card-body qv3-card-body">
+        <div class="row-counter question-btn active-form qv3-row-header"
+             role="button" tabindex="0" aria-expanded="true"
+             aria-label="باز و بسته کردن جزئیات ردیف {{ forloop.counter }}">
+            <div class="qv3-row-identity">
+                <span class="counter qv3-sequence">{{ forloop.counter|default:"۱" }}</span>
+                <div class="qv3-row-heading">
+                    <div class="qv3-row-overline">
+                        <span class="qv3-row-kind">ردیف پیش‌فاکتور</span>
+                        <span class="qv3-overline-sep" aria-hidden="true">/</span>
+                        <span class="code_h qv3-sku" name="code_h" dir="ltr">{{ form_s.instance.goods_code|default:"کد انتخاب نشده" }}</span>
+                        {% if form_s.instance.pk and form_s.instance.pricing_version != 2 %}
+                            <span class="qv3-version-label">قیمت‌گذاری تاریخی</span>
                         {% endif %}
                     </div>
-                    <div class="w-75">
-                        <div class="d-flex justify-content-end">
-                            {% render_field_by_order form_s form_s.goods_name %}
-                                                        <div class="card-text bold w-75 rounded" data-key="goods_name"> نام کالا</div>
-                            <div class="w-25 bg-light-danger text-center" onclick="hide_show_goods_alt(this)"
-                                 data-key="show_alt">مشابه
+                    <strong class="qv3-product-title" name="name_h">{{ form_s.instance.goods_code_fk.part_number|default:form_s.instance.goods_name|default:"برای شروع، کالا را انتخاب کنید" }}</strong>
+                    <div class="qv3-row-chips">
+                        {% with form_s.instance.not_over as fulfillment %}
+                            {% if fulfillment.0 %}<span class="qv3-chip is-success">انبار کامل</span>
+                            {% elif fulfillment.1 %}<span class="qv3-chip is-success">سفارش کامل</span>
+                            {% elif fulfillment.2 %}<span class="qv3-chip is-success">انبار و سفارش کامل</span>
+                            {% elif fulfillment.3 %}<span class="qv3-chip is-attention">انبار ناقص</span>
+                            {% elif fulfillment.4 %}<span class="qv3-chip is-attention">سفارش ناقص</span>
+                            {% elif fulfillment.5 %}<span class="qv3-chip is-attention">تأمین ناقص</span>
+                            {% else %}<span class="qv3-chip">بدون تخصیص</span>{% endif %}
+                        {% endwith %}
+                        {% if form_s.instance.need_local_price_inquiry %}
+                            <span class="qv3-chip is-info">استعلام داخلی</span>
+                        {% endif %}
+                        {% if form_s.instance.need_foreign_price_inquiry %}
+                            <span class="qv3-chip is-info">استعلام خارجی</span>
+                        {% endif %}
+                        {% if form_s.has_alt_code %}<span class="qv3-chip is-info">کالای مشابه</span>{% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="qv3-header-metrics">
+                <div class="col qv3-compact-stat"><small>تعداد</small><strong name="quantity_h">{{ form_s.instance.quantity|default_if_none:"—"|intcomma }}</strong></div>
+                <div class="col qv3-compact-stat"><small>فی واحد</small><strong name="unit-price_h">{{ form_s.instance.fee|default_if_none:"—"|floatformat:"-4g" }}</strong></div>
+                <div class="col qv3-compact-stat qv3-compact-total"><small>مبلغ ردیف</small><strong name="total-price_h">{{ form_s.instance.price|default_if_none:0|floatformat:"-2g" }}</strong></div>
+            </div>
+            <div class="qv3-expander" aria-hidden="true">
+                <i class="ki-outline ki-down"></i>
+            </div>
+        </div>
+
+        <div class="answer qv3-row-content">
+            <div class="qv3-workspace">
+                <section class="qv3-workspace-product" aria-label="اطلاعات اصلی کالا">
+                    <div class="qv3-pane-heading">
+                        <div><span class="qv3-pane-kicker">01 / PRODUCT</span><h3>کالا و مقدار سفارش</h3></div>
+                        <span class="qv3-pane-hint">اطلاعات اصلی ردیف</span>
+                    </div>
+
+                    <div class="qv3-product-selection">
+                        <div class="qv3-product-selector">
+                            <label class="qv3-label">کد کالا</label>
+                            {% if form_s.enable and not form_s.goods_code.field.disabled %}
+                                <div class="select2 goods_code qv3-select2" name="goods_code"></div>
+                            {% else %}
+                                <div class="qv3-readonly-select">{{ form_s.instance.goods_code|default:"—" }}</div>
+                            {% endif %}
+                            {% if form_s.instance.old_goods_code %}
+                            <p class="qv3-change-note">
+                                کد قبلی: <bdi>{{ form_s.instance.old_goods_code }}</bdi>
+                                {% if form_s.instance.item_editor_user %} · {{ form_s.instance.item_editor_user }}{% endif %}
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="qv3-product-description">
+                            <label class="qv3-label">شرح کالا</label>
+                            <textarea class="goods_name qv3-readonly-input" name="-goods_name_lbl" rows="2" disabled>{{ form_s.instance.goods_code_fk.part_number|default:form_s.instance.goods_name }}</textarea>
+                            {% if form_s.instance.pk and not form_s.instance.goods_code_fk.sepidar_id_0 %}
+                            <span class="qv3-inline-warning">کالا در سپیدار شناسایی نشده یا نیازمند همگام‌سازی است.</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="qv3-quantity-strip">
+                        <div class="qv3-quantity-main">
+                            <span class="qv3-label">تعداد درخواست</span>
+                            {% render_field_by_order form_s form_s.quantity label='on-border' margin_b=0 %}
+                        </div>
+                        <div class="qv3-quantity-stock">
+                            <span class="qv3-label">موجودی / رزرو</span>
+                            <div class="qv3-stock-values">
+                                {% render_field_by_order nested nested.stock_amount nested.stock_amount_res no_input=True %}
                             </div>
                         </div>
-                        <div class="col on-border">
-{#                            <label>نام کالا</label>#}
-                            <textarea class="w-100 goods_name form-control bg-white bold text-black"  rows="1" name="-goods_name_lbl" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>
-                            {% if form_s.instance.pk and not form_s.instance.goods_code_fk.sepidar_id_0 %}
-                                <div class="sepidar_id_warning">
-                                <small class="text-danger">این کالا در سپیدار نیست. یا بروز رسانی از سپیدار انجام نشده</small>
-                                </div>
+                        <div class="qv3-quantity-target">
+                            <span class="qv3-label">قیمت هدف</span>
+                            {% render_field_by_order form_s form_s.price_target margin_b=0 %}
+                        </div>
+                    </div>
+
+                    <div class="qv3-packing-info">
+                        <span>تعداد در بسته <bdi id="moq">{{ form_s.instance.goods_code_fk.batch_count|floatformat:"-2g"|default_if_falsy:"—" }}</bdi></span>
+                        <span>کارتن داخلی <bdi id="moq_box">{{ form_s.instance.goods_code_fk.count_in_box|floatformat:"-2g"|default_if_falsy:"—" }}</bdi></span>
+                        <span>کارتن مادر <bdi id="moq_main_box">{{ form_s.instance.goods_code_fk.count_in_main_box|floatformat:"-2g"|default_if_falsy:"—" }}</bdi></span>
+                        <span>اولویت <bdi>{{ form_s.instance.goods_code_fk.items_raked.first|default:"—" }}</bdi></span>
+                    </div>
+
+                    <div class="qv3-customer-sku">
+                        <div>
+                            <span class="qv3-label">کد کالا نزد مشتری</span>
+                            {% render_field_by_order form_s form_s.customer_goods_code margin_b=0 %}
+                        </div>
+                        <div>
+                            <span class="qv3-label">نام کالا نزد مشتری</span>
+                            {% render_field_by_order form_s form_s.customer_goods_name margin_b=0 %}
+                        </div>
+                    </div>
+
+                    {% if request.user|has_groups:"sales_user" %}
+                    <div class="qv3-product-links">
+                        {% parent_code_data form_s.instance.goods_code as parent_code %}
+                        {% if parent_code %}
+                        <span>کد مادر: <bdi>{{ parent_code.sku }}</bdi> · {{ parent_code.part_number }}</span>
+                        {% endif %}
+                        <a href="/extra_data/item/create/" target="_blank" rel="noopener">
+                            <i class="ki-outline ki-plus-circle"></i> تعریف کالای جدید
+                        </a>
+                    </div>
+                    {% endif %}
+                </section>
+
+                <section class="qv3-workspace-finance" aria-label="فی و مبلغ ردیف">
+                    <div class="qv3-pane-heading">
+                        <div><span class="qv3-pane-kicker">02 / PRICE</span><h3>قیمت و محاسبات</h3></div>
+                        <span class="qv3-pane-hint">بر اساس ارز پیش‌فاکتور</span>
+                    </div>
+                    <span class="d-none" data-previous_price_method="{{ form_s.instance.get_old_price_method_type }}"></span>
+                    <div class="qv3-price-method">
+                        <label class="qv3-label" data-key="price_method">روش تعیین قیمت</label>
+                        <div id="div_price_method">
+                            <div id="id_price_method_container" class="qv3-method-select"></div>
+                        </div>
+                    </div>
+                    <div class="qv3-price-inputs">
+                        <div class="qv3-fee">
+                            <span class="qv3-label">فی واحد</span>
+                            {% render_field_by_order form_s form_s.final_price margin_b=0 %}
+                        </div>
+                        <div class="qv3-discount">
+                            <span class="qv3-label">تخفیف هر واحد</span>
+                            {% if request.user|has_permission:"micmod_base.discount_per_item" %}
+                                {% render_field_by_order form_s form_s.discount_per_item margin_b=0 %}
+                            {% else %}
+                                <input type="hidden" name="{{ form_s.discount_per_item.html_name }}" value="{{ form_s.instance.discount_per_item|default_if_none:0 }}">
+                                <div class="qv3-readonly-select">{{ form_s.instance.discount_per_item|default_if_none:0|floatformat:"-4g" }}</div>
                             {% endif %}
-                            {% if request.user|has_groups:"sales_user" %}
-                            <div class="d-flex justify-content-between px-3">
-                            <span>
-                            {% parent_code_data form_s.instance.goods_code as parent_code %}
-                                {% if parent_code %}
-                                    <small class="me-1">کد مادر</small>
-                                    <small class="bg-light-danger">{{ parent_code.sku }}</small>
-                                     -
-                                    <small class="bg-light-info">{{ parent_code.part_number }}</small>
+                        </div>
+                    </div>
+
+                    {% if not form_s.instance.pk or form_s.instance.pricing_version == 2 %}
+                    <div class="qv3-v2-price-tools">
+                        <div class="qv3-v2-ref">
+                            <label class="qv3-label">مرجع قیمت انتخاب‌شده</label>
+                            <select class="form-control" data-qv2-source-select aria-label="مرجع قیمت سیستم">
+                                <option value="">پس از استعلام انتخاب کنید</option>
+                            </select>
+                            <span class="qv3-price-caption" data-qv2-reference-value>
+                                {% if form_s.instance.system_price is not None %}
+                                    مرجع ثبت‌شده: <bdi>{{ form_s.instance.system_price|floatformat:"-4g" }}</bdi>
                                 {% endif %}
                             </span>
-                                <a href="/extra_data/item/create/" target="_blank">
-                                    <i class="fas fa-plus-square text-success icon-xl" style="font-size: 1.5rem"></i>
-                                </a>
-                            </div>
-                            {% endif %}
+                        </div>
+                        <div class="qv3-v2-manager is-hidden" data-qv2-manager-wrap>
+                            <span class="qv3-label">{{ form_s.v2_manager_price.label }}</span>
+                            {{ form_s.v2_manager_price }}
+                            <span class="qv3-price-caption">محاسبه با قانون جاری نسخه ۲؛ جزئیات تغییر قوانین در فاز بعدی بررسی می‌شود.</span>
                         </div>
                     </div>
-                </div>
-                <div class="d-non px-1" name="box-alt-goods">
-                    <div class="d-flex mt-3">
-                        <div class="w-25 on-border">
-                            {% if form_s.enable and not form_s.goods_code_alt.field.disabled %}
-                                <div class="select2 w-100 goods_code_alt" name="goods_code_alt"></div>
-                                <label>کد کالا</label>
-                                {% render_field_by_order form_s form_s.goods_code_fk %}
-                            {% else %}
-                                <div class="mt-4">
-                                {{ form_s.instance.goods_code_alt }}
-                                </div>
-                                <label>کد کالا</label>
-                            {% endif %}
-                        </div>
-                        <div class="w-75">
-                            <div class="col on-border">
-                                <label>نام کالا</label>
-                                <textarea class="w-100 form-control bg-white bold text-black" name="-goods_name_alt_lbl" rows="1" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="px-1 replace-digits">
-                    <div class="w-100">
-{#                        <div class="card-text bold">#}
-{#                            <span>آخرین فروش به مشتری</span>#}
-{#                        </div>#}
-                        <div class="mt-1" id="customer-last-sales" style="border-top: 1px solid #f1f1f2">
-{#                            <div class="w-30 mt-3">#}
-{#                                <div class="">فاکتور</div>#}
-{#                                <div class="mt-3 ">پیش فاکتور</div>#}
-{#                            </div>#}
-{#                            <div class="w-50">#}
-{#                                <div class="card-title-desc text-center" data-key="date">تاریخ</div>#}
-{#                                <div>{% render_field_by_order nested nested.goods_last_sale no_input=True %}</div>#}
-{#                                <div class="mt-3">{% render_field_by_order nested nested.goods_q_last_sale no_input=True %}</div>#}
-{#                            </div>#}
-{#                            <div class="w-25">#}
-{#                                <div class="card-title-desc text-center" data-key="count">تعداد</div>#}
-{#                                <div>{% render_field_by_order nested nested.goods_total_sales no_input=True %}</div>#}
-{#                                <div class="mt-3">{% render_field_by_order nested nested.goods_q_total_sales no_input=True %}</div>#}
-{#                            </div>#}
-{#                            <div class="w-25">#}
-{#                                <div class="card-title-desc text-center" data-key="price">قیمت</div>#}
-{#                                <div>{% render_field_by_order nested nested.goods_last_price no_input=True %}</div>#}
-{#                                <div class="mt-3">{% render_field_by_order nested nested.goods_q_last_price no_input=True %}</div>#}
-{#                            </div>#}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4 p-0 replace-digits" style="border-bottom: 1px solid #f1f1f2">
-                <div class="px-2 h-35">
-
-
-
-                    {% if request.user|has_one_group:'sales_user, sales_admin' %}
-                    <div id="id_display_price_container"></div>
-                    <div class="diff_price_alert badge badge-danger rounded " ></div>
+                    {% else %}
+                    <p class="qv3-legacy-hint">
+                        محاسبات تاریخی این ردیف بدون تغییر باقی می‌ماند.
+                        {% if form_s.instance.quotation_id %}
+                        <a href="{% url 'micmod_base:quotation.v2.pricing' pk=form_s.instance.quotation_id %}" target="_blank" rel="noopener">بررسی نسخه قیمت‌گذاری</a>
+                        {% endif %}
+                    </p>
                     {% endif %}
-                        <span class="d-none">{{ form_s.price_json }}</span>
-{#                    </div>#}
-                </div>
-                <div class="h-30 all_pricess mt-2">
-                    <div class="d-flex">
-                        <div class="p-0 w-100">
-                            <div class="text-center bold bg-light-info">قیمت های موجود
-                                <span id="all_price_count">
-                                    ({{ form_s.instance.goods_code_fk.inquiry_count }})
-                                </span>
-                            </div>
-                            <div class="d-none" id="selected_price_code_data" data-selected_price_code_inquiry_type="{{ form_s.instance.selected_price_code.inquiry_type }}"></div>
-                            <div class="select2 selected_price_code" name="selected_price_code"></div>
+
+                    <div class="qv3-financial-breakdown" aria-live="polite">
+                        <div><span>جمع ناخالص</span><strong name="MAC">{{ form_s.instance.net_price|floatformat:"-4g" }}</strong></div>
+                        <div><span>تخفیف ردیف</span><strong name="discount_value">{{ form_s.instance.discount_value|floatformat:"-4g" }}</strong></div>
+                        <div><span>مالیات</span><strong name="tax_value">{{ form_s.instance.tax|floatformat:"-4g" }}</strong></div>
+                        <div class="qv3-financial-final">
+                            <span>مبلغ نهایی ردیف</span>
+                            <strong name="-total_price">{{ form_s.instance.price|default_if_none:0|floatformat:"-4g" }}</strong>
                         </div>
                     </div>
-                </div>
-                <div>
-                    <div class="sepidar_stock_info_result"></div>
-                </div>
+                    <input type="number" step="any" class="visually-hidden"
+                           name="{{ form_s.prefix }}-final_amount"
+                           value="{{ form_s.instance.final_amount|default_if_none:0 }}">
+                </section>
             </div>
-            <div class="col-lg-3 border" style="border-bottom: 1px solid #f1f1f2">
-                <div class="row h-100">
-                    <div class="col-lg-7 p-0 border-end border-start-0 rounded overflow-hidden">
-                        <div class="">
-                            <div class="d-flex mt-2 ">
-                                <div class="text-center w-100">
-                                    <span class="d-none" data-previous_price_method="{{ form_s.instance.get_old_price_method_type }}"></span>
-                                    <div class="col on-border  mb-3 ">
-                                        <div class="form-group" id="div_price_method">
-                                            <div id="id_price_method_container">
 
-                                            </div>
-                                        </div>
-                                        <label data-key="price_method" id="None" class="None">روش تعیین قیمت</label>
-                                        <div class="text-danger"></div>
-                                    </div>
+            <div class="qv3-detail-area" aria-label="جزئیات تکمیلی ردیف">
+                <div class="qv3-detail-heading">
+                    <div><h4>جزئیات و عملیات ردیف</h4><p>برای مشاهده هر بخش، عنوان آن را باز کنید.</p></div>
+                    <button type="button" class="qv3-details-indicator qv3-details-toggle" data-qv3-toggle-all aria-expanded="false">بازکردن همه</button>
+                </div>
+                <div class="qv3-detail-grid">
+
+                    <details class="qv3-panel qv3-panel-inquiry" open>
+                        <summary>
+                            <span class="qv3-panel-icon"><i class="ki-outline ki-document"></i></span>
+                            <span class="qv3-panel-title"><strong>استعلام و قیمت‌های موجود</strong><small>داخلی، خارجی و سوابق استعلام</small></span>
+                            <span class="qv3-panel-arrow" aria-hidden="true"><i class="ki-outline ki-down"></i></span>
+                        </summary>
+                        <div class="qv3-panel-content">
+                            <div class="qv3-inquiry-states">
+                                <div class="qv3-inquiry-type">
+                                    <strong>استعلام داخلی</strong>
+                                    {% render_field_by_order form_s form_s.need_local_price_inquiry margin_b=0 %}
+                                    {% render_field_by_order form_s form_s.local_price_inquiry_done margin_b=0 %}
+                                    <span class="qv3-source-detail">{{ form_s.instance.bazar_price_code|default_if_none:"بدون قیمت انتخاب‌شده" }}</span>
+                                    <div class="qv3-hidden-data">{{ form_s.bazar_price_code }}</div>
                                 </div>
-
-
+                                <div class="qv3-inquiry-type">
+                                    <strong>استعلام خارجی</strong>
+                                    {% render_field_by_order form_s form_s.need_foreign_price_inquiry margin_b=0 %}
+                                    {% render_field_by_order form_s form_s.foreign_price_inquiry_done margin_b=0 %}
+                                    <span class="qv3-source-detail">{{ form_s.instance.trade_price_code|default_if_none:"بدون قیمت انتخاب‌شده" }}</span>
+                                    <div class="qv3-hidden-data">{{ form_s.trade_price_code }}</div>
+                                </div>
                             </div>
-                            <div class="qv2-pricing-meta">
-                                {% if form_s.instance.pk and form_s.instance.pricing_version != 2 %}
-                                <div class="qv2-legacy-message">
-                                    <strong>قیمت‌گذاری تاریخی · نسخه ۱</strong>
-                                    <span>تخفیف‌های مصوب مدیر این ردیف بر اساس قانون قبلی محاسبه می‌شود.</span>
-                                    {% if form.instance.pk %}
-                                    <a href="{% url 'micmod_base:quotation.v2.pricing' pk=form.instance.pk %}">بررسی و تبدیل اختیاری ردیف</a>
-                                    {% endif %}
+
+                            <div class="qv3-inquiry-overview">
+                                <div class="qv3-inquiry-overview-title">
+                                    <strong>قیمت‌های قابل بررسی</strong>
+                                    <span id="all_price_count">({{ form_s.instance.goods_code_fk.inquiry_count|default:0 }})</span>
                                 </div>
-                                {% else %}
-                                <div class="qv2-live-status"><span class="qv2-dot"></span> قانون قیمت‌گذاری نسخه ۲</div>
-                                <div class="qv2-reference-control">
-                                    <label>قیمت مرجع سیستم</label>
-                                    <select class="form-control qv2-source-select" data-qv2-source-select aria-label="انتخاب قیمت مرجع سیستم">
-                                        <option value="">ابتدا استعلام قیمت را دریافت کنید</option>
-                                    </select>
-                                    <div class="qv2-reference-value" data-qv2-reference-value>
-                                        {% if form_s.instance.system_price is not None %}قیمت مرجع ثبت‌شده: {{ form_s.instance.system_price|floatformat:"-4g" }}{% endif %}
-                                    </div>
-                                </div>
-                                <div class="qv2-approved-control" data-qv2-manager-wrap>
-                                    <label>{{ form_s.v2_manager_price.label }}</label>
-                                    {{ form_s.v2_manager_price }}
-                                    <small>در حالت مصوب مدیر، تخفیف کلی و تخفیف دستی اعمال نمی‌شوند.</small>
-                                </div>
+                                {% if request.user|has_one_group:"sales_user, sales_admin" %}
+                                <div class="qv3-price-list all_pricess" id="id_display_price_container"></div>
+                                <div class="diff_price_alert qv3-diff-price-alert"></div>
                                 {% endif %}
+                                <div class="qv3-hidden-data">{{ form_s.price_json }}</div>
+                                <div class="qv3-inquiry-picker">
+                                    <label class="qv3-label">انتخاب استعلام</label>
+                                    <div class="d-none" id="selected_price_code_data"
+                                         data-selected_price_code_inquiry_type="{{ form_s.instance.selected_price_code.inquiry_type }}"></div>
+                                    <div class="select2 selected_price_code" name="selected_price_code"></div>
+                                </div>
                             </div>
-                            <div class="d-flex">
-                                <div class="w-100 card-text text-center">{% render_field_by_order form_s form_s.final_price label='on-border' margin_b="0" %}</div>
-                                {% if request.user|has_permission:"micmod_base.discount_per_item" %}
-                                <div>{% render_field_by_order form_s form_s.discount_per_item label='on-border' %}</div>
-                                {% else %}
-                                    <input type="hidden" name="{{ form_s.discount_per_item.html_name }}" value="{{ form_s.instance.discount_per_item }}">
-                                {% endif %}
-                            </div>
+                            {% if form_s.instance.goods_code %}
+                            <a class="qv3-subtle-link" href="{% url 'inquiry:inquiry_result.list' %}?sku={{ form_s.instance.goods_code }}"
+                               target="_blank" rel="noopener">پرونده استعلام این کالا <i class="ki-outline ki-arrow-left"></i></a>
+                            {% endif %}
+                            <button type="button" class="qv3-inline-action"
+                                    id="new-inquiry-result-{{ form_s.prefix }}"
+                                    data-value="{{ form_s.instance.goods_code }}">
+                                <i class="ki-outline ki-arrows-circle"></i> دریافت یا به‌روزرسانی استعلام
+                            </button>
                         </div>
-                        <div class="bg-soft-info replace-digits h-75 text-center">
-                            <div class="mb-2 d-flex gap-1">
-                                <small class="w-25 text-right">جمع خالص</small>
-                                <small name="MAC" class="">{{ form_s.instance.net_price|floatformat:'-4g' }}</small>
-                            </div>
-                            <div class="mb-2 d-flex gap-1">
-                                <small class="w-25 text-right">مالیات</small>
-                                <small name="tax_value" class="">{{ form_s.instance.tax|floatformat:'-4g' }}</small>
-                            </div>
-                            <div class="mb-2 d-flex gap-1">
-                                <small class="w-25 text-right">تخفیف</small>
-                                <small name="discount_value" class="">{{ form_s.instance.discount_value|floatformat:'-4g' }}</small>
-                            </div>
-                            <div class="mt-4 d-flex flex-column bg-light-info bold">
-                                <span>مبلغ نهایی</span>
-                                <span name="-total_price">-</span>
-{#                                <span class="d-none">#}
-                                    <input type="number" step="any" name="quotation-{{ forloop.counter0 }}-final_amount" value="{{ form_s.instance.final_amount|default_if_falsy:0 }}" class="visually-hidden">
-{#                                </span>#}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-5 d-block p-0">
-                        <div class="align-content-sm-stretch d-flex flex-column align-items-center justify-content-between"
-                             style="min-height: 100%;">
-                            <div class="w-100">
-                                {% if form_s.instance.goods_code %}
-                                    <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ form_s.instance.goods_code }}"
-                                       target="_blank" class="bold inquiry-result-link py-1">مشاهده پرونده استعلام</a>
-                                {% endif %}
-                                <div class="border-bottom ps-1">
-                                    <div class="d-flex justify-content-between mt-1">
-                                        {% render_field_by_order form_s form_s.need_local_price_inquiry label='on-border' margin_b=0 %}
-                                    </div>
-                                    <div class="d-flex justify-content-between">
-                                        {% render_field_by_order form_s form_s.local_price_inquiry_done label='on-border' margin_b=0 %}
-                                    </div>
-                                    <div class="d-flex justify-content-between">
-                                        <div class="d-none">
-                                        {% render_field_by_order form_s form_s.bazar_price_code margin_b=0 %}
-                                        </div>
-                                        {{ form_s.instance.bazar_price_code|default_if_none:'' }}
-                                    </div>
-                                </div>
-                                <div class="ps-1">
-                                    <div class="d-flex justify-content-between mt-1">
-                                        {% render_field_by_order form_s form_s.need_foreign_price_inquiry label='on-order' margin_b=0 %}
-                                    </div>
-                                    <div class="d-flex justify-content-between">
-                                        {% render_field_by_order form_s form_s.foreign_price_inquiry_done label='on-order' margin_b=0 %}
-                                    </div>
-                                    <div class="d-flex justify-content-between">
-                                        <div class="d-none">
-                                        {% render_field_by_order form_s form_s.trade_price_code margin_b=0 %}
-                                        </div>
-                                        {{ form_s.instance.trade_price_code|default_if_none:'' }}
-                                    </div>
+                    </details>
+
+                    <details class="qv3-panel qv3-panel-product">
+                        <summary>
+                            <span class="qv3-panel-icon"><i class="ki-outline ki-cube-2"></i></span>
+                            <span class="qv3-panel-title"><strong>موجودی و کالای جایگزین</strong><small>انبار، سفارش و سابقه فروش</small></span>
+                            <span class="qv3-panel-arrow" aria-hidden="true"><i class="ki-outline ki-down"></i></span>
+                        </summary>
+                        <div class="qv3-panel-content">
+                            {% with form_s.instance.not_over as fulfillment %}
+                            {% if not fulfillment.6 %}
+                            <div class="qv3-fulfillment-table">
+                                <strong>تخصیص‌های قبلی این کالا</strong>
+                                <div class="qv3-scroll-table">
+                                <table>
+                                    <thead><tr><th>فاکتور</th><th>سفارش</th><th>تعداد</th><th>زمان تقریبی تحویل</th></tr></thead>
+                                    <tbody>
+                                        {% for supply in fulfillment.7 %}
+                                        <tr><td>{{ supply.0 }}</td><td>{{ supply.1 }}</td><td>{{ supply.2 }}</td><td>{{ supply.3 }}</td></tr>
+                                        {% empty %}<tr><td colspan="4">اطلاعاتی موجود نیست</td></tr>{% endfor %}
+                                    </tbody>
+                                </table>
                                 </div>
                             </div>
-                            <div>
-                                <div class="d-flex justify-content-center mb-1">
-                                    <div class="d-flex justify-content-around align-items-center btn-sm bg-danger text-white rounded me-1">
-                                          {{ form_s.DELETE }} <label class="ms-1 mb-0 p-1" for="id_quotation-{{ forloop.counter0 }}-DELETE">حذف</label>
-                                    </div>
-                                    <div class="btn btn-sm btn-bordered btn-outline-info py-1" id="new-inquiry-result-{{ form_s.instance.goods_code }}" data-value="{{ form_s.instance.goods_code }}">
-                                        استعلام قیمت
-                                    </div>
-                                </div>
-                                <button type="button" class="btn btn-outline-primary btn-bordered changelog-btn"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#id_kt_empty_modal_lg"
-                                        data-model_name="{{ form_s.instance.files.content_type.model }}"
-                                        data-object_id="{{ form_s.instance.pk }}"
-                                        data-app_name="{{ app_name }}"
-                                        name="name_change_log">
-                                    تاریخچه تغییرات
+                            {% endif %}
+                            {% endwith %}
+                            <div class="qv3-action-pair">
+                                <button type="button" class="sepidar_stock_info qv3-inline-action"
+                                        onclick="get_sepidar_stock_info(event)">
+                                    <i class="ki-outline ki-home"></i> موجودی انبارها
+                                </button>
+                                <button type="button" class="item_order_quantity qv3-inline-action"
+                                        onclick="item_order_quantity(event)">
+                                    <i class="ki-outline ki-delivery"></i> موجودی سفارش‌ها
                                 </button>
                             </div>
+                            <div class="sepidar_stock_info_result qv3-inventory-response" aria-live="polite"></div>
+
+                            <div class="qv3-divider"></div>
+                            <button type="button" class="qv3-inline-action qv3-alt-toggle"
+                                    data-key="show_alt" onclick="hide_show_goods_alt(this)">
+                                <i class="ki-outline ki-arrows-loop"></i> نمایش / تغییر کالای جایگزین
+                            </button>
+                            <div name="box-alt-goods" class="qv3-alternative-box {% if not form_s.instance.goods_code_alt %}d-none{% endif %}">
+                                <div class="qv3-alternative-inputs">
+                                    <div>
+                                        <label class="qv3-label">کد کالای جایگزین</label>
+                                        {% if form_s.enable and not form_s.goods_code_alt.field.disabled %}
+                                            <div class="select2 goods_code_alt" name="goods_code_alt"></div>
+                                        {% else %}
+                                            <div class="qv3-readonly-select">{{ form_s.instance.goods_code_alt|default:"—" }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <label class="qv3-label">نام کالای جایگزین</label>
+                                        <textarea name="-goods_name_alt_lbl" class="qv3-readonly-input" rows="1" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="qv3-divider"></div>
+                            <div class="qv3-history">
+                                <h5>آخرین سوابق فروش به مشتری</h5>
+                                <div id="customer-last-sales">
+                                    <div id="id_goods_last_price"></div>
+                                    <div id="id_goods_q_last_price"></div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    </details>
+
+                    <details class="qv3-panel qv3-panel-delivery">
+                        <summary>
+                            <span class="qv3-panel-icon"><i class="ki-outline ki-truck"></i></span>
+                            <span class="qv3-panel-title"><strong>تأمین و زمان تحویل</strong><small>کارشناسان، تعهد و پیگیری تأخیر</small></span>
+                            <span class="qv3-panel-arrow" aria-hidden="true"><i class="ki-outline ki-down"></i></span>
+                        </summary>
+                        <div class="qv3-panel-content">
+                            <div class="qv3-delivery-status">
+                                <span>زمان تحویل برآوردی</span>
+                                <strong id="lead_time_text">{{ form_s.instance.lead_time|default_if_none:"—" }}</strong>
+                            </div>
+                            <div class="qv3-form-grid">
+                                <div><span class="qv3-label">تاریخ تعهد تأمین</span>{% render_field_by_order form_s form_s.supply_date margin_b=0 %}</div>
+                                <div><span class="qv3-label">وضعیت تأمین</span>{% render_field_by_order form_s form_s.supply_status margin_b=0 %}</div>
+                                <div><span class="qv3-label">زمان تأمین (روز)</span>{% render_field_by_order form_s form_s.lead_time margin_b=0 %}</div>
+                                <div class="qv3-flag">{{ form_s.item_in_china }} <label for="{{ form_s.item_in_china.id_for_label }}">کالا در چین است</label></div>
+                            </div>
+                            <div class="qv3-divider"></div>
+                            <h5>کارشناسان پیگیری</h5>
+                            <div class="qv3-form-grid">
+                                {% if request.user.is_superuser or request.user|has_one_group:"trade_user, trade_admin" %}
+                                <div><span class="qv3-label">کارشناس بازرگانی ۱</span>{% render_field_by_order form_s form_s.assigned_trade_user margin_b=0 %}</div>
+                                <div><span class="qv3-label">کارشناس بازرگانی ۲</span>{% render_field_by_order form_s form_s.assigned_trade_user2 margin_b=0 %}</div>
+                                <div><span class="qv3-label">شروع پیگیری ۱</span>{% render_field_by_order form_s form_s.task_start margin_b=0 %}</div>
+                                <div><span class="qv3-label">شروع پیگیری ۲</span>{% render_field_by_order form_s form_s.task_start2 margin_b=0 %}</div>
+                                {% else %}
+                                <div class="qv3-readonly-detail"><span>کارشناس بازرگانی ۱</span><strong>{{ form_s.instance.assigned_trade_user|default:"—" }}</strong></div>
+                                <div class="qv3-readonly-detail"><span>کارشناس بازرگانی ۲</span><strong>{{ form_s.instance.assigned_trade_user2|default:"—" }}</strong></div>
+                                <div class="qv3-readonly-detail"><span>شروع پیگیری ۱</span><strong>{{ form_s.instance.task_start|yesno:"شروع‌شده,شروع‌نشده" }}</strong></div>
+                                <div class="qv3-readonly-detail"><span>شروع پیگیری ۲</span><strong>{{ form_s.instance.task_start2|yesno:"شروع‌شده,شروع‌نشده" }}</strong></div>
+                                {% endif %}
+                            </div>
+                            {% if form_s.instance.task_start or form_s.instance.task_start2 %}
+                                {% if not form_s.instance.foreign_price_inquiry_done %}
+                                <p class="qv3-inline-warning">استعلام این ردیف شروع شده؛ تغییرات مرتبط را با کارشناس بازرگانی هماهنگ کنید.</p>
+                                {% endif %}
+                            {% endif %}
+                            <div class="qv3-divider"></div>
+                            <h5>کنترل تأخیر</h5>
+                            <div class="qv3-form-grid">
+                                {% if request.user.is_superuser or request.user|has_one_group:"trade_user, trade_admin" %}
+                                <div>{% render_field_by_order form_s form_s.has_delay margin_b=0 %}</div>
+                                <div>{% render_field_by_order form_s form_s.delay_reason margin_b=0 %}</div>
+                                <div>{% render_field_by_order form_s form_s.delay_time margin_b=0 %}</div>
+                                {% else %}
+                                <div class="qv3-readonly-detail"><span>وضعیت تأخیر</span><strong>{% if form_s.instance.has_delay %}دارای تأخیر{% else %}بدون تأخیر{% endif %}</strong></div>
+                                <div class="qv3-readonly-detail"><span>علت تأخیر</span><strong>{{ form_s.instance.delay_reason|default:"—" }}</strong></div>
+                                <div class="qv3-readonly-detail"><span>مدت تأخیر</span><strong>{{ form_s.instance.delay_time|default:"—" }}</strong></div>
+                                {% endif %}
+                                <div>{% render_field_by_order form_s form_s.delivery_time margin_b=0 %}</div>
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="qv3-panel qv3-panel-notes">
+                        <summary>
+                            <span class="qv3-panel-icon"><i class="ki-outline ki-message-text"></i></span>
+                            <span class="qv3-panel-title"><strong>توضیحات و سوابق تغییرات</strong><small>یادداشت داخلی و متن قابل مشاهده مشتری</small></span>
+                            <span class="qv3-panel-arrow" aria-hidden="true"><i class="ki-outline ki-down"></i></span>
+                        </summary>
+                        <div class="qv3-panel-content">
+                            <div class="qv3-note-fields">
+                                <div><span class="qv3-label">توضیحات داخلی ردیف</span>{% render_field_by_order form_s form_s.description margin_b=0 %}</div>
+                                <div><span class="qv3-label">توضیح فروش برای مشتری</span>{% render_field_by_order form_s form_s.sales_description margin_b=0 %}</div>
+                                <div><span class="qv3-label">توضیح استعلام</span>{% render_field_by_order nested nested.description margin_b=0 %}</div>
+                            </div>
+                            {% get_comment_user_list form_s request.user %}
+                            {% if form_s.instance.need_local_price_inquiry %}
+                            <div class="qv3-inquiry-comment">
+                                <span title="{% get_inquiry_result_description quotation_item=form_s.instance %}">یادداشت استعلام داخلی</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </details>
                 </div>
             </div>
-<span class="d-none">{{ form_s.lead_time }}</span>
-        <div class="d-flex align-items-center y-2" >
-            <span class="ms-8">{{ form_s.item_in_china }} {{ form_s.item_in_china.label }}</span>
-            <span class="ms-8">زمان تحویل: <span id="lead_time_text">{{ form_s.instance.lead_time|default_if_none:'-' }}</span></span>
-            <span class="ms-8"><span>کارشناس ۱: </span> <span>{{ form_s.instance.assigned_trade_user|default_if_none:'-' }}</span></span>
-            <span class="ms-8"><span>کارشناس ۲: </span> <span>{{ form_s.instance.assigned_trade_user2|default_if_none:'-' }}</span></span>
-            <span class="sepidar_stock_info tooltip_ cursor-pointer text-primary d-non ms-8" onclick="get_sepidar_stock_info(event, row=null, sepidar_id_0=null)">
-                <span class="tooltiptext">موجودی انبارها</span>
-                <i class="ki-duotone ki-home fs-1"></i>
-            </span>
-            <span class="item_order_quantity tooltip_ cursor-pointer text-primary d-non ms-8" onclick="item_order_quantity(event)">
-                <span class="tooltiptext">موجودی سفارش ‌ها</span>
-                <i class="ki-duotone ki-handcart fs-1"></i>
-            </span>
-            <span class="d-none" id="id_quotation_row">{{ form_s.instance.pk }}</span>
-            <span class="w-20 ms-8">{{ form_s.sales_description }}</span>
-            <span class="ms-2">
-{#                {% render_field_by_order form_s form_s.supply_status margin_b=0 %}#}
-                {% render_field_by_order form_s form_s.supply_date margin_b=0 %}
-            </span>
-{#        {{ form_s.supply_status }}#}
-            {% if form_s.instance.task_start or form_s.instance.task_start2 %}
-                {% if not form_s.instance.foreign_price_inquiry_done %}
-                    <span class="text-danger ms-8">فرایند استعلام این ردیف آغاز شده؛ برای تغییرات با کارشناس بازرگانی هماهنگ کنید.</span>
-                {% endif %}
-            {% endif %}
 
-
+            <div class="qv3-row-footer">
+                <div class="qv3-row-actions">
+                    <button type="button" class="qv3-footer-button changelog-btn"
+                            data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg"
+                            data-model_name="{{ form_s.instance.files.content_type.model }}"
+                            data-object_id="{{ form_s.instance.pk }}"
+                            data-app_name="{{ app_name }}"
+                            name="name_change_log">
+                        <i class="ki-outline ki-time"></i> تاریخچه تغییرات
+                    </button>
+                    {% if form_s.instance.goods_code %}
+                        <a class="qv3-footer-button" href="{% url 'inquiry:inquiry_result.list' %}?sku={{ form_s.instance.goods_code }}"
+                           target="_blank" rel="noopener">
+                            <i class="ki-outline ki-document"></i> پرونده استعلام
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="qv3-row-footer-right">
+                    <div class="qv3-delete-wrap">
+                        {{ form_s.DELETE }}
+                        <label for="{{ form_s.DELETE.id_for_label }}"><i class="ki-outline ki-trash"></i> حذف ردیف</label>
+                    </div>
+                    <span class="handel-drop qv3-drag-handle cursor-move" title="جابه‌جایی ردیف" aria-label="دستگیره جابه‌جایی ردیف">
+                        <i class="ki-outline ki-arrow-up-down"></i>
+                    </span>
+                </div>
+            </div>
         </div>
-<div class="position-absolute d-none" id="comment-form-group__{{ form_s.instance.pk }}">
-<div class="position-absolute d-none" id="generic-payment-form-group__{{ form_s.instance.pk }}"></div>
-</div>
+        <div class="position-absolute d-none" id="comment-form-group__{{ form_s.instance.pk }}">
+            <div class="position-absolute d-none" id="generic-payment-form-group__{{ form_s.instance.pk }}"></div>
         </div>
     </div>
-{% if not forloop.last %}
-<i class="ki-duotone ki-arrow-up-down handel-drop cursor-move fs-2x position-absolute text-info hover-drop-down-icon" style="top: 0; left: 0; height: 30px">
-     <span class="path1"></span>
-     <span class="path2"></span>
-    </i>
-{% endif %}
 </div>

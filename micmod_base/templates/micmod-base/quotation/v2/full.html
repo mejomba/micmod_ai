@@ -15,6 +15,7 @@
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
     <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
     <link href="{% static 'micmod_base/css/quotation_v2_full.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'micmod_base/css/quotation_v2_rows.css' %}" rel="stylesheet" type="text/css" />
 {% endblock extra_css %}
 
 {% block form_content %}
@@ -329,6 +330,7 @@
     <script src="{% static 'js/extra/quotation1.js' %}"></script>
     <script src="{% static 'js/extra/formset.js' %}"></script>
     <script defer src="{% static 'micmod_base/js/quotation_v2_full.js' %}"></script>
+    <script defer src="{% static 'micmod_base/js/quotation_v2_rows.js' %}"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function (e) {
         closeAllFormset({
