@@ -6,7 +6,7 @@
 {% load accounts_tag %}
 
 {# Full row redesign. Preserve field names, nested inline formset, and legacy JS hooks. #}
-<div class="card item qv2-item qv3-item {% if not forloop.last %}sortable-item{% endif %}"
+<div class="card item qv2-item qv3-item sortable-item"
      dir="rtl"
      data-qv2-version="{% if form_s.instance.pk %}{{ form_s.instance.pricing_version }}{% else %}2{% endif %}"
      data-qv2-system-price="{{ form_s.instance.system_price|default_if_none:'' }}"
@@ -32,7 +32,7 @@
         <div class="row-counter question-btn active-form qv3-row-header qv4-row-header"
              role="button" tabindex="0" aria-expanded="true"
              aria-label="باز و بسته کردن جزئیات ردیف {{ forloop.counter }}">
-            <div class="qv4-summary-grid">
+            <div class="qv4-summary-grid {% if not form_s.instance.need_local_price_inquiry and not form_s.instance.need_foreign_price_inquiry %}qv4-no-inquiry{% endif %}">
                 <div class="qv4-cell qv4-cell-index">
                     <small>ردیف</small>
                     <strong class="counter qv3-sequence" data-qv4-row-number>{{ forloop.counter|default:"۱" }}</strong>
@@ -71,18 +71,18 @@
                     <small>مبلغ ردیف</small>
                     <strong name="total-price_h" data-qv4-numeric>{{ form_s.instance.price|default_if_none:0|floatformat:"-4g" }}</strong>
                 </div>
-                <div class="qv4-cell qv4-cell-inquiries">
+                <div class="qv4-cell qv4-cell-inquiries" {% if not form_s.instance.need_local_price_inquiry and not form_s.instance.need_foreign_price_inquiry %}hidden{% endif %}>
                     <small>وضعیت استعلام</small>
                     <div class="qv4-inquiry-states" aria-label="وضعیت استعلام داخلی و خارجی">
-                        <span class="qv4-inquiry-pill {% if form_s.instance.local_price_inquiry_done %}is-approved{% elif form_s.instance.need_local_price_inquiry %}is-pending{% else %}is-none{% endif %}"
-                              data-qv4-inquiry="local"
+                        <span class="qv4-inquiry-pill {% if form_s.instance.need_local_price_inquiry and form_s.instance.local_price_inquiry_done %}is-approved{% elif form_s.instance.need_local_price_inquiry %}is-pending{% else %}is-none{% endif %}"
+                              data-qv4-inquiry="local" {% if not form_s.instance.need_local_price_inquiry %}hidden{% endif %}
                               data-needed="{% if form_s.instance.need_local_price_inquiry %}1{% else %}0{% endif %}"
                               data-done="{% if form_s.instance.local_price_inquiry_done %}1{% else %}0{% endif %}"
                               title="{% if form_s.instance.local_price_inquiry_done %}پاسخ استعلام داخلی ثبت شده{% elif form_s.instance.need_local_price_inquiry %}در انتظار پاسخ استعلام داخلی{% else %}استعلام داخلی درخواست نشده{% endif %}">
                             داخلی <span class="qv4-inquiry-symbol">{% if form_s.instance.local_price_inquiry_done %}✓{% elif form_s.instance.need_local_price_inquiry %}◷{% else %}—{% endif %}</span>
                         </span>
-                        <span class="qv4-inquiry-pill {% if form_s.instance.foreign_price_inquiry_done %}is-approved{% elif form_s.instance.need_foreign_price_inquiry %}is-pending{% else %}is-none{% endif %}"
-                              data-qv4-inquiry="foreign"
+                        <span class="qv4-inquiry-pill {% if form_s.instance.need_foreign_price_inquiry and form_s.instance.foreign_price_inquiry_done %}is-approved{% elif form_s.instance.need_foreign_price_inquiry %}is-pending{% else %}is-none{% endif %}"
+                              data-qv4-inquiry="foreign" {% if not form_s.instance.need_foreign_price_inquiry %}hidden{% endif %}
                               data-needed="{% if form_s.instance.need_foreign_price_inquiry %}1{% else %}0{% endif %}"
                               data-done="{% if form_s.instance.foreign_price_inquiry_done %}1{% else %}0{% endif %}"
                               title="{% if form_s.instance.foreign_price_inquiry_done %}پاسخ استعلام خارجی ثبت شده{% elif form_s.instance.need_foreign_price_inquiry %}در انتظار پاسخ استعلام خارجی{% else %}استعلام خارجی درخواست نشده{% endif %}">
@@ -94,6 +94,12 @@
             <div class="qv3-expander qv4-expander" aria-hidden="true">
                 <i class="ki-outline ki-down"></i>
             </div>
+            <span class="handel-drop qv3-drag-handle qv4-drag-handle cursor-move"
+                  role="button" tabindex="0"
+                  title="جابجایی ردیف؛ برای جابجایی با صفحه‌کلید از کلیدهای جهت‌دار استفاده کنید"
+                  aria-label="جابه‌جایی ردیف {{ forloop.counter }}">
+                <i class="ki-outline ki-arrow-up-down" aria-hidden="true"></i>
+            </span>
             {# Keep the fulfillment chips for the summary of the separate stock accordion. #}
             <div class="qv3-row-chips qv4-hidden-fulfillment" aria-hidden="true">
                 {% with form_s.instance.not_over as fulfillment %}
@@ -519,9 +525,7 @@
                         {{ form_s.DELETE }}
                         <label for="{{ form_s.DELETE.id_for_label }}"><i class="ki-outline ki-trash"></i> حذف ردیف</label>
                     </div>
-                    <span class="handel-drop qv3-drag-handle cursor-move" title="جابه‌جایی ردیف" aria-label="دستگیره جابه‌جایی ردیف">
-                        <i class="ki-outline ki-arrow-up-down"></i>
-                    </span>
+                    {# Reorder handle lives in the always-visible header. #}
                 </div>
             </div>
         </div>

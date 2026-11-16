@@ -117,3 +117,11 @@ used as the green indicator, not an invented approval state.
 Values in the compact header sync from the existing row calculation
 and selector controls. No pricing formula, workflow or migration is
 changed. Responsive layout preserves the DOM column order on mobile.
+
+## Row interaction fixes (2026-11-16)
+
+- Border corners and divider follow the real expanded/collapsed state, rather than the inverted active-form class toggles in the legacy formset script.
+- Inquiry indicators and the whole inquiry summary column are hidden unless their corresponding need_*_price_inquiry option is checked. Gray means requested/no completed response; green means requested/completed response. A stale completed flag alone cannot show a badge.
+- Expanded product, price, secondary panels, input heights, whitespace and footers are more compact while retaining all fields.
+- Every row, including the last one and cloned rows, is sortable. The existing SortableJS instance and persisted QuotationItem.index field remain authoritative. Move the drag handle into the always-visible header; ArrowUp/ArrowDown on the handle also reorder and persist indexes. The hidden Django formset index and .counter identities remain untouched.
+- Formulas, workflows and database schema are unchanged.

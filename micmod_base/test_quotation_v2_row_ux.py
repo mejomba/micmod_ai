@@ -239,7 +239,7 @@ class QuotationV2CollapsedRowOrderTests(SimpleTestCase):
         ).read_text(encoding="utf-8")
 
     def test_exact_column_order_and_financial_sources(self):
-        start = self.html.index('class="qv4-summary-grid"')
+        start = self.html.index('class="qv4-summary-grid ')
         end = self.html.index('class="qv3-expander qv4-expander"', start)
         header = self.html[start:end]
         columns = (
@@ -264,7 +264,7 @@ class QuotationV2CollapsedRowOrderTests(SimpleTestCase):
             self.assertIn(model_property, header)
 
     def test_two_independent_inquiry_states_and_colors(self):
-        header = self.html.split('class="qv4-summary-grid"', 1)[1].split(
+        header = self.html.split('class="qv4-summary-grid ', 1)[1].split(
             'class="answer qv3-row-content"', 1
         )[0]
         self.assertIn('data-qv4-inquiry="local"', header)
@@ -300,3 +300,77 @@ class QuotationV2CollapsedRowOrderTests(SimpleTestCase):
         self.assertIn(".qv4-summary-grid", self.css)
         self.assertIn("@media(max-width:870px)", self.css)
         self.assertIn("@media(max-width:520px)", self.css)
+
+
+class QuotationV2RowInteractionFixTests(SimpleTestCase):
+    """Guard sorting, compact detail and open/close CSS behavior."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.row = get_template(
+            "micmod-base/quotation/v2/item_full.html"
+        ).template.source
+        cls.css = (
+            Path(settings.BASE_DIR) /
+            "micmod_base/static/micmod_base/css/quotation_v2_rows.css"
+        ).read_text(encoding="utf-8")
+        cls.ui_js = (
+            Path(settings.BASE_DIR) /
+            "micmod_base/static/micmod_base/js/quotation_v2_rows.js"
+        ).read_text(encoding="utf-8")
+        cls.drag_js = (
+            Path(settings.BASE_DIR) / "assets/js/base.js"
+        ).read_text(encoding="utf-8")
+
+    def test_all_rows_can_be_sorted_including_last_and_newly_added(self):
+        self.assertIn("qv3-item sortable-item", self.row)
+        self.assertNotIn("{% if not forloop.last %}sortable-item", self.row)
+        self.assertEqual(self.row.count('class="handel-drop'), 1)
+        header_start = self.row.index('class="qv4-summary-grid ')
+        header_end = self.row.index('class="answer qv3-row-content"', header_start)
+        self.assertIn("qv4-drag-handle", self.row[header_start:header_end])
+        self.assertIn("handle: '.handel-drop'", self.drag_js)
+        self.assertIn("index_field_id_selector='-index'", self.drag_js)
+        self.assertIn("persistRowOrder", self.ui_js)
+        self.assertIn('input[id*="-index"]', self.ui_js)
+        self.assertIn('"ArrowUp", "ArrowDown"', self.ui_js)
+        self.assertIn('event.stopPropagation()', self.ui_js)
+
+    def test_header_rounding_uses_actual_expansion_state(self):
+        self.assertIn("row.classList.toggle(\"qv3-is-expanded\", isOpen)", self.ui_js)
+        self.assertIn("header.classList.toggle(\"active-form\", isOpen)", self.ui_js)
+        self.assertIn('.qv4-row-header[aria-expanded="true"]', self.css)
+        self.assertIn('.qv4-row-header[aria-expanded="false"]', self.css)
+        self.assertIn('.qv3-row-content:not(.close)', self.css)
+        self.assertIn('.qv3-row-content.close', self.css)
+
+    def test_inquiries_only_display_when_requested(self):
+        self.assertIn('data-qv4-inquiry="local" {% if not form_s.instance.need_local_price_inquiry %}hidden{% endif %}', self.row)
+        self.assertIn('data-qv4-inquiry="foreign" {% if not form_s.instance.need_foreign_price_inquiry %}hidden{% endif %}', self.row)
+        self.assertIn("badge.hidden = !needed", self.ui_js)
+        self.assertIn("const approved = needed && done", self.ui_js)
+        self.assertIn("inquiryBlock.hidden = !anyNeeded", self.ui_js)
+        self.assertIn(".qv4-inquiry-pill[hidden]", self.css)
+        self.assertIn(".qv4-cell-inquiries[hidden]", self.css)
+
+    def test_opened_row_controls_are_compact_without_hiding_fields(self):
+        for selector in (
+            ".qv3-item .qv3-workspace",
+            ".qv3-item .qv3-workspace-product",
+            ".qv3-item .qv3-workspace-finance",
+            ".qv3-item .qv3-price-inquiry>summary",
+            ".qv3-item .qv3-detail-grid",
+            ".qv3-row-content .form-control",
+        ):
+            with self.subTest(selector=selector):
+                self.assertIn(selector, self.css)
+        for field in (
+            "form_s.quantity", "form_s.final_price",
+            "form_s.discount_per_item", "form_s.price_target",
+            "form_s.need_local_price_inquiry", "form_s.need_foreign_price_inquiry",
+            "form_s.supply_date", "form_s.sales_description",
+            "form_s.customer_goods_code", "form_s.customer_goods_name",
+        ):
+            with self.subTest(field=field):
+                self.assertIn(field, self.row)

@@ -70,15 +70,18 @@
 
         const needed = valueOf("need_" + type + "_price_inquiry", badge.dataset.needed);
         const done = valueOf(type + "_price_inquiry_done", badge.dataset.done);
-        const state = done ? "is-approved" : (needed ? "is-pending" : "is-none");
+        // A response can be shown only when the corresponding inquiry is requested.
+        const approved = needed && done;
+        const state = approved ? "is-approved" : (needed ? "is-pending" : "is-none");
         badge.classList.remove("is-approved", "is-pending", "is-none");
         badge.classList.add(state);
         badge.dataset.needed = needed ? "1" : "0";
         badge.dataset.done = done ? "1" : "0";
+        badge.hidden = !needed;
 
         const symbol = first(badge, ".qv4-inquiry-symbol");
-        if (symbol) symbol.textContent = done ? "✓" : needed ? "◷" : "—";
-        badge.title = done
+        if (symbol) symbol.textContent = approved ? "✓" : needed ? "◷" : "—";
+        badge.title = approved
             ? "پاسخ استعلام " + title + " ثبت و تأیید شده"
             : needed
                 ? "در انتظار تأیید پاسخ استعلام " + title
@@ -130,13 +133,33 @@
 
         syncInquiryBadge(row, "local", "داخلی");
         syncInquiryBadge(row, "foreign", "خارجی");
+        const inquiryBlock = first(row, ".qv4-cell-inquiries");
+        const anyNeeded = Array.from(row.querySelectorAll("[data-qv4-inquiry]"))
+            .some((badge) => !badge.hidden);
+        if (inquiryBlock) inquiryBlock.hidden = !anyNeeded;
+        first(row, ".qv4-summary-grid")?.classList.toggle("qv4-no-inquiry", !anyNeeded);
     }
 
     function syncExpanded(row) {
         const header = first(row, ".qv3-row-header");
         if (!header) return;
-        header.setAttribute("aria-expanded", expanded(row) ? "true" : "false");
-        if (!expanded(row)) syncHeading(row);
+        const isOpen = expanded(row);
+        // Production formset.js toggles active-form opposite to the actual
+        // body visibility. Normalize that state for consistent border radius.
+        header.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        header.classList.toggle("active-form", isOpen);
+        row.classList.toggle("qv3-is-expanded", isOpen);
+        if (!isOpen) syncHeading(row);
+    }
+
+    function persistRowOrder() {
+        // Match the established base.js Sortable onEnd index contract.
+        // Do not renumber .counter: legacy price callbacks use it to locate
+        // the formset index (which must not change when merely reordering).
+        Array.from(list.querySelectorAll(":scope > .qv3-item")).forEach((item, index) => {
+            const position = item.querySelector('input[id*="-index"]');
+            if (position) position.value = String(index);
+        });
     }
 
     function syncDelete(row) {
@@ -235,6 +258,25 @@
             // The production formset handler is registered before this UI handler.
             requestAnimationFrame(() => syncExpanded(row));
         });
+
+        const handle = first(row, ".qv4-drag-handle");
+        if (handle) {
+            // Clicking the drag handle should never toggle the accordion.
+            handle.addEventListener("click", (event) => event.stopPropagation());
+            handle.addEventListener("keydown", (event) => {
+                if (!["ArrowUp", "ArrowDown", "Enter", " "].includes(event.key)) return;
+                event.stopPropagation();
+                event.preventDefault();
+                if (!["ArrowUp", "ArrowDown"].includes(event.key)) return;
+                const sibling = event.key === "ArrowUp"
+                    ? row.previousElementSibling : row.nextElementSibling;
+                if (!sibling?.classList.contains("qv3-item")) return;
+                if (event.key === "ArrowUp") list.insertBefore(row, sibling);
+                else list.insertBefore(sibling, row);
+                persistRowOrder();
+                handle.focus();
+            });
+        }
 
         const observer = new MutationObserver(() => syncExpanded(row));
         observer.observe(content, { attributes: true, attributeFilter: ["class"] });
