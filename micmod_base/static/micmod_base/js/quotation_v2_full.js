@@ -173,7 +173,8 @@
         const commercial = (manual + documentDiscount) * qty;
         const official = document.querySelector("#id_is_official")?.checked;
         const officialValue = parse(document.querySelector("#id_official_value")?.value) || 0;
-        const taxRate = parse(document.querySelector(".quotation-v2-full")?.dataset.taxRate) || 10;
+        const configuredTaxRate = parse(document.querySelector(".quotation-v2-full")?.dataset.taxRate);
+        const taxRate = Number.isFinite(configuredTaxRate) ? configuredTaxRate : 10;
         const officialAdj = official ? (gross - commercial) * officialValue / (100 + taxRate) : 0;
         const discount = commercial + officialAdj;
         const tax = official ? (gross - discount) * taxRate / 100 : 0;

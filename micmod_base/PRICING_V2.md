@@ -25,7 +25,7 @@ QuotationItem and uses a separate price editor.
    reference editor and check its confirmation box. This route is not the
    complete quotation view.
 7. Verify with:
-   `python manage.py test micmod_base.test_pricing_v2 factor.test_modern_print`
+   `python manage.py test micmod_base.test_pricing_v2 micmod_base.test_pricing_v2_full`
 
 The legacy entry screen still creates legacy-form rows, intentionally preserving
 its unchanged calculations. Use the v2 price editor to add v2 rows.

@@ -50,7 +50,7 @@
         </nav>
     </div>
     <div class="qv2-kpi-row">
-        <div class="qv2-kpi"><small>تعداد ردیف‌ها</small><strong>{{ formset.total_form_count }}</strong></div>
+        <div class="qv2-kpi"><small>تعداد ردیف‌ها</small><strong>{{ formset.initial_form_count }}</strong></div>
         <div class="qv2-kpi"><small>مبلغ پیش‌فاکتور</small><strong class="quotation_total_price">—</strong></div>
         <div class="qv2-kpi"><small>تخفیف کلی</small><strong>{{ form.instance.self_discount|default_if_none:0 }}%</strong></div>
         <div class="qv2-kpi"><small>ارز سند</small><strong>{{ form.instance.currency_ref|default_if_none:"—" }}</strong></div>
@@ -116,8 +116,7 @@
                                 <div class="row">
                                     <div class="col-sm-7">
                                         <div class="border-end p-2 pe-4">
-                                            <h3 class="card-title pb-3" data-key="quotation-information">Quotation
-                                                Information
+                                            <h3 class="card-title pb-3" data-key="quotation-information">اطلاعات پیش‌فاکتور
                                             </h3>
                                             <div class="row">
                                                 <div class="col-sm-4 m-0">
@@ -154,7 +153,7 @@
                                     </div>
                                     <div class="col-sm-5 ms-lg-auto">
                                         <div class="p-2">
-                                            <h3 class="card-title pb-3" data-key="customer-information">Customer Information
+                                            <h3 class="card-title pb-3" data-key="customer-information">اطلاعات مشتری
                                             </h3>
                                             <div class="row">
                                                 <div class="">
