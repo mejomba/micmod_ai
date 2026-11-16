@@ -207,6 +207,17 @@ def _fetch_prices(request, quote, row):
     return entries
 
 
+def _get_locked_item(quote, row_id):
+    """Lock the item itself, not nullable JOIN targets in PostgreSQL."""
+    row = get_object_or_404(
+        QuotationItem.objects.select_for_update(),
+        pk=row_id, quotation_id=quote.pk, is_deleted=False,
+    )
+    # Reuse the already-loaded quotation; no outer join for locking.
+    row.quotation = quote
+    return row
+
+
 def _view_rows(quote):
     rows = quote.quotation.filter(is_deleted=False).select_related("goods_code_fk").order_by("index", "pk")
     rendered = []
@@ -267,10 +278,7 @@ def quotation_v2_editor(request, pk):
                     row_id = request.POST.get("row_id", "")
                     if not row_id.isdigit():
                         raise PricingError("شناسه ردیف نامعتبر است.")
-                    row = get_object_or_404(
-                        QuotationItem.objects.select_for_update().select_related("quotation", "quotation__currency_ref"),
-                        pk=int(row_id), quotation=quote, is_deleted=False,
-                    )
+                    row = _get_locked_item(quote, int(row_id))
                     if action == "refresh":
                         if row.pricing_version != 2:
                             raise PricingError("ابتدا ردیف قدیمی را آگاهانه ارتقا دهید.")

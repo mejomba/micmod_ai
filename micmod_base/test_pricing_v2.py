@@ -265,3 +265,25 @@ class PricingV2HistoricalSafety(SimpleTestCase):
         self.assertEqual(row.manager_approved_price, Decimal("1800"))
         self.assertEqual(row.manager_positive_difference, Decimal("1600.0000"))
         self.assertEqual(row.price_method, "sales_admin")
+
+
+class PricingV2LockingRegression(SimpleTestCase):
+    def test_for_update_locks_only_item_not_nullable_joined_relations(self):
+        # No database round-trip is required: verify the actual queryset
+        # passed by the v2 editor to Django's object lookup.
+        from micmod_base.quotation_v2_views import _get_locked_item
+
+        quotation = SimpleNamespace(pk=16682)
+        item = SimpleNamespace(quotation=None)
+        with patch(
+            "micmod_base.quotation_v2_views.get_object_or_404",
+            return_value=item,
+        ) as lookup:
+            self.assertIs(_get_locked_item(quotation, 99), item)
+
+        query = lookup.call_args.args[0].query
+        self.assertTrue(query.select_for_update)
+        self.assertFalse(query.select_related)
+        self.assertEqual(lookup.call_args.kwargs["pk"], 99)
+        self.assertEqual(lookup.call_args.kwargs["quotation_id"], 16682)
+        self.assertIs(item.quotation, quotation)
