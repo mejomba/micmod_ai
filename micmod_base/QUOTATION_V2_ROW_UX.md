@@ -64,3 +64,38 @@ observers. The original operational logic remains authoritative.
 
 No migration required. No production merge until the Django tests and
 end-to-end UI checks have been run successfully.
+
+
+## Compact layout refinement (2026-11-16)
+
+- In quotations containing multiple rows, all valid existing rows start
+  **collapsed**. Their compact header shows SKU, item, quantity, unit price,
+  total amount and fulfillment indicators.
+- All pricing UI is consolidated into one main **قیمت و محاسبات** block:
+  inquiry flags, inquiry selection and history, pricing method, target
+  price, unit fee, discount and totals. Price-source details form an
+  expandable section *inside* this same pricing block.
+- Quantity and stock are in the always-visible product workspace.
+  **موجودی انبارها** and **موجودی سفارش‌ها** are now immediate product
+  actions, not hidden inside an accordion. Existing Ajax endpoints and
+  callbacks are unchanged.
+- Packaging and customer-specific code/name remain available under a small
+  summary disclosure in the product workspace.
+- The three remaining secondary accordions—fulfillment/alternatives,
+  supply/delivery and notes—are compact and show their key current values
+  even when closed. Front-end summaries refresh after edits.
+- Select2 product, alternate-product and inquiry selectors attach their
+  dropdowns to their row **only on the v2 page**; legacy pages retain
+  the body dropdown default. This avoids misplaced menus due to scroll
+  containers/sticky toolbars.
+- No changes to quotation calculations, ORM models, data, migrations,
+  factor behavior or workflow logic.
+
+Regression tests:
+
+`python manage.py test micmod_base.test_quotation_v2_row_ux micmod_base.test_pricing_v2_full micmod_base.test_pricing_v2`
+
+Manually verify the Select2 placement while scrolling, opening a collapsed
+price inquiry, using each inventory action, adding/reordering rows, and
+saving/advancing through the workflow. Static checks alone cannot prove
+live browser geometry or business integration.

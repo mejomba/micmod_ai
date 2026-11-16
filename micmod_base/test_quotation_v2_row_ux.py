@@ -148,3 +148,77 @@ class QuotationV2RowExperienceTests(SimpleTestCase):
         self.assertNotIn("window.set_price_data =", js)
         self.assertNotIn("apply_materialized_values", js)
         self.assertNotIn("workflow_form", js)
+
+
+class QuotationV2CompactRowRequirementsTests(SimpleTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.html = get_template("micmod-base/quotation/v2/item_full.html").template.source
+        cls.css = (Path(settings.BASE_DIR) / "micmod_base/static/micmod_base/css/quotation_v2_rows.css").read_text(encoding="utf-8")
+        cls.ui_js = (Path(settings.BASE_DIR) / "micmod_base/static/micmod_base/js/quotation_v2_rows.js").read_text(encoding="utf-8")
+        cls.legacy_js = (Path(settings.BASE_DIR) / "assets/js/extra/quotation1.js").read_text(encoding="utf-8")
+
+    def test_all_price_operations_are_inside_one_financial_block(self):
+        finance_start = self.html.index('<section class="qv3-workspace-finance"')
+        finance_end = self.html.index("</section>", finance_start)
+        detail_start = self.html.index('<div class="qv3-detail-grid"')
+        for required in (
+            "id_price_method_container", "form_s.final_price",
+            "form_s.discount_per_item", "form_s.price_target",
+            "data-qv2-source-select", "id_display_price_container",
+            "selected_price_code", "form_s.need_local_price_inquiry",
+            "form_s.need_foreign_price_inquiry", "new-inquiry-result-",
+            'class="qv3-financial-breakdown"',
+        ):
+            with self.subTest(required=required):
+                at = self.html.index(required)
+                self.assertGreater(at, finance_start)
+                self.assertLess(at, finance_end)
+        self.assertLess(finance_end, detail_start)
+        self.assertIn("qv3-price-inquiry", self.html[finance_start:finance_end])
+
+    def test_inventory_buttons_are_always_in_main_product_section(self):
+        product_start = self.html.index('<section class="qv3-workspace-product"')
+        product_end = self.html.index("</section>", product_start)
+        for required in (
+            'onclick="get_sepidar_stock_info(event)"',
+            'onclick="item_order_quantity(event)"',
+            "sepidar_stock_info_result",
+        ):
+            with self.subTest(required=required):
+                self.assertEqual(self.html.count(required), 1)
+                self.assertTrue(product_start < self.html.index(required) < product_end)
+
+    def test_every_collapsible_section_has_a_visible_data_summary(self):
+        for required in (
+            'data-qv3-summary="inquiry"',
+            'data-qv3-summary="stock"',
+            'data-qv3-summary="delivery"',
+            'data-qv3-summary="notes"',
+            'class="qv3-product-extra"',
+            'qv3-product-extra>summary span',
+        ):
+            # Last item exists in CSS rather than Django template.
+            with self.subTest(required=required):
+                self.assertIn(required, self.css if ">" in required else self.html)
+        self.assertEqual(self.html.count('<details class="qv3-panel'), 4)
+        self.assertNotIn('<details class="qv3-panel qv3-panel-inquiry" open>', self.html)
+        self.assertIn("syncCollapsedSummaries", self.ui_js)
+
+    def test_collapsed_rows_show_multiple_items_per_viewport(self):
+        self.assertIn("min-height:60px!important", self.css)
+        self.assertIn("grid-template-columns:repeat(3,minmax(0,1fr))", self.css)
+        self.assertIn("rows.length <= 1", self.ui_js)
+        self.assertIn('content.classList.add("close")', self.ui_js)
+        self.assertIn("qv3-product-extra", self.html)
+
+    def test_select2_attaches_to_visible_row_only_on_new_quotation(self):
+        self.assertEqual(self.legacy_js.count(
+            "dropdownParent: document.querySelector('.quotation-v2-full') ? $(item) : $(document.body)"
+        ), 3)
+        self.assertIn("width: document.querySelector('.quotation-v2-full') ? '100%' : 'resolve'", self.legacy_js)
+        self.assertIn("qv3-select2-active", self.css)
+        self.assertIn('"select2:open"', self.ui_js)
+        self.assertIn('"select2:close"', self.ui_js)
+        self.assertIn("row.classList.add", self.ui_js)

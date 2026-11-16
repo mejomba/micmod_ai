@@ -78,7 +78,7 @@
                 <section class="qv3-workspace-product" aria-label="اطلاعات اصلی کالا">
                     <div class="qv3-pane-heading">
                         <div><span class="qv3-pane-kicker">01 / PRODUCT</span><h3>کالا و مقدار سفارش</h3></div>
-                        <span class="qv3-pane-hint">اطلاعات اصلی ردیف</span>
+                        <span class="qv3-pane-hint">انتخاب کالا، تعداد، موجودی</span>
                     </div>
 
                     <div class="qv3-product-selection">
@@ -98,7 +98,7 @@
                         </div>
                         <div class="qv3-product-description">
                             <label class="qv3-label">شرح کالا</label>
-                            <textarea class="goods_name qv3-readonly-input" name="-goods_name_lbl" rows="2" disabled>{{ form_s.instance.goods_code_fk.part_number|default:form_s.instance.goods_name }}</textarea>
+                            <textarea class="goods_name qv3-readonly-input" name="-goods_name_lbl" rows="1" disabled>{{ form_s.instance.goods_code_fk.part_number|default:form_s.instance.goods_name }}</textarea>
                             {% if form_s.instance.pk and not form_s.instance.goods_code_fk.sepidar_id_0 %}
                             <span class="qv3-inline-warning">کالا در سپیدار شناسایی نشده یا نیازمند همگام‌سازی است.</span>
                             {% endif %}
@@ -116,12 +116,32 @@
                                 {% render_field_by_order nested nested.stock_amount nested.stock_amount_res no_input=True %}
                             </div>
                         </div>
-                        <div class="qv3-quantity-target">
-                            <span class="qv3-label">قیمت هدف</span>
-                            {% render_field_by_order form_s form_s.price_target margin_b=0 %}
-                        </div>
+
                     </div>
 
+                    <div class="qv3-stock-quick" aria-label="دسترسی سریع به موجودی">
+                        <span class="qv3-label">بررسی موجودی</span>
+                        <div class="qv3-action-pair qv3-quick-stock-buttons">
+                                <button type="button" class="sepidar_stock_info qv3-inline-action"
+                                        onclick="get_sepidar_stock_info(event)">
+                                    <i class="ki-outline ki-home"></i> موجودی انبارها
+                                </button>
+                                <button type="button" class="item_order_quantity qv3-inline-action"
+                                        onclick="item_order_quantity(event)">
+                                    <i class="ki-outline ki-delivery"></i> موجودی سفارش‌ها
+                                </button>
+                            </div>
+                            <div class="sepidar_stock_info_result qv3-inventory-response" aria-live="polite"></div>
+
+
+                    </div>
+
+                    <details class="qv3-product-extra">
+                        <summary><strong>مشخصات تکمیلی کالا</strong>
+                            <span>بسته‌بندی: {{ form_s.instance.goods_code_fk.batch_count|floatformat:"-2g"|default_if_falsy:"—" }} عدد · کد مشتری: {{ form_s.instance.customer_goods_code|default:"—" }}</span>
+                            <i class="ki-outline ki-down" aria-hidden="true"></i>
+                        </summary>
+                        <div class="qv3-product-extra-body">
                     <div class="qv3-packing-info">
                         <span>تعداد در بسته <bdi id="moq">{{ form_s.instance.goods_code_fk.batch_count|floatformat:"-2g"|default_if_falsy:"—" }}</bdi></span>
                         <span>کارتن داخلی <bdi id="moq_box">{{ form_s.instance.goods_code_fk.count_in_box|floatformat:"-2g"|default_if_falsy:"—" }}</bdi></span>
@@ -151,14 +171,18 @@
                         </a>
                     </div>
                     {% endif %}
+
+                        </div>
+                    </details>
                 </section>
 
                 <section class="qv3-workspace-finance" aria-label="فی و مبلغ ردیف">
                     <div class="qv3-pane-heading">
                         <div><span class="qv3-pane-kicker">02 / PRICE</span><h3>قیمت و محاسبات</h3></div>
-                        <span class="qv3-pane-hint">بر اساس ارز پیش‌فاکتور</span>
+                        <span class="qv3-pane-hint">روش قیمت، استعلام، فی و تخفیف</span>
                     </div>
                     <span class="d-none" data-previous_price_method="{{ form_s.instance.get_old_price_method_type }}"></span>
+                    <div class="qv3-price-main-line">
                     <div class="qv3-price-method">
                         <label class="qv3-label" data-key="price_method">روش تعیین قیمت</label>
                         <div id="div_price_method">
@@ -181,6 +205,11 @@
                         </div>
                     </div>
 
+                    <div class="qv3-price-target">
+                        <span class="qv3-label">قیمت هدف مشتری</span>
+                        {% render_field_by_order form_s form_s.price_target margin_b=0 %}
+                    </div>
+                    </div>
                     {% if not form_s.instance.pk or form_s.instance.pricing_version == 2 %}
                     <div class="qv3-v2-price-tools">
                         <div class="qv3-v2-ref">
@@ -209,32 +238,18 @@
                     </p>
                     {% endif %}
 
-                    <div class="qv3-financial-breakdown" aria-live="polite">
-                        <div><span>جمع ناخالص</span><strong name="MAC">{{ form_s.instance.net_price|floatformat:"-4g" }}</strong></div>
-                        <div><span>تخفیف ردیف</span><strong name="discount_value">{{ form_s.instance.discount_value|floatformat:"-4g" }}</strong></div>
-                        <div><span>مالیات</span><strong name="tax_value">{{ form_s.instance.tax|floatformat:"-4g" }}</strong></div>
-                        <div class="qv3-financial-final">
-                            <span>مبلغ نهایی ردیف</span>
-                            <strong name="-total_price">{{ form_s.instance.price|default_if_none:0|floatformat:"-4g" }}</strong>
-                        </div>
-                    </div>
-                    <input type="number" step="any" class="visually-hidden"
-                           name="{{ form_s.prefix }}-final_amount"
-                           value="{{ form_s.instance.final_amount|default_if_none:0 }}">
-                </section>
-            </div>
-
-            <div class="qv3-detail-area" aria-label="جزئیات تکمیلی ردیف">
-                <div class="qv3-detail-heading">
-                    <div><h4>جزئیات و عملیات ردیف</h4><p>برای مشاهده هر بخش، عنوان آن را باز کنید.</p></div>
-                    <button type="button" class="qv3-details-indicator qv3-details-toggle" data-qv3-toggle-all aria-expanded="false">بازکردن همه</button>
-                </div>
-                <div class="qv3-detail-grid">
-
-                    <details class="qv3-panel qv3-panel-inquiry" open>
+                    <div class="qv3-price-all-sources">
+                        <details class="qv3-panel qv3-panel-inquiry qv3-price-inquiry">
                         <summary>
                             <span class="qv3-panel-icon"><i class="ki-outline ki-document"></i></span>
-                            <span class="qv3-panel-title"><strong>استعلام و قیمت‌های موجود</strong><small>داخلی، خارجی و سوابق استعلام</small></span>
+                            <span class="qv3-panel-title">
+                                <strong>استعلام‌ها و قیمت‌های موجود</strong>
+                                <small class="qv3-panel-summary" data-qv3-summary="inquiry">
+                                    {{ form_s.instance.goods_code_fk.inquiry_count|default:0 }} قیمت موجود
+                                    · داخلی: {% if form_s.instance.local_price_inquiry_done %}تکمیل{% elif form_s.instance.need_local_price_inquiry %}در انتظار{% else %}—{% endif %}
+                                    · خارجی: {% if form_s.instance.foreign_price_inquiry_done %}تکمیل{% elif form_s.instance.need_foreign_price_inquiry %}در انتظار{% else %}—{% endif %}
+                                </small>
+                            </span>
                             <span class="qv3-panel-arrow" aria-hidden="true"><i class="ki-outline ki-down"></i></span>
                         </summary>
                         <div class="qv3-panel-content">
@@ -283,11 +298,37 @@
                             </button>
                         </div>
                     </details>
+                    </div>
+                    <div class="qv3-financial-breakdown" aria-live="polite">
+                        <div><span>جمع ناخالص</span><strong name="MAC">{{ form_s.instance.net_price|floatformat:"-4g" }}</strong></div>
+                        <div><span>تخفیف ردیف</span><strong name="discount_value">{{ form_s.instance.discount_value|floatformat:"-4g" }}</strong></div>
+                        <div><span>مالیات</span><strong name="tax_value">{{ form_s.instance.tax|floatformat:"-4g" }}</strong></div>
+                        <div class="qv3-financial-final">
+                            <span>مبلغ نهایی ردیف</span>
+                            <strong name="-total_price">{{ form_s.instance.price|default_if_none:0|floatformat:"-4g" }}</strong>
+                        </div>
+                    </div>
+                    <input type="number" step="any" class="visually-hidden"
+                           name="{{ form_s.prefix }}-final_amount"
+                           value="{{ form_s.instance.final_amount|default_if_none:0 }}">
+                </section>
+            </div>
+
+            <div class="qv3-detail-area" aria-label="جزئیات تکمیلی ردیف">
+                <div class="qv3-detail-heading">
+                    <div><h4>اطلاعات تکمیلی</h4><p>هر بخش در حالت بسته خلاصه اطلاعات خود را نشان می‌دهد.</p></div>
+                    <button type="button" class="qv3-details-indicator qv3-details-toggle" data-qv3-toggle-all aria-expanded="false">بازکردن همه</button>
+                </div>
+                <div class="qv3-detail-grid">
+
+
 
                     <details class="qv3-panel qv3-panel-product">
                         <summary>
                             <span class="qv3-panel-icon"><i class="ki-outline ki-cube-2"></i></span>
-                            <span class="qv3-panel-title"><strong>موجودی و کالای جایگزین</strong><small>انبار، سفارش و سابقه فروش</small></span>
+                            <span class="qv3-panel-title"><strong>تأمین و کالای جایگزین</strong>
+                                <small class="qv3-panel-summary" data-qv3-summary="stock">وضعیت: {% with form_s.instance.not_over as result %}{% if result.0 %}تأمین کامل از انبار{% elif result.1 %}تأمین کامل از سفارش{% elif result.2 %}تأمین کامل{% elif result.3 or result.4 or result.5 %}تأمین ناقص{% else %}بدون تخصیص{% endif %}{% endwith %} · مشابه: {{ form_s.instance.goods_code_alt|default:"—" }}</small>
+                            </span>
                             <span class="qv3-panel-arrow" aria-hidden="true"><i class="ki-outline ki-down"></i></span>
                         </summary>
                         <div class="qv3-panel-content">
@@ -308,18 +349,6 @@
                             </div>
                             {% endif %}
                             {% endwith %}
-                            <div class="qv3-action-pair">
-                                <button type="button" class="sepidar_stock_info qv3-inline-action"
-                                        onclick="get_sepidar_stock_info(event)">
-                                    <i class="ki-outline ki-home"></i> موجودی انبارها
-                                </button>
-                                <button type="button" class="item_order_quantity qv3-inline-action"
-                                        onclick="item_order_quantity(event)">
-                                    <i class="ki-outline ki-delivery"></i> موجودی سفارش‌ها
-                                </button>
-                            </div>
-                            <div class="sepidar_stock_info_result qv3-inventory-response" aria-live="polite"></div>
-
                             <div class="qv3-divider"></div>
                             <button type="button" class="qv3-inline-action qv3-alt-toggle"
                                     data-key="show_alt" onclick="hide_show_goods_alt(this)">
@@ -355,7 +384,9 @@
                     <details class="qv3-panel qv3-panel-delivery">
                         <summary>
                             <span class="qv3-panel-icon"><i class="ki-outline ki-truck"></i></span>
-                            <span class="qv3-panel-title"><strong>تأمین و زمان تحویل</strong><small>کارشناسان، تعهد و پیگیری تأخیر</small></span>
+                            <span class="qv3-panel-title"><strong>پیگیری و زمان تحویل</strong>
+                                <small class="qv3-panel-summary" data-qv3-summary="delivery">تحویل: {{ form_s.instance.lead_time|default_if_none:"—" }} · تاریخ تأمین: {{ form_s.instance.supply_date|default:"—" }} · مسئول: {{ form_s.instance.assigned_trade_user|default:"—" }}</small>
+                            </span>
                             <span class="qv3-panel-arrow" aria-hidden="true"><i class="ki-outline ki-down"></i></span>
                         </summary>
                         <div class="qv3-panel-content">
@@ -409,7 +440,9 @@
                     <details class="qv3-panel qv3-panel-notes">
                         <summary>
                             <span class="qv3-panel-icon"><i class="ki-outline ki-message-text"></i></span>
-                            <span class="qv3-panel-title"><strong>توضیحات و سوابق تغییرات</strong><small>یادداشت داخلی و متن قابل مشاهده مشتری</small></span>
+                            <span class="qv3-panel-title"><strong>توضیحات و سوابق</strong>
+                                <small class="qv3-panel-summary" data-qv3-summary="notes">{{ form_s.instance.sales_description|default:form_s.instance.description|default:"بدون توضیح ثبت‌شده"|truncatechars:65 }}</small>
+                            </span>
                             <span class="qv3-panel-arrow" aria-hidden="true"><i class="ki-outline ki-down"></i></span>
                         </summary>
                         <div class="qv3-panel-content">

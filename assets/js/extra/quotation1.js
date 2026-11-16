@@ -386,6 +386,10 @@ function set_item_classes(item, idx=null) {
                 },
                 cache: true
             },
+            // Keep quotation v2 dropdowns anchored to the active row.
+            // Legacy screens retain Select2's default document-body portal.
+            dropdownParent: document.querySelector('.quotation-v2-full') ? $(item) : $(document.body),
+            width: document.querySelector('.quotation-v2-full') ? '100%' : 'resolve',
             dropdownAutoWidth: true,
             dropdownCssClass: 'goods_select2',
             minimumInputLength: 1,
@@ -429,6 +433,10 @@ function set_item_classes(item, idx=null) {
                 },
                 cache: true
             },
+            // Keep quotation v2 dropdowns anchored to the active row.
+            // Legacy screens retain Select2's default document-body portal.
+            dropdownParent: document.querySelector('.quotation-v2-full') ? $(item) : $(document.body),
+            width: document.querySelector('.quotation-v2-full') ? '100%' : 'resolve',
             dropdownAutoWidth: true,
             dropdownCssClass: 'goods_select2',
             minimumInputLength: 1,
@@ -489,6 +497,10 @@ function set_item_classes(item, idx=null) {
                 },
                 cache: true
             },
+            // Keep quotation v2 dropdowns anchored to the active row.
+            // Legacy screens retain Select2's default document-body portal.
+            dropdownParent: document.querySelector('.quotation-v2-full') ? $(item) : $(document.body),
+            width: document.querySelector('.quotation-v2-full') ? '100%' : 'resolve',
             dropdownAutoWidth: true,
             dropdownCssClass: 'all_price_select2',
             minimumInputLength: 0,
