@@ -222,3 +222,81 @@ class QuotationV2CompactRowRequirementsTests(SimpleTestCase):
         self.assertIn('"select2:open"', self.ui_js)
         self.assertIn('"select2:close"', self.ui_js)
         self.assertIn("row.classList.add", self.ui_js)
+
+
+class QuotationV2CollapsedRowOrderTests(SimpleTestCase):
+    """The compact header shows every financial field in the requested order."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.html = get_template("micmod-base/quotation/v2/item_full.html").template.source
+        cls.css = (
+            Path(settings.BASE_DIR) / "micmod_base/static/micmod_base/css/quotation_v2_rows.css"
+        ).read_text(encoding="utf-8")
+        cls.js = (
+            Path(settings.BASE_DIR) / "micmod_base/static/micmod_base/js/quotation_v2_rows.js"
+        ).read_text(encoding="utf-8")
+
+    def test_exact_column_order_and_financial_sources(self):
+        start = self.html.index('class="qv4-summary-grid"')
+        end = self.html.index('class="qv3-expander qv4-expander"', start)
+        header = self.html[start:end]
+        columns = (
+            "qv4-cell-index", "qv4-cell-code", "qv4-cell-name",
+            "qv4-cell-quantity", "qv4-cell-method",
+            "qv4-cell-unit-price", "qv4-cell-discount",
+            "qv4-cell-tax", "qv4-cell-total", "qv4-cell-inquiries",
+        )
+        positions = [header.index('class="qv4-cell ' + name + '"') for name in columns]
+        self.assertEqual(positions, sorted(positions))
+        self.assertEqual(len(set(positions)), 10)
+        for name in ("name_h", "code_h", "quantity_h", "price-method_h",
+                     "unit-price_h", "discount_h", "tax_h", "total-price_h"):
+            self.assertIn('name="' + name + '"', header)
+        for model_property in (
+            "form_s.instance.discount_value",
+            "form_s.instance.tax",
+            "form_s.instance.price",
+            "form_s.instance.fee",
+            "form_s.instance.get_old_price_method_type",
+        ):
+            self.assertIn(model_property, header)
+
+    def test_two_independent_inquiry_states_and_colors(self):
+        header = self.html.split('class="qv4-summary-grid"', 1)[1].split(
+            'class="answer qv3-row-content"', 1
+        )[0]
+        self.assertIn('data-qv4-inquiry="local"', header)
+        self.assertIn('data-qv4-inquiry="foreign"', header)
+        self.assertIn("form_s.instance.local_price_inquiry_done", header)
+        self.assertIn("form_s.instance.foreign_price_inquiry_done", header)
+        self.assertIn("form_s.instance.need_local_price_inquiry", header)
+        self.assertIn("form_s.instance.need_foreign_price_inquiry", header)
+        self.assertIn("is-approved", header)
+        self.assertIn("is-pending", header)
+        self.assertIn("is-none", header)
+        self.assertIn(".qv4-inquiry-pill.is-pending", self.css)
+        self.assertIn(".qv4-inquiry-pill.is-approved", self.css)
+        self.assertIn(".qv4-inquiry-pill.is-none", self.css)
+
+    def test_live_values_follow_legacy_form_without_repricing(self):
+        self.assertIn("function currentMethodLabel(row)", self.js)
+        self.assertIn("function syncInquiryBadge(row, type, title)", self.js)
+        self.assertIn('[name="discount_value"]', self.js)
+        self.assertIn('[name="tax_value"]', self.js)
+        self.assertIn('[name="-total_price"]', self.js)
+        self.assertIn("MutationObserver", self.js)
+        self.assertIn('first(row, "#id_price_method_container")', self.js)
+        self.assertNotIn("window.calculate_price =", self.js)
+        self.assertNotIn("window.set_price2 =", self.js)
+        self.assertNotIn("apply_materialized_values", self.js)
+
+    def test_item_header_remains_formset_compatible(self):
+        self.assertIn("row-counter question-btn active-form qv3-row-header qv4-row-header", self.html)
+        self.assertIn('class="counter qv3-sequence"', self.html)
+        self.assertIn('class="answer qv3-row-content"', self.html)
+        self.assertIn('qv4-hidden-fulfillment', self.html)
+        self.assertIn(".qv4-summary-grid", self.css)
+        self.assertIn("@media(max-width:870px)", self.css)
+        self.assertIn("@media(max-width:520px)", self.css)

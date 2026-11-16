@@ -25,29 +25,111 @@
         return !!content && !content.classList.contains("close");
     };
 
+    function currentMethodLabel(row) {
+        const control = first(row, "#id_price_method_container select");
+        const selected = control?.selectedOptions?.[0];
+        const fallback = first(row, '[name="price-method_h"]')?.dataset.qv4Method || "";
+        const method = control?.value || first(row, 'input[name$="-price_method"]')?.value || fallback;
+        if (!method) return "—";
+        if (method === "sales_admin") return "مصوب مدیر";
+
+        // Prefer the human-readable price source from the *actual* form/price list.
+        const label = selected?.textContent?.trim();
+        if (selected?.value === method && label && !/^[-—]+$/.test(label)) {
+            return label.split("|")[0].trim() || label;
+        }
+        let prices = [];
+        try {
+            prices = JSON.parse(first(row, 'textarea[name$="-price_json"]')?.value || "[]");
+        } catch (_) {
+            prices = [];
+        }
+        if (Array.isArray(prices)) {
+            const match = prices.find((item) => item?.unique_title === method);
+            if (match?.title) return String(match.title);
+        }
+        const known = {
+            bazar: "قیمت بازار", price_market: "قیمت بازار",
+            express: "اکسپرس", price_sheet1: "اکسپرس",
+            air: "هوایی", price_sheet2: "هوایی",
+            sea: "دریایی", price_sheet3: "دریایی",
+        };
+        return known[method] || method;
+    }
+
+    function syncInquiryBadge(row, type, title) {
+        const badge = first(row, '[data-qv4-inquiry="' + type + '"]');
+        if (!badge) return;
+
+        function valueOf(suffix, fallback) {
+            const field = first(row, 'input[name$="-' + suffix + '"]');
+            if (!field) return fallback === "1";
+            if (field.type === "checkbox") return field.checked;
+            return /^(1|true|yes|on)$/i.test(String(field.value || "").trim());
+        }
+
+        const needed = valueOf("need_" + type + "_price_inquiry", badge.dataset.needed);
+        const done = valueOf(type + "_price_inquiry_done", badge.dataset.done);
+        const state = done ? "is-approved" : (needed ? "is-pending" : "is-none");
+        badge.classList.remove("is-approved", "is-pending", "is-none");
+        badge.classList.add(state);
+        badge.dataset.needed = needed ? "1" : "0";
+        badge.dataset.done = done ? "1" : "0";
+
+        const symbol = first(badge, ".qv4-inquiry-symbol");
+        if (symbol) symbol.textContent = done ? "✓" : needed ? "◷" : "—";
+        badge.title = done
+            ? "پاسخ استعلام " + title + " ثبت و تأیید شده"
+            : needed
+                ? "در انتظار تأیید پاسخ استعلام " + title
+                : "استعلام " + title + " درخواست نشده";
+        badge.setAttribute("aria-label", badge.title);
+    }
+
     function syncHeading(row) {
         const sku = first(row, 'input[type="hidden"][name$="-goods_code"]');
         const skuLabel = first(row, ".qv3-sku");
-        if (skuLabel && sku) skuLabel.textContent = sku.value || "کد انتخاب نشده";
+        if (skuLabel && sku) {
+            skuLabel.textContent = sku.value || "—";
+            skuLabel.title = sku.value || "";
+        }
 
         const name = first(row, 'textarea[name="-goods_name_lbl"]');
         const heading = first(row, ".qv3-product-title");
-        if (name && heading && name.value.trim()) heading.textContent = name.value.trim();
+        if (name && heading && name.value.trim()) {
+            heading.textContent = name.value.trim();
+            heading.title = name.value.trim();
+        }
 
         const qty = first(row, 'input[name$="-quantity"]');
         const qtyTarget = first(row, '[name="quantity_h"]');
         if (qty && qtyTarget) qtyTarget.textContent = fmt(number(qty.value), 0);
 
+        const methodTarget = first(row, '[name="price-method_h"]');
+        if (methodTarget) {
+            methodTarget.textContent = currentMethodLabel(row);
+            methodTarget.title = methodTarget.textContent;
+        }
+
         const fee = first(row, 'input[name$="-final_price"]');
         const feeTarget = first(row, '[name="unit-price_h"]');
         if (fee && feeTarget) feeTarget.textContent = fmt(number(fee.value));
 
-        const amount = first(row, '[name="-total_price"]');
-        const amountTarget = first(row, '[name="total-price_h"]');
-        if (amount && amountTarget) {
-            const n = number(amount.textContent);
-            amountTarget.textContent = Number.isFinite(n) ? fmt(n) : amount.textContent.trim() || "—";
+        for (const [source, target] of [
+            ['[name="discount_value"]', '[name="discount_h"]'],
+            ['[name="tax_value"]', '[name="tax_h"]'],
+            ['[name="-total_price"]', '[name="total-price_h"]'],
+        ]) {
+            const from = first(row, source);
+            const to = first(row, target);
+            if (!from || !to) continue;
+            const current = (from.textContent || "").trim();
+            const parsed = number(current);
+            to.textContent = Number.isFinite(parsed) ? fmt(parsed) : (current || "—");
         }
+
+        syncInquiryBadge(row, "local", "داخلی");
+        syncInquiryBadge(row, "foreign", "خارجی");
     }
 
     function syncExpanded(row) {
@@ -156,6 +238,23 @@
 
         const observer = new MutationObserver(() => syncExpanded(row));
         observer.observe(content, { attributes: true, attributeFilter: ["class"] });
+
+        // Several legacy price methods update financial spans programmatically
+        // without dispatching input/change. Observe those changes so the
+        // collapsed summary always reflects the current calculation.
+        const totals = first(row, ".qv3-financial-breakdown");
+        if (totals) {
+            const totalsObserver = new MutationObserver(() => scheduleHeading(row));
+            totalsObserver.observe(totals, {
+                childList: true, characterData: true, subtree: true,
+            });
+        }
+        // The price-method Select is dynamically created by quotation1.js.
+        const methodContainer = first(row, "#id_price_method_container");
+        if (methodContainer) {
+            const methodObserver = new MutationObserver(() => scheduleHeading(row));
+            methodObserver.observe(methodContainer, { childList: true });
+        }
 
         row.addEventListener("input", (event) => {
             if (event.target.matches(

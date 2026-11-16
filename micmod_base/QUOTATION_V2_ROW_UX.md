@@ -99,3 +99,21 @@ Manually verify the Select2 placement while scrolling, opening a collapsed
 price inquiry, using each inventory action, adding/reordering rows, and
 saving/advancing through the workflow. Static checks alone cannot prove
 live browser geometry or business integration.
+
+## Collapsed quotation row contract
+
+The collapsed row displays ten ordered RTL columns: row number,
+product SKU, product name, quantity, pricing method (readable title),
+unit selling price, entire row discount (QuotationItem.discount_value),
+entire row tax (QuotationItem.tax), row total (QuotationItem.price),
+and independent internal/foreign inquiry statuses.
+
+Inquiry badges are gray when the corresponding need_*_price_inquiry is
+true but *_price_inquiry_done is false; green when the *_done field
+is true; and neutral when no inquiry is requested. No extra approval
+field exists in the current model: a completed/responded inquiry is
+used as the green indicator, not an invented approval state.
+
+Values in the compact header sync from the existing row calculation
+and selector controls. No pricing formula, workflow or migration is
+changed. Responsive layout preserves the DOM column order on mobile.

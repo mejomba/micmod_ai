@@ -28,48 +28,83 @@
     {% for hidden in nested.hidden_fields %}{{ hidden }}{% endfor %}
 
     <div class="card-body qv3-card-body">
-        <div class="row-counter question-btn active-form qv3-row-header"
+        {# Keep the legacy .question-btn / .answer sibling contract for formset.js. #}
+        <div class="row-counter question-btn active-form qv3-row-header qv4-row-header"
              role="button" tabindex="0" aria-expanded="true"
              aria-label="باز و بسته کردن جزئیات ردیف {{ forloop.counter }}">
-            <div class="qv3-row-identity">
-                <span class="counter qv3-sequence">{{ forloop.counter|default:"۱" }}</span>
-                <div class="qv3-row-heading">
-                    <div class="qv3-row-overline">
-                        <span class="qv3-row-kind">ردیف پیش‌فاکتور</span>
-                        <span class="qv3-overline-sep" aria-hidden="true">/</span>
-                        <span class="code_h qv3-sku" name="code_h" dir="ltr">{{ form_s.instance.goods_code|default:"کد انتخاب نشده" }}</span>
-                        {% if form_s.instance.pk and form_s.instance.pricing_version != 2 %}
-                            <span class="qv3-version-label">قیمت‌گذاری تاریخی</span>
-                        {% endif %}
-                    </div>
-                    <strong class="qv3-product-title" name="name_h">{{ form_s.instance.goods_code_fk.part_number|default:form_s.instance.goods_name|default:"برای شروع، کالا را انتخاب کنید" }}</strong>
-                    <div class="qv3-row-chips">
-                        {% with form_s.instance.not_over as fulfillment %}
-                            {% if fulfillment.0 %}<span class="qv3-chip is-success">انبار کامل</span>
-                            {% elif fulfillment.1 %}<span class="qv3-chip is-success">سفارش کامل</span>
-                            {% elif fulfillment.2 %}<span class="qv3-chip is-success">انبار و سفارش کامل</span>
-                            {% elif fulfillment.3 %}<span class="qv3-chip is-attention">انبار ناقص</span>
-                            {% elif fulfillment.4 %}<span class="qv3-chip is-attention">سفارش ناقص</span>
-                            {% elif fulfillment.5 %}<span class="qv3-chip is-attention">تأمین ناقص</span>
-                            {% else %}<span class="qv3-chip">بدون تخصیص</span>{% endif %}
-                        {% endwith %}
-                        {% if form_s.instance.need_local_price_inquiry %}
-                            <span class="qv3-chip is-info">استعلام داخلی</span>
-                        {% endif %}
-                        {% if form_s.instance.need_foreign_price_inquiry %}
-                            <span class="qv3-chip is-info">استعلام خارجی</span>
-                        {% endif %}
-                        {% if form_s.has_alt_code %}<span class="qv3-chip is-info">کالای مشابه</span>{% endif %}
+            <div class="qv4-summary-grid">
+                <div class="qv4-cell qv4-cell-index">
+                    <small>ردیف</small>
+                    <strong class="counter qv3-sequence" data-qv4-row-number>{{ forloop.counter|default:"۱" }}</strong>
+                </div>
+                <div class="qv4-cell qv4-cell-code">
+                    <small>کد کالا</small>
+                    <strong class="code_h qv3-sku" name="code_h" dir="ltr" title="{{ form_s.instance.goods_code|default:'' }}">{{ form_s.instance.goods_code|default:"—" }}</strong>
+                </div>
+                <div class="qv4-cell qv4-cell-name">
+                    <small>نام کالا</small>
+                    <strong class="qv3-product-title" name="name_h" title="{{ form_s.instance.goods_code_fk.part_number|default:form_s.instance.goods_name|default:'' }}">{{ form_s.instance.goods_code_fk.part_number|default:form_s.instance.goods_name|default:"برای شروع کالا انتخاب کنید" }}</strong>
+                </div>
+                <div class="qv4-cell qv4-cell-quantity">
+                    <small>تعداد</small>
+                    <strong name="quantity_h" data-qv4-numeric>{{ form_s.instance.quantity|default_if_none:"—"|intcomma }}</strong>
+                </div>
+                <div class="qv4-cell qv4-cell-method">
+                    <small>روش تعیین قیمت</small>
+                    <strong name="price-method_h" data-qv4-method="{{ form_s.instance.get_old_price_method_type|default_if_none:'' }}" title="{{ form_s.instance.get_old_price_method_type|default_if_none:'' }}">
+                        {% if form_s.instance.price_method == "sales_admin" %}مصوب مدیر{% else %}{{ form_s.instance.get_old_price_method_type|default:"—" }}{% endif %}
+                    </strong>
+                </div>
+                <div class="qv4-cell qv4-cell-unit-price">
+                    <small>فی واحد</small>
+                    <strong name="unit-price_h" data-qv4-numeric>{{ form_s.instance.fee|default_if_none:0|floatformat:"-4g" }}</strong>
+                </div>
+                <div class="qv4-cell qv4-cell-discount">
+                    <small>تخفیف کل ردیف</small>
+                    <strong name="discount_h" data-qv4-numeric>{{ form_s.instance.discount_value|floatformat:"-4g" }}</strong>
+                </div>
+                <div class="qv4-cell qv4-cell-tax">
+                    <small>مالیات کل ردیف</small>
+                    <strong name="tax_h" data-qv4-numeric>{{ form_s.instance.tax|floatformat:"-4g" }}</strong>
+                </div>
+                <div class="qv4-cell qv4-cell-total">
+                    <small>مبلغ ردیف</small>
+                    <strong name="total-price_h" data-qv4-numeric>{{ form_s.instance.price|default_if_none:0|floatformat:"-4g" }}</strong>
+                </div>
+                <div class="qv4-cell qv4-cell-inquiries">
+                    <small>وضعیت استعلام</small>
+                    <div class="qv4-inquiry-states" aria-label="وضعیت استعلام داخلی و خارجی">
+                        <span class="qv4-inquiry-pill {% if form_s.instance.local_price_inquiry_done %}is-approved{% elif form_s.instance.need_local_price_inquiry %}is-pending{% else %}is-none{% endif %}"
+                              data-qv4-inquiry="local"
+                              data-needed="{% if form_s.instance.need_local_price_inquiry %}1{% else %}0{% endif %}"
+                              data-done="{% if form_s.instance.local_price_inquiry_done %}1{% else %}0{% endif %}"
+                              title="{% if form_s.instance.local_price_inquiry_done %}پاسخ استعلام داخلی ثبت شده{% elif form_s.instance.need_local_price_inquiry %}در انتظار پاسخ استعلام داخلی{% else %}استعلام داخلی درخواست نشده{% endif %}">
+                            داخلی <span class="qv4-inquiry-symbol">{% if form_s.instance.local_price_inquiry_done %}✓{% elif form_s.instance.need_local_price_inquiry %}◷{% else %}—{% endif %}</span>
+                        </span>
+                        <span class="qv4-inquiry-pill {% if form_s.instance.foreign_price_inquiry_done %}is-approved{% elif form_s.instance.need_foreign_price_inquiry %}is-pending{% else %}is-none{% endif %}"
+                              data-qv4-inquiry="foreign"
+                              data-needed="{% if form_s.instance.need_foreign_price_inquiry %}1{% else %}0{% endif %}"
+                              data-done="{% if form_s.instance.foreign_price_inquiry_done %}1{% else %}0{% endif %}"
+                              title="{% if form_s.instance.foreign_price_inquiry_done %}پاسخ استعلام خارجی ثبت شده{% elif form_s.instance.need_foreign_price_inquiry %}در انتظار پاسخ استعلام خارجی{% else %}استعلام خارجی درخواست نشده{% endif %}">
+                            خارجی <span class="qv4-inquiry-symbol">{% if form_s.instance.foreign_price_inquiry_done %}✓{% elif form_s.instance.need_foreign_price_inquiry %}◷{% else %}—{% endif %}</span>
+                        </span>
                     </div>
                 </div>
             </div>
-            <div class="qv3-header-metrics">
-                <div class="col qv3-compact-stat"><small>تعداد</small><strong name="quantity_h">{{ form_s.instance.quantity|default_if_none:"—"|intcomma }}</strong></div>
-                <div class="col qv3-compact-stat"><small>فی واحد</small><strong name="unit-price_h">{{ form_s.instance.fee|default_if_none:"—"|floatformat:"-4g" }}</strong></div>
-                <div class="col qv3-compact-stat qv3-compact-total"><small>مبلغ ردیف</small><strong name="total-price_h">{{ form_s.instance.price|default_if_none:0|floatformat:"-2g" }}</strong></div>
-            </div>
-            <div class="qv3-expander" aria-hidden="true">
+            <div class="qv3-expander qv4-expander" aria-hidden="true">
                 <i class="ki-outline ki-down"></i>
+            </div>
+            {# Keep the fulfillment chips for the summary of the separate stock accordion. #}
+            <div class="qv3-row-chips qv4-hidden-fulfillment" aria-hidden="true">
+                {% with form_s.instance.not_over as fulfillment %}
+                    {% if fulfillment.0 %}<span class="qv3-chip is-success">انبار کامل</span>
+                    {% elif fulfillment.1 %}<span class="qv3-chip is-success">سفارش کامل</span>
+                    {% elif fulfillment.2 %}<span class="qv3-chip is-success">انبار و سفارش کامل</span>
+                    {% elif fulfillment.3 %}<span class="qv3-chip is-attention">انبار ناقص</span>
+                    {% elif fulfillment.4 %}<span class="qv3-chip is-attention">سفارش ناقص</span>
+                    {% elif fulfillment.5 %}<span class="qv3-chip is-attention">تأمین ناقص</span>
+                    {% else %}<span class="qv3-chip">بدون تخصیص</span>{% endif %}
+                {% endwith %}
             </div>
         </div>
 
