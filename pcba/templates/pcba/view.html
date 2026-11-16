@@ -13,6 +13,30 @@
         .item_customer_receipt_list{
             transition: all 0.3s ease;
         }
+        .pcba-pad-summary {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: .75rem;
+            padding: 1rem 1.25rem;
+            background: #f5f8ff;
+            border: 1px solid #dfebff;
+            border-radius: .75rem;
+            margin-top: 1rem;
+        }
+        .pcba-pad-summary strong, .pcba-cost-summary strong { font-size: 1.15rem; }
+        .pcba-cost-summary {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: .75rem;
+            background: #f3f9f5;
+            border: 1px solid #cfe9d6;
+            border-radius: .75rem;
+            padding: 1rem 1.25rem;
+        }
+        .pcba-calculation-help { color: #697b91; font-size: .83rem; }
+
         .nav-pills .nav-link.active,
         .nav-pills .show > .nav-link{
             background-color: #061b66 !important;
@@ -50,22 +74,30 @@
                     </div>
                 </div>
                 <div class="col mt-3">
-                    <div class="row row-cols-5">
-                        {% render_field_by_order form form.customer_sheet_count form.customer_board_count form.customer_total_board_count form.pad_count form.ic_pad_count label='on-border' %}
+                    <div class="row row-cols-1 row-cols-md-3 row-cols-xl-6">
+                        {% render_field_by_order form form.customer_sheet_count form.customer_board_count form.customer_total_board_count form.pad_count form.ic_pad_count form.not_assembly_pad_count label='on-border' %}
                     </div>
-                </div>
-
-
-                <div class="col mt-3">
-                    <div class="row row-cols-7">
-                        {% render_field_by_order form form.not_assembly_pad_count form.first_setup_time form.second_setup_time form.first_setup_cost form.second_setup_cost label='on-border' %}
+                    <div class="pcba-pad-summary" aria-live="polite">
+                        <span>جمع همه پدها در هر برد (معمولی + IC + خمیر قلع/چسب بدون مونتاژ):</span>
+                        <strong id="pcba-total-pads-per-board" dir="ltr">{{ form.instance.total_pads_per_board|intcomma }}</strong>
+                        <span class="pcba-calculation-help">برای گزارش پدهای مونتاژشده، پدهای بدون مونتاژ شمرده نمی‌شوند.</span>
                     </div>
                 </div>
 
                 <div class="col mt-3">
-                    <div class="row row-cols-5">
-                        {% render_field_by_order form form.pad_cost form.ic_pad_cost form.total_cost form.finish form.contract_end_date form.assembly_type form.image_1 label='on-border' %}
+                    <div class="row row-cols-1 row-cols-md-3 row-cols-xl-5">
+                        {% render_field_by_order form form.first_setup_time form.second_setup_time form.first_setup_cost form.second_setup_cost label='on-border' %}
                     </div>
+                </div>
+
+                <div class="col mt-3">
+                    <div class="row row-cols-1 row-cols-md-3 row-cols-xl-5">
+                        {% render_field_by_order form form.pad_cost form.ic_pad_cost form.total_cost form.extra_total_cost form.finish form.contract_end_date form.assembly_type form.image_1 label='on-border' %}
+                    </div>
+                    <p class="pcba-calculation-help mt-2 mb-0">
+                        هزینه پدهای بدون مونتاژ با نرخ هر پد معمولی محاسبه می‌شود.
+                        هزینه راه‌اندازی اول و دوم و هزینه‌های مازاد، تنها یک‌بار به مبلغ قرارداد اضافه می‌شوند.
+                    </p>
                 </div>
             <div class="" dir="ltr" id="image-wrapper">
                     {% for pic in form.instance.images.all %}
@@ -75,9 +107,10 @@
                     {% endfor %}
 
             </div>
-            <div class="mt-5">
-                <span class="font-size-16 bold ">جمع مبلغ قرارداد:</span>
-                <span class="badge badge-light-secondary text-black font-size-14">{{ form.instance.contract_cost|default_if_none:0|intcomma }}</span>
+            <div class="pcba-cost-summary mt-5" aria-live="polite">
+                <span class="font-size-16 bold">جمع مبلغ محاسبه‌شده قرارداد:</span>
+                <strong id="pcba-calculated-contract-cost" dir="ltr">{{ form.instance.contract_cost|default_if_none:0|intcomma }}</strong>
+                <span class="pcba-calculation-help">شامل پدهای معمولی، IC، پدهای بدون مونتاژ، راه‌اندازی‌ها و هزینه‌های مازاد</span>
             </div>
                 {{ form.errors }}
 
@@ -503,6 +536,7 @@
     <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
     <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/pcba_contract_calculations.js' %}"></script>
 
     <script>
     try {
@@ -716,6 +750,7 @@
         customer_board_count_val = parseFloat(customer_board_count.value) || 0
 
         total_board_count.value = customer_board_count_val * customer_sheet_count_val
+        total_board_count.dispatchEvent(new Event('input', { bubbles: true }));
     }
     customer_sheet_count.addEventListener('input', calculateBoardCount);
     customer_board_count.addEventListener('input', calculateBoardCount)
@@ -818,6 +853,8 @@
                         document.getElementById('id_customer_sheet_count').value = data.data.customer_sheet_count;
                         document.getElementById('id_ic_pad_count').value = data.data.ic_pad_count;
                         document.getElementById('id_pad_count').value = data.data.pad_count;
+                        document.getElementById('id_pad_count').dispatchEvent(new Event('input', { bubbles: true }));
+                        document.getElementById('id_ic_pad_count').dispatchEvent(new Event('input', { bubbles: true }));
                     } else if (data.error) {
                         alert(data.error);
                     } else {
