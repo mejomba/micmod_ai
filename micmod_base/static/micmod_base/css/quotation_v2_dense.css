@@ -702,3 +702,12 @@
     outline: 2px solid #a3c7d9;
     outline-offset: 1px;
 }
+
+/* Expand inquiry results across the financial pane when the user opens it. */
+.quotation-v2-full .qv3-item .qv6-finance-tools .qv3-price-all-sources:has(.qv3-price-inquiry[open]) {
+    grid-column: 1 / -1;
+}
+.quotation-v2-full .qv3-item .qv6-finance-tools .qv3-price-inquiry[open] .qv3-panel-content {
+    max-height: 280px;
+    overflow-y: auto;
+}
