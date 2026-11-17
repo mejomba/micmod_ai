@@ -1,0 +1,459 @@
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load humanize %}
+{% load more_tags %}
+{% load accounts_tag %}
+
+<div class="card item qw-item p-0 my-2 sortable-item" dir="rtl" data-qw-goods-code="{{ form_s.instance.goods_code|default_if_none:'' }}" data-qw-goods-name="{{ form_s.instance.goods_name|default_if_none:'' }}">
+{% if form_s.errors %}
+<div class="qw-row-errors bg-light-danger text-danger p-3" data-qw-row-error role="alert"><strong>ردیف {{ forloop.counter }} نیاز به اصلاح دارد.</strong>{{ form_s.errors }}</div>
+{% endif %}
+{% if nested.errors %}
+<div class="qw-row-errors bg-light-danger text-danger p-3" data-qw-row-error role="alert"><strong>اطلاعات استعلام ردیف {{ forloop.counter }} نیاز به اصلاح دارد.</strong>{{ nested.errors }}</div>
+{% endif %}
+    {% for hidden in form_s.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+{{ nested_manage.management_form }}
+{{ nested_manage.non_form_errors }}
+    {% for h in nested.hidden_fields %}
+        {{ h }}
+    {% endfor %}
+    <div class="card-body p-0">
+        <div class="row-counter question-btn active-form qw-row-summary">
+            <div class="qw-row-number">
+                <span class="counter visually-hidden">{{ forloop.counter }}</span>
+                <span data-qw-position>{{ forloop.counter }}</span>
+                <span class="qw-drag-hint handel-drop" aria-hidden="true" title="جابجایی ردیف">⠿</span>
+            </div>
+            <div class="qw-cell qw-code-cell">
+                <small class="qw-mobile-label">کد کالا</small>
+                <span class="code_h" name="code_h">{{ form_s.instance.goods_code|default_if_none:'—' }}</span>
+            </div>
+            <div class="qw-cell qw-name-cell">
+                <small class="qw-mobile-label">نام کالا</small>
+                <span name="name_h">{{ form_s.instance.goods_name|default_if_none:'—' }}</span>
+                <span class="qw-row-status" data-qw-status></span>
+                {% if form_s.has_alt_code %}<span class="qw-alt-badge">کالای مشابه دارد</span>{% endif %}
+            </div>
+            <div class="qw-cell qw-quantity-cell">
+                <small class="qw-mobile-label">تعداد</small>
+                <span name="quantity_h">{{ form_s.instance.quantity|default_if_none:'—' }}</span>
+                <input type="text" inputmode="decimal" class="qw-quantity-input" data-qw-quantity value="{{ form_s.instance.quantity|default_if_none:'' }}" aria-label="تعداد ردیف" autocomplete="off" disabled>
+            </div>
+            <div class="qw-cell qw-unit-cell">
+                <small class="qw-mobile-label">قیمت واحد</small>
+                <span name="unit-price_h">{{ form_s.instance.goods_q_last_price|default_if_none:'—' }}</span>
+            </div>
+            <div class="qw-cell qw-total-cell">
+                <small class="qw-mobile-label">مبلغ نهایی</small>
+                <span name="total-price_h">{{ form_s.instance.goods_q_last_price|mul:form_s.instance.quantity|intcomma }}</span>
+            </div>
+            <button type="button" class="qw-row-toggle" data-qw-toggle aria-expanded="true">جزئیات</button>
+        </div>
+        <div class="row answer m-0 qw-row-details">
+        <div class="ribbon ribbon-start ribbon-clip qw-supply-status">
+            <div class="ribbon-label text-black px-6 d-flex justify-content-between" style="padding-bottom: 2px; padding-top: 2px; width: 10%">
+            {% with form_s.instance.not_over as not_over %}
+                <span class="me-2">
+                {% if not_over.0 %}
+                    انبار کامل
+                {% elif not_over.1 %}
+                    سفارش کامل
+                {% elif not_over.2 %}
+                    انبار + سفارش (کامل)
+                {% elif not_over.3 %}
+                    انبار ناقص
+                {% elif not_over.4 %}
+                    سفارش ناقص
+                {% elif not_over.5 %}
+                    انبار + سفارش (ناقص)
+                {% elif not_over.6 %}
+                    بدون فاکتور
+                {% endif %}
+                </span>
+                <span class="ribbon-inner
+                {% if not_over.0 %}
+                bg-success
+                {% elif not_over.1 %}
+                bg-light-success
+                {% elif not_over.2 %}
+                bg-light-success
+                {% elif not_over.3 %}
+                bg-light-warning
+                {% elif not_over.4 %}
+                bg-light-danger
+                {% elif not_over.5 %}
+                bg-light-danger
+                {% elif not_over.6 %}
+                bg-white
+                {% endif %}">
+                </span>
+                {% if not not_over.6 %}
+                    <i class="ki-outline ki-information-2 fs-3 text-black cursor-pointer tooltip_">
+                <span class="tooltiptext-fit">
+                    <table class="table table-stripe  table-dar m-0">
+                        <thead>
+                          <tr class="bold">
+                            <th scope="col" class="font-size-13">فاکتور</th>
+                            <th scope="col" class="font-size-13">سفارش</th>
+                            <th scope="col" class="font-size-13">تعداد</th>
+                            <th scope="col" class="font-size-13">تقریب زمان تحویل</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        {% for supply_location in not_over.7 %}
+                        <tr class="border-top">
+                        <th scope="row">{{ supply_location.0 }}</th>
+{#                            <td>{{ supply_location.0 }}</td>#}
+                            <td>{{ supply_location.1 }}</td>
+                            <td>{{ supply_location.2 }}</td>
+                            <td>{{ supply_location.3 }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                      </table>
+
+                </span>
+                </i>
+                {% endif %}
+            {% endwith %}
+            </div>
+        </div>
+            <div class="col-lg-2 rounded qw-detail-group" style="border-bottom: 1px solid #f1f1f2">
+                <h3 class="qw-detail-heading">تعداد و درخواست مشتری</h3>
+                <div class="d-flex">
+                    <div class="w-50 mt-3">{% render_field_by_order form_s form_s.quantity label='on-border' %}</div>
+                    <div class="w-50 replace-digits">
+                        <label class="card-title-desc text-center bold ms-1"
+                               data-key="stock_amount">موجودی:</label>
+                        {% render_field_by_order nested nested.stock_amount nested.stock_amount_res no_input=True %}
+
+                    </div>
+                    <div>{% render_field_by_order nested nested.description label='on-border' %}</div>
+                </div>
+                <div class="d-flex gap-2 mb-1 d-non">
+                    <span> تعداد در بسته: </span>
+                    <span id="moq">{{ form_s.instance.goods_code_fk.batch_count|floatformat:"-2g"|default_if_falsy:'-' }}</span>/
+                    <span id="moq_box">{{ form_s.instance.goods_code_fk.count_in_box|floatformat:"-2g"|default_if_falsy:'-' }}</span>/
+                    <span id="moq_main_box">{{ form_s.instance.goods_code_fk.count_in_main_box|floatformat:"-2g"|default_if_falsy:'-' }}</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <span>اولویت: </span>
+                    <span>{{ form_s.instance.goods_code_fk.items_raked.first }}</span>
+                </div>
+                <div class="d-flex mt-4">
+                    <div class="w-35">
+{#                        <input value="{{ form_s.instance.customer_goods_code.sku }}" placeholder="کد کالا مشتری" type="text" name="quotation-{{ forloop.counter0 }}-customer_goods_code" maxlength="100" class="form-control narrow-input font-size-12" id="id_quotation-{{ forloop.counter0 }}-customer_goods_code">#}
+                        {% render_field_by_order form_s form_s.customer_goods_code label='on-border' %}
+                    </div>
+                    <div class="w-65">
+                        {% render_field_by_order form_s form_s.customer_goods_name label='on-border' margin_b=1 %}
+                    </div>
+                </div>
+                <div>
+                </div>
+                {% if form_s.instance.need_local_price_inquiry %}
+                    <span class="position-absolute" data-bs-toggle="tooltip" data-bs-placement="top" title="{% get_inquiry_result_description quotation_item=form_s.instance %}" style="bottom: 0; right: 30px;">
+                    <i class="ki-outline ki-message-notif fs-2x"></i>
+                    </span>
+                {% endif %}
+
+                <div class="mb-1">
+                    {% render_field_by_order form_s form_s.price_target label='on-border' %}
+                </div>
+                {% get_comment_user_list form_s request.user %}
+{#                {% get_payment_list form_s request.user %}#}
+            </div>
+            <div class="col-lg-3 p-0 qw-detail-group" style="border-bottom: 1px solid #f1f1f2">
+                <h3 class="qw-detail-heading">کالا و جایگزین</h3>
+                <div class="d-flex px-1 align-items-start">
+                    <div class="w-25 mt-3 on-border">
+                        {% if form_s.enable and not form_s.goods_code.field.disabled %}
+                            <div class="select2 goods_code " name="goods_code"></div>
+                            <label>کد کالا</label>
+                            {% if form_s.instance.old_goods_code %}
+                                <small style="font-size: 0.7rem;">{{ form_s.instance.old_goods_code }} ({{ form_s.instance.item_editor_user }})</small>
+                                <br>
+                                <small style="font-size: 0.6rem;">{{ form_s.instance.old_goods_name }}</small>
+                            {% endif %}
+                        {% else %}
+                            <label>کد کالا</label>
+                            <div class="mt-4 select2-selection__rendered">
+                            {{ form_s.instance.goods_code }}
+                            {% if form_s.instance.old_goods_code %}
+                                <small>{{ form_s.instance.old_goods_code }} ({{ form_s.instance.item_editor_user }})</small>
+                                <br>
+                                <small style="font-size: 0.6rem;">{{ form_s.instance.old_goods_name }}</small>
+                            {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="w-75">
+                        <div class="d-flex justify-content-end">
+                            {% render_field_by_order form_s form_s.goods_name %}
+                                                        <div class="card-text bold w-75 rounded" data-key="goods_name"> نام کالا</div>
+                            <div class="w-25 bg-light-danger text-center" onclick="hide_show_goods_alt(this)"
+                                 data-key="show_alt">مشابه
+                            </div>
+                        </div>
+                        <div class="col on-border">
+{#                            <label>نام کالا</label>#}
+                            <textarea class="w-100 goods_name form-control bg-white bold text-black"  rows="1" name="-goods_name_lbl" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>
+                            {% if form_s.instance.pk and not form_s.instance.goods_code_fk.sepidar_id_0 %}
+                                <div class="sepidar_id_warning">
+                                <small class="text-danger">این کالا در سپیدار نیست. یا بروز رسانی از سپیدار انجام نشده</small>
+                                </div>
+                            {% endif %}
+                            {% if request.user|has_groups:"sales_user" %}
+                            <div class="d-flex justify-content-between px-3">
+                            <span>
+                            {% parent_code_data form_s.instance.goods_code as parent_code %}
+                                {% if parent_code %}
+                                    <small class="me-1">کد مادر</small>
+                                    <small class="bg-light-danger">{{ parent_code.sku }}</small>
+                                     -
+                                    <small class="bg-light-info">{{ parent_code.part_number }}</small>
+                                {% endif %}
+                            </span>
+                                <a href="/extra_data/item/create/" target="_blank">
+                                    <i class="fas fa-plus-square text-success icon-xl" style="font-size: 1.5rem"></i>
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="d-non px-1" name="box-alt-goods">
+                    <div class="d-flex mt-3">
+                        <div class="w-25 on-border">
+                            {% if form_s.enable and not form_s.goods_code_alt.field.disabled %}
+                                <div class="select2 w-100 goods_code_alt" name="goods_code_alt"></div>
+                                <label>کد کالا</label>
+                                {% render_field_by_order form_s form_s.goods_code_fk %}
+                            {% else %}
+                                <div class="mt-4">
+                                {{ form_s.instance.goods_code_alt }}
+                                </div>
+                                <label>کد کالا</label>
+                            {% endif %}
+                        </div>
+                        <div class="w-75">
+                            <div class="col on-border">
+                                <label>نام کالا</label>
+                                <textarea class="w-100 form-control bg-white bold text-black" name="-goods_name_alt_lbl" rows="1" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-1 replace-digits">
+                    <div class="w-100">
+{#                        <div class="card-text bold">#}
+{#                            <span>آخرین فروش به مشتری</span>#}
+{#                        </div>#}
+                        <div class="mt-1" id="customer-last-sales" style="border-top: 1px solid #f1f1f2">
+{#                            <div class="w-30 mt-3">#}
+{#                                <div class="">فاکتور</div>#}
+{#                                <div class="mt-3 ">پیش فاکتور</div>#}
+{#                            </div>#}
+{#                            <div class="w-50">#}
+{#                                <div class="card-title-desc text-center" data-key="date">تاریخ</div>#}
+{#                                <div>{% render_field_by_order nested nested.goods_last_sale no_input=True %}</div>#}
+{#                                <div class="mt-3">{% render_field_by_order nested nested.goods_q_last_sale no_input=True %}</div>#}
+{#                            </div>#}
+{#                            <div class="w-25">#}
+{#                                <div class="card-title-desc text-center" data-key="count">تعداد</div>#}
+{#                                <div>{% render_field_by_order nested nested.goods_total_sales no_input=True %}</div>#}
+{#                                <div class="mt-3">{% render_field_by_order nested nested.goods_q_total_sales no_input=True %}</div>#}
+{#                            </div>#}
+{#                            <div class="w-25">#}
+{#                                <div class="card-title-desc text-center" data-key="price">قیمت</div>#}
+{#                                <div>{% render_field_by_order nested nested.goods_last_price no_input=True %}</div>#}
+{#                                <div class="mt-3">{% render_field_by_order nested nested.goods_q_last_price no_input=True %}</div>#}
+{#                            </div>#}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 p-0 replace-digits qw-detail-group" style="border-bottom: 1px solid #f1f1f2">
+                <h3 class="qw-detail-heading">منابع قیمت</h3>
+                <div class="px-2 h-35">
+
+
+
+                    {% if request.user|has_one_group:'sales_user, sales_admin' %}
+                    <div id="id_display_price_container"></div>
+                    <div class="diff_price_alert badge badge-danger rounded " ></div>
+                    {% endif %}
+                        <span class="d-none">{{ form_s.price_json }}</span>
+{#                    </div>#}
+                </div>
+                <div class="h-30 all_pricess mt-2">
+                    <div class="d-flex">
+                        <div class="p-0 w-100">
+                            <div class="text-center bold bg-light-info">قیمت های موجود
+                                <span id="all_price_count">
+                                    ({{ form_s.instance.goods_code_fk.inquiry_count }})
+                                </span>
+                            </div>
+                            <div class="d-none" id="selected_price_code_data" data-selected_price_code_inquiry_type="{{ form_s.instance.selected_price_code.inquiry_type }}"></div>
+                            <div class="select2 selected_price_code" name="selected_price_code"></div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="sepidar_stock_info_result"></div>
+                </div>
+            </div>
+            <div class="col-lg-3 border qw-detail-group" style="border-bottom: 1px solid #f1f1f2">
+                <h3 class="qw-detail-heading">قیمت‌گذاری و استعلام</h3>
+                <div class="row h-100">
+                    <div class="col-lg-7 p-0 border-end border-start-0 rounded overflow-hidden">
+                        <div class="">
+                            <div class="d-flex mt-2 ">
+                                <div class="text-center w-100">
+                                    <span class="d-none" data-previous_price_method="{{ form_s.instance.get_old_price_method_type }}"></span>
+                                    <div class="col on-border  mb-3 ">
+                                        <div class="form-group" id="div_price_method">
+                                            <div id="id_price_method_container">
+
+                                            </div>
+                                        </div>
+                                        <label data-key="price_method" id="None" class="None">روش تعیین قیمت</label>
+                                        <div class="text-danger"></div>
+                                    </div>
+                                </div>
+
+
+                            </div>
+                            <div class="d-flex">
+                                <div class="w-100 card-text text-center">{% render_field_by_order form_s form_s.final_price label='on-border' margin_b="0" %}</div>
+                                {% if request.user|has_permission:"micmod_base.discount_per_item" %}
+                                <div>{% render_field_by_order form_s form_s.discount_per_item label='on-border' %}</div>
+                                {% else %}
+                                    <input type="hidden" name="{{ form_s.discount_per_item.html_name }}" value="{{ form_s.instance.discount_per_item }}">
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="bg-soft-info replace-digits h-75 text-center">
+                            <div class="mb-2 d-flex gap-1">
+                                <small class="w-25 text-right">جمع خالص</small>
+                                <small name="MAC" class="">{{ form_s.instance.net_price|floatformat:'-4g' }}</small>
+                            </div>
+                            <div class="mb-2 d-flex gap-1">
+                                <small class="w-25 text-right">مالیات</small>
+                                <small name="tax_value" class="">{{ form_s.instance.tax|floatformat:'-4g' }}</small>
+                            </div>
+                            <div class="mb-2 d-flex gap-1">
+                                <small class="w-25 text-right">تخفیف</small>
+                                <small name="discount_value" class="">{{ form_s.instance.discount_value|floatformat:'-4g' }}</small>
+                            </div>
+                            <div class="mt-4 d-flex flex-column bg-light-info bold">
+                                <span>مبلغ نهایی</span>
+                                <span name="-total_price">-</span>
+{#                                <span class="d-none">#}
+                                    <input type="number" step="any" name="{{ form_s.prefix }}-final_amount" value="{{ form_s.instance.final_amount|default_if_falsy:0 }}" class="visually-hidden">
+{#                                </span>#}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5 d-block p-0">
+                        <div class="align-content-sm-stretch d-flex flex-column align-items-center justify-content-between"
+                             style="min-height: 100%;">
+                            <div class="w-100">
+                                {% if form_s.instance.goods_code %}
+                                    <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ form_s.instance.goods_code }}"
+                                       target="_blank" class="bold inquiry-result-link py-1">مشاهده پرونده استعلام</a>
+                                {% endif %}
+                                <div class="border-bottom ps-1">
+                                    <div class="d-flex justify-content-between mt-1">
+                                        {% render_field_by_order form_s form_s.need_local_price_inquiry label='on-border' margin_b=0 %}
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        {% render_field_by_order form_s form_s.local_price_inquiry_done label='on-border' margin_b=0 %}
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <div class="d-none">
+                                        {% render_field_by_order form_s form_s.bazar_price_code margin_b=0 %}
+                                        </div>
+                                        {{ form_s.instance.bazar_price_code|default_if_none:'' }}
+                                    </div>
+                                </div>
+                                <div class="ps-1">
+                                    <div class="d-flex justify-content-between mt-1">
+                                        {% render_field_by_order form_s form_s.need_foreign_price_inquiry label='on-order' margin_b=0 %}
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        {% render_field_by_order form_s form_s.foreign_price_inquiry_done label='on-order' margin_b=0 %}
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <div class="d-none">
+                                        {% render_field_by_order form_s form_s.trade_price_code margin_b=0 %}
+                                        </div>
+                                        {{ form_s.instance.trade_price_code|default_if_none:'' }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="d-flex justify-content-center mb-1">
+                                    <div class="d-flex justify-content-around align-items-center btn-sm bg-danger text-white rounded me-1">
+                                          {{ form_s.DELETE }} <label class="ms-1 mb-0 p-1" for="{{ form_s.DELETE.id_for_label }}">حذف</label>
+                                    </div>
+                                    <div class="btn btn-sm btn-bordered btn-outline-info py-1" id="new-inquiry-result-{{ form_s.instance.goods_code }}" data-value="{{ form_s.instance.goods_code }}">
+                                        استعلام قیمت
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-bordered changelog-btn"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#id_kt_empty_modal_lg"
+                                        data-model_name="{{ form_s.instance.files.content_type.model }}"
+                                        data-object_id="{{ form_s.instance.pk }}"
+                                        data-app_name="{{ app_name }}"
+                                        name="name_change_log">
+                                    تاریخچه تغییرات
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+<span class="d-none">{{ form_s.lead_time }}</span>
+        <div class="d-flex align-items-center y-2" >
+            <span class="ms-8">{{ form_s.item_in_china }} {{ form_s.item_in_china.label }}</span>
+            <span class="ms-8">زمان تحویل: <span id="lead_time_text">{{ form_s.instance.lead_time|default_if_none:'-' }}</span></span>
+            <span class="ms-8"><span>کارشناس ۱: </span> <span>{{ form_s.instance.assigned_trade_user|default_if_none:'-' }}</span></span>
+            <span class="ms-8"><span>کارشناس ۲: </span> <span>{{ form_s.instance.assigned_trade_user2|default_if_none:'-' }}</span></span>
+            <span class="sepidar_stock_info tooltip_ cursor-pointer text-primary d-non ms-8" onclick="get_sepidar_stock_info(event, row=null, sepidar_id_0=null)">
+                <span class="tooltiptext">موجودی انبارها</span>
+                <i class="ki-duotone ki-home fs-1"></i>
+            </span>
+            <span class="item_order_quantity tooltip_ cursor-pointer text-primary d-non ms-8" onclick="item_order_quantity(event)">
+                <span class="tooltiptext">موجودی سفارش ‌ها</span>
+                <i class="ki-duotone ki-handcart fs-1"></i>
+            </span>
+            <span class="d-none" id="id_quotation_row">{{ form_s.instance.pk }}</span>
+            <span class="w-20 ms-8">{{ form_s.sales_description }}</span>
+            <span class="ms-2">
+{#                {% render_field_by_order form_s form_s.supply_status margin_b=0 %}#}
+                {% render_field_by_order form_s form_s.supply_date margin_b=0 %}
+            </span>
+{#        {{ form_s.supply_status }}#}
+            {% if form_s.instance.task_start or form_s.instance.task_start2 %}
+                {% if not form_s.instance.foreign_price_inquiry_done %}
+                    <span class="text-danger ms-8">فرایند استعلام این ردیف آغاز شده؛ برای تغییرات با کارشناس بازرگانی هماهنگ کنید.</span>
+                {% endif %}
+            {% endif %}
+
+
+        </div>
+<div class="position-absolute d-none" id="comment-form-group__{{ form_s.instance.pk }}">
+<div class="position-absolute d-none" id="generic-payment-form-group__{{ form_s.instance.pk }}"></div>
+</div>
+        </div>
+    </div>
+<i class="ki-duotone ki-arrow-up-down handel-drop cursor-move fs-2x position-absolute text-info hover-drop-down-icon" style="top: 0; left: 0; height: 30px" title="جابجایی ردیف" aria-label="جابجایی ردیف">
+     <span class="path1"></span>
+     <span class="path2"></span>
+    </i>
+</div>

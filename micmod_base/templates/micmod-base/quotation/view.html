@@ -10,269 +10,187 @@
 {% block title %}
     {{ form.instance.pk }}
     پیش‌‌فاکتور
-{% endblock title %} {"title": ""})
+{% endblock title %}
 {% block extra_css %}
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
     <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'css/quotation-workspace.css' %}" rel="stylesheet" type="text/css"/>
 {% endblock extra_css %}
 
 {% block form_content %}
-
+<div class="qw-page" id="quotation-page" dir="rtl">
     <input type="hidden" name="qis_last_update_datetime" value="{{ qis_last_update_datetime }}">
     <input type="hidden" name="last_update_datetime" value="{{ last_update_datetime }}">
     <input type="hidden" name="quotation_id" value="{{ form.instance.pk }}">
+    {% csrf_token %}
+    {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
 
-    <div class="border rounded mb-5 p-3">
-        <div class="d-flex justify-content-between">
-            <span class="d-flex align-items-center gap-3">
-                <button data-quotation-id="{{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg" class="border border-primary rounded p-2 bg-light-primary cursor-pointer" onclick="openModal(event)" id="openExportModal">
-                    خروجی اکسل
-                </button>
-                <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="cursor-pointer border border-primary rounded text-black p-2 bg-light-primary">بازگشت به لیست</a>
-                <a class="border border-primary rounded text-black p-2 bg-light-primary cursor-pointer" href="{% url 'factor:factor.view' %}?q_id={{ form.instance.pk }}" target="_blank">ایجاد فاکتور</a>
-                <span class="tooltip_">
-                    <a class="fw-bold" href="{% url 'micmod_base:quotations.create' %}" target="_blank">
-                        <i class="ki-duotone ki-plus-circle fs-2x">
-                            <span class="tooltiptext font-size-12">ایجاد پیش‌فاکتور</span>
-                            <span class="path1"></span>
-                            <span class="path2"></span>
-                        </i>
-                    </a>
-                </span>
-            </span>
+    <header class="qw-hero">
+        <div>
+            <a class="qw-eyebrow" href="{% url 'micmod_base:quotations.list' %}?q=active">پیش‌فاکتورها / فضای کار</a>
+            <h1>{% if form.instance.pk %}پیش‌فاکتور <bdi>#{{ form.instance.pk }}</bdi>{% else %}پیش‌فاکتور جدید{% endif %}</h1>
+            <p>از یک نگاه کلی تا جزئیات هر کالا؛ همه ردیف‌ها در دسترس شماست.</p>
         </div>
-    </div>
-
-    <div class="mb-3">
-    {% for warn in q_warn %}
-    <span class="p-2 border border-danger text-danger rounded">{{ warn }}</span>
-    {% endfor %}
-
-    </div>
-
-    <div class="bg-light-danger text-danger p-8 rounded d-none position-sticky sticky-top w-80 mx-auto" id="expire_inquiry_error">
-    <span class="mx-3 bold">استفاده از استعلام های بازار پس از ۷۲ ساعت مجاز نیست</span>
-        <span class="">ردیف(های)</span>
-    <span id="expire_inquiry_row_number" class="bg-danger px-2 rounded text-white s-2"></span>
-    (روش تعیین قیمت را اصلاح کنید)
-</div>
-            {% csrf_token %}
-                    {% for hidden in form.hidden_fields %}
-                        {{ hidden }}
-                    {% endfor %}
-                    <div class="row">
-                        <div class="col-sm-12">
-
-    {% if form.instance.pk and form.instance.cancel %}
-        <h3 class="p-5 bg-light-danger text-danger bold text-center">
-        این پیش فاکتور کنسل شده است
-        </h3>
-    {% endif %}
-{% if factors %}
-    <div class="bg-light-danger {% if factors %} p-3 {% endif %}">
-    {% for factor in factors %}
-    {% if forloop.first %}
-        <div class="text-danger bold mb-4">امکان تغییر در پیش فاکتوری که برای آن فاکتور صادر شده است وجود ندارد
-            {% if form.instance.is_direct %}
-                <span class="badge">این سند برای فاکتور مستقیم ثبت شده است</span>
+        <nav class="qw-hero-actions" aria-label="عملیات پیش‌فاکتور">
+            {% if form.instance.pk %}
+            <button type="button" data-quotation-id="{{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg" class="btn btn-light" onclick="openModal(event)" id="openExportModal">خروجی اکسل</button>
+            <a class="btn btn-light" href="{% url 'factor:factor.view' %}?q_id={{ form.instance.pk }}" target="_blank" rel="noopener">ایجاد فاکتور</a>
             {% endif %}
+            <a class="btn btn-primary" href="{% url 'micmod_base:quotations.create' %}" target="_blank" rel="noopener">+ پیش‌فاکتور جدید</a>
+        </nav>
+    </header>
+
+    {% for warn in q_warn %}<div class="alert alert-warning" role="alert">{{ warn }}</div>{% endfor %}
+    {% if form.instance.pk and form.instance.cancel %}
+    <div class="alert alert-danger" role="status">این پیش‌فاکتور لغو شده است.</div>
+    {% endif %}
+    {% if factors %}
+    <div class="alert alert-warning" role="status">
+        <strong>برای این پیش‌فاکتور فاکتور صادر شده و امکان تغییر آن وجود ندارد.</strong>
+        {% if form.instance.is_direct %}<span class="badge badge-light">فاکتور مستقیم</span>{% endif %}
+        <div class="mt-2">فاکتورهای مرتبط:
+        {% for factor in factors %}<a href="{% url 'factor:factor.view' factor.pk %}" class="badge badge-light-primary" target="_blank" rel="noopener">{{ factor.pk }}</a>{% endfor %}
         </div>
-        <span class="bold">فاکتور های مرتبط</span>
-    {% endif %}
-        <a href="{% url 'factor:factor.view' factor.pk %}" class="text-primary badge pb-1 badge-light-primary border border-primary font-size-12 ms-2" target="_blank" style="letter-spacing: 1.5px">{{ factor.pk }}</a>
-    {% endfor %}
     </div>
-    {% else %}
-    <a class="fw-bold border border-primary bg-light-primary rounded p-1 m-10 d-none" href="{% url 'factor:factor.view' %}?q_id={{ form.instance.pk }}" target="_blank">ایجاد فاکتور</a>
     {% endif %}
+    <div class="alert alert-danger d-none" id="expire_inquiry_error" role="alert">
+        استفاده از استعلام‌های بازار پس از ۷۲ ساعت مجاز نیست. روش تعیین قیمت ردیف‌های
+        <strong id="expire_inquiry_row_number"></strong> را اصلاح کنید.
+    </div>
 
-                        <div class="mt-5 mb-2">
-                            {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
+    <div class="qw-workflow">{% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}</div>
+
+    <details class="qw-section qw-document qw-metadata" id="qw-document" {% if not form.instance.pk or form.errors %}open{% endif %}>
+        <summary><span><strong>اطلاعات پیش‌فاکتور و مشتری</strong><small>مشخصات سند، شرایط پرداخت و اطلاعات مشتری</small></span></summary>
+        <div class="qw-section-body">
+            {{ form.non_field_errors }}
+            <div class="row g-5">
+                <section class="col-xl-7" aria-label="مشخصات پیش‌فاکتور">
+                    <h2 class="fs-5 mb-4">مشخصات پیش‌فاکتور</h2>
+                    <div class="row g-4">
+                        <div class="col-md-4">{% render_field_by_order form form.sepidar_number no_input=True label='on-border' margin_b=3 %}{% render_field_by_order form form.title form.status label='on-border' margin_b=3 %}</div>
+                        <div class="col-md-4">{% render_field_by_order form form.request_date form.expiration_date form.delivery_time label='on-border' margin_b=3 %}</div>
+                        <div class="col-md-4">{% render_field_by_order form form.currency_ref form.payment_method form.sale_type label='on-border' margin_b=3 %}</div>
+                        <div class="col-12"><div class="row row-cols-1 row-cols-sm-3 g-3">
+                            {% render_field_by_order form form.addition form.tax label='on-border' %}
+                            <div class="col on-border">{% render_field_by_order form form.q_price_setting label='on-border' %}</div>
+                            <div class="d-none">{{ form.market_grade }}</div>
+                        </div></div>
+                        <div class="col-12"><div class="row row-cols-1 row-cols-sm-3 g-3">
+                            <div class="col on-border mb-3">
+                                <input onfocusout="validateNotifyNumber(event)" type="text" name="notify_number" maxlength="255" class="form-control" id="id_notify_number" value="{{ notify_number }}">
+                                <label for="id_notify_number">شماره اطلاع‌رسانی</label>
+                            </div>
+                            {% render_field_by_order form form.can_observe form.prepayment label='on-border' %}
+                        </div></div>
+                    </div>
+                </section>
+                <section class="col-xl-5 qw-customer" aria-label="اطلاعات مشتری">
+                    <h2 class="fs-5 mb-4">اطلاعات مشتری</h2>
+                    {% if request.user|has_group:"sales_user" %}
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            {% render_field_by_order form form.customer_code form.customer_grade form.description form.description_sales form.cancel label='on-border' margin_b=3 %}
+                            {% get_comment_user_list form request.user %}
+                            {% get_payment_list form request.user %}
                         </div>
-                            <div class="card p-0">
-                                <div class="row">
-                                    <div class="col-sm-7">
-                                        <div class="border-end p-2 pe-4">
-                                            <h3 class="card-title pb-3" data-key="quotation-information">Quotation
-                                                Information
-                                            </h3>
-                                            <div class="row">
-                                                <div class="col-sm-4 m-0">
-                                                    {% render_field_by_order form form.sepidar_number no_input=True label='on-border' margin_b=3 %}
-                                                    {% render_field_by_order form form.title form.status label='on-border' margin_b=3 %}
-                                                </div>
-                                                <div class="col-sm-4">
-                                                    {% render_field_by_order form form.request_date form.expiration_date form.delivery_time label='on-border' margin_b=3 %}
-                                                </div>
-                                                <div class="col-sm-4 ms-lg-auto">
-                                                    {% render_field_by_order form form.currency_ref form.payment_method form.sale_type label='on-border' margin_b=3 %}
-                                                </div>
-                                                <div class="col-sm-12">
-                                                    <div class="row row-cols-3">
-                                                        {% render_field_by_order form form.addition form.tax label='on-border '%}
-                                                    <div class="col on-border">
-                                                    {% render_field_by_order form form.q_price_setting label='on-border '%}
-                                                    </div>
-                                                        <div class="d-none">{{ form.market_grade }}</div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-sm-12">
-                                                    <div class="row row-cols-3">
-                                                        <div class="col on-border mb-3">
-                                                            <input onload="validateNotifyNumber(event)" onfocusout="validateNotifyNumber(event)" type="text" name="notify_number" maxlength="255" class=" form-control " id="id_notify_number" value="{{ notify_number }}">
-                                                            <label data-key="notify_number" id="None" class="None">Notify number</label>
-                                                        </div>
-                                                        {% render_field_by_order form form.can_observe label='on-border '%}
-                                                        {% render_field_by_order form form.prepayment label='on-border '%}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-5 ms-lg-auto">
-                                        <div class="p-2">
-                                            <h3 class="card-title pb-3" data-key="customer-information">Customer Information
-                                            </h3>
-                                            <div class="row">
-                                                <div class="">
-                                                {% if request.user|has_group:"sales_user" %}
-                                                    <div class="row">
-                                                        <div class="col-sm-6">
-                                                            {% render_field_by_order form form.customer_code form.customer_grade form.description form.description_sales form.cancel label='on-border' margin_b=3 %}
-                                                            {% get_comment_user_list form request.user %}
-                                                            {% get_payment_list form request.user %}
-                                                        </div>
-                                                        <div class="col-sm-6 ms-sm-auto rounded">
-                                                            {% get_customer form.instance.customer_code as customer %}
-                                                                {% if  customer %}
-                                                                    <div class="p-2 pb-3 rounded bg-success" id="customer_card">
-                                                                {% else %}
-                                                                    <div class="d-none p-2 pb-3 rounded bg-success" id="customer_card">
-                                                                {% endif %}
-                                                                    <div data-key="customer_title" class="rounded">customer title</div>
-                                                                    <div class="bg-light-info p-2 rounded text-black mb-1" id="customer_name">{{ customer.name }}</div>
-                                                                    <div data-key="party_id">party id</div>
-                                                                    <div class="bg-light-info p-2 rounded text-black" id="customer_pid">{{ customer.sepidar_party_id }}</div>
-                                                                    <div class="d-none" id="customer_dl_id">{{ customer.sepidar_dl_id }}</div>
-
-                                                                </div>
-                                                        {% if customer.pk %}
-                                                        <a href="{% url 'extra_data:customer.update' pk=customer.pk %}" target="_blank">صفحه اطلاعات مشتری</a>
-                                                        {% endif %}
-
-                                                            {% if request.user|has_group:"sales_admin" or customer.change_marketer_rel.first.to_marketer.current_user == request.user %}
-                                                                <div class="row row-cols-2" id="id_customer_accounting_info_container"></div>
-                                                                <div class="row row-cols-2" id="id_customer_dax"></div>
-                                                                {% endif %}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    {% else %}
-                                                        {{ object.customer_party_id.secret_id }}
-                                                {% endif %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                        <div class="col-md-6">
+                            {% get_customer form.instance.customer_code as customer %}
+                            <div class="qw-customer-card {% if not customer %}d-none{% endif %}" id="customer_card">
+                                <small>نام مشتری</small><div id="customer_name">{{ customer.name }}</div>
+                                <small>شناسه مشتری</small><div id="customer_pid">{{ customer.sepidar_party_id }}</div>
+                                <div class="d-none" id="customer_dl_id">{{ customer.sepidar_dl_id }}</div>
                             </div>
+                            {% if customer.pk %}<a class="d-inline-block mt-3" href="{% url 'extra_data:customer.update' pk=customer.pk %}" target="_blank" rel="noopener">مشاهده پرونده مشتری ↗</a>{% endif %}
+                            {% if request.user|has_group:"sales_admin" or customer.change_marketer_rel.first.to_marketer.current_user == request.user %}
+                            <div class="row row-cols-2" id="id_customer_accounting_info_container"></div>
+                            <div class="row row-cols-2" id="id_customer_dax"></div>
+                            {% endif %}
                         </div>
-                        {% include 'factor/partial/sale_conditions_editor.html' with sac_document_type='quotation' %}
-                        <!--list start-->
-                        {{ formset.management_form }}
-                        {{ formset.non_form_errors }}
-                        <div class="card">
-                            <template
-                                    id="id_formset_empty_form">{% include "micmod-base/quotation/item3.html" with form_s=formset.empty_form nested=formset.forms.0.nested.empty_form nested_manage=formset.forms.0.nested %}</template>
-                            </div>
-                            <div class="card-body p-0" id="id_formset_container">
-                            <div class="d-flex justify-content-start align-items-center gap-4 mt-10 bg-white position-sticky" style="top: 40px; z-index: 200">
-                                {% include 'partials/formset_header_buttons.html' %}
-                                {% if form.instance.get_inquiry_result_count %}
-                                <p class="font-size-14 inquiry-status">تعداد کل ردیف <strong>{{ form.instance.get_inquiry_result_count.0 }}</strong></p>
-                                <p class="font-size-14 inquiry-status">وضعیت استعلام داخلی <strong>{{ form.instance.get_inquiry_result_count.2 }}</strong>/<small>{{ form.instance.get_inquiry_result_count.1 }}</small></p>
-                                <p class="font-size-14 inquiry-status">وضعیت استعلام خارجی <strong>{{ form.instance.get_inquiry_result_count.4 }}</strong>/<small>{{ form.instance.get_inquiry_result_count.3 }}</small></p>
-                                {% endif %}
-                            <div class="row row-cols-4 align-items-baseline ms-5 me-5">
-                                {% render_field_by_order form form.is_official form.official_value form.self_discount label='on-border' %}
-                                {% get_comment_user_list form request.user cancel=True %}
-                            </div>
+                    </div>
+                    {% else %}{{ object.customer_party_id.secret_id }}{% endif %}
+                </section>
+            </div>
+        </div>
+    </details>
+    {% include 'factor/partial/sale_conditions_editor.html' with sac_document_type='quotation' %}
 
-                                {% if request.user|has_group:'sales_admin' %}
-                                    {% render_field_by_order form form.sales_admin_confirm label='on-border' %}
-                                {% else %}
-                                    <span class="d-none">{{ form.sales_admin_confirm }}</span>
-                                {% endif %}
-
-
-                            </div>
-                            <div id="sortable-container">
-                                {% for form_ in formset.forms %}
-                                    {% include "micmod-base/quotation/item3.html" with form_s=form_ nested=form_.nested.forms.0 nested_manage=form_.nested detail_logs=detail_logs %}
-                                {% endfor %}
-                            </div>
-                            </div>
-                        <div class="mt-20 pt-10"></div>
-            {% include 'core/partial/empty_modal.html' %}
-            {% include 'core/partial/empty_modal_lg.html' %}
-            {% include 'core/partial/empty_modal_sm.html' %}
-<div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
-<div class="position-absolute d-none" id="generic-payment-form-group__{{ form.instance.pk }}"></div>
-                {# this tag maybe need to close #}
-
-            {% endblock form_content %}
+    <section id="quotation-workspace" data-editable="{% if form.enable %}1{% else %}0{% endif %}" aria-labelledby="qw-items-title">
+        <div class="qw-metrics">
+            <div class="qw-metric"><span>ردیف‌های پیش‌فاکتور</span><strong id="qw-total-count">{{ formset.forms|length }}</strong><small>همه کالاها، در تمام صفحات</small></div>
+            <div class="qw-metric"><span>در انتظار استعلام</span><strong id="qw-pending-count">—</strong><small>استعلام داخلی یا خارجی ناتمام</small></div>
+            <div class="qw-metric"><span>نیازمند اصلاح</span><strong id="qw-error-count">—</strong><small>خطاهای ثبت یا اعتبارسنجی</small></div>
+            <div class="qw-metric qw-metric-total"><span>جمع کل پیش‌فاکتور</span><strong class="quotation_total_price" name="quotation_total_price">—</strong><small>{{ form.instance.currency_ref }}</small></div>
+        </div>
+        <div class="qw-section">
+            <div class="qw-section-heading qw-workspace-heading d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div><h2 id="qw-items-title">ردیف‌های پیش‌فاکتور</h2><p>تعداد را در فهرست تغییر دهید؛ برای سایر اطلاعات، «جزئیات» را باز کنید.</p></div>
+                {% if formset and form.enable %}<button type="button" name="id_formset_add_button" class="btn btn-primary qw-button qw-button-primary">+ افزودن ردیف</button>{% endif %}
+            </div>
+            <div class="qw-toolbar">
+                <div class="qw-toolbar-search"><label for="qw-search">جست‌وجوی کالا</label><input type="search" id="qw-search" class="form-control" placeholder="کد، نام یا مشخصات کالای مشتری…" autocomplete="off" aria-keyshortcuts="Control+k"></div>
+                <div class="qw-toolbar-controls">
+                    <div><label for="qw-filter">نمایش ردیف‌ها</label><select id="qw-filter" class="form-select">
+                        <option value="all">همه ردیف‌ها</option><option value="pending-local">در انتظار استعلام داخلی</option><option value="pending-foreign">در انتظار استعلام خارجی</option><option value="unpriced">بدون قیمت</option><option value="errors">دارای خطا</option>
+                    </select></div>
+                    <div><label for="qw-page-size">تعداد در صفحه</label><select id="qw-page-size" class="form-select"><option value="25">۲۵ ردیف</option><option value="50">۵۰ ردیف</option><option value="100">۱۰۰ ردیف</option><option value="0">همه ردیف‌ها</option></select></div>
+                </div>
+            </div>
+            <div class="qw-row-options d-flex flex-wrap align-items-center gap-3">
+                <button type="button" id="qw-open-page" class="btn btn-sm btn-light">باز کردن جزئیات این صفحه</button>
+                <button type="button" id="qw-close-page" class="btn btn-sm btn-light">بستن جزئیات این صفحه</button>
+                <span id="qw-visible-count" role="status" aria-live="polite"></span>
+            </div>
+            <details class="qw-pricing-options">
+                <summary>تنظیمات مالی و تأیید پیش‌فاکتور</summary>
+                <div class="d-flex flex-wrap align-items-center gap-4 p-4">
+                    {% render_field_by_order form form.is_official form.official_value form.self_discount label='on-border' %}
+                    {% get_comment_user_list form request.user cancel=True %}
+                    {% if request.user|has_group:'sales_admin' %}{% render_field_by_order form form.sales_admin_confirm label='on-border' %}{% else %}<span class="d-none">{{ form.sales_admin_confirm }}</span>{% endif %}
+                    {% if form.instance.get_inquiry_result_count %}<small>استعلام داخلی: {{ form.instance.get_inquiry_result_count.2 }} / {{ form.instance.get_inquiry_result_count.1 }} · استعلام خارجی: {{ form.instance.get_inquiry_result_count.4 }} / {{ form.instance.get_inquiry_result_count.3 }}</small>{% endif %}
+                </div>
+            </details>
+            {{ formset.management_form }}
+            <div role="alert">{{ formset.non_form_errors }}</div>
+            <template id="id_formset_empty_form">{% include "micmod-base/quotation/workspace_item.html" with form_s=formset.empty_form nested=formset.forms.0.nested.empty_form nested_manage=formset.forms.0.nested %}</template>
+            <div class="qw-table-head" aria-hidden="true"><span>ردیف</span><span>کد کالا</span><span>نام کالا / وضعیت</span><span>تعداد</span><span>قیمت واحد</span><span>مبلغ نهایی</span><span>ویرایش</span></div>
+            <div id="id_formset_container">
+                <div id="sortable-container">
+                {% for form_ in formset.forms %}{% include "micmod-base/quotation/workspace_item.html" with form_s=form_ nested=form_.nested.forms.0 nested_manage=form_.nested detail_logs=detail_logs %}{% endfor %}
+                </div>
+            </div>
+            <div class="qw-empty" id="qw-empty" hidden><strong>ردیفی پیدا نشد.</strong><p>عبارت جست‌وجو یا فیلتر را تغییر دهید.</p></div>
+            <nav class="qw-pagination" aria-label="صفحه‌بندی ردیف‌ها">
+                <div class="d-flex align-items-center gap-2"><button type="button" id="qw-prev" class="btn btn-sm btn-light" aria-label="صفحه قبل">قبلی</button><span id="qw-page-info" aria-live="polite"></span><button type="button" id="qw-next" class="btn btn-sm btn-light" aria-label="صفحه بعد">بعدی</button></div>
+                <div class="d-flex align-items-center gap-2"><label for="qw-jump">رفتن به ردیف</label><input type="text" inputmode="numeric" id="qw-jump" class="form-control form-control-sm" autocomplete="off" placeholder="شماره ردیف"><button type="button" id="qw-jump-button" class="btn btn-sm btn-light">برو</button></div>
+            </nav>
+        </div>
+    </section>
+    {% include 'core/partial/empty_modal.html' %}
+    {% include 'core/partial/empty_modal_lg.html' %}
+    {% include 'core/partial/empty_modal_sm.html' %}
+    <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
+    <div class="position-absolute d-none" id="generic-payment-form-group__{{ form.instance.pk }}"></div>
+</div>
+{% endblock form_content %}
 {% block before_button %}
     {% include "micmod-base/base/create_info_bar.html" %}
 {% endblock before_button %}
 {% block form_footer_extra %}
-    <span style="position: relative; bottom: 6px;">
-{% include "core/partial/add_formset_button.html" %}
-    </span>
+    <span id="qw-save-status" class="qw-save-state" role="status" aria-live="polite">تغییرات با دکمه ذخیره ثبت می‌شوند</span>
     {% if form.instance.id %}
-    <div class="px-2 mx-auto">
-    </div>
         {% if form.instance.quotation_rel.all.last.id %}
-            <a href="{% url 'micmod_base:quotations.view' form.instance.quotation_rel.all.last.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
-            {% elif form.instance.quotation_self.id %}
-            <a href="{% url 'micmod_base:quotations.view' form.instance.quotation_self.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
+        <a href="{% url 'micmod_base:quotations.view' form.instance.quotation_rel.all.last.id %}" class="btn btn-light">پیش‌فاکتور مرتبط</a>
+        {% elif form.instance.quotation_self.id %}
+        <a href="{% url 'micmod_base:quotations.view' form.instance.quotation_self.id %}" class="btn btn-light">پیش‌فاکتور مرتبط</a>
         {% endif %}
-        <div class="d-flex justify-content-between mt-1 {% if not request.user|has_group:'sales_admin' %} d-none {% endif %}">
-            <div><label class="col-form-label">استعلام سریع</label></div>
-            <div>
-                <span class="switch switch-brand">
-                    <label>
-                        {{ form.force_inquiry }}
-                        <span></span>
-                    </label>
-                </span>
-            </div>
-        </div>
-    <div class="btn btn-outline-dark btn-bordered text-xl-center ms-auto"
-         m-href="{% url 'micmod_base:quotations.print-view' form.instance.id %}"
-         onclick="do_print({{ data }})" name="do_print">
-        پرینت پیش فاکتور
-    </div>
-    {% else %}
-        <div class="px-2 mx-auto">
-        </div>
+        <label class="d-flex align-items-center gap-2 {% if not request.user|has_group:'sales_admin' %}d-none{% endif %}">{{ form.force_inquiry }} استعلام سریع</label>
+        <button type="button" class="btn btn-light" m-href="{% url 'micmod_base:quotations.print-view' form.instance.id %}" onclick="do_print({{ data }})" name="do_print">چاپ پیش‌فاکتور</button>
     {% endif %}
-        <div class="d-flex w-25 replace-digits" {% if not form.enable %}disabled="disabled"{% endif %}>
-            <div class="btn btn-outline-info w-35 btn-bordered w-lg text-xl-center mx-1 text-center"
-                 data-key="refresh_price" onclick="refresh_prices()">
-                به روز رسانی قیمت
-            </div>
-            <div class="align-items-center text-white bg-info w-65 rounded">
-                <div class=""></div>
-                <h5 class="d-flex mt-2 px-1 mt-3 text-white bg-info replace-digits">
-                    <div class="w-30 ms-2"> جمع کل</div>
-                    <div class="quotation_total_price w-70 text-center "
-                         name="quotation_total_price"></div>
-                </h5>
-            </div>
-        </div>
-    </div>
-    </div>
-<div class="position-fixed bg-light-info w-75 p-5 rounded d-none" id="price-updating" style="top: 50%; right: 50%; transform: translate(50%, 50%);">در حال بروز رسانی قیمت ...</div>
-<div class="position-fixed bg-light-success w-75 p-5 rounded d-none" id="price-updated" style="top: 50%; right: 50%; transform: translate(50%, 50%);">قیمت ها بروز شدند</div>
+    <button type="button" class="btn btn-light" data-key="refresh_price" onclick="refresh_prices()" {% if not form.enable %}disabled{% endif %}>به‌روزرسانی قیمت</button>
+    <div class="qw-footer-total"><small>جمع کل</small><strong class="quotation_total_price" name="quotation_total_price">—</strong></div>
+    <div class="position-fixed bg-light-info p-5 rounded d-none" id="price-updating" role="status" style="top: 50%; right: 50%; transform: translate(50%, -50%);">در حال به‌روزرسانی قیمت…</div>
+    <div class="position-fixed bg-light-success p-5 rounded d-none" id="price-updated" role="status" style="top: 50%; right: 50%; transform: translate(50%, -50%);">قیمت‌ها به‌روز شدند</div>
 {% endblock form_footer_extra %}
 
 {% block extra_js %}
@@ -307,11 +225,11 @@
     const isOfficial = document.getElementById('id_is_official');
     const officialValue = document.getElementById('id_official_value');
     isOfficialCheck()
-    isOfficial.addEventListener('change', isOfficialCheck)
+    isOfficial?.addEventListener('change', isOfficialCheck)
     function isOfficialCheck(){
-        if(isOfficial && isOfficial.checked){
+        if(isOfficial && officialValue && isOfficial.checked){
             officialValue.disabled = false
-        } else if (isOfficial && !isOfficial.checked){
+        } else if (isOfficial && officialValue && !isOfficial.checked){
             officialValue.disabled = true
         }
     }
@@ -359,17 +277,17 @@
         document.querySelector('#id-empty-modal-body').innerHTML = ''
     })
     const customerName = document.querySelector('#customer_name')
-    customerName.addEventListener('change', createTitle)
+    customerName?.addEventListener('change', createTitle)
     const saleType = document.querySelector('#id_sale_type')
-    saleType.addEventListener('change', createTitle)
+    saleType?.addEventListener('change', createTitle)
     const requestDate = document.querySelector('#id_request_date')
-    requestDate.addEventListener('change', createTitle)
+    requestDate?.addEventListener('change', createTitle)
 
     function createTitle (){
         debugger
         const title = document.querySelector('#id_title')
         const saleTypeText = saleType.options[saleType.selectedIndex].text
-        if (title) {
+        if (title && saleType && requestDate && customerName) {
             title.value =  requestDate.value + '--' + saleTypeText + '--' + customerName.innerText
         }
     }
@@ -408,7 +326,7 @@ let config = {};
 function openModal(event) {
     event.preventDefault();
 
-    const quotationId = $(event.target).data('quotation-id');
+    const quotationId = $(event.currentTarget).data('quotation-id');
     window.currentQuotationId = quotationId;
 
     const requestData = {
@@ -746,4 +664,5 @@ function getPortalReserveQuantity(event, sku_=null){
 
     <script src="{% static 'js/jalali.js' %}"></script>
 {#    <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.1.0"></script>#}
+    <script src="{% static 'js/extra/quotation-workspace.js' %}"></script>
 {% endblock extra_js %}
