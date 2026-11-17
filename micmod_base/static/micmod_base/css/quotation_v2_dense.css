@@ -377,3 +377,314 @@
         grid-template-columns:repeat(2,minmax(0,1fr))!important;
     }
 }
+
+
+/*
+ * qv6 — compact quotation row
+ * Keep high-frequency controls on the same line without changing any
+ * formset ids, pricing calculations, Select2 callbacks or access controls.
+ * The preceding qv3/qv4 rules remain the baseline for smaller screens.
+ */
+.quotation-v2-full .qv3-item .qv3-row-content:not(.close) {
+    padding: 0 !important;
+}
+.quotation-v2-full .qv3-item .qv3-workspace {
+    align-items: start !important; /* avoid stretching the short product pane */
+    gap: 5px !important;
+    padding: 5px !important;
+}
+.quotation-v2-full .qv3-item .qv3-workspace-product,
+.quotation-v2-full .qv3-item .qv3-workspace-finance {
+    padding: 6px 8px !important;
+}
+.quotation-v2-full .qv3-item .qv3-pane-heading {
+    min-height: 20px;
+    margin-bottom: 4px !important;
+    padding-bottom: 3px !important;
+}
+.quotation-v2-full .qv3-item .qv3-pane-heading h3 {
+    font-size: 12px !important;
+}
+.quotation-v2-full .qv3-item .qv3-label {
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+}
+.quotation-v2-full .qv3-item .qv3-workspace-product {
+    grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+    gap: 4px 6px !important;
+}
+.quotation-v2-full .qv3-item .qv3-product-selector { grid-column: span 4; }
+.quotation-v2-full .qv3-item .qv3-product-description { grid-column: span 5; }
+.quotation-v2-full .qv3-item .qv3-quantity-main { grid-column: span 3; }
+.quotation-v2-full .qv3-item .qv3-quantity-stock { grid-column: span 3; }
+.quotation-v2-full .qv3-item .qv3-stock-quick {
+    grid-column: span 6;
+    padding: 2px 4px !important;
+    min-height: 29px;
+    align-self: start;
+}
+.quotation-v2-full .qv3-item .qv3-stock-quick > .qv3-label {
+    display: none; /* actions already identify the inventory operation */
+}
+.quotation-v2-full .qv3-item .qv3-stock-quick .qv3-inline-action {
+    min-height: 26px !important;
+    font-size: 10px !important;
+}
+.quotation-v2-full .qv3-item .qv3-product-extra {
+    grid-column: span 3;
+    min-width: 0;
+    align-self: start;
+}
+.quotation-v2-full .qv3-item .qv3-product-extra > summary {
+    min-height: 29px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 5px !important;
+}
+.quotation-v2-full .qv3-item .qv3-product-extra > summary strong {
+    font-size: 10px;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.quotation-v2-full .qv3-item .qv3-product-extra > summary span {
+    display: none; /* full packaging/customer SKU remains inside details */
+}
+.quotation-v2-full .qv3-item .qv3-product-extra[open] {
+    grid-column: 1 / -1;
+}
+.quotation-v2-full .qv3-item .qv3-product-extra[open] > summary span {
+    display: inline;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.quotation-v2-full .qv3-item .qv3-quantity-main,
+.quotation-v2-full .qv3-item .qv3-quantity-stock {
+    padding: 2px 4px !important;
+}
+.quotation-v2-full .qv3-item .qv3-price-main-line {
+    display: grid !important;
+    grid-template-columns: minmax(0, .95fr) minmax(0, 1.8fr) minmax(0, 1fr) !important;
+    align-items: end !important;
+    gap: 4px 6px !important;
+    margin-bottom: 4px !important;
+}
+.quotation-v2-full .qv3-item .qv3-price-target {
+    grid-column: auto !important;
+    display: block !important;
+    min-width: 0;
+    padding: 0 !important;
+}
+.quotation-v2-full .qv3-item .qv3-price-target > .qv3-label {
+    display: block;
+    margin-bottom: 2px !important;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+.quotation-v2-full .qv3-item .qv3-price-target input {
+    width: 100%;
+    min-width: 0;
+}
+.quotation-v2-full .qv3-item .qv3-price-inputs {
+    gap: 4px !important;
+}
+.quotation-v2-full .qv3-item .qv6-finance-tools {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+    align-items: start;
+    gap: 5px 7px;
+    min-width: 0;
+    margin: 0 !important;
+}
+.quotation-v2-full .qv3-item .qv6-finance-tools > * {
+    min-width: 0;
+}
+.quotation-v2-full .qv3-item .qv3-v2-price-tools {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)) !important;
+    align-items: start !important;
+    gap: 4px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-top: 0 !important;
+}
+.quotation-v2-full .qv3-item .qv3-price-all-sources { margin: 0 !important; }
+.quotation-v2-full .qv3-item .qv3-price-inquiry > summary {
+    min-height: 29px !important;
+    padding: 3px 5px !important;
+    gap: 4px !important;
+}
+.quotation-v2-full .qv3-item .qv3-price-inquiry .qv3-panel-title {
+    min-width: 0;
+    flex: 1;
+}
+.quotation-v2-full .qv3-item .qv3-price-inquiry .qv3-panel-title strong,
+.quotation-v2-full .qv3-item .qv3-price-inquiry .qv3-panel-summary {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.quotation-v2-full .qv3-item .qv3-financial-breakdown {
+    margin-top: 4px !important;
+}
+.quotation-v2-full .qv3-item .qv3-financial-breakdown > div,
+.quotation-v2-full .qv3-item .qv3-financial-breakdown > .qv3-financial-final {
+    padding: 4px 6px !important;
+    font-size: 10px !important;
+}
+.quotation-v2-full .qv3-item .qv3-financial-breakdown > div strong {
+    font-size: 12px !important;
+}
+.quotation-v2-full .qv3-item .qv3-financial-breakdown > .qv3-financial-final strong {
+    font-size: 14px !important;
+}
+.quotation-v2-full .qv3-item .qv3-detail-area {
+    display: grid !important;
+    grid-template-columns: 132px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 5px 8px !important;
+    padding: 4px 7px !important;
+}
+.quotation-v2-full .qv3-item .qv3-detail-heading {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-width: 0;
+    margin: 0 !important;
+}
+.quotation-v2-full .qv3-item .qv3-detail-heading h4 {
+    font-size: 11px !important;
+    margin: 0 !important;
+}
+.quotation-v2-full .qv3-item .qv3-detail-heading p { display: none; }
+.quotation-v2-full .qv3-item .qv3-detail-grid {
+    min-width: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+}
+.quotation-v2-full .qv3-item .qv3-detail-grid > .qv3-panel[open] { grid-column: 1 / -1; }
+.quotation-v2-full .qv3-item .qv3-detail-grid > .qv3-panel > summary {
+    min-height: 31px !important;
+    padding: 4px 5px !important;
+}
+.quotation-v2-full .qv3-item .qv3-detail-grid .qv3-panel-title {
+    min-width: 0;
+    flex: 1;
+}
+.quotation-v2-full .qv3-item .qv3-detail-grid .qv3-panel-title strong,
+.quotation-v2-full .qv3-item .qv3-detail-grid .qv3-panel-title small {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+.quotation-v2-full .qv3-item .qv3-row-footer { padding: 3px 7px !important; }
+.quotation-v2-full .qv3-item .qv3-footer-button,
+.quotation-v2-full .qv3-item .qv3-delete-wrap {
+    min-height: 27px !important;
+}
+/* The first nine/tenth summary cells share one line on normal desktops. */
+@media (min-width: 1060px) {
+    .quotation-v2-full .qv3-item .qv4-row-header {
+        min-height: 53px !important;
+        padding: 5px 7px !important;
+    }
+    .quotation-v2-full .qv4-summary-grid {
+        grid-template-columns: 31px minmax(0,.92fr) minmax(0,1.85fr) minmax(0,.56fr) minmax(0,1.08fr) minmax(0,.95fr) minmax(0,.78fr) minmax(0,.77fr) minmax(0,1fr) minmax(0,1.3fr) !important;
+        grid-template-rows: minmax(0,1fr) !important;
+        gap: 2px !important;
+    }
+    .quotation-v2-full .qv4-summary-grid.qv4-no-inquiry {
+        grid-template-columns: 31px minmax(0,.92fr) minmax(0,1.85fr) minmax(0,.56fr) minmax(0,1.08fr) minmax(0,.95fr) minmax(0,.78fr) minmax(0,.77fr) minmax(0,1fr) !important;
+    }
+    .quotation-v2-full .qv4-cell {
+        grid-column: auto !important;
+        grid-row: auto !important;
+        gap: 1px !important;
+        padding: 1px 4px !important;
+    }
+    .quotation-v2-full .qv4-cell small { font-size: 9px !important; }
+    .quotation-v2-full .qv4-cell > strong { font-size: 11px !important; }
+    .quotation-v2-full .qv4-cell-total > strong { font-size: 13px !important; }
+}
+@media (min-width: 960px) and (max-width: 1160px) {
+    .quotation-v2-full .qv3-item .qv3-workspace {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+@media (min-width: 761px) and (max-width: 1059px) {
+    .quotation-v2-full .qv3-item .qv4-row-header {
+        min-height: 76px !important;
+        padding: 5px 7px !important;
+    }
+}
+@media (max-width: 1180px) {
+    .quotation-v2-full .qv3-item .qv3-price-main-line {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) !important;
+    }
+    .quotation-v2-full .qv3-item .qv3-price-target {
+        grid-column: 1 / -1 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+    }
+    .quotation-v2-full .qv3-item .qv3-price-target > .qv3-label { margin: 0 !important; }
+}
+@media (max-width: 959px) {
+    .quotation-v2-full .qv3-item .qv3-workspace {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+    .quotation-v2-full .qv3-item .qv3-detail-area {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+    .quotation-v2-full .qv3-item .qv3-detail-heading {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .quotation-v2-full .qv3-item .qv3-price-main-line {
+        grid-template-columns: minmax(0,.9fr) minmax(0,1.65fr) minmax(0,1fr) !important;
+    }
+    .quotation-v2-full .qv3-item .qv3-price-target {
+        grid-column: auto !important;
+        display: block !important;
+    }
+}
+@media (max-width: 760px) {
+    .quotation-v2-full .qv3-item .qv3-quantity-stock { grid-column: span 4; }
+    .quotation-v2-full .qv3-item .qv3-stock-quick { grid-column: span 8; }
+    .quotation-v2-full .qv3-item .qv3-product-extra { grid-column: 1 / -1; }
+    .quotation-v2-full .qv3-item .qv3-product-extra > summary span {
+        display: inline;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .quotation-v2-full .qv3-item .qv6-finance-tools {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .quotation-v2-full .qv3-item .qv3-price-main-line {
+        grid-template-columns: minmax(0,.85fr) minmax(0,1.4fr) !important;
+    }
+    .quotation-v2-full .qv3-item .qv3-price-target {
+        grid-column: 1 / -1 !important;
+        display: flex !important;
+    }
+}
+@media (max-width: 510px) {
+    .quotation-v2-full .qv3-item .qv3-quantity-stock { grid-column: span 6; }
+    .quotation-v2-full .qv3-item .qv3-stock-quick { grid-column: 1 / -1; }
+    .quotation-v2-full .qv3-item .qv3-detail-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+    .quotation-v2-full .qv3-item .qv3-financial-breakdown {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
