@@ -251,6 +251,8 @@
                         {% render_field_by_order form_s form_s.price_target margin_b=0 %}
                     </div>
                     </div>
+                    {# Keep pricing sources and inquiries on one desktop line. #}
+                    <div class="qv6-finance-tools">
                     {% if not form_s.instance.pk or form_s.instance.pricing_version == 2 %}
                     <div class="qv3-v2-price-tools">
                         <div class="qv3-v2-ref">
@@ -340,6 +342,7 @@
                         </div>
                     </details>
                     </div>
+                    </div>{# /qv6-finance-tools #}
                     <div class="qv3-financial-breakdown" aria-live="polite">
                         <div><span>جمع ناخالص</span><strong name="MAC">{{ form_s.instance.net_price|floatformat:"-4g" }}</strong></div>
                         <div><span>تخفیف ردیف</span><strong name="discount_value">{{ form_s.instance.discount_value|floatformat:"-4g" }}</strong></div>
