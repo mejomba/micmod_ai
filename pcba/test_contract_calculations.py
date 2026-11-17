@@ -65,19 +65,19 @@ class ContractCalculationTests(SimpleTestCase):
         self.assertIn('pcba_contract_calculations.js', source)
 
 
-    def test_calculation_totals_share_one_compact_box_at_form_bottom(self):
+    def test_calculation_totals_share_one_compact_box_below_cost_fields(self):
         source = get_template('pcba/view.html').template.source
         self.assertEqual(source.count('class="pcba-contract-summary"'), 1)
         self.assertEqual(source.count('id="pcba-total-pads-per-board"'), 1)
         self.assertEqual(source.count('id="pcba-calculated-contract-cost"'), 1)
-        self.assertLess(
-            source.index("form form.description"),
-            source.index('class="pcba-contract-summary"'),
+        cost_fields_end = source.index(
+            "{% render_field_by_order form form.pad_cost form.ic_pad_cost"
         )
-        self.assertLess(
-            source.index('class="pcba-contract-summary"'),
-            source.index("{% include 'core/partial/empty_modal.html' %}"),
-        )
+        summary_position = source.index('class="pcba-contract-summary"')
+        image_wrapper_position = source.index('id="image-wrapper"')
+        self.assertLess(cost_fields_end, summary_position)
+        self.assertLess(summary_position, image_wrapper_position)
+        self.assertLess(summary_position, source.index("form form.description"))
         self.assertNotIn('class="pcba-pad-summary"', source)
         self.assertNotIn('class="pcba-cost-summary', source)
         self.assertIn('grid-template-columns: repeat(2, minmax(0, 1fr))', source)

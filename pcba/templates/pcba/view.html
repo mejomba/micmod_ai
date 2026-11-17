@@ -151,6 +151,30 @@
                     <div class="row row-cols-1 row-cols-md-3 row-cols-xl-5">
                         {% render_field_by_order form form.pad_cost form.ic_pad_cost form.total_cost form.extra_total_cost form.finish form.contract_end_date form.assembly_type form.image_1 label='on-border' %}
                     </div>
+                    {# Compact totals directly beneath the contract price fields. #}
+                    <div class="pcba-contract-summary" role="group" aria-label="خلاصه محاسبات قرارداد">
+                        <div class="pcba-contract-summary-item pcba-contract-summary-item--pads"
+                             title="مجموع پدهای معمولی، IC و خمیر قلع یا چسب بدون مونتاژ، به ازای هر برد">
+                            <span class="pcba-contract-summary-label">
+                                <span class="pcba-contract-summary-icon" aria-hidden="true">∑</span>
+                                جمع پدهای هر برد
+                            </span>
+                            <span class="pcba-contract-summary-value" aria-live="polite">
+                                <strong id="pcba-total-pads-per-board" dir="ltr">{{ form.instance.total_pads_per_board|intcomma }}</strong>
+                                <small>پد</small>
+                            </span>
+                        </div>
+                        <div class="pcba-contract-summary-item pcba-contract-summary-item--cost"
+                             title="جمع پدهای معمولی و خمیر قلع/چسب با نرخ پد معمولی، پدهای IC با نرخ IC، به اضافه هزینه‌های راه‌اندازی و مازاد">
+                            <span class="pcba-contract-summary-label">
+                                <span class="pcba-contract-summary-icon" aria-hidden="true">﷼</span>
+                                جمع مبلغ قرارداد
+                            </span>
+                            <span class="pcba-contract-summary-value" aria-live="polite">
+                                <strong id="pcba-calculated-contract-cost" dir="ltr">{{ form.instance.contract_cost|default_if_none:0|intcomma }}</strong>
+                            </span>
+                        </div>
+                    </div>
                 </div>
             <div class="" dir="ltr" id="image-wrapper">
                     {% for pic in form.instance.images.all %}
@@ -572,31 +596,6 @@
 			</div>
 		</div>
 	</div>
-</div>
-
-{# Compact totals stay together at the bottom of the contract form. #}
-<div class="pcba-contract-summary" role="group" aria-label="خلاصه محاسبات قرارداد">
-    <div class="pcba-contract-summary-item pcba-contract-summary-item--pads"
-         title="مجموع پدهای معمولی، IC و خمیر قلع یا چسب بدون مونتاژ، به ازای هر برد">
-        <span class="pcba-contract-summary-label">
-            <span class="pcba-contract-summary-icon" aria-hidden="true">∑</span>
-            جمع پدهای هر برد
-        </span>
-        <span class="pcba-contract-summary-value" aria-live="polite">
-            <strong id="pcba-total-pads-per-board" dir="ltr">{{ form.instance.total_pads_per_board|intcomma }}</strong>
-            <small>پد</small>
-        </span>
-    </div>
-    <div class="pcba-contract-summary-item pcba-contract-summary-item--cost"
-         title="جمع پدهای معمولی و خمیر قلع/چسب با نرخ پد معمولی، پدهای IC با نرخ IC، به اضافه هزینه‌های راه‌اندازی و مازاد">
-        <span class="pcba-contract-summary-label">
-            <span class="pcba-contract-summary-icon" aria-hidden="true">﷼</span>
-            جمع مبلغ قرارداد
-        </span>
-        <span class="pcba-contract-summary-value" aria-live="polite">
-            <strong id="pcba-calculated-contract-cost" dir="ltr">{{ form.instance.contract_cost|default_if_none:0|intcomma }}</strong>
-        </span>
-    </div>
 </div>
 
 {#    END MULTI TAB#}
