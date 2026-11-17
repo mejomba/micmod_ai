@@ -13,29 +13,91 @@
         .item_customer_receipt_list{
             transition: all 0.3s ease;
         }
-        .pcba-pad-summary {
+        /* A single compact, responsive summary at the end of the form. */
+        .pcba-contract-summary {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0;
+            margin: 1rem 0 .5rem;
+            padding: .7rem 1rem;
+            border: 1px solid #dae6f1;
+            border-radius: .85rem;
+            background: #f7fafd;
+            direction: rtl;
+        }
+        .pcba-contract-summary-item {
             display: flex;
             align-items: center;
-            flex-wrap: wrap;
+            justify-content: space-between;
             gap: .75rem;
-            padding: 1rem 1.25rem;
-            background: #f5f8ff;
-            border: 1px solid #dfebff;
-            border-radius: .75rem;
-            margin-top: 1rem;
+            min-width: 0;
+            padding: .5rem .9rem;
         }
-        .pcba-pad-summary strong, .pcba-cost-summary strong { font-size: 1.15rem; }
-        .pcba-cost-summary {
+        .pcba-contract-summary-item + .pcba-contract-summary-item {
+            border-right: 1px solid #dae6f1;
+        }
+        .pcba-contract-summary-label {
             display: flex;
+            align-items: center;
+            gap: .55rem;
+            min-width: 0;
+            color: #45546a;
+            font-weight: 650;
+            font-size: .88rem;
+        }
+        .pcba-contract-summary-icon {
+            width: 2rem;
+            height: 2rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border-radius: .6rem;
+            color: #3668c6;
+            background: #e8effc;
+            font-size: 1rem;
+        }
+        .pcba-contract-summary-item--cost .pcba-contract-summary-icon {
+            color: #177d64;
+            background: #e4f4ed;
+        }
+        .pcba-contract-summary-value {
+            display: inline-flex;
             align-items: baseline;
             flex-wrap: wrap;
-            gap: .75rem;
-            background: #f3f9f5;
-            border: 1px solid #cfe9d6;
-            border-radius: .75rem;
-            padding: 1rem 1.25rem;
+            justify-content: flex-end;
+            gap: .35rem;
+            color: #183c77;
+            min-width: 0;
+            font-size: 1.3rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
         }
-        .pcba-calculation-help { color: #697b91; font-size: .83rem; }
+        .pcba-contract-summary-item--cost .pcba-contract-summary-value {
+            color: #12694f;
+        }
+        .pcba-contract-summary-value strong {
+            overflow-wrap: anywhere;
+            unicode-bidi: isolate;
+            font: inherit;
+        }
+        .pcba-contract-summary-value small {
+            font-size: .7rem;
+            font-weight: 600;
+            color: #66788c;
+        }
+        @media (max-width: 767px) {
+            .pcba-contract-summary {
+                grid-template-columns: 1fr;
+                padding: .3rem .65rem;
+            }
+            .pcba-contract-summary-item { padding: .65rem .4rem; }
+            .pcba-contract-summary-item + .pcba-contract-summary-item {
+                border-right: 0;
+                border-top: 1px solid #dae6f1;
+            }
+            .pcba-contract-summary-value { font-size: 1.15rem; }
+        }
 
         .nav-pills .nav-link.active,
         .nav-pills .show > .nav-link{
@@ -77,11 +139,6 @@
                     <div class="row row-cols-1 row-cols-md-3 row-cols-xl-6">
                         {% render_field_by_order form form.customer_sheet_count form.customer_board_count form.customer_total_board_count form.pad_count form.ic_pad_count form.not_assembly_pad_count label='on-border' %}
                     </div>
-                    <div class="pcba-pad-summary" aria-live="polite">
-                        <span>جمع همه پدها در هر برد (معمولی + IC + خمیر قلع/چسب بدون مونتاژ):</span>
-                        <strong id="pcba-total-pads-per-board" dir="ltr">{{ form.instance.total_pads_per_board|intcomma }}</strong>
-                        <span class="pcba-calculation-help">برای گزارش پدهای مونتاژشده، پدهای بدون مونتاژ شمرده نمی‌شوند.</span>
-                    </div>
                 </div>
 
                 <div class="col mt-3">
@@ -94,10 +151,6 @@
                     <div class="row row-cols-1 row-cols-md-3 row-cols-xl-5">
                         {% render_field_by_order form form.pad_cost form.ic_pad_cost form.total_cost form.extra_total_cost form.finish form.contract_end_date form.assembly_type form.image_1 label='on-border' %}
                     </div>
-                    <p class="pcba-calculation-help mt-2 mb-0">
-                        هزینه پدهای بدون مونتاژ با نرخ هر پد معمولی محاسبه می‌شود.
-                        هزینه راه‌اندازی اول و دوم و هزینه‌های مازاد، تنها یک‌بار به مبلغ قرارداد اضافه می‌شوند.
-                    </p>
                 </div>
             <div class="" dir="ltr" id="image-wrapper">
                     {% for pic in form.instance.images.all %}
@@ -106,11 +159,6 @@
                         </a>
                     {% endfor %}
 
-            </div>
-            <div class="pcba-cost-summary mt-5" aria-live="polite">
-                <span class="font-size-16 bold">جمع مبلغ محاسبه‌شده قرارداد:</span>
-                <strong id="pcba-calculated-contract-cost" dir="ltr">{{ form.instance.contract_cost|default_if_none:0|intcomma }}</strong>
-                <span class="pcba-calculation-help">شامل پدهای معمولی، IC، پدهای بدون مونتاژ، راه‌اندازی‌ها و هزینه‌های مازاد</span>
             </div>
                 {{ form.errors }}
 
@@ -524,6 +572,31 @@
 			</div>
 		</div>
 	</div>
+</div>
+
+{# Compact totals stay together at the bottom of the contract form. #}
+<div class="pcba-contract-summary" role="group" aria-label="خلاصه محاسبات قرارداد">
+    <div class="pcba-contract-summary-item pcba-contract-summary-item--pads"
+         title="مجموع پدهای معمولی، IC و خمیر قلع یا چسب بدون مونتاژ، به ازای هر برد">
+        <span class="pcba-contract-summary-label">
+            <span class="pcba-contract-summary-icon" aria-hidden="true">∑</span>
+            جمع پدهای هر برد
+        </span>
+        <span class="pcba-contract-summary-value" aria-live="polite">
+            <strong id="pcba-total-pads-per-board" dir="ltr">{{ form.instance.total_pads_per_board|intcomma }}</strong>
+            <small>پد</small>
+        </span>
+    </div>
+    <div class="pcba-contract-summary-item pcba-contract-summary-item--cost"
+         title="جمع پدهای معمولی و خمیر قلع/چسب با نرخ پد معمولی، پدهای IC با نرخ IC، به اضافه هزینه‌های راه‌اندازی و مازاد">
+        <span class="pcba-contract-summary-label">
+            <span class="pcba-contract-summary-icon" aria-hidden="true">﷼</span>
+            جمع مبلغ قرارداد
+        </span>
+        <span class="pcba-contract-summary-value" aria-live="polite">
+            <strong id="pcba-calculated-contract-cost" dir="ltr">{{ form.instance.contract_cost|default_if_none:0|intcomma }}</strong>
+        </span>
+    </div>
 </div>
 
 {#    END MULTI TAB#}
