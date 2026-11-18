@@ -1,13 +1,15 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.views import View
 from django.views.generic import TemplateView
 from django.http import HttpResponse
 from django.conf import settings
-from django.urls import resolve
+from django.urls import resolve, reverse
 from _keenthemes.__init__ import KTLayout
 from _keenthemes.libs.theme import KTTheme
 from pprint import pprint
+from django.core.paginator import Paginator
+from urllib.parse import urlencode
 
 from core.views import BaseView
 from dashboards.models import BIReport
@@ -20,33 +22,79 @@ Refer to dashboards/urls.py file for more pages.
 
 
 class DashboardsView(LoginRequiredMixin, TemplateView):
-    # Default template file
-    # Refer to dashboards/urls.py file for more pages and template files
+    """Landing page with server-side, permission-scoped operational metrics."""
     template_name = 'pages/dashboards/index.html'
 
-    # Predefined function
     def get_context_data(self, **kwargs):
-        # Call the base implementation first to get a context
+        from dashboards.operational_reports import build_report
+
         context = super().get_context_data(**kwargs)
-
-        """
-        # Example to get page name. Refer to dashboards/urls.py file.
-        url_name = resolve(self.request.path_info).url_name
-
-        if url_name == 'dashboard-2':
-            # Example to override settings at the runtime
-            settings.KT_THEME_DIRECTION = 'rtl'
-        else:
-            settings.KT_THEME_DIRECTION = 'ltr'
-        """
-
-        # A function to init the global layout. It is defined in _keenthemes/__init__.py file
         context = KTLayout.init(context)
-
-        # Include vendors and javascript files for dashboard widgets
-        KTTheme.addVendors(['amcharts', 'amcharts-maps', 'amcharts-stock'])
-
+        context['report'] = build_report(
+            self.request.user,
+            days=self.request.GET.get('days', 30),
+            selected_user_id=self.request.GET.get('user_id'),
+        )
         return context
+
+
+
+class SalesWorkItemsView(LoginRequiredMixin, TemplateView):
+    """Paginated, permission-scoped links to the user's *current* sales work."""
+    template_name = 'pages/dashboards/sales_work_items.html'
+
+    def get_context_data(self, **kwargs):
+        from dashboards.operational_reports import (
+            active_sales_queryset, clamp_days, visible_users,
+        )
+        from factor.models import Factor
+        from micmod_base.models import Quotation
+
+        context = KTLayout.init(super().get_context_data(**kwargs))
+        user_qs, scope = visible_users(self.request.user)
+        target = get_object_or_404(user_qs, pk=self.kwargs['user_id'])
+
+        kind = self.request.GET.get('type', 'factor')
+        if kind not in ('factor', 'quotation'):
+            kind = 'factor'
+
+        model = Factor if kind == 'factor' else Quotation
+        route = 'factor:factor.view' if kind == 'factor' else 'micmod_base:quotations.view'
+        base_qs = active_sales_queryset(model, [target.pk])
+        qs = base_qs.select_related('customer_party_id', 'last_work_flow').order_by(
+            '-last_update_date', '-pk'
+        )
+        page = Paginator(qs, 20).get_page(self.request.GET.get('page'))
+        documents = [
+            {
+                'id': doc.pk,
+                'url': reverse(route, kwargs={'pk': doc.pk}),
+                'customer': getattr(doc.customer_party_id, 'title', '') or '',
+                'state': doc.last_work_flow.current_state_name or 'در جریان',
+            }
+            for doc in page.object_list
+        ]
+        days = clamp_days(self.request.GET.get('days', 30))
+        base_url = reverse('dashboards:sales_work_items',
+                           kwargs={'user_id': target.pk})
+        common = {'days': days}
+        context.update({
+            'subject_user': target,
+            'kind': kind,
+            'scope': scope,
+            'days': days,
+            'documents': documents,
+            'page_obj': page,
+            'factor_count': active_sales_queryset(Factor, [target.pk]).count(),
+            'quotation_count': active_sales_queryset(Quotation, [target.pk]).count(),
+            'factor_tab_url': base_url + '?' + urlencode({**common, 'type': 'factor'}),
+            'quotation_tab_url': base_url + '?' + urlencode({**common, 'type': 'quotation'}),
+            'back_url': reverse('dashboards:index') + '?' + urlencode(
+                {'days': days, 'user_id': target.pk}
+            ),
+        })
+        return context
+
 
 
 class BIView(View):

@@ -2508,6 +2508,8 @@ class OrderAndSepidar(View):
                     o.buy_factors.append({str((buy_factor_id, buy_factor_number)): (inventory_purchase_invoice_item_id, key[1])})
                     o.buy_factor_quantity_in_sepidar = (o.buy_factor_quantity_in_sepidar or 0) + int(key[1])
                     o.editor_user = self.request.user
+                    # Persist the acting user in the order ChangeLog for reporting.
+                    o.extra_data.request = self.request
                     o.save()
                 new_btn = """
                 <button 
@@ -2683,6 +2685,8 @@ class OrderAndSepidar(View):
                         {str((buy_factor_id, buy_factor_number)): (inventory_purchase_invoice_item_id, key[1])})
                     o.buy_factor_quantity_in_sepidar = (o.buy_factor_quantity_in_sepidar or 0) + int(key[1])
                     o.editor_user = self.request.user
+                    # Persist the acting user in the order ChangeLog for reporting.
+                    o.extra_data.request = self.request
                     o.save()
 
                 return JsonResponse({
@@ -2724,6 +2728,8 @@ class OrderAndSepidar(View):
                         {str((buy_factor_id, buy_factor_number)): (inventory_purchase_invoice_item_id, key[1])})
                     o.buy_factor_quantity_in_sepidar = (o.buy_factor_quantity_in_sepidar or 0) + int(key[1])
                     o.editor_user = self.request.user
+                    # Persist the acting user in the order ChangeLog for reporting.
+                    o.extra_data.request = self.request
                     o.save()
 
                 return JsonResponse({
@@ -3512,6 +3518,8 @@ def wh_packing_view(request, sepidar_buy_factor_id=-1, *args, **kwargs):
                         )
                         order.receipt_in_wh = True
                         order.sepidar_wh_code = wh_code
+                        # Record who received this order for the operational report.
+                        order.extra_data.request = request
                         order.save(update_fields=['receipt_in_wh', 'sepidar_wh_code'])
 
                         # تعداد رسیده‌ی این سفارش از همان payload
