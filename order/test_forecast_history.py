@@ -1,4 +1,6 @@
 from datetime import date
+from contextlib import redirect_stdout
+from io import StringIO
 from decimal import Decimal
 from unittest.mock import patch
 from django.contrib.auth import get_user_model
@@ -29,6 +31,17 @@ class ForecastHistoryTests(TestCase):
 
     def records(self):
         return WorkflowForecast.objects.filter(content_type=self.ct, object_id=self.order.pk).order_by('revision')
+
+    def test_first_order_number_without_missing_order_message(self):
+        # Remove existing numbers without deleting the fixture or its workflow.
+        Order.objects.all().update(number=None)
+        output = StringIO()
+        with redirect_stdout(output):
+            first = Order.objects.create(quantity=1, transportation_method='air')
+            second = Order.objects.create(quantity=1, transportation_method='air')
+        self.assertEqual(first.number, 1)
+        self.assertEqual(second.number, 2)
+        self.assertNotIn('Order matching query does not exist', output.getvalue())
 
     def test_initial_and_idempotent_history(self):
         first, changed = recalculate('order', self.order.pk, reason='backfill')
@@ -70,8 +83,12 @@ class ForecastHistoryTests(TestCase):
         enqueue('order', self.order.pk, 'order_changed')
         self.assertEqual(WorkflowForecastRefresh.objects.count(), 1)
         self.assertEqual(WorkflowForecastRefresh.objects.get().reason, 'trade_entry')
-        with patch('order.scheduling_queue.recalculate', side_effect=RuntimeError('test failure')):
-            self.assertEqual(drain(1)['failed'], 1)
+        with self.assertLogs('order.scheduling_queue', level='ERROR') as captured:
+            with patch('order.scheduling_queue.recalculate', side_effect=RuntimeError('test failure')):
+                self.assertEqual(drain(1)['failed'], 1)
+        self.assertEqual(len(captured.records), 1)
+        self.assertIn('Forecast refresh failed: order/%s' % self.order.pk, captured.output[0])
+        self.assertIn('RuntimeError: test failure', captured.output[0])
         job = WorkflowForecastRefresh.objects.get()
         self.assertEqual(job.attempts, 1)
         self.assertIn('test failure', job.last_error)

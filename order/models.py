@@ -417,11 +417,11 @@ class Order(BaseModeWF):
                     last_number = self.__class__.objects.exclude(number__isnull=True).latest('number').number or 0
                     self.order_number = f'A{year}-{last_number + 1}'
                     self.number = last_number + 1
-                except Exception as e:
+                except self.__class__.DoesNotExist:
+                    # An empty order table is normal (e.g. the first order).
                     last_number = 0
                     self.order_number = f'A{year}-{last_number + 1}'
                     self.number = last_number + 1
-                    print(e)
         else:
             try:
                 self.version += 1
