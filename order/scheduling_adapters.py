@@ -139,8 +139,9 @@ def _packing_shipments(row, forecast, as_of):
         # Do not silently count over-receipt as part of another shipment.
         amount = min(remaining, quantity(line.quantity))
         if amount:
-            shipments.append(Shipment('receipt:%s' % line.pk, amount, actual=line.transfer.sent_at,
-                                      status='actual', details={'packing_id': row.packing_id}))
+            shipments.append(Shipment('receipt:%s' % line.pk, amount,
+                declared=declared, actual=line.transfer.sent_at, status='actual',
+                details={'packing_id': row.packing_id, 'forecast': forecast}))
             remaining -= amount
     if remaining:
         noncentral = _noncentral_receipt(row, as_of)
@@ -181,7 +182,8 @@ def forecast_order_arrival(order, *, as_of=None, policy=None):
         packed += quantity(item.quantity)
         stage = packing_state(packing, as_of).stage
         if stage in PACKING_KEYS[2:-1]:
-            transit += sum((s.quantity for s in portions if not s.actual), Decimal(0))
+            transit += sum((s.quantity for s in portions if not s.actual
+                            and not (s.details or {}).get('noncentral_receipt')), Decimal(0))
     # Group by actual GIO (not per row) and preserve the full effective weight.
     groups = {}
     for item in order.gio_items.filter(is_deleted=False, gio__is_deleted=False).select_related('gio').order_by('gio__gio_date', 'gio_id', 'pk'):

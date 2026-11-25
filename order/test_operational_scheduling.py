@@ -45,7 +45,7 @@ class OperationalSchedulingTests(TestCase):
 
     def test_warehouse_entry_not_actual_receipt(self):
         from django.conf import settings
-        packing = Packing.objects.create(shipment_type='air')
+        packing = Packing.objects.create(shipment_type='air', estimated_arrive_to_wh_date=date.today())
         item = PackingItem.objects.create(packing=packing, order=self.order, quantity=1000)
         WorkFlow.objects.create(content_type=ContentType.objects.get_for_model(Packing),
             object_id=packing.pk, state='ترخیص', current_state_name='انبار', wf_status=3, to_user=self.user)
@@ -58,6 +58,20 @@ class OperationalSchedulingTests(TestCase):
         self.assertEqual(result['received_quantity'], 1000)
         self.assertEqual(result['status'], 'actual')
         self.assertEqual(result['complete_arrival'], transfer.sent_at)
+        self.assertIsNotNone(result['shipments'][0].declared)
+        self.assertEqual(result['shipments'][0].source, 'actual')
+
+    def test_other_destination_not_a_central_receipt(self):
+        packing = Packing.objects.create(shipment_type='air', estimated_arrive_to_wh_date=date.today())
+        item = PackingItem.objects.create(packing=packing, order=self.order, quantity=1000)
+        transfer = PackingSepidarTransfer.objects.create(packing=packing, transfer_type='damaged',
+            source_stock_ref=91, destination_stock_ref=42, status='success', receipt_id=456,
+            sent_at=timezone.now())
+        PackingSepidarTransferItem.objects.create(transfer=transfer, packing_item=item, item_ref=1, quantity=1000)
+        result = forecast_order_arrival(self.order)
+        self.assertEqual(result['received_quantity'], 0)
+        self.assertIsNone(result['complete_arrival'])
+        self.assertEqual(result['status'], 'incomplete')
 
     def test_cancelled_order(self):
         Order.objects.filter(pk=self.order.pk).update(sales_admin_cancel=True)

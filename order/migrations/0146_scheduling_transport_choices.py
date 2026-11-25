@@ -8,10 +8,10 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterField(
             model_name='order', name='transportation_method',
-            field=models.CharField(max_length=64, choices=[('express', 'express'), ('air', 'air'), ('sea', 'sea'), ('road', 'road'), ('rail', 'rail')], default='air', null=True, blank=True, verbose_name='transportation_method'),
+            field=models.CharField(max_length=64, choices=[('express', 'express'), ('air', 'air'), ('sea', 'sea'), ('road', 'road'), ('rail', 'rail')], default='air', null=True, blank=True, verbose_name='روش حمل'),
         ),
         migrations.AlterField(
             model_name='packing', name='shipment_type',
-            field=models.CharField(max_length=255, choices=[('express', 'express'), ('air', 'air'), ('sea', 'sea'), ('road', 'road'), ('rail', 'rail')], null=True, blank=True, verbose_name='shipment_type'),
+            field=models.CharField(max_length=255, choices=[('express', 'express'), ('air', 'air'), ('sea', 'sea'), ('road', 'road'), ('rail', 'rail')], null=True, blank=True, verbose_name='نوع حمل'),
         ),
     ]
