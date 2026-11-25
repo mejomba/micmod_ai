@@ -45,6 +45,8 @@ def update_gio_weight(request, pk):
     if gio.manual_weight_kg != manual:
         GIO.objects.filter(pk=gio.pk).update(manual_weight_kg=manual)
         gio.manual_weight_kg = manual
+        from .scheduling_events import notify_gio_weight_changed
+        notify_gio_weight_changed(gio.pk)
     summary = gio.get_weight_summary()
     return JsonResponse({
         'calculated': _number(summary.calculated_weight_kg),

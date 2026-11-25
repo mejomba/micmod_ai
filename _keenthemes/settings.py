@@ -836,3 +836,18 @@ SEPIDAR_CONST_DATA = {
 }
 
 MULTI_GROUP_ACCESS_VIEW = ['factor']
+ 
+# Enable only after applying the scheduling migrations and seeding policies.
+# Manual management commands do not depend on the automatic-processing flag.
+WORKFLOW_SCHEDULING_AUTO_ENABLED = os.environ.get('WORKFLOW_SCHEDULING_AUTO_ENABLED', '0').lower() in ('1', 'true', 'yes')
+if WORKFLOW_SCHEDULING_AUTO_ENABLED:
+    from celery.schedules import crontab
+    CELERY_BEAT_SCHEDULE = {
+        **globals().get('CELERY_BEAT_SCHEDULE', {}),
+        'workflow-forecast-drain': {
+            'task': 'order.scheduling.drain', 'schedule': 60.0,
+        },
+        'workflow-forecast-daily': {
+            'task': 'order.scheduling.daily', 'schedule': crontab(hour=2, minute=0),
+        },
+    }

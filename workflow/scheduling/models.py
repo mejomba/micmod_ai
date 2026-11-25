@@ -258,3 +258,24 @@ class WorkflowForecastAnchor(models.Model):
         constraints = [
             models.CheckConstraint(check=(models.Q(source_content_type__isnull=True, source_object_id__isnull=True) | models.Q(source_content_type__isnull=False, source_object_id__gt=0, source_object_id__isnull=False)), name='wf_sched_anchor_source_pair'),
         ]
+
+ 
+class WorkflowForecastRefresh(models.Model):
+    """Coalesced, retryable recalculation requests; not part of forecast history."""
+    workflow_key = models.CharField(max_length=100)
+    object_id = models.PositiveBigIntegerField()
+    reason = models.CharField(max_length=100)
+    requested_at = models.DateTimeField(default=timezone.now)
+    available_at = models.DateTimeField(default=timezone.now)
+    attempts = models.PositiveIntegerField(default=0)
+    last_error = models.TextField(blank=True)
+    latest_policy = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['workflow_key', 'object_id'],
+                                    name='wf_forecast_refresh_unique'),
+        ]
+        indexes = [
+            models.Index(fields=['available_at', 'id'], name='wf_forecast_refresh_due'),
+        ]

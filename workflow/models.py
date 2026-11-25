@@ -220,4 +220,5 @@ from .scheduling.models import (  # noqa: E402,F401
     WorkflowForecast,
     WorkflowForecastStep,
     WorkflowForecastAnchor,
+    WorkflowForecastRefresh,
 )
