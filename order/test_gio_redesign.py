@@ -3,13 +3,14 @@ import json
 from collections import OrderedDict
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.conf import settings
 from django.template.loader import get_template, render_to_string
 from django.test import RequestFactory, SimpleTestCase
 
 from order.gio_sepidar import gio_preview_groups, gio_header_status, gio_registered_group_count
+from order.gio_weight import summarize_weights
 from order.views import OrderAndSepidar, QuickGIODataTableListView, QuickGIOView
 
 
@@ -67,8 +68,10 @@ class GIOHeaderPresentationTests(SimpleTestCase):
 
     def test_get_uses_planned_groups_for_header_and_persisted_success_for_badge(self):
         # The missing pending group has no database record yet.
+        weight_summary = summarize_weights([(1, 3, '2.5')])
         gio = SimpleNamespace(
             pk=42,
+            get_weight_summary=Mock(return_value=weight_summary),
             sepidar_buy_factor_response_json=None,
             sepidar_inventory_receipt_response_json=None,
             sepidar_groups=SimpleNamespace(values_list=lambda *args, **kwargs: ['success']),
@@ -76,6 +79,7 @@ class GIOHeaderPresentationTests(SimpleTestCase):
         request = RequestFactory().get('/order/quick_gio/42/')
         request.user = SimpleNamespace(
             is_authenticated=True, is_superuser=False, is_active=True,
+            has_perm=Mock(return_value=False),
         )
         planned = [
             {'key': '101___1', 'status': 'success'},
@@ -99,6 +103,11 @@ class GIOHeaderPresentationTests(SimpleTestCase):
         self.assertEqual(context['gio_hero_status']['label'], 'ارسال بخشی از گروه‌ها')
         self.assertEqual(context['gio_registered_group_count'], 1)
         self.assertTrue(context['gio_has_group_submissions'])
+        gio.get_weight_summary.assert_called_once_with()
+        request.user.has_perm.assert_called_once_with('order.change_gio')
+        self.assertIs(context['gio_weight_summary'], weight_summary)
+        self.assertEqual(context['gio_weight_summary'].effective_weight_kg, weight_summary.calculated_weight_kg)
+        self.assertFalse(context['gio_can_change_weight'])
 
 
 class GIORedesignPreviewTests(SimpleTestCase):
