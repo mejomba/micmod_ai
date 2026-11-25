@@ -1,0 +1,38 @@
+{% extends 'partials/base.html' %}
+{% block title %}{{ policy.name }} v{{ policy.version }}{% endblock %}
+{% block content %}
+<div dir="{% if fa %}rtl{% else %}ltr{% endif %}" class="d-flex flex-column gap-4">
+  <div class="card p-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div><a href="{% url 'scheduling:index' %}">{% if fa %}مدیریت زمان‌بندی گردش کار{% else %}Workflow scheduling{% endif %}</a><h2 class="mt-2 mb-1">{{ policy.name }} · v{{ policy.version }}</h2><span class="text-muted">{{ policy.workflow_key }} / {{ policy.code }} · {{ policy.status }} · {{ policy.route_mode }}</span></div>
+      <div class="d-flex gap-2 flex-wrap">
+        {% if can_edit %}<a class="btn btn-sm btn-light-primary" href="{% url 'scheduling:add' policy.pk 'policy' %}">{% if fa %}تنظیمات سیاست{% else %}Policy settings{% endif %}</a><a class="btn btn-sm btn-light-primary" href="{% url 'scheduling:add' policy.pk 'unknown' %}">{% if fa %}اطلاعات نامشخص{% else %}Unknown values{% endif %}</a>{% endif %}
+        {% if can_clone %}<form method="post" action="{% url 'scheduling:clone' policy.pk %}">{% csrf_token %}<button class="btn btn-sm btn-primary">{% if fa %}ساخت نسخه پیش‌نویس{% else %}Clone draft{% endif %}</button></form>{% endif %}
+      </div>
+    </div>
+    {% if policy.status != 'draft' %}<p class="text-muted mt-3 mb-0">{% if fa %}نسخه فقط خواندنی است. سفارش‌های قبلی به نسخه خود متصل می‌مانند.{% else %}Read-only version. Existing forecasts retain their policy version.{% endif %}</p>{% endif %}
+    <div class="d-flex flex-wrap gap-2 mt-3">{% for v in versions %}<a class="btn btn-sm {% if v.pk == policy.pk %}btn-light-primary{% else %}btn-light{% endif %}" href="{% url 'scheduling:detail' v.pk %}">v{{ v.version }} · {{ v.status }}</a>{% endfor %}</div>
+    <p class="mt-3 mb-0">{{ policy.description }}</p>
+  </div>
+  {% if error %}<div role="alert" class="alert alert-danger">{{ error }}</div>{% endif %}
+  <div class="card p-4">
+    <div class="d-flex flex-wrap align-items-end gap-4">
+      {% if perms.workflow.view_workflowforecast %}<form method="post" action="{% url 'scheduling:preview' policy.pk %}" class="d-flex flex-wrap align-items-end gap-2">{% csrf_token %}<div><label for="doc-id">{% if fa %}پیش‌نمایش روی شناسه سند واقعی{% else %}Real document preview{% endif %}</label><input id="doc-id" name="document_id" required min="1" type="number" class="form-control form-control-sm" value="{{ preview_id|default:'' }}"></div><button class="btn btn-sm btn-light-primary">{% if fa %}محاسبه بدون ذخیره{% else %}Preview without saving{% endif %}</button></form>{% endif %}
+      {% if can_publish %}<form method="post" action="{% url 'scheduling:publish' policy.pk %}" class="d-flex flex-wrap align-items-end gap-2" onsubmit="return confirm(this.dataset.confirm)" data-confirm="{% if fa %}نسخه پس از انتشار قابل ویرایش نیست. منتشر شود؟{% else %}Publish this read-only version?{% endif %}">{% csrf_token %}<div><label for="effective">{% if fa %}زمان اعتبار (خالی = اکنون){% else %}Effective from (blank = now){% endif %}</label><input id="effective" name="effective_from" type="datetime-local" class="form-control form-control-sm"></div><button class="btn btn-sm btn-success">{% if fa %}اعتبارسنجی و انتشار{% else %}Validate and publish{% endif %}</button></form>{% endif %}
+    </div>
+    {% if preview_result %}<div class="border rounded p-3 mt-3"><strong>{% if fa %}نتیجه پیش‌نمایش{% else %}Preview result{% endif %}: {{ preview_result.status }}</strong><div>{{ preview_result.complete_arrival|date:"Y-m-d"|default:"—" }}</div><div class="table-responsive"><table class="table table-sm"><tbody>{% for shipment in preview_result.shipments %}<tr><td>{{ shipment.key }}</td><td>{{ shipment.quantity }}</td><td>{{ shipment.effective|date:"Y-m-d"|default:"—" }}</td><td>{{ shipment.source }}</td></tr>{% endfor %}</tbody></table></div>{% for note in preview_result.assumptions %}<p class="text-warning mb-1">{{ note }}</p>{% endfor %}</div>{% endif %}
+  </div>
+  {% for section in sections %}
+  <section class="card p-4"><div class="d-flex justify-content-between align-items-center mb-2"><h3 class="mb-0">{% if section.kind == 'calendar' %}{% if fa %}تقویم‌ها{% else %}Calendars{% endif %}{% elif section.kind == 'exception' %}{% if fa %}تعطیلات و استثناها{% else %}Calendar exceptions{% endif %}{% elif section.kind == 'stage' %}{% if fa %}مدت مراحل{% else %}Stage timings{% endif %}{% elif section.kind == 'rule' %}{% if fa %}قوانین شرطی{% else %}Timing rules{% endif %}{% else %}{% if fa %}مسیرها{% else %}Transitions{% endif %}{% endif %}</h3>{% if section.add %}<a class="btn btn-sm btn-light-primary" href="{% url 'scheduling:add' policy.pk section.kind %}">+ {% if fa %}افزودن{% else %}Add{% endif %}</a>{% endif %}</div>
+  <div class="table-responsive"><table class="table table-sm table-row-bordered align-middle"><tbody>{% for row in section.rows %}<tr>
+    {% if section.kind == 'calendar' %}<td>{{ row.name }} <small>{{ row.code }}</small></td><td>{{ row.timezone }}</td><td>{{ row.working_weekdays }}</td>
+    {% elif section.kind == 'exception' %}<td>{{ row.calendar.name }}</td><td>{{ row.date|date:"Y-m-d" }}</td><td>{% if row.is_working_day %}{% if fa %}کاری{% else %}Working{% endif %}{% else %}{% if fa %}تعطیل{% else %}Holiday{% endif %}{% endif %}</td><td>{{ row.description }}</td>
+    {% elif section.kind == 'stage' %}<td>{{ row.workflow_key }}.{{ row.stage_key }}</td><td>{{ row.default_duration }} {% if fa %}روز{% else %}days{% endif %}</td><td>{{ row.calendar.name }}</td><td>{{ row.remaining_time_strategy }}</td>
+    {% elif section.kind == 'rule' %}<td>{{ row.name }}<div class="small text-muted">{{ row.stage_timing.workflow_key }}.{{ row.stage_timing.stage_key }}</div></td><td>{{ row.condition_json }}</td><td>{{ row.effect_json }}</td><td>{{ row.priority }}</td>
+    {% else %}<td>{{ row.source_workflow }}.{{ row.source_stage }} → {{ row.target_workflow }}.{{ row.target_stage }}</td><td>{{ row.condition_json }}</td><td>{{ row.priority }}</td>{% endif %}
+    {% if section.kind != 'exception' %}<td>{% if row.is_active %}✓{% else %}—{% endif %}</td>{% endif %}
+    <td><div class="d-flex gap-2">{% if section.edit %}<a class="btn btn-sm btn-light" href="{% url 'scheduling:edit' policy.pk section.kind row.pk %}">{% if fa %}ویرایش{% else %}Edit{% endif %}</a>{% endif %}{% if section.delete %}<form method="post" action="{% url 'scheduling:remove' policy.pk section.kind row.pk %}" onsubmit="return confirm(this.dataset.confirm)" data-confirm="{% if fa %}این تنظیم حذف شود؟{% else %}Delete this configuration?{% endif %}">{% csrf_token %}<button class="btn btn-sm btn-light-danger">{% if fa %}حذف{% else %}Delete{% endif %}</button></form>{% endif %}</div></td>
+  </tr>{% empty %}<tr><td class="text-muted">—</td></tr>{% endfor %}</tbody></table></div></section>
+  {% endfor %}
+</div>
+{% endblock %}

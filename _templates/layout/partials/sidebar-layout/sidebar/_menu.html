@@ -20,6 +20,10 @@
                     {% include "layout/partials/sidebar-layout/sidebar/_menu_section.html" with menu=menu %}
                 {% endfor %}
             {% endif %}
+            {% if perms.workflow.view_workflowschedulepolicy %}
+            <div class="menu-item pt-4"><div class="menu-content"><span class="menu-heading fw-bold text-uppercase fs-7" data-key="scheduling_settings">تنظیمات</span></div></div>
+            <div class="menu-item"><a class="menu-link" href="{% url 'scheduling:index' %}"><span class="menu-icon"><i class="ki-duotone ki-calendar fs-2"></i></span><span class="menu-title" data-key="workflow_scheduling_management">مدیریت زمان‌بندی گردش کار</span></a></div>
+            {% endif %}
             <!--end:Menu item-->
         </div>
         <!--end::Menu-->

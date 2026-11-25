@@ -1,0 +1,19 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+{% block title %}{{ policy.name }} · {{ kind }}{% endblock %}
+{% block content %}
+<div class="card p-5" dir="{% if fa %}rtl{% else %}ltr{% endif %}">
+  <div><a href="{% url 'scheduling:detail' policy.pk %}">{{ policy.name }} / v{{ policy.version }}</a><h2 class="mt-2">{% if fa %}ویرایش پیش‌نویس{% else %}Edit draft{% endif %} · {{ kind }}</h2></div>
+  <form method="post" id="scheduling-editor" novalidate>{% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for hidden in form.hidden_fields %}{{ hidden }}{{ hidden.errors }}{% endfor %}
+    <div class="row g-3">{% for field in form.visible_fields %}<div class="col-12 col-md-6 col-xl-4"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}{{ field.errors }}</div>{% endfor %}</div>
+    {% if condition_editor %}
+      <div class="border rounded p-3 mt-4" id="condition-builder" data-fa="{% if fa %}1{% else %}0{% endif %}"><h3>{% if fa %}شرایط اعمال قانون{% else %}Conditions{% endif %}</h3><div id="condition-tree"></div><p id="condition-error" role="alert" class="text-danger"></p><noscript>{% if fa %}برای ساخت شرط، JavaScript را فعال کنید.{% else %}Enable JavaScript for the rule builder.{% endif %}</noscript></div>
+      {{ field_metadata|json_script:"scheduling-field-metadata" }}
+      <script src="{% static 'js/scheduling-rule-builder.js' %}" defer></script>
+    {% endif %}
+    <div class="d-flex gap-2 mt-4"><button class="btn btn-primary" type="submit">{% if fa %}ذخیره پیش‌نویس{% else %}Save draft{% endif %}</button><a class="btn btn-light" href="{% url 'scheduling:detail' policy.pk %}">{% if fa %}بازگشت{% else %}Back{% endif %}</a></div>
+  </form>
+</div>
+{% endblock %}
