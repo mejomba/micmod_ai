@@ -8,16 +8,19 @@ Weekday integers follow Python (Monday=0). Duration units are currently days.
 Forecast revisions use a conditional unique constraint to ensure one current
 record per document, target and entry/exit event. The database stores source
 dates independently; step components and policy snapshots preserve details.
-The persistence layer does not yet enforce immutable published policies or
-append-only revisions against direct ORM edits. The publication/recalculation
-services must enforce that contract before enabling management or event hooks.
+Policy cloning and publication are provided in policies.py. The publication
+entry point requires a registry-aware validator from the integration layer.
+Previously published versions remain intact, and effective dates control
+selection. The service is not wired to any public view or event hook.
+Direct ORM writes are not yet guarded; append-only forecast writes and protected
+draft editing must be implemented before enabling management or event hooks.
 No production migration or backfill is performed by this change.
 
 Local verification, using the actual portal test settings:
     python manage.py check
     python manage.py makemigrations workflow --check --dry-run
     python manage.py migrate --plan
-    python manage.py test workflow.test_scheduling_models
+    python manage.py test workflow.test_scheduling_models workflow.test_scheduling_policies
     python -m unittest workflow.test_scheduling_engine -v
 
 The model tests require Django and a test database. Do not apply the migration
