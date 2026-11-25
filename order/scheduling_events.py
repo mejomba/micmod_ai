@@ -44,7 +44,10 @@ def _before(sender, instance, using, raw=False, **kwargs):
 def _after(sender, instance, using, raw=False, **kwargs):
     if not enabled() or raw or using != 'default':
         return
-    new = _values(instance)
+    # Read persisted values, not unsaved attributes omitted by update_fields.
+    new = sender._base_manager.filter(pk=instance.pk).values(*FIELDS[sender]).first()
+    if new is None:
+        return
     old = getattr(instance, '_scheduling_old', None)
     if old == new:
         return
@@ -117,6 +120,9 @@ def _collect(sender, pk, old, new):
         gios.update(GIOItem.objects.filter(order_id__in=orders).values_list('gio_id', flat=True))
 
     orders.update(GIOItem.objects.filter(gio_id__in=gios).values_list('order_id', flat=True))
+    # A changed packing row can change the candidate GIO for every row in
+    # that packing. Include directly related orders even when the row was removed.
+    orders.update(PackingItem.objects.filter(packing_id__in=packings).values_list('order_id', flat=True))
     # An entire GIO weight can affect other orders and their packing drafts.
     packings.update(PackingItem.objects.filter(order_id__in=orders).values_list('packing_id', flat=True))
     orders.update(PackingItem.objects.filter(packing_id__in=packings).values_list('order_id', flat=True))

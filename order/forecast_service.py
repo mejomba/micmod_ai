@@ -30,7 +30,7 @@ def recalculate(workflow_key, object_id, *, reason='manual', latest_policy=False
     excluded = bool(workflow_key == 'order' and (instance.is_wh or instance.is_bazar))
     if not previous and (state.cancelled or excluded or not state.stage):
         return None, False
-    policy = (previous.policy if previous and not latest_policy else
+    policy = (previous.policy if previous and (not latest_policy or previous.forecast_status == 'actual') else
               select_policy(workflow_key, POLICY_CODE, as_of=as_of))
     if policy is None:
         raise SchedulingError('No eligible published arrival policy: ' + workflow_key)

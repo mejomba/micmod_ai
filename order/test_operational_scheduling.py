@@ -77,3 +77,34 @@ class OperationalSchedulingTests(TestCase):
         Order.objects.filter(pk=self.order.pk).update(sales_admin_cancel=True)
         self.order.refresh_from_db()
         self.assertEqual(forecast_order_arrival(self.order)['status'], 'cancelled')
+
+    def test_terminal_order_still_reads_actual_receipt(self):
+        from django.conf import settings
+        from order.forecast_service import recalculate
+        first, _ = recalculate('order', self.order.pk, reason='backfill')
+        packing = Packing.objects.create(shipment_type='air')
+        item = PackingItem.objects.create(packing=packing, order=self.order, quantity=1000)
+        transfer = PackingSepidarTransfer.objects.create(packing=packing, transfer_type='normal',
+            source_stock_ref=91, destination_stock_ref=settings.SEPIDAR_CONST_DATA['central_wh_id'],
+            status='success', receipt_id=123, sent_at=timezone.now())
+        PackingSepidarTransferItem.objects.create(transfer=transfer, packing_item=item, item_ref=1, quantity=1000)
+        WorkFlow.objects.create(content_type=ContentType.objects.get_for_model(Order),
+            object_id=self.order.pk, state='پرداخت / PACKING / GIO', current_state_name='مرحله نهایی',
+            wf_status=3,to_user=self.user)
+        self.assertEqual(order_state(self.order).stage,'order.done')
+        result = forecast_order_arrival(self.order)
+        self.assertEqual(result['status'],'actual')
+        latest, changed = recalculate('order', self.order.pk)
+        self.assertTrue(changed)
+        self.assertEqual(latest.actual_at,transfer.sent_at)
+        self.assertEqual(latest.initial_estimated_at,first.initial_estimated_at)
+
+    def test_terminal_packing_without_receipt_is_not_declared_complete(self):
+        packing = Packing.objects.create(shipment_type='air',estimated_arrive_to_wh_date=date.today())
+        PackingItem.objects.create(packing=packing, order=self.order, quantity=1000)
+        WorkFlow.objects.create(content_type=ContentType.objects.get_for_model(Packing),
+            object_id=packing.pk,state='انبار',current_state_name='اتمام کار',wf_status=3,to_user=self.user)
+        result = forecast_order_arrival(self.order)
+        self.assertEqual(result['status'],'incomplete')
+        self.assertIsNone(result['complete_arrival'])
+        self.assertEqual(result['received_quantity'],0)

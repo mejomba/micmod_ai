@@ -40,6 +40,7 @@ def stage_keys(workflow, rows):
     return tuple(workflow + '.' + row[0] for row in rows)
 
 
+ORDER_DONE = 'order.done'
 ORDER_KEYS = stage_keys('order', ORDER_STAGES)
 PACKING_KEYS = stage_keys('packing', PACKING_STAGES)
 KEYS = ORDER_KEYS + PACKING_KEYS

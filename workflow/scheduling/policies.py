@@ -1,7 +1,7 @@
 """Controlled policy versioning. No operational workflow changes are made here.
 
 The caller of publish_policy must supply the full registry-aware validator.
-There is intentionally no public view/admin publication action yet.
+Published versions are protected by the PostgreSQL migration; portal views use this service.
 """
 from copy import deepcopy
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -16,7 +16,7 @@ from .models import (
 
 
 def _require(user, permission):
-    if not user.is_authenticated or not user.has_perm('workflow.' + permission):
+    if not user.is_authenticated or not user.is_active or not user.has_perm('workflow.' + permission):
         raise PermissionDenied
 
 

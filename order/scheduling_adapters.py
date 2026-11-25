@@ -19,7 +19,7 @@ from workflow.scheduling.policies import select_policy
 from .models import Order, Packing, GIOItem, PackingSepidarTransferItem
 from .scheduling_rules import (
     FIELDS, ORDER_STAGES, PACKING_STAGES, ORDER_KEYS, PACKING_KEYS, KEYS,
-    TARGET, POLICY_CODE, normalize_label, stage_state, transport_method,
+    TARGET, POLICY_CODE, ORDER_DONE, normalize_label, stage_state, transport_method,
     quantity, Shipment, summarize_shipments, residual_gio_allocations,
 )
 
@@ -34,7 +34,9 @@ def _events(instance, as_of=None):
 
 
 def order_state(order, as_of=None):
-    return stage_state(_events(order, as_of), ORDER_STAGES, 'order',
+    # Terminal order stage has no timing; keep it as an observed state so
+    # linked shipments can still provide real arrival evidence.
+    return stage_state(_events(order, as_of), ORDER_STAGES + (('done','مرحله نهایی',0),), 'order',
         cancelled=bool(order.cancel or order.sales_admin_cancel or order.is_deleted))
 
 
@@ -93,7 +95,7 @@ def _local_date(value):
 
 
 def _forecast(compiled, binding, state, context, as_of, actual_gio=False):
-    if state.cancelled or not state.stage or state.stage == 'packing.done':
+    if state.cancelled or not state.stage or state.stage in ('packing.done', ORDER_DONE):
         return None
     if actual_gio and context.get('gio_weight_kg') is None:
         # The default is only for virtual GIOs; an existing incomplete weight
@@ -130,7 +132,7 @@ def _noncentral_receipt(row, as_of):
     ).exclude(transfer__transfer_type='normal', transfer__destination_stock_ref=central).exists()
 
 
-def _packing_shipments(row, forecast, as_of):
+def _packing_shipments(row, forecast, as_of, *, terminal=False):
     planned = quantity(row.quantity)
     declared = _local_date(row.packing.estimated_arrive_to_wh_date)
     remaining = planned
@@ -148,7 +150,7 @@ def _packing_shipments(row, forecast, as_of):
         calculated = forecast.estimated_at if forecast and not noncentral else None
         # A completed transfer to another warehouse is not a central receipt.
         shipments.append(Shipment('packing:%s' % row.pk, remaining, calculated,
-            None if noncentral else declared, status='incomplete' if noncentral else forecast.status if forecast else 'incomplete',
+            None if noncentral or terminal else declared, status='incomplete' if noncentral or terminal else forecast.status if forecast else 'incomplete',
             details={'packing_id': row.packing_id, 'noncentral_receipt': noncentral,
                      'declared_overdue': bool(declared and declared.date() < timezone.localdate(as_of)),
                      'forecast': forecast}))
@@ -177,10 +179,10 @@ def forecast_order_arrival(order, *, as_of=None, policy=None):
         packing = item.packing
         if packing.pk not in forecasts:
             forecasts[packing.pk] = _packing_forecast(packing, compiled, binding, as_of)
-        portions = _packing_shipments(item, forecasts[packing.pk], as_of)
+        stage = packing_state(packing, as_of).stage
+        portions = _packing_shipments(item, forecasts[packing.pk], as_of, terminal=stage=='packing.done')
         shipments.extend(portions)
         packed += quantity(item.quantity)
-        stage = packing_state(packing, as_of).stage
         if stage in PACKING_KEYS[2:-1]:
             transit += sum((s.quantity for s in portions if not s.actual
                             and not (s.details or {}).get('noncentral_receipt')), Decimal(0))
@@ -202,7 +204,7 @@ def forecast_order_arrival(order, *, as_of=None, policy=None):
         context['gio_weight_kg'] = weight
         # A saved GIO represents completed GIO allocation, but there is no
         # recorded entry into a virtual packing. Forecast from now provisionally.
-        source = StageState('packing.draft', entered) if key is not None else state
+        source = StageState('packing.draft', entered) if key is not None and state.stage != ORDER_DONE else state
         if key is not None:
             assumptions.append('GIO %s has no packing stage entry; forecast starts from now.' % key)
         forecast = _forecast(compiled, binding, source, context, as_of, key is not None)
@@ -220,6 +222,11 @@ def forecast_order_arrival(order, *, as_of=None, policy=None):
 
 def forecast_packing_arrival(packing, *, as_of=None, policy=None):
     as_of = as_of if as_of is not None else timezone.now()
+    if timezone.is_naive(as_of):
+        raise SchedulingError('Timezone-aware as_of required')
+    state = packing_state(packing, as_of)
+    if state.cancelled:
+        return {**summarize_shipments(0, []), 'status':'cancelled', 'shipments':[], 'assumptions':[]}
     binding = registry.by_key('packing')
     row = policy or select_policy('packing', POLICY_CODE, as_of=as_of)
     if row is None:
@@ -230,7 +237,7 @@ def forecast_packing_arrival(packing, *, as_of=None, policy=None):
     required = Decimal(0)
     for item in packing.packing_item_rel.filter(is_deleted=False).select_related('packing').order_by('pk'):
         required += quantity(item.quantity)
-        shipments.extend(_packing_shipments(item, forecast, as_of))
+        shipments.extend(_packing_shipments(item, forecast, as_of, terminal=state.stage=='packing.done'))
     result = summarize_shipments(required, shipments)
     result.update(shipments=shipments, forecast=forecast, policy_id=row.pk)
     return result

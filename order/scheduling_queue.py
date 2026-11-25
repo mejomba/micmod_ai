@@ -5,7 +5,7 @@ import logging
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Exists, OuterRef
 from django.utils import timezone
 
 from workflow.scheduling.models import WorkflowForecast, WorkflowForecastRefresh
@@ -47,8 +47,12 @@ def sweep_candidates(workflow_key):
     completed = forecasts.filter(forecast_status='actual').values('object_id')
     qs = model._base_manager.all()
     if workflow_key == 'order':
+        from .models import PackingItem
+        # Completed legacy orders with packing evidence may never have been
+        # forecast before. Include them only for the explicit initial backfill.
+        qs = qs.annotate(_has_packing=Exists(PackingItem.objects.filter(order_id=OuterRef('pk'),is_deleted=False,packing__is_deleted=False)))
         qs = qs.filter(Q(is_deleted=False, is_wh=False, is_bazar=False, cancel=False,
-                        sales_admin_cancel=False, is_over=False) | Q(pk__in=unfinished))
+                        sales_admin_cancel=False) & (Q(is_over=False) | Q(_has_packing=True)) | Q(pk__in=unfinished))
     else:
         qs = qs.filter(Q(is_deleted=False) | Q(pk__in=unfinished))
     return qs.exclude(pk__in=completed).order_by('pk').values_list('pk', flat=True)
