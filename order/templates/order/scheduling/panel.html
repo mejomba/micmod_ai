@@ -5,6 +5,10 @@
     {% if current %}
     <span class="fw-bold" dir="ltr">{{ summary.effective }}</span><span class="badge badge-light-primary">{{ summary.source }}</span><span class="text-muted">{{ summary.status }}</span>
     {% if overdue %}<span class="text-danger fw-bold">{% if fa %}دارای تأخیر{% else %}Overdue{% endif %}</span>{% endif %}
+    <span class="text-muted small">{% if fa %}اولین رسید{% else %}First{% endif %}: <b dir="ltr">{{ first }}</b></span>
+    <span class="text-muted small">{% if fa %}اولیه{% else %}Initial{% endif %}: <b dir="ltr">{{ initial }}</b></span>
+    <span class="text-muted small">{% if fa %}حمل{% else %}Transport{% endif %}: <b>{{ method }}</b></span>
+    <span class="small {% if delta > 0 %}text-danger{% else %}text-muted{% endif %}">{% if fa %}انحراف (روز){% else %}Variance (days){% endif %}: <b dir="ltr">{{ delta|default_if_none:"—" }}</b></span>
     {% if assumption_count %}<span class="text-warning">{% if fa %}دارای فرضیات{% else %}Assumptions{% endif %} ({{ assumption_count }})</span>{% endif %}
     {% else %}<span class="text-muted">{% if fa %}هنوز پیش‌بینی ثبت نشده است{% else %}No stored forecast yet{% endif %}</span>{% endif %}
     {% if pending %}<span class="text-warning">{% if retrying %}{% if fa %}در انتظار تلاش مجدد{% else %}Retry pending{% endif %}{% else %}{% if fa %}در صف به‌روزرسانی{% else %}Refresh queued{% endif %}{% endif %}</span>{% endif %}
@@ -22,6 +26,7 @@
     <div class="col"><div class="text-muted fs-8">{% if fa %}روش حمل مؤثر{% else %}Effective transport{% endif %}</div><strong>{{ method }}</strong></div>
     <div class="col"><div class="text-muted fs-8">{% if fa %}تعداد رسیده{% else %}Received quantity{% endif %}</div><strong dir="ltr">{{ received|default_if_none:"—" }}</strong></div>
     <div class="col"><div class="text-muted fs-8">{% if fa %}تعداد باقی‌مانده{% else %}Remaining quantity{% endif %}</div><strong dir="ltr">{{ remaining|default_if_none:"—" }}</strong></div>
+    {% if kind == 'order' and not historical %}<div class="col"><div class="text-muted fs-8">{% if fa %}تعداد در مسیر{% else %}In-transit quantity{% endif %}</div><strong dir="ltr">{{ transit|default_if_none:"—" }}</strong></div>{% endif %}
     <div class="col"><div class="text-muted fs-8">{% if fa %}نسخه سیاست / پیش‌بینی{% else %}Policy / forecast revision{% endif %}</div><strong dir="ltr">v{{ summary.version }} / {{ summary.revision }}</strong></div>
   </div>
   <p class="text-muted small mt-3 mb-0">{% if fa %}آخرین محاسبه ثبت‌شده{% else %}Last stored calculation{% endif %}: {{ summary.recorded }} · {{ summary.reason }}</p>

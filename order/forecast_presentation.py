@@ -46,6 +46,13 @@ def display_date(value, fa):
     return jdatetime.date.fromgregorian(date=value).strftime('%Y/%m/%d') if fa else value.isoformat()
 
 
+def display_datetime(value,fa):
+    if value is None:
+        return '—'
+    local = timezone.localtime(value) if timezone.is_aware(value) else value
+    return display_date(local,fa) + ' ' + local.strftime('%H:%M:%S')
+
+
 def current_queryset(model):
     return WorkflowForecast.objects.filter(content_type=ContentType.objects.get_for_model(model),
         target_stage=TARGET,target_event='exit',is_current=True)
@@ -131,7 +138,7 @@ def _actual_stages(instance, kind, fa):
 def revision_summary(row, fa):
     result = row.context_snapshot.get('result',{}) or {}
     return {'revision':row.revision,'version':row.policy_version,
-        'recorded':display_date(row.calculated_at,fa),
+        'recorded':display_datetime(row.calculated_at,fa),
         'effective':display_date(row.effective_estimated_at,fa),
         'status':label(STATUSES,row.forecast_status,fa),
         'source':label(SOURCES,row.forecast_source,fa),'reason':row.calculation_reason,

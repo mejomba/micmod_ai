@@ -3,7 +3,8 @@ from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
-from django.test import TestCase, RequestFactory
+from django.test import TestCase, Client
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 
@@ -39,7 +40,8 @@ class SchedulingPortalTests(TestCase):
             self.viewer.user_permissions.add(Permission.objects.get(content_type__app_label='workflow',codename=code))
 
     def test_index_and_detail_render(self):
-        response = self.client.get(self.url('index'),HTTP_COOKIE='portal_scheduling_language=fa')
+        self.client.cookies['portal_scheduling_language'] = 'fa'
+        response = self.client.get(self.url('index'))
         self.assertEqual(response.status_code,200)
         self.assertContains(response,'مدیریت زمان‌بندی گردش کار')
         response = self.client.get(self.url('detail',self.policy.pk))
@@ -149,3 +151,20 @@ class SchedulingPortalTests(TestCase):
         self.assertFalse(restricted['can_history'])
         self.assertNotIn('steps',restricted)
         self.assertEqual(restricted['current'].pk,second.pk)
+
+    def test_read_only_panel_renders_both_languages(self):
+        recalculate('order',self.order.pk,reason='backfill')
+        for fa, title in ((True,'زمان‌بندی رسید کالا'),(False,'Arrival scheduling')):
+            context = panel_context(self.order,'order',self.admin,fa)
+            output = render_to_string('order/scheduling/panel.html',context)
+            self.assertIn(title,output)
+            self.assertIn('data-forecast-panel',output)
+            self.assertIn(self.url('history','order',self.order.pk),output)
+        self.assertEqual(WorkflowForecast.objects.count(),1)
+
+    def test_mutations_require_post_and_csrf(self):
+        self.assertEqual(self.client.get(self.url('clone',self.policy.pk)).status_code,405)
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.admin)
+        self.assertEqual(csrf_client.post(self.url('clone',self.policy.pk)).status_code,403)
+        self.assertEqual(WorkflowSchedulePolicy.objects.count(),2)
