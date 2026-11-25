@@ -4,6 +4,7 @@
 {% load accounts_tag %}
 {% load core_tags %}
 {% load order_tags %}
+{% load forecast_tags %}
 {% load jalali_tags %}
 
 {% block title %}سفارش {{ form.instance.pk }}{% endblock title %}
@@ -67,6 +68,7 @@
 
 {% block form_content %}
 {% csrf_token %}
+{% arrival_forecast_panel form.instance 'order' %}
 
     {% if not form.instance.cancel %}
         <div class="mb-2">

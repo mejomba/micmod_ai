@@ -984,7 +984,8 @@ class OrderDataTableListView(AjaxDatatableView):
         #         ~Q(last_work_flow__current_state_name='پیش نویس')
         #     )
 
-        return qs.distinct()
+        from .forecast_presentation import annotate_order_forecasts, filter_order_forecasts
+        return filter_order_forecasts(annotate_order_forecasts(qs.distinct()), request.POST)
 
     def customize_row(self, row, obj):
         # row['order_method'] = f'<span>{obj.order_method}</span>'
@@ -1013,7 +1014,8 @@ class OrderDataTableListView(AjaxDatatableView):
         row['is_kasri'] = f'<span class="badge badge-success">بله</span>' if obj.is_kasri else f'<span class="badge badge-danger">خیر</span>'
         row['is_force_order'] = f'<span class="badge badge-success">بله</span>' if obj.is_force_order else f'<span class="badge badge-danger">خیر</span>'
         row['qi__quotation'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
-        row['estimated_arrive_date'] = obj.estimate_arrive_at
+        from .forecast_presentation import order_forecast_cells, is_farsi
+        row.update(order_forecast_cells(obj, is_farsi(self.request)))
         row['comments'] = '<hr>'.join([f"{x.comment_content} <br> ({x.elapsed_time})" for x in obj.comments.filter(comment_title='R')])  # "R" is order error from trade user
         row['payment'] = '<hr>'.join([
                             (
@@ -1336,6 +1338,24 @@ class OrderDataTableListView(AjaxDatatableView):
             ]
 
 
+        # Keep the existing role-specific ordering and extend only lists that
+        # expose the foreign-order arrival column. Copy to avoid shared mutation.
+        from .forecast_presentation import is_farsi
+        fa = is_farsi(request)
+        columns = []
+        for column in self.column_defs:
+            column = dict(column)
+            if column.get('name') == 'estimated_arrive_date':
+                column.update(title='پیش‌بینی رسید کامل' if fa else 'Complete arrival', orderable=True, searchable=False)
+                columns.append(column)
+                columns.extend([
+                    {'name':'forecast_source_code','title':'منبع پیش‌بینی' if fa else 'Forecast source','visible':True,'orderable':True,'searchable':False},
+                    {'name':'forecast_status_code','title':'وضعیت پیش‌بینی' if fa else 'Forecast status','visible':True,'orderable':True,'searchable':False},
+                    {'name':'forecast_delay','title':'انحراف (روز)' if fa else 'Variance (days)','visible':True,'orderable':True,'searchable':False},
+                ])
+            else:
+                columns.append(column)
+        self.column_defs = columns
         return super().get_column_defs(request)
 
 

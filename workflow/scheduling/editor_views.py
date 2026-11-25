@@ -30,7 +30,8 @@ RESOURCES = {
 
 
 def _fa(request):
-    return not (getattr(request,'LANGUAGE_CODE',None) or get_language() or 'fa').startswith('en')
+    from order.forecast_presentation import is_farsi
+    return is_farsi(request)
 
 
 def _require(request, perm):
@@ -218,3 +219,33 @@ def preview(request,pk):
     except (ValidationError,SchedulingError,ValueError,TypeError) as exc:
         return _detail(request,policy,error=_error(exc))
     return _detail(request,policy,preview_result=result,preview_id=document_id)
+
+ 
+@login_required
+@require_http_methods(['GET'])
+def history(request,kind,document_id):
+    _require(request,'workflow.view_workflowforecast')
+    from order.models import Order,Packing
+    from order.forecast_presentation import revision_summary
+    from .models import WorkflowForecast
+    from django.contrib.contenttypes.models import ContentType
+    from django.core.paginator import Paginator
+    from order.scheduling_rules import TARGET
+    if kind == 'order':
+        _require(request,'order.view_order')
+        instance = get_object_or_404(Order.objects.get_access_object(request.user,lst=False),pk=document_id)
+        if request.user.base_group=='mac' and instance.buy_operator!='mac' and instance.pay_operator!='mac':
+            raise PermissionDenied
+    elif kind == 'packing':
+        _require(request,'order.view_packing')
+        instance = get_object_or_404(Packing.objects,pk=document_id)
+        if not instance.user_can_view_workflow(request.user):
+            raise PermissionDenied
+    else:
+        raise Http404
+    qs = WorkflowForecast.objects.filter(content_type=ContentType.objects.get_for_model(instance),
+        object_id=document_id,target_stage=TARGET,target_event='exit').order_by('-revision')
+    page = Paginator(qs,25).get_page(request.GET.get('page'))
+    fa = _fa(request)
+    return render(request,'order/scheduling/history.html',dict(page=page,
+        rows=[revision_summary(r,fa) for r in page],fa=fa,kind=kind,document_id=document_id))

@@ -1,0 +1,41 @@
+{% if show %}
+<details class="border rounded bg-body p-3 mb-3" dir="{% if fa %}rtl{% else %}ltr{% endif %}" data-forecast-panel>
+  <summary class="d-flex flex-wrap align-items-center gap-3" style="cursor:pointer">
+    <strong class="fs-5">{% if fa %}زمان‌بندی رسید کالا{% else %}Arrival scheduling{% endif %}</strong>
+    {% if current %}
+    <span class="fw-bold" dir="ltr">{{ summary.effective }}</span><span class="badge badge-light-primary">{{ summary.source }}</span><span class="text-muted">{{ summary.status }}</span>
+    {% if overdue %}<span class="text-danger fw-bold">{% if fa %}دارای تأخیر{% else %}Overdue{% endif %}</span>{% endif %}
+    {% if assumption_count %}<span class="text-warning">{% if fa %}دارای فرضیات{% else %}Assumptions{% endif %} ({{ assumption_count }})</span>{% endif %}
+    {% else %}<span class="text-muted">{% if fa %}هنوز پیش‌بینی ثبت نشده است{% else %}No stored forecast yet{% endif %}</span>{% endif %}
+    {% if pending %}<span class="text-warning">{% if retrying %}{% if fa %}در انتظار تلاش مجدد{% else %}Retry pending{% endif %}{% else %}{% if fa %}در صف به‌روزرسانی{% else %}Refresh queued{% endif %}{% endif %}</span>{% endif %}
+  </summary>
+  {% if current %}
+  <div class="row row-cols-2 row-cols-md-4 row-cols-xl-6 g-3 border-top mt-3 pt-3">
+    <div class="col"><div class="text-muted fs-8">{% if fa %}اولین رسید (شناخته‌شده){% else %}First known arrival{% endif %}</div><strong dir="ltr">{{ first }}</strong></div>
+    <div class="col"><div class="text-muted fs-8">{% if fa %}رسید کامل{% else %}Complete arrival{% endif %}</div><strong dir="ltr">{{ summary.effective }}</strong></div>
+    <div class="col"><div class="text-muted fs-8">{% if fa %}پیش‌بینی اولیه{% else %}Initial forecast{% endif %}</div><strong dir="ltr">{{ initial }}</strong>{% if backfill %}<div class="small text-muted">Backfill</div>{% endif %}</div>
+    <div class="col"><div class="text-muted fs-8">{% if fa %}محاسباتی{% else %}Calculated{% endif %}</div><strong dir="ltr">{{ calculated }}</strong></div>
+    <div class="col"><div class="text-muted fs-8">{% if fa %}اعلامی{% else %}Declared{% endif %}</div><strong dir="ltr">{{ declared }}</strong></div>
+    <div class="col"><div class="text-muted fs-8">{% if fa %}رسید واقعی{% else %}Actual receipt{% endif %}</div><strong dir="ltr">{{ actual }}</strong></div>
+    <div class="col"><div class="text-muted fs-8">{% if fa %}انحراف از اولیه (روز تقویمی){% else %}Variance from initial (calendar days){% endif %}</div><strong dir="ltr" class="{% if delta > 0 %}text-danger{% endif %}">{{ delta|default_if_none:"—" }}</strong></div>
+    <div class="col"><div class="text-muted fs-8">{% if fa %}اعلامی منهای محاسباتی (روز){% else %}Declared minus calculated (days){% endif %}</div><strong dir="ltr">{{ declared_delta|default_if_none:"—" }}</strong></div>
+    <div class="col"><div class="text-muted fs-8">{% if fa %}روش حمل مؤثر{% else %}Effective transport{% endif %}</div><strong>{{ method }}</strong></div>
+    <div class="col"><div class="text-muted fs-8">{% if fa %}تعداد رسیده{% else %}Received quantity{% endif %}</div><strong dir="ltr">{{ received|default_if_none:"—" }}</strong></div>
+    <div class="col"><div class="text-muted fs-8">{% if fa %}تعداد باقی‌مانده{% else %}Remaining quantity{% endif %}</div><strong dir="ltr">{{ remaining|default_if_none:"—" }}</strong></div>
+    <div class="col"><div class="text-muted fs-8">{% if fa %}نسخه سیاست / پیش‌بینی{% else %}Policy / forecast revision{% endif %}</div><strong dir="ltr">v{{ summary.version }} / {{ summary.revision }}</strong></div>
+  </div>
+  <p class="text-muted small mt-3 mb-0">{% if fa %}آخرین محاسبه ثبت‌شده{% else %}Last stored calculation{% endif %}: {{ summary.recorded }} · {{ summary.reason }}</p>
+  {% if can_history %}
+    <div class="d-flex justify-content-end mt-2"><a class="btn btn-sm btn-light-primary" target="_blank" rel="noopener noreferrer" href="{% url 'scheduling:history' kind object_id %}">{% if fa %}تاریخچه نسخه‌ها{% else %}Revision history{% endif %}</a></div>
+    <h4 class="mt-4">{% if fa %}تفکیک محموله‌ها{% else %}Shipment breakdown{% endif %}</h4>
+    <div class="table-responsive"><table class="table table-sm table-row-bordered"><thead><tr><th>{% if fa %}محموله{% else %}Shipment{% endif %}</th><th>{% if fa %}تعداد{% else %}Qty{% endif %}</th><th>{% if fa %}محاسباتی{% else %}Calculated{% endif %}</th><th>{% if fa %}اعلامی{% else %}Declared{% endif %}</th><th>{% if fa %}واقعی{% else %}Actual{% endif %}</th><th>{% if fa %}مؤثر{% else %}Effective{% endif %}</th><th>{% if fa %}منبع{% else %}Source{% endif %}</th></tr></thead><tbody>{% for s in shipments %}<tr><td>{{ s.key }}</td><td>{{ s.quantity }}</td><td>{{ s.calculated }}</td><td>{{ s.declared }}</td><td>{{ s.actual }}</td><td>{{ s.effective }}</td><td>{{ s.source }}</td></tr>{% empty %}<tr><td colspan="7">—</td></tr>{% endfor %}</tbody></table></div>
+    <h4 class="mt-3">{% if fa %}مراحل واقعی گردش کار{% else %}Actual workflow stages{% endif %}</h4>
+    <div class="table-responsive"><table class="table table-sm table-row-bordered"><thead><tr><th>{% if fa %}مرحله{% else %}Stage{% endif %}</th><th>{% if fa %}ورود{% else %}Entry{% endif %}</th><th>{% if fa %}خروج{% else %}Exit{% endif %}</th><th>{% if fa %}روز تقویمی سپری‌شده{% else %}Calendar days elapsed{% endif %}</th></tr></thead><tbody>{% for s in actual_stages %}<tr><td>{{ s.stage }}</td><td>{{ s.entry }}</td><td>{{ s.exit }}</td><td>{{ s.days|default_if_none:"—" }}</td></tr>{% empty %}<tr><td colspan="4">—</td></tr>{% endfor %}</tbody></table></div>
+    <h4 class="mt-3">{% if fa %}جزئیات زمان‌بندی ذخیره‌شده{% else %}Stored stage calculations{% endif %}</h4>
+    <div class="table-responsive"><table class="table table-sm table-row-bordered"><thead><tr><th>{% if fa %}محموله / سناریو / مسیر{% else %}Shipment / scenario / route{% endif %}</th><th>{% if fa %}مرحله{% else %}Stage{% endif %}</th><th>{% if fa %}مدت استاندارد{% else %}Standard{% endif %}</th><th>{% if fa %}سپری‌شده{% else %}Elapsed{% endif %}</th><th>{% if fa %}باقی‌مانده{% else %}Remaining{% endif %}</th><th>{% if fa %}شروع تخمینی{% else %}Estimated start{% endif %}</th><th>{% if fa %}پایان تخمینی{% else %}Estimated end{% endif %}</th><th>{% if fa %}قواعد / تقویم{% else %}Rules / calendar{% endif %}</th></tr></thead><tbody>{% for s in steps %}<tr {% if s.overdue %}class="text-warning"{% endif %}><td>{{ s.shipment }} / {{ s.scenario }} / {{ s.route }}</td><td>{{ s.stage }}</td><td>{{ s.duration }}</td><td>{{ s.elapsed }}</td><td>{{ s.remaining }}</td><td>{{ s.start }}</td><td>{{ s.end }}</td><td>{{ s.rules|default:"—" }}{% for component in s.components %}{% for c in component.standard %}<div class="small text-muted">{{ c.duration }} · {{ c.calendar }}</div>{% endfor %}{% endfor %}</td></tr>{% empty %}<tr><td colspan="8">—</td></tr>{% endfor %}</tbody></table></div>
+    {% if assumptions %}<h4>{% if fa %}فرضیات و داده‌های نامشخص{% else %}Assumptions and unknowns{% endif %}</h4><ul>{% for assumption in assumptions %}<li>{{ assumption }}</li>{% endfor %}</ul>{% endif %}
+    <details class="mt-2"><summary>{% if fa %}تقویم‌های مورد استفاده و استثناها{% else %}Calendar configuration and exceptions{% endif %}</summary>{% for calendar in calendars %}<div class="border rounded p-2 my-1"><strong>{{ calendar.code }}</strong> · {{ calendar.timezone }} · {{ calendar.weekdays }}{% for exception in calendar.exceptions %}<div>{{ exception.date }} · {% if exception.working %}{% if fa %}کاری{% else %}Working{% endif %}{% else %}{% if fa %}تعطیل{% else %}Holiday{% endif %}{% endif %} · {{ exception.description }}</div>{% endfor %}</div>{% endfor %}</details>
+  {% endif %}
+  {% endif %}
+</details>
+{% endif %}
