@@ -22,7 +22,7 @@ METHODS = {'air':('هوایی','Air'), 'express':('اکسپرس','Express'), 'se
 
 
 def is_farsi(request=None):
-    cookie = request.COOKIES.get('portal_scheduling_language') if request is not None else None
+    cookie = getattr(request,'COOKIES',{}).get('portal_scheduling_language') if request is not None else None
     language = cookie if cookie in ('fa','en') else getattr(request,'LANGUAGE_CODE',None) or get_language() or 'en'
     return language.startswith('fa')
 
@@ -139,7 +139,7 @@ def revision_summary(row, fa):
         'first':display_date(result.get('first_arrival'),fa)}
 
 
-def panel_context(instance, kind, user, fa):
+def panel_context(instance, kind, user, fa, *, revision=None):
     result = {'show':False,'fa':fa,'kind':kind}
     if not instance or not getattr(instance,'pk',None):
         return result
@@ -150,10 +150,15 @@ def panel_context(instance, kind, user, fa):
     if kind=='order' and (instance.is_wh or instance.is_bazar):
         return result
     result['show']=True
-    current = current_queryset(model).filter(object_id=instance.pk).select_related('policy').first()
-    job = WorkflowForecastRefresh.objects.filter(workflow_key=kind,object_id=instance.pk).only('attempts','requested_at').first()
+    if revision is not None:
+        if not user.has_perm('workflow.view_workflowforecast') or revision.object_id != instance.pk or revision.content_type_id != ContentType.objects.get_for_model(model).pk or revision.target_stage != TARGET or revision.target_event != 'exit':
+            return {'show':False,'fa':fa,'kind':kind}
+        current,job = revision,None
+    else:
+        current = current_queryset(model).filter(object_id=instance.pk).select_related('policy').first()
+        job = WorkflowForecastRefresh.objects.filter(workflow_key=kind,object_id=instance.pk).only('attempts','requested_at').first()
     result.update(current=current,pending=bool(job),retrying=bool(job and job.attempts),
-                  can_history=user.has_perm('workflow.view_workflowforecast'),object_id=instance.pk)
+                  can_history=user.has_perm('workflow.view_workflowforecast'),object_id=instance.pk,historical=revision is not None)
     if not current:
         return result
     snapshot = current.context_snapshot.get('result',{}) or {}
@@ -192,5 +197,5 @@ def panel_context(instance, kind, user, fa):
                 'components':step.duration_components,'overdue':step.status=='overdue'})
         result.update(shipments=shipments,steps=steps,assumptions=current.assumptions,
                       calendars=current.policy_snapshot.get('calendars',[]),
-                      actual_stages=_actual_stages(instance,kind,fa))
+                      actual_stages=[] if revision is not None else _actual_stages(instance,kind,fa))
     return result

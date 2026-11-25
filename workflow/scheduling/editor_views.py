@@ -17,7 +17,7 @@ from .policies import clone_policy
 from .models import (WorkflowSchedulePolicy, WorkflowCalendar, WorkflowCalendarException,
                      WorkflowStageTiming, WorkflowTimingRule, WorkflowScheduleTransition)
 from .editor_forms import (CalendarForm, ExceptionForm, StageForm, RuleForm, TransitionForm,
-                           PolicyForm, UnknownForm, label_field, style)
+                           PolicyForm, UnknownForm, label_field, style, condition_summary, effect_summary)
 
 VIEW = 'workflow.view_workflowschedulepolicy'
 RESOURCES = {
@@ -80,6 +80,7 @@ def index(request):
 def _detail(request, policy, **extra):
     binding = registry.by_key(policy.workflow_key)
     sections = []
+    fa = _fa(request)
     for kind, (model, _, _) in RESOURCES.items():
         qs = _resources(policy,kind)
         if kind == 'stage':
@@ -88,10 +89,20 @@ def _detail(request, policy, **extra):
             qs = qs.select_related('stage_timing')
         if kind == 'exception':
             qs = qs.select_related('calendar')
-        sections.append({'kind':kind,'rows':qs,'add':policy.status=='draft' and _permit(request.user,model,'add'),
+        rows = list(qs)
+        for item in rows:
+            if kind in ('rule','transition'):
+                item.display_condition = condition_summary(item.condition_json,binding,fa)
+            if kind == 'rule':
+                item.display_effect = effect_summary(item.effect_json,binding,fa)
+        sections.append({'kind':kind,'rows':rows,'add':policy.status=='draft' and _permit(request.user,model,'add'),
                          'edit':policy.status=='draft' and _permit(request.user,model,'change'),
                          'delete':policy.status=='draft' and _permit(request.user,model,'delete')})
-    return render(request,'workflow/scheduling/detail.html',dict(policy=policy,sections=sections,fa=_fa(request),
+    from .policies import select_policy
+    eligible = select_policy(policy.workflow_key,policy.code)
+    can_refresh = bool(eligible and eligible.pk==policy.pk and policy.code=='central-arrival'
+        and policy.workflow_key in ('order','packing') and request.user.has_perm('workflow.publish_schedule_policy'))
+    return render(request,'workflow/scheduling/detail.html',dict(policy=policy,sections=sections,fa=fa,can_refresh=can_refresh,
         can_edit=policy.status=='draft' and request.user.has_perm('workflow.change_workflowschedulepolicy'),
         can_publish=policy.status=='draft' and request.user.has_perm('workflow.publish_schedule_policy'),
         can_clone=request.user.has_perm('workflow.add_workflowschedulepolicy'),
@@ -185,6 +196,7 @@ def remove(request,pk,kind,row_id):
 def publish(request,pk):
     policy = _policy(request,pk)
     _require(request,'workflow.publish_schedule_policy')
+    _draft(policy)
     try:
         effective = forms.DateTimeField(required=False).clean(request.POST.get('effective_from') or None)
         publish_configured_policy(pk,user=request.user,effective_from=effective)
@@ -247,5 +259,30 @@ def history(request,kind,document_id):
         object_id=document_id,target_stage=TARGET,target_event='exit').order_by('-revision')
     page = Paginator(qs,25).get_page(request.GET.get('page'))
     fa = _fa(request)
+    selected = None
+    if request.GET.get('revision'):
+        revision = forms.IntegerField(min_value=1)
+        try:
+            number = revision.clean(request.GET['revision'])
+        except ValidationError as exc:
+            raise Http404 from exc
+        selected = get_object_or_404(qs,revision=number)
+    from order.forecast_presentation import panel_context
+    selected_panel = panel_context(instance,kind,request.user,fa,revision=selected) if selected else None
     return render(request,'order/scheduling/history.html',dict(page=page,
-        rows=[revision_summary(r,fa) for r in page],fa=fa,kind=kind,document_id=document_id))
+        rows=[revision_summary(r,fa) for r in page],fa=fa,kind=kind,document_id=document_id,selected_panel=selected_panel))
+
+
+@login_required
+@require_POST
+def refresh_open(request,pk):
+    policy = _policy(request,pk)
+    _require(request,'workflow.publish_schedule_policy')
+    from .policies import select_policy
+    from order.scheduling_queue import enqueue_sweep
+    from order.scheduling_rules import POLICY_CODE
+    effective = select_policy(policy.workflow_key,policy.code)
+    if policy.code != POLICY_CODE or policy.workflow_key not in ('order','packing') or not effective or effective.pk != pk:
+        raise PermissionDenied('Only the latest currently effective operational policy may be applied.')
+    count = enqueue_sweep('policy_upgrade',latest_policy=True,workflow_key=policy.workflow_key)
+    return _detail(request,policy,refresh_count=count)

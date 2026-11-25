@@ -54,9 +54,11 @@ def sweep_candidates(workflow_key):
     return qs.exclude(pk__in=completed).order_by('pk').values_list('pk', flat=True)
 
 
-def enqueue_sweep(reason='daily', *, latest_policy=False):
+def enqueue_sweep(reason='daily', *, latest_policy=False, workflow_key=None):
+    if workflow_key is not None and workflow_key not in MODELS:
+        raise ValueError('Unknown workflow')
     count = 0
-    for key in MODELS:
+    for key in (workflow_key,) if workflow_key else MODELS:
         batch = []
         for pk in sweep_candidates(key).iterator(chunk_size=500):
             batch.append(WorkflowForecastRefresh(workflow_key=key, object_id=pk,

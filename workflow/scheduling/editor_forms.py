@@ -103,6 +103,17 @@ class StageForm(forms.ModelForm):
 
 
 class ConditionForm(forms.ModelForm):
+    def _update_errors(self, errors):
+        # Model.clean() can report errors on computed model fields that are
+        # deliberately absent from this editor (e.g. effect_json, target_stage).
+        # Django would otherwise raise ValueError from add_error().
+        if hasattr(errors, 'error_dict'):
+            mapped = {}
+            for key, items in errors.error_dict.items():
+                mapped.setdefault(key if key in self.fields else '__all__', []).extend(items)
+            errors = ValidationError(mapped)
+        return super()._update_errors(errors)
+
     condition_json = forms.JSONField(required=False, widget=forms.HiddenInput)
 
     def clean_condition_json(self):
@@ -245,3 +256,50 @@ class UnknownForm(forms.Form):
             config[key] = entry
         self.config = config
         return data
+
+def condition_summary(node, binding, fa):
+    if not node:
+        return 'همیشه' if fa else 'Always'
+    if not isinstance(node, dict):
+        return 'شرط نامعتبر' if fa else 'Invalid condition'
+    if 'and' in node or 'or' in node:
+        key = 'and' if 'and' in node else 'or'
+        join = (' و ' if key == 'and' else ' یا ') if fa else (' AND ' if key == 'and' else ' OR ')
+        return '(' + join.join(condition_summary(c,binding,fa) for c in node[key]) + ')'
+    if 'not' in node:
+        return ('نه ' if fa else 'NOT ') + '(' + condition_summary(node['not'],binding,fa) + ')'
+    key = node.get('field','?')
+    field = binding.fields.get(key)
+    title = label_field(key,field,fa) if field else key
+    operators = {'eq':'=', 'ne':'≠', 'gt':'>', 'gte':'≥', 'lt':'<', 'lte':'≤',
+                 'in':'در مجموعه' if fa else 'in', 'not_in':'خارج مجموعه' if fa else 'not in',
+                 'is_null':'نامشخص' if fa else 'is unknown', 'is_not_null':'مشخص' if fa else 'is known'}
+    op = node.get('operator','?')
+    if op in ('is_null','is_not_null'):
+        return title + ' ' + operators[op]
+    value = node.get('value')
+    def value_label(v):
+        if v is None:
+            return 'نامشخص' if fa else 'Unknown'
+        if isinstance(v,bool):
+            return ('بله' if v else 'خیر') if fa else ('Yes' if v else 'No')
+        if fa and key == 'shipment_type':
+            return {'air':'هوایی','sea':'دریایی','road':'زمینی','rail':'ریلی'}.get(v,str(v))
+        return str(v)
+    value = ', '.join(value_label(v) for v in value) if isinstance(value,list) else value_label(value)
+    return title + ' ' + operators.get(op,op) + ' ' + value
+
+
+def effect_summary(effect, binding, fa):
+    op = effect.get('operation','?')
+    title = next((f if fa else e for key,f,e in OPS if key==op),op)
+    parts = [title]
+    if 'value' in effect:
+        parts.append(str(effect['value']) + (' روز' if fa else ' days'))
+    if 'field' in effect:
+        key=effect['field']
+        field=binding.fields.get(key)
+        parts.append(label_field(key,field,fa) if field else key)
+    if effect.get('calendar'):
+        parts.append(str(effect['calendar']))
+    return ' · '.join(parts)

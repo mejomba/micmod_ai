@@ -1345,6 +1345,8 @@ class OrderDataTableListView(AjaxDatatableView):
         columns = []
         for column in self.column_defs:
             column = dict(column)
+            if column.get('name') in ('forecast_source_code','forecast_status_code','forecast_delay'):
+                continue
             if column.get('name') == 'estimated_arrive_date':
                 column.update(title='پیش‌بینی رسید کامل' if fa else 'Complete arrival', orderable=True, searchable=False)
                 columns.append(column)
@@ -1355,6 +1357,13 @@ class OrderDataTableListView(AjaxDatatableView):
                 ])
             else:
                 columns.append(column)
+        if request.user.base_group != 'bazar' and not any(c.get('name')=='estimated_arrive_date' for c in columns):
+            columns.extend([
+                {'name':'estimated_arrive_date','title':'پیش‌بینی رسید کامل' if fa else 'Complete arrival','visible':True,'orderable':True,'searchable':False},
+                {'name':'forecast_source_code','title':'منبع پیش‌بینی' if fa else 'Forecast source','visible':True,'orderable':True,'searchable':False},
+                {'name':'forecast_status_code','title':'وضعیت پیش‌بینی' if fa else 'Forecast status','visible':True,'orderable':True,'searchable':False},
+                {'name':'forecast_delay','title':'انحراف (روز)' if fa else 'Variance (days)','visible':True,'orderable':True,'searchable':False},
+            ])
         self.column_defs = columns
         return super().get_column_defs(request)
 
