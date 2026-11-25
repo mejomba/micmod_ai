@@ -25,3 +25,17 @@ Local verification, using the actual portal test settings:
 
 The model tests require Django and a test database. Do not apply the migration
 to production until the entire scheduling feature has passed integration tests.
+
+## Phase 3: configured forecasts
+
+Register a Binding with explicit typed fields, allowed stages, adapter and context provider.
+Use scheduler.preview for draft calculations and scheduler.forecast for a published policy.
+Use publish_configured_policy for registry-aware publication. Explicit configured outgoing
+transitions replace the registered defaults for that source. Alternative routes and unknown
+scenarios never silently choose a date; parallel mode requires all applicable paths. The
+validator conservatively rejects same-priority replacement conditions unless it can prove
+disjoint equality/membership. Complex AND/OR branch joins are not inferred. No business
+adapters, policy seed, forecast writes or UI hooks are enabled yet.
+
+Pure tests: python -m unittest workflow.test_scheduling_engine workflow.test_scheduling_configuration -v
+Django tests: python manage.py test workflow.test_configured_scheduler
