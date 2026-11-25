@@ -49,8 +49,24 @@ def recalculate(workflow_key, object_id, *, reason='manual', latest_policy=False
     # Only the genuine first trade-entry event qualifies as a contemporaneous
     # initial forecast. Existing records, delayed events and later stages are
     # never represented as forecasts actually recorded in the past.
-    initial_backfill = not (reason == 'trade_entry' and state.stage == ORDER_KEYS[0]
-        and state.entered_at and timezone.localdate(state.entered_at) == timezone.localdate(as_of))
+    initial_backfill = not (workflow_key == 'order' and reason == 'trade_entry'
+        and state.stage == ORDER_KEYS[0] and state.entered_at
+        and timezone.localdate(state.entered_at) == timezone.localdate(as_of))
+    if not initial_backfill:
+        from .scheduling_adapters import _events
+        from .scheduling_rules import ORDER_STAGES, stage_state
+        first_entry = None
+        events = _events(instance, as_of)
+        # The first valid entry can be identified from the earliest prefix of
+        # the real history. Skip reassignment without resetting the anchor.
+        for index, event in enumerate(events):
+            if event.wf_status not in (1, 2, 3, 5):
+                continue
+            candidate = stage_state([event], ORDER_STAGES, 'order')
+            if candidate.stage == ORDER_KEYS[0]:
+                first_entry = candidate.entered_at
+                break
+        initial_backfill = first_entry != state.entered_at
     return record_forecast(instance, policy=policy, target=TARGET, source=state.stage,
         entered_at=state.entered_at, result=result, context=context, as_of=as_of,
         reason=reason, initial_backfill=initial_backfill)

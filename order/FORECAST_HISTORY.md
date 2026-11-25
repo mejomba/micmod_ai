@@ -34,6 +34,10 @@ The daily task queues open documents at 02:00 in Celery's configured timezone;
 the drain runs every 60 seconds, processing up to 200 records per execution.
 If the installation uses the django-celery-beat database scheduler, confirm
 these two periodic tasks are registered and enabled, with no duplicate schedules.
+The repository's Docker Compose uses _keenthemes/.env for web, worker and
+beat, and the Django database scheduler. Recreate/restart those services after
+setting the flag; do not start a second beat scheduler. Inspect delayed queue
+jobs and errors before repeatedly invoking --drain.
 
 Normal model saves/deletes are observed and related documents queued after
 successful commit. The manual GIO weight endpoint explicitly notifies after

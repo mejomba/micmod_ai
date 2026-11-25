@@ -14,6 +14,8 @@ from order.scheduling_queue import enqueue, drain
 from order.scheduling_seed import seed_policy
 from workflow.models import WorkFlow
 from workflow.scheduling.models import WorkflowForecast, WorkflowForecastRefresh
+from workflow.scheduling.policies import clone_policy
+from workflow.scheduling.scheduler import publish_configured_policy
 
 
 class ForecastHistoryTests(TestCase):
@@ -47,6 +49,8 @@ class ForecastHistoryTests(TestCase):
         first.refresh_from_db()
         self.assertFalse(first.is_current)
         self.assertIsNotNone(third.policy_snapshot['calendars'])
+        self.order.refresh_from_db()
+        self.assertIsNone(self.order.trade_commitment_date)
 
     def test_cancelled_and_dry_run(self):
         result, changed = recalculate('order', self.order.pk, dry_run=True)
@@ -108,6 +112,30 @@ class ForecastHistoryTests(TestCase):
             row.is_deleted = True
             row.save()
         self.assertTrue(WorkflowForecastRefresh.objects.filter(workflow_key='order', object_id=self.order.pk).exists())
+
+    def test_policy_upgrade_is_explicit_and_preserves_initial(self):
+        first, _ = recalculate('order', self.order.pk, reason='backfill')
+        draft = clone_policy(self.policy.pk, user=self.user)
+        timing = draft.stage_timings.get(workflow_key='order', stage_key='trade_approval')
+        timing.default_duration += 1
+        timing.save(update_fields=['default_duration'])
+        publish_configured_policy(draft.pk, user=self.user)
+        pinned, changed = recalculate('order', self.order.pk)
+        self.assertFalse(changed)
+        self.assertEqual(pinned.policy_id, self.policy.pk)
+        newer, changed = recalculate('order', self.order.pk, latest_policy=True)
+        self.assertTrue(changed)
+        self.assertEqual(newer.policy_id, draft.pk)
+        self.assertEqual(newer.initial_estimated_at, first.initial_estimated_at)
+        self.assertEqual(self.records().count(), 2)
+
+    @override_settings(WORKFLOW_SCHEDULING_AUTO_ENABLED=True)
+    def test_unrelated_workflow_description_does_not_enqueue(self):
+        event = WorkFlow.objects.filter(content_type=self.ct, object_id=self.order.pk).first()
+        with self.captureOnCommitCallbacks(execute=True):
+            event.wf_description = 'unrelated'
+            event.save()
+        self.assertFalse(WorkflowForecastRefresh.objects.exists())
 
     def test_command_preview_does_not_write(self):
         call_command('recalculate_workflow_forecasts', order_id=[self.order.pk], dry_run=True)

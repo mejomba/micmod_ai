@@ -54,11 +54,15 @@ def _write_details(revision, result, entered_at):
         workflow, stage = step.stage.split('.', 1)
         standard = sum(c.duration for c in step.components)
         remaining = sum(c.duration for c in step.remaining)
+        standard_remaining = sum(c.duration for c in step.remaining[:len(step.components)])
         codes = {c.calendar for c in step.components}
+        direct_entry = entered_at if (step.stage == revision.source_stage and
+            shipment.key == 'unallocated' and route_index >= 0) else None
         rows.append(WorkflowForecastStep(
             forecast=revision, sequence=sequence, workflow_key=workflow, stage_key=stage,
             estimated_start_at=step.start, estimated_end_at=step.end,
-            standard_duration=standard, elapsed_duration=max(0, standard - remaining),
+            actual_start_at=direct_entry,
+            standard_duration=standard, elapsed_duration=max(0, standard - standard_remaining),
             remaining_duration=remaining,
             calendar_id=calendar_ids.get(next(iter(codes))) if len(codes) == 1 else None,
             duration_components=json_value([{'standard': step.components, 'remaining': step.remaining}]),
@@ -99,6 +103,12 @@ def record_forecast(instance, *, policy, target, source, entered_at, result,
     if status == 'actual' and previous:
         dates['calculated_estimated_at'] = previous.calculated_estimated_at
         dates['declared_at'] = previous.declared_at
+    if status == 'actual':
+        # Retain a real declaration even when the first calculation is made
+        # after receipt. Per-shipment dates remain independently in snapshot.
+        declarations = [s.declared for s in result['shipments'] if s.quantity > 0]
+        if declarations and all(declarations):
+            dates['declared_at'] = max(declarations)
     effective = dates['actual_at'] or dates['declared_at'] or dates['calculated_estimated_at']
     forecast_source = ('actual' if dates['actual_at'] else 'declared' if dates['declared_at']
                        else 'calculated' if dates['calculated_estimated_at'] else 'none')

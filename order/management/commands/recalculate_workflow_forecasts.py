@@ -2,6 +2,8 @@
 from django.core.management.base import BaseCommand, CommandError
 from order.forecast_service import recalculate
 from order.scheduling_queue import enqueue_sweep, sweep_candidates, drain
+from workflow.scheduling.models import WorkflowForecastRefresh
+from django.utils import timezone
 
 
 class Command(BaseCommand):
@@ -26,6 +28,8 @@ class Command(BaseCommand):
         if not targets and not sweep and not options['drain']:
             raise CommandError('Specify --order-id, --packing-id, --sweep, --backfill or --drain.')
         reason = 'backfill' if options['backfill'] else 'manual'
+        if options['dry_run'] and options['drain']:
+            raise CommandError('--dry-run cannot process queued writes; use --sweep --dry-run or explicit IDs.')
         if options['dry_run'] and sweep:
             for key in ('order', 'packing'):
                 if len(targets) < limit:
@@ -50,5 +54,8 @@ class Command(BaseCommand):
                 stats = drain(limit)
                 failed += stats['failed']
                 self.stdout.write(str(stats))
+                self.stdout.write('Pending jobs: %s; delayed jobs: %s' % (
+                    WorkflowForecastRefresh.objects.count(),
+                    WorkflowForecastRefresh.objects.filter(available_at__gt=timezone.now()).count()))
         if failed:
             raise CommandError('%s calculation(s) failed; queued failures remain retryable.' % failed)
