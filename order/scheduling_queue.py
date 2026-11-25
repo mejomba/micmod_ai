@@ -38,7 +38,7 @@ def enqueue(workflow_key, object_id, reason, *, latest_policy=False):
                                 'last_error', 'latest_policy'])
 
 
-def sweep_candidates(workflow_key):
+def sweep_candidates(workflow_key, *, include_closed_legacy=False):
     model = MODELS[workflow_key]
     ct = ContentType.objects.get_for_model(model)
     forecasts = WorkflowForecast.objects.filter(content_type=ct, target_stage=TARGET,
@@ -51,8 +51,11 @@ def sweep_candidates(workflow_key):
         # Completed legacy orders with packing evidence may never have been
         # forecast before. Include them only for the explicit initial backfill.
         qs = qs.annotate(_has_packing=Exists(PackingItem.objects.filter(order_id=OuterRef('pk'),is_deleted=False,packing__is_deleted=False)))
+        eligible = Q(is_over=False)
+        if include_closed_legacy:
+            eligible |= Q(_has_packing=True)
         qs = qs.filter(Q(is_deleted=False, is_wh=False, is_bazar=False, cancel=False,
-                        sales_admin_cancel=False) & (Q(is_over=False) | Q(_has_packing=True)) | Q(pk__in=unfinished))
+                        sales_admin_cancel=False) & eligible | Q(pk__in=unfinished))
     else:
         qs = qs.filter(Q(is_deleted=False) | Q(pk__in=unfinished))
     return qs.exclude(pk__in=completed).order_by('pk').values_list('pk', flat=True)
@@ -64,7 +67,7 @@ def enqueue_sweep(reason='daily', *, latest_policy=False, workflow_key=None):
     count = 0
     for key in (workflow_key,) if workflow_key else MODELS:
         batch = []
-        for pk in sweep_candidates(key).iterator(chunk_size=500):
+        for pk in sweep_candidates(key, include_closed_legacy=(reason == 'backfill')).iterator(chunk_size=500):
             batch.append(WorkflowForecastRefresh(workflow_key=key, object_id=pk,
                                                 reason=reason, latest_policy=latest_policy))
             if len(batch) == 500:

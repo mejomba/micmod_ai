@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.utils import timezone
+from workflow.scheduling.write_scope import scheduling_write_scope
 from workflow.scheduling.models import (
     WorkflowSchedulePolicy, WorkflowCalendar, WorkflowCalendarException,
     WorkflowStageTiming, WorkflowTimingRule, WorkflowScheduleTransition,
@@ -81,8 +82,9 @@ class SchedulingModelTests(TestCase):
 
     def test_steps_and_anchors(self):
         forecast = WorkflowForecast.objects.create(**self.forecast_fields())
-        WorkflowForecastStep.objects.create(forecast=forecast, sequence=1, workflow_key='test', stage_key='review', calendar=self.calendar, duration_components=[{'days': 2, 'calendar': 'work'}])
-        self.assert_constraint(lambda: WorkflowForecastStep.objects.create(forecast=forecast, sequence=1, workflow_key='test', stage_key='done'))
-        anchor = WorkflowForecastAnchor.objects.create(forecast=forecast, stage_key='test.done', anchor_type='actual', anchor_datetime=timezone.now(), source_content_type=forecast.content_type, source_object_id=self.policy.pk)
-        self.assertEqual(anchor.source_object, self.policy)
-        self.assert_constraint(lambda: WorkflowForecastAnchor.objects.create(forecast=forecast, stage_key='test.done', anchor_type='actual', anchor_datetime=timezone.now(), source_object_id=self.policy.pk))
+        with scheduling_write_scope('detail_revision', forecast.pk):
+            WorkflowForecastStep.objects.create(forecast=forecast, sequence=1, workflow_key='test', stage_key='review', calendar=self.calendar, duration_components=[{'days': 2, 'calendar': 'work'}])
+            self.assert_constraint(lambda: WorkflowForecastStep.objects.create(forecast=forecast, sequence=1, workflow_key='test', stage_key='done'))
+            anchor = WorkflowForecastAnchor.objects.create(forecast=forecast, stage_key='test.done', anchor_type='actual', anchor_datetime=timezone.now(), source_content_type=forecast.content_type, source_object_id=self.policy.pk)
+            self.assertEqual(anchor.source_object, self.policy)
+            self.assert_constraint(lambda: WorkflowForecastAnchor.objects.create(forecast=forecast, stage_key='test.done', anchor_type='actual', anchor_datetime=timezone.now(), source_object_id=self.policy.pk))

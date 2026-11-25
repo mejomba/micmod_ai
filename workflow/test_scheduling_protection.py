@@ -11,6 +11,7 @@ from workflow.scheduling.models import (WorkflowSchedulePolicy, WorkflowCalendar
     WorkflowScheduleTransition, WorkflowForecast, WorkflowForecastStep, WorkflowForecastAnchor)
 from order.scheduling_seed import seed_policy
 from workflow.scheduling.policies import clone_policy
+from workflow.scheduling.write_scope import scheduling_write_scope
 
 
 @skipUnless(connection.vendor == 'postgresql','PostgreSQL trigger protection')
@@ -37,6 +38,9 @@ class SchedulingProtectionTests(TestCase):
         self.rejected(lambda: self.calendar.save(update_fields=['name']))
         draft=clone_policy(self.policy.pk,user=self.user)
         self.assertEqual(draft.status,'draft')
+        self.rejected(lambda: WorkflowSchedulePolicy.objects.filter(pk=draft.pk).update(
+            status='published',is_active=True,published_at=timezone.now()))
+        self.rejected(lambda: WorkflowSchedulePolicy.objects.filter(pk=draft.pk).update(version=99))
         stage=draft.stage_timings.get(workflow_key='order',stage_key='trade_approval')
         self.assertEqual(WorkflowStageTiming.objects.filter(pk=stage.pk).update(default_duration=5),1)
         self.rejected(lambda: WorkflowStageTiming.objects.filter(pk=stage.pk).update(calendar_id=self.calendar.pk))
@@ -52,13 +56,16 @@ class SchedulingProtectionTests(TestCase):
         row=WorkflowForecast.objects.create(content_type=ContentType.objects.get_for_model(self.policy),
             object_id=self.policy.pk,policy=self.policy,policy_version=self.policy.version,
             source_stage='order.trade_approval',target_stage='packing.warehouse',as_of=now)
-        step=WorkflowForecastStep.objects.create(forecast=row,sequence=1,workflow_key='order',stage_key='trade_approval')
-        anchor=WorkflowForecastAnchor.objects.create(forecast=row,stage_key='order.trade_approval',
-            anchor_type='actual',anchor_datetime=now)
+        with scheduling_write_scope('detail_revision',row.pk):
+            step=WorkflowForecastStep.objects.create(forecast=row,sequence=1,workflow_key='order',stage_key='trade_approval')
+            anchor=WorkflowForecastAnchor.objects.create(forecast=row,stage_key='order.trade_approval',
+                anchor_type='actual',anchor_datetime=now)
+        self.rejected(lambda: WorkflowForecastStep.objects.create(forecast=row,sequence=2,workflow_key='order',stage_key='supplier_dispatch'))
         self.rejected(lambda: WorkflowForecast.objects.filter(pk=row.pk).update(initial_estimated_at=now))
         self.rejected(lambda: WorkflowForecastStep.objects.filter(pk=step.pk).update(standard_duration=10))
         self.rejected(lambda: WorkflowForecastAnchor.objects.filter(pk=anchor.pk).delete())
         self.assertEqual(WorkflowForecast.objects.filter(pk=row.pk).update(is_current=False),1)
         self.rejected(lambda: WorkflowForecast.objects.filter(pk=row.pk).update(is_current=True))
-        self.rejected(lambda: WorkflowForecastStep.objects.create(forecast=row,sequence=2,workflow_key='order',stage_key='supplier_dispatch'))
+        with scheduling_write_scope('detail_revision',row.pk):
+            self.rejected(lambda: WorkflowForecastStep.objects.create(forecast=row,sequence=2,workflow_key='order',stage_key='supplier_dispatch'))
         self.rejected(lambda: WorkflowForecast.objects.filter(pk=row.pk).delete())

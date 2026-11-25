@@ -146,5 +146,7 @@ def record_forecast(instance, *, policy, target, source, entered_at, result,
     if previous:
         history.filter(pk=previous.pk).update(is_current=False)
     revision.save(force_insert=True)
-    _write_details(revision, result, entered_at)
+    from .write_scope import scheduling_write_scope
+    with scheduling_write_scope('detail_revision', revision.pk):
+        _write_details(revision, result, entered_at)
     return revision, True

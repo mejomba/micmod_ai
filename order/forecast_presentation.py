@@ -18,6 +18,7 @@ STATUSES = {'estimated':('پیش‌بینی‌شده','Estimated'), 'provisional
     'incomplete':('اطلاعات ناقص','Incomplete'), 'declared':('اعلامی','Declared'),
     'actual':('رسیده','Arrived'), 'cancelled':('لغوشده','Cancelled'), 'missing':('بدون پیش‌بینی','No forecast')}
 STAGES = {prefix + '.' + key: label for prefix, rows in [('order',ORDER_STAGES),('packing',PACKING_STAGES)] for key,label,_ in rows}
+STAGES['order.done'] = 'مرحله نهایی'
 METHODS = {'air':('هوایی','Air'), 'express':('اکسپرس','Express'), 'sea':('دریایی','Sea'), 'road':('زمینی','Road'), 'rail':('ریلی','Rail')}
 
 
@@ -114,7 +115,7 @@ def _date_delta(later, earlier):
 
 
 def _actual_stages(instance, kind, fa):
-    rows = ORDER_STAGES if kind=='order' else PACKING_STAGES
+    rows = ORDER_STAGES + (('done','مرحله نهایی',0),) if kind=='order' else PACKING_STAGES
     normalize = normalize_label if kind=='order' else lambda v: normalize_label(instance.normalize_workflow_state_name(v))
     visits = []
     for event in instance.get_flow().order_by('created_date','pk'):
@@ -129,7 +130,7 @@ def _actual_stages(instance, kind, fa):
             visits[-1]['exit']=state.entered_at
         visits.append({'key':state.stage,'stage':_stage_name(state.stage,fa),'entry':state.entered_at,'exit':None})
     for v in visits:
-        v['days']=_date_delta(v['exit'] or timezone.now(),v['entry'])
+        v['days']=0 if v['key'] in ('order.done','packing.done') else _date_delta(v['exit'] or timezone.now(),v['entry'])
         v['entry']=display_date(v['entry'],fa)
         v['exit']=display_date(v['exit'],fa)
     return visits

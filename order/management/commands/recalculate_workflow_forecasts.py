@@ -33,7 +33,7 @@ class Command(BaseCommand):
         if options['dry_run'] and sweep:
             for key in ('order', 'packing'):
                 if len(targets) < limit:
-                    targets.extend((key, pk) for pk in sweep_candidates(key)[:limit-len(targets)])
+                    targets.extend((key, pk) for pk in sweep_candidates(key,include_closed_legacy=options['backfill'])[:limit-len(targets)])
         failed = 0
         for key, pk in dict.fromkeys(targets):
             try:

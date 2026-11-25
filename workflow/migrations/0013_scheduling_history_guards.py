@@ -18,6 +18,12 @@ DETAILS = ('workflow_workflowforecaststep', 'workflow_workflowforecastanchor')
 SQL = """
 CREATE FUNCTION wf_sched_guard_policy() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
+    IF TG_OP = 'INSERT' THEN
+        IF NEW.status <> 'draft' THEN
+            RAISE EXCEPTION 'Create a draft and publish through the policy service' USING ERRCODE = '23514';
+        END IF;
+        RETURN NEW;
+    END IF;
     IF OLD.status <> 'draft' THEN
         IF TG_OP = 'UPDATE' THEN
             -- Permit only nullable audit-user references to be cleared by
@@ -31,8 +37,18 @@ BEGIN
         RAISE EXCEPTION 'Published scheduling policy is immutable' USING ERRCODE = '23514';
     END IF;
     IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
+    IF (NEW.workflow_key, NEW.code, NEW.version) IS DISTINCT FROM
+       (OLD.workflow_key, OLD.code, OLD.version) THEN
+        RAISE EXCEPTION 'Policy family and version are immutable' USING ERRCODE = '23514';
+    END IF;
+    IF NEW.status <> 'draft' AND (
+        NEW.status <> 'published' OR
+        current_setting('portal.scheduling_publish', true) IS DISTINCT FROM OLD.id::text
+    ) THEN
+        RAISE EXCEPTION 'Use the validated policy publication service' USING ERRCODE = '23514';
+    END IF;
     RETURN NEW;
-END $$;
+END $;
 
 CREATE FUNCTION wf_sched_guard_config() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
@@ -96,7 +112,9 @@ BEGIN
     IF TG_OP = 'INSERT' THEN
         SELECT is_current INTO active_revision FROM workflow_workflowforecast
             WHERE id = NEW.forecast_id FOR UPDATE;
-        IF active_revision THEN RETURN NEW; END IF;
+        IF active_revision AND
+            current_setting('portal.scheduling_detail_revision', true) = NEW.forecast_id::text
+        THEN RETURN NEW; END IF;
     END IF;
     RAISE EXCEPTION 'Forecast detail history is append-only' USING ERRCODE = '23514';
 END $$;
@@ -109,7 +127,7 @@ def install(apps, schema_editor):
         # this protection and must not be used for production scheduling.
         return
     schema_editor.execute(SQL)
-    schema_editor.execute(f'CREATE TRIGGER wf_sched_guard BEFORE UPDATE OR DELETE ON {POLICY} FOR EACH ROW EXECUTE FUNCTION wf_sched_guard_policy()')
+    schema_editor.execute(f'CREATE TRIGGER wf_sched_guard BEFORE INSERT OR UPDATE OR DELETE ON {POLICY} FOR EACH ROW EXECUTE FUNCTION wf_sched_guard_policy()')
     for table, field in CONFIG.items():
         schema_editor.execute(f"CREATE TRIGGER wf_sched_guard BEFORE INSERT OR UPDATE OR DELETE ON {table} FOR EACH ROW EXECUTE FUNCTION wf_sched_guard_config('{field}')")
     schema_editor.execute(f'CREATE TRIGGER wf_sched_guard BEFORE UPDATE OR DELETE ON {FORECAST} FOR EACH ROW EXECUTE FUNCTION wf_sched_guard_forecast()')

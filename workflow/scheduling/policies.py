@@ -27,9 +27,16 @@ def _locked_family(policy_id):
     new version is inserted concurrently. Callers must not bypass this service.
     """
     source = WorkflowSchedulePolicy.objects.get(pk=policy_id)
-    family = list(WorkflowSchedulePolicy.objects.select_for_update().filter(
+    queryset = WorkflowSchedulePolicy.objects.filter(
         workflow_key=source.workflow_key, code=source.code
-    ).order_by('pk'))
+    )
+    # The earliest existing version is a stable serialization point. Lock it
+    # BEFORE reading the family again so a concurrent clone committed while
+    # waiting is visible in the fresh READ COMMITTED statement.
+    anchor = queryset.select_for_update().order_by('pk').first()
+    if anchor is None:
+        raise ValidationError('Policy family no longer exists.')
+    family = list(queryset.select_for_update().order_by('pk'))
     source = next((p for p in family if p.pk == policy_id), None)
     if source is None:
         raise ValidationError('Policy no longer belongs to this family.')
@@ -129,7 +136,9 @@ def publish_policy(policy_id, *, user, validate, effective_from=None):
     policy.published_by = user
     policy.effective_from = effective
     policy.full_clean()
-    policy.save(update_fields=['status', 'is_active', 'published_at', 'published_by', 'effective_from'])
+    from .write_scope import scheduling_write_scope
+    with scheduling_write_scope('publish', policy.pk):
+        policy.save(update_fields=['status', 'is_active', 'published_at', 'published_by', 'effective_from'])
     return policy
 
 

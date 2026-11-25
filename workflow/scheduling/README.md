@@ -39,3 +39,16 @@ adapters, policy seed, forecast writes or UI hooks are enabled yet.
 
 Pure tests: python -m unittest workflow.test_scheduling_engine workflow.test_scheduling_configuration -v
 Django tests: python manage.py test workflow.test_configured_scheduler
+
+## Phase 8: publication and revision protection
+
+PostgreSQL migration 0013 installs row-level guards for policy family identity,
+published policy and calendar/stage/rule/transition rows, and append-only forecast
+history. Only the validated publication service may move a draft to published,
+and the history service may append details to a current revision in its
+transaction-local write scope. Prior revisions can only lose their current marker.
+Nullable audit-user references may be cleared (e.g. user deletion). No existing
+policy or history data is rewritten. These guards protect against unintended
+ORM/SQL mutations, not privileged administrators who can disable triggers,
+truncate tables or deliberately enter internal write scopes. Other DB engines
+do not get the PostgreSQL triggers and are not supported for production scheduling.
