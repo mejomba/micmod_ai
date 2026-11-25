@@ -162,6 +162,7 @@
             {{ gio_hero_status.label }}
           </div>
         </header>
+        {% include 'order/gio/weight_panel.html' %}
 
         <nav class="gio-tabs" role="tablist" aria-label="بخش‌های GIO">
           <button type="button" role="tab" aria-selected="true" aria-controls="gio-stage-editor" data-gio-tab="editor">سند و اقلام</button>
@@ -186,7 +187,7 @@
             <section class="gio-panel gio-form-panel" id="section-2" aria-label="فرم GIO">
               <div class="gio-panel-header">
                 <h3>اطلاعات سند</h3>
-                <p>اطلاعات فعلی GIO و ردیف‌ها بدون افزودن فیلد جدید</p>
+                <p>اطلاعات پایه GIO و ردیف‌های سند</p>
               </div>
               <div class="gio-panel-body" id="gio-form-inputs">
                 <input type="hidden" id="gio_id" name="gio_id" value="{{ form.instance.pk|default_if_none:'' }}">

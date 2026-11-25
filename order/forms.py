@@ -642,7 +642,8 @@ PackingItemFormSet = formset_factory(PackingItemForm, extra=1)
 class GIOForm(CustomBaseModelForm):
     class Meta:
         model = GIO
-        exclude = ['group']
+        # Weight changes are handled by the dedicated validated endpoint.
+        exclude = ['group', 'manual_weight_kg']
 
     def __init__(self, *args, **kwargs):
 

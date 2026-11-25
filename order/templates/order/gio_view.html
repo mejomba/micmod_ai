@@ -30,6 +30,12 @@
         <div class="row">
             <input type="hidden" id="gio_id" value="{{ form.instance.pk }}">
         {% render_field_by_order form form.gio_date form.quantity form.description form.sepidar_buy_factor_response_json  label='on-border' %}
+        {% if form.instance.pk %}
+        <div class="col-12 my-2">
+            {% include 'order/gio/weight_summary.html' %}
+            <a href="{% url 'order:quick_gio' pk=form.instance.pk %}" class="btn btn-sm btn-light-primary">مدیریت وزن GIO / Manage GIO weight</a>
+        </div>
+        {% endif %}
         <div class="col-12">
             <div id="to-sepidar-wrapper">
                 {% if form.instance.pk and not form.instance.sepidar_buy_factor_response_json and not request.user|has_group:'mac' %}

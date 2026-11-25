@@ -11,6 +11,7 @@ from .views import CustomerRequestOrderViewSet
 from .select2 import order_select2_search
 from .packing_sepidar_views import packing_sepidar_preview, packing_sepidar_send
 from .packing_transport_schedule import PackingTransportScheduleView
+from .gio_weight_views import update_gio_weight
 
 
 router = DefaultRouter()
@@ -69,6 +70,7 @@ urlpatterns = [
     #  quick gio
     path('quick_gio/', QuickGIOView.as_view(), name='quick_gio'),
     path('quick_gio/<int:pk>/', QuickGIOView.as_view(), name='quick_gio'),
+    path('quick_gio/<int:pk>/weight/', update_gio_weight, name='gio.weight'),
     path('quick_gio_datatable/', QuickGIODataTableListView.as_view(), name='quick_gio.datatable'),
 
     #  gioitem

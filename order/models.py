@@ -1598,6 +1598,56 @@ class GIOSepidarManualDocumentEntry(models.Model):
 
 
 class GIO(BaseModeWF):
+    # NULL means automatic. A manual zero is distinct from NULL.
+    manual_weight_kg = models.DecimalField(
+        'Manual GIO weight (kg)', max_digits=18, decimal_places=6,
+        null=True, blank=True, validators=[MinValueValidator(0)],
+    )
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(manual_weight_kg__isnull=True) | models.Q(manual_weight_kg__gte=0),
+                name='order_gio_manual_weight_nonneg',
+            ),
+        ]
+
+    def get_weight_summary(self):
+        from .gio_weight import summarize_weights
+        if not self.pk:
+            return summarize_weights([], self.manual_weight_kg)
+        rows = self.gioitems.filter(is_deleted=False).select_related(
+            'order__item', 'order__item_trade',
+        ).order_by('pk')
+        cache = {}
+        def row_weights():
+            for row in rows:
+                order = row.order
+                item = order.final_item if order and not order.is_deleted else None
+                if item is None or item.is_deleted:
+                    yield row.pk, row.quantity, None
+                    continue
+                if item.pk not in cache:
+                    cache[item.pk] = item.weight
+                yield row.pk, row.quantity, cache[item.pk]
+        return summarize_weights(row_weights(), self.manual_weight_kg)
+
+    @property
+    def calculated_weight_kg(self):
+        return self.get_weight_summary().calculated_weight_kg
+
+    @property
+    def total_weight_kg(self):
+        return self.get_weight_summary().effective_weight_kg
+
+    @property
+    def effective_weight_kg(self):
+        return self.total_weight_kg
+
+    @property
+    def weight_is_overridden(self):
+        return self.manual_weight_kg is not None
+
     quantity = models.FloatField(_('quantity'), default=0, null=True, blank=True)
     gio_date = models.DateField(_('gio_date'))
     description = models.TextField(_('description'), null=True, blank=True)

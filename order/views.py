@@ -1854,6 +1854,9 @@ class GIOView(LoginRequiredMixin, BaseView):
             locked_gio = GIO.objects.select_for_update().get(pk=self.object.pk)
             if gio_is_locked(locked_gio):
                 return JsonResponse({'res': {'error': 'GIO is locked after Sepidar sending.'}}, status=409)
+            # The legacy ModelForm saves all columns, including excluded fields.
+            # Preserve an override saved concurrently before obtaining this lock.
+            self.object.manual_weight_kg = locked_gio.manual_weight_kg
         # if is_ajax(self.request):
         #     res = json.loads(self.request.body)
         #     # kwargs['quantity'] = res['quantity']
@@ -1873,6 +1876,8 @@ class GIOView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['app_name'] = self.request.resolver_match.app_name
+        if self.object:
+            context['gio_weight_summary'] = self.object.get_weight_summary()
         return context
 
 
@@ -3756,7 +3761,10 @@ class QuickGIOView(LoginRequiredMixin, View):
             # A broken/incomplete plan must never be declared fully sent.
             group_statuses.append('preview_error')
         sepidar_response = gio_document_display(gio_object) if gio_object else {}
+        from .gio_weight_views import can_change_gio_weight
         context = {
+            'gio_weight_summary': gio_object.get_weight_summary() if gio_object else None,
+            'gio_can_change_weight': can_change_gio_weight(request.user, gio_object),
             'form': gio_form,
             'formset': gio_item_formset,
             'gios': (
