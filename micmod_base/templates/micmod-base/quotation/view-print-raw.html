@@ -7,6 +7,7 @@
 {% load more_tags %}
 
 {#<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700">#}
+{% if not bulk_mode or forloop.first %}
 <link href="/assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/global/plugins.bundle.rtl.css" rel="stylesheet" type="text/css">
@@ -22,30 +23,60 @@
 <link href="{% static 'custom_libs/toastr/toastr.min.css' %}" rel="stylesheet"/>
 <link href="{% static 'css/style.bundle.css_v7.2.9.css' %}" rel="stylesheet" type="text/css">
 <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
-<style>
-        @media print {
+<link href="{% static 'factor/css/print_toolbar.css' %}" rel="stylesheet">
+<style>@media print {.noprint{display:none!important;}}</style>
+{% endif %}
 
-           .noprint {
-              visibility: hidden;
-           }
-           .button {
-               display: block;
-           }
-        }
-    </style>
-
-<div class="position-absolute" style="right: 0">
-    <a href="javascript:window.print()" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
-    <a href="{% url "micmod_base:quotations.print-view" id=data.id %}" class="noprint btn btn-primary btn-bordered mb-5 mt-5"> پرینت پیش فاکتور کارشناس</a>
-    <a href="{% url "micmod_base:print_customer" id=data.id %}?customer_goods_code_url_param={{ customer_goods_code_url_param }}"
-       class="noprint btn btn-primary btn-bordered mb-5 mt-5">
-        {% if customer_goods_code_url_param == '0' %}
-            بدون کد کالای مشتری
-        {% elif customer_goods_code_url_param == '1' %}
-        با کد کالای مشتری
-        {% endif %}
-    </a>
-</div>
+{% if not bulk_mode %}
+<details class="ptb-drawer noprint"
+         {% if request.GET.print_settings == '1' or request.POST.print_settings == '1' %}open{% endif %}>
+    <summary class="ptb-drawer-toggle" aria-label="باز و بسته کردن تنظیمات چاپ">
+        <span class="ptb-toggle-icon" aria-hidden="true">⚙</span>
+        <span class="ptb-toggle-label">تنظیمات چاپ</span>
+        <span class="ptb-toggle-chevron" aria-hidden="true">⌄</span>
+    </summary>
+<section class="ptb-toolbar quotation-customer-print-toolbar noprint" dir="rtl"
+         aria-label="ابزارهای چاپ پیش‌فاکتور مشتری">
+    <div class="ptb-main">
+        <div class="ptb-identity">
+            <span class="ptb-icon" aria-hidden="true">▣</span>
+            <div>
+                <h3 class="ptb-title">تنظیمات چاپ پیش‌فاکتور</h3>
+                <span class="ptb-subtitle">نسخه مشتری · P{{ data.id }}</span>
+            </div>
+        </div>
+        <section class="ptb-section ptb-section--actions" aria-label="عملیات چاپ و نمایش">
+            <h4 class="ptb-section-title">عملیات چاپ و نمایش</h4>
+            <div class="ptb-actions">
+            <button type="button" class="ptb-button ptb-button--primary" id="id_print_btn"
+                    onclick="window.print()">چاپ پیش‌فاکتور</button>
+                </div>
+            </section>
+            <section class="ptb-section ptb-section--display" aria-label="گزینه‌های نمایش">
+                <h4 class="ptb-section-title">گزینه‌های نمایش</h4>
+                <div class="ptb-actions">
+            <a href="{% url 'micmod_base:quotations.print-view' id=data.id %}?legal_profile={{ selected_legal_profile|default:''|urlencode }}&amp;print_settings=1"
+               class="ptb-button">نسخه کارشناس</a>
+            <a href="{% url 'micmod_base:print_customer' id=data.id %}?customer_goods_code_url_param={{ customer_goods_code_url_param }}&amp;legal_profile={{ selected_legal_profile|default:''|urlencode }}&amp;print_settings=1"
+               class="ptb-button">
+                {% if customer_goods_code_url_param == '0' %}
+                    بدون کد کالای مشتری
+                {% elif customer_goods_code_url_param == '1' %}
+                    با کد کالای مشتری
+                {% endif %}
+            </a>
+            </div>
+        </section>
+    </div>
+    {% if legal_profile_options %}
+    <div class="ptb-profile-zone">
+        <span class="ptb-profile-heading">پروفایل حقوقی خریدار</span>
+        {% include 'micmod-base/quotation/partial/legal_profile_picker.html' %}
+    </div>
+    {% endif %}
+</section>
+</details>
+{% endif %}
 <div>
 <div class="container mt-10" dir="rtl">
     <div class="row">
@@ -125,8 +156,11 @@
                     <p data-key="address">نشانی: </p>
                 </div>
                 <div class="">
-                    <p class="">{{ data.customer_party_id.title|default_if_none:"-" }}</p>
-                    <p class="">{{ data.customer_party_id.address|default_if_none:"-" }}</p>
+                    <p class="">{{ buyer_info.name }}</p>
+                    <p class="">{{ buyer_info.address }}</p>
+                    {% if buyer_info.is_legal_profile %}
+                        <p data-key="buyer_legal_type" class="mb-0">نوع شخصیت حقوقی: {{ buyer_info.type }}</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -137,21 +171,21 @@
                     <p data-key="phone">تلفن:</p>
                 </div>
                 <div class="">
-                    <p class="">{{ data.customer_party_id.national_code|default_if_none:"-" }}</p>
-                    <p class="">{{ data.customer_party_id.phone|default_if_none:"-" }}</p>
+                    <p class="">{{ buyer_info.economical_number }}</p>
+                    <p class="">{{ buyer_info.phone }}</p>
                 </div>
             </div>
         </div>
         <div class="col-4">
         <div class="d-flex gap-3">
         <div class="">
-            <p data-key="national_number">شماره ثبت/شماره ملی : </p>
+            <p data-key="national_number">{% if buyer_info.is_legal_profile %}شناسه ملی{% else %}شماره ثبت/شماره ملی{% endif %} : </p>
             <p data-key="postal_code">کد پستی: </p>
 
         </div>
         <div class="">
-            <p data-key="national_number">{{ data.customer_party_id.national_code|default_if_none:"-" }} </p>
-            <p data-key="postal_code">-</p>
+            <p data-key="national_number">{{ buyer_info.national_number }} </p>
+            <p data-key="postal_code">{{ buyer_info.postal_code }}</p>
 
         </div>
             </div>
@@ -321,6 +355,7 @@
 {#<br>#}
 {#<br>#}
 {% block extra_js %}
+{% if not bulk_mode %}
     <script src="{% static 'js/base.js' %}"></script>
 
     <script>
@@ -341,4 +376,5 @@
             {#    rowTotalCount.innerHTML = numberWithCommas(parseFloat(count))#}
             //})
     </script>
+{% endif %}
 {% endblock extra_js %}

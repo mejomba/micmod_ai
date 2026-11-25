@@ -1,0 +1,95 @@
+{% load static %}
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>چاپ گروهی پیش‌فاکتورها</title>
+  <link href="{% static 'factor/css/print_toolbar.css' %}" rel="stylesheet">
+  <style>
+    body {margin:0;direction:rtl;background:#fff;}
+    .quotation-bulk-document .noprint, .quotation-bulk-document .button.print {display:none!important;}
+    @media print { .quotation-bulk-document:not(:last-child) { break-after:page; page-break-after:always; } }
+  </style>
+</head>
+<body>
+  <details class="ptb-drawer noprint"
+       {% if request.GET.print_settings == '1' or request.POST.print_settings == '1' %}open{% endif %}>
+  <summary class="ptb-drawer-toggle" aria-label="باز و بسته کردن تنظیمات چاپ">
+      <span class="ptb-toggle-icon" aria-hidden="true">⚙</span>
+      <span class="ptb-toggle-label">تنظیمات چاپ</span>
+      <span class="ptb-toggle-chevron" aria-hidden="true">⌄</span>
+  </summary>
+  <section class="quotation-bulk-toolbar ptb-toolbar noprint" dir="rtl" aria-label="ابزارهای چاپ گروهی پیش‌فاکتورها">
+    <div class="ptb-main">
+      <div class="ptb-identity">
+        <span class="ptb-icon" aria-hidden="true">▣</span>
+        <div>
+          <h3 class="ptb-title">چاپ گروهی پیش‌فاکتورها</h3>
+          <span class="ptb-subtitle">{{ documents|length }} پیش‌فاکتور آماده چاپ</span>
+        </div>
+      </div>
+      <section class="ptb-section ptb-section--actions" aria-label="عملیات چاپ">
+          <h4 class="ptb-section-title">عملیات چاپ</h4>
+          <div class="ptb-actions">
+        <button type="button" class="ptb-button ptb-button--primary" onclick="window.print()">چاپ همه پیش‌فاکتورها</button>
+          </div>
+      </section>
+    </div>
+    <div class="ptb-profile-zone">
+      <span class="ptb-profile-heading">تنظیمات خروجی و مشخصات خریداران</span>
+      <form class="ptb-bulk-form" method="post" action="{% url 'micmod_base:quotation.bulk_print' %}">
+        {% csrf_token %}
+        <input type="hidden" name="print_settings" value="1">
+        {% for quotation_id in ids %}<input type="hidden" name="ids" value="{{ quotation_id }}">{% endfor %}
+        <input type="hidden" name="q" value="{{ filter_q }}">
+        <div class="ptb-subsection" aria-label="نوع خروجی">
+          <span class="ptb-subsection-title">نوع خروجی</span>
+          <div class="ptb-bulk-fields ptb-bulk-controls">
+          <label class="ptb-field">
+            <span>نوع چاپ</span>
+            <select name="print_style">
+              <option value="customer" {% if print_style == 'customer' %}selected{% endif %}>نسخه مشتری</option>
+              <option value="expert" {% if print_style == 'expert' %}selected{% endif %}>نسخه کارشناس</option>
+            </select>
+          </label>
+          </div>
+        </div>
+        {% if customers %}
+        <div class="ptb-subsection" aria-label="پروفایل مشتری‌ها">
+          <span class="ptb-subsection-title">پروفایل حقوقی هر مشتری</span>
+          <div class="ptb-bulk-fields">
+          {% for customer in customers %}
+          <label class="ptb-field ptb-bulk-customer">
+            <span>{{ customer.name }}</span>
+            <select name="{{ customer.field_name }}">
+              <option value="" {% if not customer.selected %}selected{% endif %}>اطلاعات پایه مشتری</option>
+              {% for profile in customer.options %}
+              <option value="{{ profile.value }}" {% if profile.selected %}selected{% endif %}>{{ profile.label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        <div class="ptb-profile-actions">
+          <button type="submit" class="ptb-button ptb-button--primary">اعمال انتخاب‌ها</button>
+          <p class="ptb-help">نوع چاپ و پروفایل هر مشتری را مشخص کنید، سپس همه را یکجا اعمال کنید.</p>
+        </div>
+      </form>
+    </div>
+  </section>
+  </details>
+
+  {% for doc in documents %}
+  <section class="quotation-bulk-document">
+    {% if print_style == 'expert' %}
+    {% include 'micmod-base/quotation/view-print.html' with data=doc.data form=doc.form formset=doc.formset with_comments=doc.with_comments comments_url_params=doc.comments_url_params with_alt_code=doc.with_alt_code alt_code=doc.alt_code has_sales_description=doc.has_sales_description buyer_info=doc.buyer_info bulk_mode=True %}
+    {% else %}
+    {% include 'micmod-base/quotation/view-print-raw.html' with data=doc.data form=doc.form formset=doc.formset customer_goods_code_url_param=doc.customer_goods_code_url_param with_customer_goods_code=doc.with_customer_goods_code has_sales_description=doc.has_sales_description buyer_info=doc.buyer_info bulk_mode=True %}
+    {% endif %}
+  </section>
+  {% endfor %}
+</body>
+</html>

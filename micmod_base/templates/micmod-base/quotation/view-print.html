@@ -7,6 +7,7 @@
 {% block extra_css %}
 {% endblock extra_css %}
 
+{% if not bulk_mode or forloop.first %}
 <link href="/assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/custom/datatables/print.style.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet" type="text/css">
@@ -23,33 +24,63 @@
 <link href="{% static 'custom_libs/toastr/toastr.min.css' %}" rel="stylesheet"/>
 <link href="{% static 'css/style.bundle.css_v7.2.9.css' %}" rel="stylesheet" type="text/css">
 <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+<link href="{% static 'factor/css/print_toolbar.css' %}" rel="stylesheet">
 <!-- ============================================================== -->
 <!-- Start right Content here -->
 <!-- ============================================================== -->
+{% endif %}
+{% if not bulk_mode %}
+<details class="ptb-drawer noprint"
+         {% if request.GET.print_settings == '1' or request.POST.print_settings == '1' %}open{% endif %}>
+    <summary class="ptb-drawer-toggle" aria-label="باز و بسته کردن تنظیمات چاپ">
+        <span class="ptb-toggle-icon" aria-hidden="true">⚙</span>
+        <span class="ptb-toggle-label">تنظیمات چاپ</span>
+        <span class="ptb-toggle-chevron" aria-hidden="true">⌄</span>
+    </summary>
+<section class="ptb-toolbar noprint" dir="rtl" aria-label="ابزارهای چاپ پیش‌فاکتور کارشناس">
+    <div class="ptb-main">
+        <div class="ptb-identity">
+            <span class="ptb-icon" aria-hidden="true">▣</span>
+            <div>
+                <h3 class="ptb-title">تنظیمات چاپ پیش‌فاکتور</h3>
+                <span class="ptb-subtitle">نسخه کارشناس · P{{ data.id }}</span>
+            </div>
+        </div>
+        <section class="ptb-section ptb-section--actions" aria-label="عملیات چاپ و نمایش">
+            <h4 class="ptb-section-title">عملیات چاپ و نمایش</h4>
+            <div class="ptb-actions">
+            <button type="button" class="ptb-button ptb-button--primary" id="id_print_btn" onclick="window.print()">چاپ پیش‌فاکتور</button>
+                </div>
+            </section>
+            <section class="ptb-section ptb-section--display" aria-label="گزینه‌های نمایش">
+                <h4 class="ptb-section-title">گزینه‌های نمایش</h4>
+                <div class="ptb-actions">
+            <a href="{% url 'micmod_base:print_customer' id=data.id %}?legal_profile={{ selected_legal_profile|default:''|urlencode }}&amp;print_settings=1"
+               class="ptb-button" target="_blank" rel="noopener">نسخه مشتری</a>
+            <a href="{% url 'micmod_base:quotations.print-view' id=data.pk %}?comments_url_params={{ comments_url_params }}&amp;legal_profile={{ selected_legal_profile|default:''|urlencode }}&amp;print_settings=1"
+               class="ptb-button">
+                {% if comments_url_params == '0' %}بدون نظرات{% else %}با نظرات{% endif %}
+            </a>
+            <a href="{% url 'micmod_base:quotations.print-view' id=data.pk %}?comments_url_params={{ comments_url_params }}&amp;alt_code={{ alt_code }}&amp;legal_profile={{ selected_legal_profile|default:''|urlencode }}&amp;print_settings=1"
+               class="ptb-button">
+                {% if alt_code == '0' %}بدون کد مشابه{% else %}با کد مشابه{% endif %}
+            </a>
+            </div>
+        </section>
+    </div>
+    {% if legal_profile_options %}
+    <div class="ptb-profile-zone">
+        <span class="ptb-profile-heading">پروفایل حقوقی خریدار</span>
+        {% include 'micmod-base/quotation/partial/legal_profile_picker.html' %}
+    </div>
+    {% endif %}
+</section>
+</details>
+{% endif %}
 <div class="main-content  mt-10 px-1" id="main-content" dir="rtl">
     <div class="page-content">
         <div class="container-fluid">
             <div class="replace-digits">
-                <a href="javascript:window.print()" class="button print btn btn-primary btn-bordered mb-10">پرینت</a>
-                <a href="{% url 'micmod_base:print_customer' id=data.id %}" class="button print btn btn-primary btn-bordered mb-10"
-                   target="_blank">پرینت پیش فاکتور مشتری</a>
-                <a href="{% url "micmod_base:quotations.print-view" id=data.pk %}?comments_url_params={{ comments_url_params }}"
-                   class="button print px-5 mx-5 btn btn-primary btn-bordered mb-10">
-                    {% if comments_url_params == '0' %}
-                        بدون نظرات
-                    {% elif comments_url_params == '1' %}
-                        با نظرات
-
-                    {% endif %}
-                </a>
-                <a href="{% url "micmod_base:quotations.print-view" id=data.pk %}?comments_url_params={{ comments_url_params }}&alt_code={{ alt_code }}"
-                   class="button print px-5 mx-5 btn btn-primary btn-bordered mb-10">
-                    {% if alt_code == '0' %}
-                        بدون کد مشابه
-                    {% elif alt_code == '1' %}
-                        با کد مشابه
-                    {% endif %}
-                </a>
                 <div class="">
                     <div class="font-size-12 mx-5 px-5">
                         <div class="d-flex">
@@ -145,7 +176,25 @@
                                                 {% endif %}
                                                 <div data-key="customer_title"></div>
                                                 <div class="px-2 bg-light-info p-0 text-black"
-                                                     id="customer_name">{{ customer.name }}</div>
+                                                     id="customer_name">{% if buyer_info.is_legal_profile %}{{ buyer_info.name }}{% else %}{{ customer.name }}{% endif %}</div>
+                                                {% if buyer_info.is_legal_profile %}
+                                                <div class="d-flex border w-100">
+                                                    <div class="w-40 bold">نوع شخصیت حقوقی</div>
+                                                    <div class="w-60">{{ buyer_info.type }}</div>
+                                                </div>
+                                                <div class="d-flex border w-100">
+                                                    <div class="w-40 bold">شناسه ملی</div>
+                                                    <div class="w-60" dir="ltr">{{ buyer_info.national_number }}</div>
+                                                </div>
+                                                <div class="d-flex border w-100">
+                                                    <div class="w-40 bold">کد پستی</div>
+                                                    <div class="w-60" dir="ltr">{{ buyer_info.postal_code }}</div>
+                                                </div>
+                                                <div class="d-flex border w-100">
+                                                    <div class="w-40 bold">آدرس</div>
+                                                    <div class="w-60">{{ buyer_info.address }}</div>
+                                                </div>
+                                                {% endif %}
                                                 </div>
 
                                                 </div>
@@ -234,6 +283,7 @@
 
 
 {% block extra_js %}
+{% if not bulk_mode %}
     <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
     <script src="/assets/lang/translate.js"></script>
     <script src="/assets/js/refresh_after_ajax.js"></script>
@@ -261,4 +311,5 @@
         // )
     </script>
 
+{% endif %}
 {% endblock extra_js %}

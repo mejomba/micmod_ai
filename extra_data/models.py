@@ -1030,6 +1030,9 @@ class Customer(AbsBaseModel):
     title = models.CharField(max_length=350, verbose_name=_('title'), unique=True)
     type = models.CharField(choices=CustomerType.choices,verbose_name=_("type"), max_length=10, default=CustomerType.Company)
     national_code = models.CharField(max_length=12, verbose_name=_("national_code"), null=True, blank=True)
+    legal_profiles = models.JSONField(
+        'پروفایل‌های حقوقی', default=list, blank=True,
+    )
     name = models.CharField(max_length=150, verbose_name=_("name"), null=True, blank=True)
     last_name = models.CharField(max_length=150, verbose_name=_("last_name"), null=True, blank=True)
     email = models.EmailField(max_length=150, verbose_name=_("email"), null=True, blank=True)

@@ -25,25 +25,75 @@
         @media print {
 
            .noprint {
-              visibility: hidden;
+              display: none !important;
            }
            .button {
                display: block;
            }
         }
     </style>
+<link href="{% static 'factor/css/print_toolbar.css' %}" rel="stylesheet">
 
 {% endif %}
-<div class="container" dir="rtl">
-    <div>
-        <a href="javascript:window.print()" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
+{% if not bulk_mode %}
+<details class="ptb-drawer noprint"
+         {% if request.GET.print_settings == '1' or request.POST.print_settings == '1' %}open{% endif %}>
+    <summary class="ptb-drawer-toggle" aria-label="باز و بسته کردن تنظیمات چاپ">
+        <span class="ptb-toggle-icon" aria-hidden="true">⚙</span>
+        <span class="ptb-toggle-label">تنظیمات چاپ</span>
+        <span class="ptb-toggle-chevron" aria-hidden="true">⌄</span>
+    </summary>
+<section class="ptb-toolbar noprint" dir="rtl" aria-label="ابزارهای چاپ فاکتور">
+    <div class="ptb-main">
+        <div class="ptb-identity">
+            <span class="ptb-icon" aria-hidden="true">▣</span>
+            <div>
+                <h3 class="ptb-title">تنظیمات چاپ فاکتور</h3>
+                <span class="ptb-subtitle">صورت‌حساب فروش · F{{ data.id }}</span>
+            </div>
+        </div>
+        <section class="ptb-section ptb-section--actions" aria-label="عملیات چاپ و نمایش">
+            <h4 class="ptb-section-title">عملیات چاپ و نمایش</h4>
+            <div class="ptb-actions">
+            <button type="button" class="ptb-button ptb-button--primary" id="id_print_btn" onclick="window.print()">چاپ فاکتور</button>
+            {% if request.user.base_group == 'wh' %}
+            <button type="button" class="ptb-button" id="calculate-button">چاپ لیبل کالا</button>
+            {% endif %}
+            </div>
+        </section>
     </div>
-    <div>
-    {% if request.user.base_group == 'wh' %}
-        <span class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="calculate-button">پرینت لیبل کالا</span>
+    {% if legal_profile_options %}
+    <div class="ptb-profile-zone">
+        <span class="ptb-profile-heading">پروفایل حقوقی خریدار</span>
+        <form method="get" class="ptb-profile-form" id="factor-legal-profile-form"
+              aria-label="انتخاب پروفایل حقوقی خریدار">
+            <input type="hidden" name="action" value="factor_print">
+            <input type="hidden" name="print_settings" value="1">
+            {% if request.GET.location_url_params %}
+                <input type="hidden" name="location_url_params" value="{{ request.GET.location_url_params }}">
+            {% endif %}
+            <div class="ptb-profile-fields">
+                <label class="ptb-field" for="factor-legal-profile-select">
+                    <span>مشخصات خریدار برای چاپ</span>
+                    <select name="legal_profile" id="factor-legal-profile-select" class="form-select">
+                        <option value="" {% if not selected_legal_profile %}selected{% endif %}>اطلاعات پایه مشتری</option>
+                        {% for option in legal_profile_options %}
+                            <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <div class="ptb-profile-actions">
+                    <button type="submit" class="ptb-button ptb-button--primary">اعمال پروفایل</button>
+                    <p class="ptb-help">انتخاب فقط روی چاپ تأثیر دارد و در فاکتور ذخیره نمی‌شود.</p>
+                </div>
+            </div>
+        </form>
+    </div>
     {% endif %}
-    </div>
-
+</section>
+</details>
+{% endif %}
+<div class="container" dir="rtl">
     <div class="row">
         <div class="col">
         </div>
@@ -123,8 +173,11 @@
                     <p data-key="address">نشانی: </p>
                 </div>
                 <div class="">
-                    <p class="">{{ data.q.customer_party_id.title|default_if_none:"-" }}</p>
-                    <p class="">{{ data.q.customer_party_id.address|default_if_none:"-" }}</p>
+                    <p class="">{{ buyer_info.name }}</p>
+                    <p class="">{{ buyer_info.address }}</p>
+                    {% if buyer_info.is_legal_profile %}
+                        <p data-key="buyer_legal_type" class="mb-0">نوع شخصیت حقوقی: {{ buyer_info.type }}</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -135,21 +188,21 @@
                     <p data-key="phone">تلفن:</p>
                 </div>
                 <div class="">
-                    <p class="">{{ data.q.customer_party_id.national_code|default_if_none:"-" }}</p>
-                    <p class="">{{ data.q.customer_party_id.phone|default_if_none:"-" }}</p>
+                    <p class="">{{ buyer_info.economical_number }}</p>
+                    <p class="">{{ buyer_info.phone }}</p>
                 </div>
             </div>
         </div>
         <div class="col-4">
         <div class="d-flex gap-3">
         <div class="">
-            <p data-key="national_number">شماره ثبت/شماره ملی : </p>
+            <p data-key="national_number">{% if buyer_info.is_legal_profile %}شناسه ملی{% else %}شماره ثبت/شماره ملی{% endif %} : </p>
             <p data-key="postal_code">کد پستی: </p>
 
         </div>
         <div class="">
-            <p data-key="national_number">{{ data.q.customer_party_id.national_code|default_if_none:"-" }} </p>
-            <p data-key="postal_code">-</p>
+            <p data-key="national_number">{{ buyer_info.national_number }} </p>
+            <p data-key="postal_code">{{ buyer_info.postal_code }}</p>
 
         </div>
             </div>
@@ -309,8 +362,7 @@
     <div id="result-container" style="display:none;"></div>
 
 <script>
-document.getElementById('calculate-button').addEventListener('click', function() {
-    debugger
+document.getElementById('calculate-button')?.addEventListener('click', function() {
     const rows = document.querySelectorAll('[id^="id_goods_code-"]'); // همه ردیف‌ها
 
     // ✅ متغیر برای جمع کردن همه خروجی‌ها
