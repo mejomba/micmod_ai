@@ -163,7 +163,7 @@ class Order(BaseModeWF):
     ORDER_STATUS = [('1', _("draft")), ('2', _("started")), ('3', _("co-conf")), ('4', _("supp-sent")), ('5', _("sup-conf")),
                     ('6', _("pre-paid")), ('7', _("gio")), ('8', _("has-packing")), ('9', _("partial-arrived")),
                     ('10', _("total-arrived")), ('11', _("has-error")), ('12', _("completed")), ('13', _("canceled")), ]
-    TRANSPORTATION_CHOICE = [("express", "express"), ("air", "air"), ("sea", "sea"), ]
+    TRANSPORTATION_CHOICE = [("express", "express"), ("air", "air"), ("sea", "sea"), ("road", "road"), ("rail", "rail"), ]
     BUY_OPERATOR_CHOICE = (("me", _("me")), ("mac", _("mac")), ("luise", _("luise")))
     PAY_OPERATOR_CHOICE = (("mac", _("mac")), ("luise", _("luise")), ("iranpaid", _("iranpaid")))
 
@@ -1036,7 +1036,7 @@ class Packing(BaseModeWF):
         42: "انبار کالای معیوب",
     }
 
-    SHIPMENT_TYPE = [("express", "express"), ("air", "air"), ("sea", "sea"), ]
+    SHIPMENT_TYPE = [("express", "express"), ("air", "air"), ("sea", "sea"), ("road", "road"), ("rail", "rail"), ]
     WH_DESTINATION_CHOICE = [(2, _("central")), (3, _("resalat")), ]
     packing_number = models.CharField(_('packing_number'), max_length=255, null=True, blank=True)
     order_registration_number = models.CharField(
