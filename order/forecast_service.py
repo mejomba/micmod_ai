@@ -26,6 +26,11 @@ def recalculate(workflow_key, object_id, *, reason='manual', latest_policy=False
     ct = ContentType.objects.get_for_model(model)
     previous = WorkflowForecast.objects.filter(content_type=ct, object_id=object_id,
         target_stage=TARGET, target_event='exit', is_current=True).select_related('policy').first()
+    # Actual receipt is a recorded business fact, not a mutable estimate.
+    # Ordinary refreshes, including policy upgrades, must not rewrite it.
+    # Dry runs remain available for investigating evidence discrepancies.
+    if previous and previous.forecast_status == 'actual' and not dry_run:
+        return previous, False
     state = order_state(instance, as_of) if workflow_key == 'order' else packing_state(instance, as_of)
     excluded = bool(workflow_key == 'order' and (instance.is_wh or instance.is_bazar))
     if not previous and (state.cancelled or excluded or not state.stage):

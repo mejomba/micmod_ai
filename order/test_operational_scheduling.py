@@ -98,6 +98,13 @@ class OperationalSchedulingTests(TestCase):
         self.assertTrue(changed)
         self.assertEqual(latest.actual_at,transfer.sent_at)
         self.assertEqual(latest.initial_estimated_at,first.initial_estimated_at)
+        # Later edits to source evidence cannot silently move an actual date.
+        from datetime import timedelta
+        PackingSepidarTransfer.objects.filter(pk=transfer.pk).update(sent_at=transfer.sent_at-timedelta(days=1))
+        frozen, changed = recalculate('order',self.order.pk,latest_policy=True)
+        self.assertFalse(changed)
+        self.assertEqual(frozen.pk,latest.pk)
+        self.assertEqual(frozen.actual_at,transfer.sent_at)
 
     def test_terminal_packing_without_receipt_is_not_declared_complete(self):
         packing = Packing.objects.create(shipment_type='air',estimated_arrive_to_wh_date=date.today())

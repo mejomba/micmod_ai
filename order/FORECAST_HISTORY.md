@@ -54,3 +54,10 @@ stored calculated_at/as_of always reflect actual computation time.
 Tests:
     python -m unittest workflow.test_scheduling_history_values workflow.test_scheduling_engine workflow.test_scheduling_configuration order.test_scheduling_business_rules -v
     python manage.py test order.test_forecast_history
+
+Phase 8: current actual receipts are frozen by ordinary recalculation (including
+manual and policy upgrades). If actual receipt evidence is later corrected or
+a completed order is reopened, use a dry-run to investigate; a deliberate
+audited correction workflow is not implemented. Do not edit history via SQL.
+Explicit backfill also considers closed legacy orders with linked packing;
+the normal daily sweep remains focused on open/incomplete documents.

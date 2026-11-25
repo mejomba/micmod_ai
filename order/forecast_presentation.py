@@ -187,7 +187,19 @@ def panel_context(instance, kind, user, fa, *, revision=None):
         for row in snapshot.get('shipments',[]):
             effective = row.get('actual') or row.get('declared') or row.get('calculated')
             source = 'actual' if row.get('actual') else 'declared' if row.get('declared') else 'calculated' if row.get('calculated') else 'none'
+            declared = row.get('declared')
+            try:
+                declared_date = parse_datetime(declared) if isinstance(declared,str) else declared
+                if isinstance(declared_date,datetime):
+                    declared_date = timezone.localdate(declared_date) if timezone.is_aware(declared_date) else declared_date.date()
+                elif isinstance(declared,str):
+                    declared_date = parse_date(declared)
+            except (TypeError,ValueError):
+                declared_date = None
+            overdue_declaration = bool(declared_date and not row.get('actual')
+                and declared_date < (timezone.localdate(current.as_of) if revision is not None else timezone.localdate()))
             shipments.append({'key':row.get('key'),'quantity':row.get('quantity'),
+                'declared_overdue':overdue_declaration,
                 'calculated':display_date(row.get('calculated'),fa),'declared':display_date(row.get('declared'),fa),
                 'actual':display_date(row.get('actual'),fa),'effective':display_date(effective,fa),
                 'source':label(SOURCES,source,fa),'status':label(STATUSES,row.get('status'),fa)})
