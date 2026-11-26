@@ -15,8 +15,11 @@ CONFIG = {
 FORECAST = 'workflow_workflowforecast'
 DETAILS = ('workflow_workflowforecaststep', 'workflow_workflowforecastanchor')
 
-SQL = """
-CREATE FUNCTION wf_sched_guard_policy() RETURNS trigger LANGUAGE plpgsql AS $$
+# Keep each CREATE FUNCTION in a separate statement. In particular, a malformed
+# dollar-quoted function must never consume the following function definition.
+FUNCTION_SQL = (
+    """
+CREATE FUNCTION wf_sched_guard_policy() RETURNS trigger LANGUAGE plpgsql AS $policy$
 BEGIN
     IF TG_OP = 'INSERT' THEN
         IF NEW.status <> 'draft' THEN
@@ -48,9 +51,11 @@ BEGIN
         RAISE EXCEPTION 'Use the validated policy publication service' USING ERRCODE = '23514';
     END IF;
     RETURN NEW;
-END $;
-
-CREATE FUNCTION wf_sched_guard_config() RETURNS trigger LANGUAGE plpgsql AS $$
+END;
+$policy$;
+""",
+    """
+CREATE FUNCTION wf_sched_guard_config() RETURNS trigger LANGUAGE plpgsql AS $config$
 DECLARE
     old_parent bigint;
     new_parent bigint;
@@ -94,9 +99,11 @@ BEGIN
     END IF;
     IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
     RETURN NEW;
-END $$;
-
-CREATE FUNCTION wf_sched_guard_forecast() RETURNS trigger LANGUAGE plpgsql AS $$
+END;
+$config$;
+""",
+    """
+CREATE FUNCTION wf_sched_guard_forecast() RETURNS trigger LANGUAGE plpgsql AS $forecast$
 BEGIN
     IF TG_OP = 'UPDATE' THEN
         IF (to_jsonb(OLD) - 'is_current') = (to_jsonb(NEW) - 'is_current')
@@ -104,9 +111,11 @@ BEGIN
         THEN RETURN NEW; END IF;
     END IF;
     RAISE EXCEPTION 'Forecast history is append-only' USING ERRCODE = '23514';
-END $$;
-
-CREATE FUNCTION wf_sched_guard_detail() RETURNS trigger LANGUAGE plpgsql AS $$
+END;
+$forecast$;
+""",
+    """
+CREATE FUNCTION wf_sched_guard_detail() RETURNS trigger LANGUAGE plpgsql AS $detail$
 DECLARE active_revision boolean;
 BEGIN
     IF TG_OP = 'INSERT' THEN
@@ -117,8 +126,10 @@ BEGIN
         THEN RETURN NEW; END IF;
     END IF;
     RAISE EXCEPTION 'Forecast detail history is append-only' USING ERRCODE = '23514';
-END $$;
-"""
+END;
+$detail$;
+""",
+)
 
 
 def install(apps, schema_editor):
@@ -126,7 +137,8 @@ def install(apps, schema_editor):
         # The operational database is PostgreSQL. Other engines do not gain
         # this protection and must not be used for production scheduling.
         return
-    schema_editor.execute(SQL)
+    for statement in FUNCTION_SQL:
+        schema_editor.execute(statement)
     schema_editor.execute(f'CREATE TRIGGER wf_sched_guard BEFORE INSERT OR UPDATE OR DELETE ON {POLICY} FOR EACH ROW EXECUTE FUNCTION wf_sched_guard_policy()')
     for table, field in CONFIG.items():
         schema_editor.execute(f"CREATE TRIGGER wf_sched_guard BEFORE INSERT OR UPDATE OR DELETE ON {table} FOR EACH ROW EXECUTE FUNCTION wf_sched_guard_config('{field}')")

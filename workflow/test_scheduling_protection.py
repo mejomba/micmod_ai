@@ -1,10 +1,11 @@
 """PostgreSQL-only database protections, including QuerySet and raw SQL writes."""
 from datetime import date
+from importlib import import_module
 from unittest import skipUnless
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.db import connection, IntegrityError, transaction
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
 from workflow.scheduling.models import (WorkflowSchedulePolicy, WorkflowCalendar,
     WorkflowCalendarException, WorkflowStageTiming, WorkflowTimingRule,
@@ -69,3 +70,39 @@ class SchedulingProtectionTests(TestCase):
         with scheduling_write_scope('detail_revision',row.pk):
             self.rejected(lambda: WorkflowForecastStep.objects.create(forecast=row,sequence=2,workflow_key='order',stage_key='supplier_dispatch'))
         self.rejected(lambda: WorkflowForecast.objects.filter(pk=row.pk).delete())
+
+
+@skipUnless(connection.vendor == 'postgresql', 'PostgreSQL trigger protection')
+@override_settings(WORKFLOW_SCHEDULING_AUTO_ENABLED=False)
+class SchedulingGuardMigrationRoundTripTests(TransactionTestCase):
+    """Run the real forward and reverse DDL on the disposable test database."""
+
+    def test_uninstall_reinstall_preserves_data_and_guards(self):
+        migration = import_module('workflow.migrations.0013_scheduling_history_guards')
+        tables = (migration.POLICY, *migration.CONFIG, migration.FORECAST, *migration.DETAILS)
+        user = get_user_model().objects.create_superuser(username='guard_roundtrip_admin', password=None)
+        policy, _ = seed_policy('order', user=user, publish=True)
+        before = list(WorkflowSchedulePolicy.objects.filter(pk=policy.pk).values())
+
+        def installed_tables():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT c.relname FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid "
+                    "WHERE t.tgname='wf_sched_guard' AND NOT t.tgisinternal "
+                    "AND t.tgenabled IN ('O','A') AND c.oid IN "
+                    "(SELECT to_regclass(name) FROM unnest(%s::text[]) AS names(name))",
+                    [list(tables)],
+                )
+                return {row[0] for row in cursor.fetchall()}
+
+        self.assertEqual(installed_tables(), set(tables))
+        # Keep both directions in one transaction: a failure restores the
+        # original DDL, rather than leaving the test DB without its guards.
+        with connection.schema_editor(atomic=True) as editor:
+            migration.uninstall(None, editor)
+            self.assertEqual(installed_tables(), set())
+            migration.install(None, editor)
+            self.assertEqual(installed_tables(), set(tables))
+        self.assertEqual(list(WorkflowSchedulePolicy.objects.filter(pk=policy.pk).values()), before)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            WorkflowSchedulePolicy.objects.filter(pk=policy.pk).update(name='forbidden')
