@@ -39,3 +39,45 @@ class OrderListAccessIntegrationTests(SimpleTestCase):
                 with self.subTest(role=role, admin=admin, template=template):
                     html = render_to_string('order/partial/' + template + '.html', context, request=request)
                     self.assertEqual(html.count(marker), int(admin or role == 'trade'))
+
+    def test_payment_toolbar_has_short_labels_and_inline_calendar(self):
+        from html.parser import HTMLParser
+
+        class ToolbarParser(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.stack = []
+                self.calendar_in_toolbar = False
+                self.labels = {}
+                self.mode = None
+
+            def handle_starttag(self, tag, attrs):
+                attrs = dict(attrs)
+                if tag == 'div':
+                    if attrs.get('id') == 'tradePaymentDateControls':
+                        self.calendar_in_toolbar = 'tp-filter-toolbar' in self.stack
+                    self.stack.append(attrs.get('class', '').split(' ')[0])
+                if tag == 'button':
+                    self.mode = attrs.get('data-payment-mode')
+
+            def handle_data(self, data):
+                if self.mode:
+                    self.labels[self.mode] = self.labels.get(self.mode, '') + data
+
+            def handle_endtag(self, tag):
+                if tag == 'div':
+                    self.stack.pop()
+                if tag == 'button':
+                    self.mode = None
+
+        request = RequestFactory().get('/order/list/')
+        request.user = self.user('trade', False)
+        html = render_to_string('order/partial/trade_payment_filters.html',
+                                {'can_view_order_payments': True}, request=request)
+        parser = ToolbarParser()
+        parser.feed(html)
+        self.assertTrue(parser.calendar_in_toolbar)
+        self.assertEqual(set(parser.labels), {'scheduled', 'overdue', 'today', 'due_until', 'date_range'})
+        self.assertTrue(all('پرداخت' not in label for label in parser.labels.values()))
+        for field in ('tradePaymentStart', 'tradePaymentEnd', 'tradePaymentApply', 'tradePaymentClear'):
+            self.assertEqual(html.count('id="' + field + '"'), 1)

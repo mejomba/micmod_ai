@@ -1,38 +1,37 @@
 {% if can_view_order_payments %}
 <div id="tradePaymentPanel" class="border-top pt-3 mt-3" dir="rtl">
     {% csrf_token %}
-    <div class="d-flex flex-wrap align-items-center gap-1" role="group" aria-label="فیلترهای پرداخت">
-        <span class="fw-bold me-2">وضعیت پرداخت</span>
-        <button type="button" class="btn btn-sm btn-bordered btn-outline-primary mx-1" data-payment-mode="scheduled" aria-pressed="false" disabled>پرداخت برنامه‌ریزی شده</button>
-        <button type="button" class="btn btn-sm btn-bordered btn-outline-primary mx-1" data-payment-mode="overdue" aria-pressed="false" disabled>پرداخت منقضی شده</button>
-        <button type="button" class="btn btn-sm btn-bordered btn-outline-primary mx-1" data-payment-mode="today" aria-pressed="false" disabled>پرداخت سررسید امروز</button>
-        <button type="button" class="btn btn-sm btn-bordered btn-outline-primary mx-1" data-payment-mode="due_until" aria-pressed="false" disabled>پرداخت تا سررسید یک تاریخ خاص</button>
-        <button type="button" class="btn btn-sm btn-bordered btn-outline-primary mx-1" data-payment-mode="date_range" aria-pressed="false" disabled>پرداخت در بازه زمانی خاص</button>
-        <button type="button" id="tradePaymentClear" class="btn btn-sm btn-outline-secondary mx-1 d-none" disabled>حذف فیلتر پرداخت</button>
-    </div>
-    <div id="tradePaymentDateControls" class="d-none mt-3">
-        <div class="d-flex flex-wrap align-items-end gap-2">
-            <div>
-                <label class="form-label mb-1">نوع تقویم</label>
-                <div class="btn-group d-flex" role="group" aria-label="نوع تقویم">
-                    <button type="button" class="btn btn-sm btn-outline-primary" data-payment-calendar="gregorian" aria-pressed="true">میلادی</button>
-                    <button type="button" class="btn btn-sm btn-outline-primary" data-payment-calendar="jalali" aria-pressed="false">شمسی</button>
-                </div>
+    <div class="tp-filter-toolbar" role="group" aria-label="فیلترهای وضعیت پرداخت">
+        <span class="fw-bold tp-filter-heading">وضعیت پرداخت</span>
+        <button type="button" class="btn btn-sm btn-bordered btn-outline-primary" data-payment-mode="scheduled" aria-pressed="false" disabled>برنامه‌ریزی شده</button>
+        <button type="button" class="btn btn-sm btn-bordered btn-outline-primary" data-payment-mode="overdue" aria-pressed="false" disabled>منقضی شده</button>
+        <button type="button" class="btn btn-sm btn-bordered btn-outline-primary" data-payment-mode="today" aria-pressed="false" disabled>سررسید امروز</button>
+        <button type="button" class="btn btn-sm btn-bordered btn-outline-primary" data-payment-mode="due_until" aria-pressed="false" disabled>تا سررسید تاریخ خاص</button>
+        <button type="button" class="btn btn-sm btn-bordered btn-outline-primary" data-payment-mode="date_range" aria-pressed="false" disabled>بازه زمانی خاص</button>
+        <div id="tradePaymentDateControls" class="tp-date-controls d-none" role="group" aria-label="انتخاب تقویم و تاریخ">
+            <div class="btn-group tp-calendar-switch" role="group" aria-label="نوع تقویم">
+                <button type="button" class="btn btn-sm btn-outline-primary" data-payment-calendar="gregorian" aria-pressed="true">میلادی</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-payment-calendar="jalali" aria-pressed="false">شمسی</button>
             </div>
             <div id="tradePaymentStartWrap" class="d-none tp-date-field">
-                <label for="tradePaymentStart" class="form-label mb-1">از تاریخ</label>
-                <input id="tradePaymentStart" type="date" class="form-control form-control-sm" dir="ltr" min="1821-03-21" max="2222-03-20">
-                <button type="button" id="tradePaymentStartJalali" class="btn btn-sm btn-outline-secondary tp-jalali-display d-none" aria-label="انتخاب تاریخ شروع شمسی" aria-haspopup="dialog" aria-expanded="false"></button>
-                <small id="tradePaymentStartEquivalent" class="text-muted d-block tp-date-equivalent" dir="ltr"></small>
+                <label for="tradePaymentStart" class="tp-date-label">از</label>
+                <div class="tp-date-input">
+                    <input id="tradePaymentStart" type="date" class="form-control form-control-sm" dir="ltr" aria-label="از تاریخ میلادی" min="1821-03-21" max="2222-03-20">
+                    <button type="button" id="tradePaymentStartJalali" class="btn btn-sm btn-outline-secondary tp-jalali-display d-none" aria-label="انتخاب تاریخ شروع شمسی" aria-haspopup="dialog" aria-expanded="false"></button>
+                    <small id="tradePaymentStartEquivalent" class="text-muted d-block tp-date-equivalent" dir="ltr"></small>
+                </div>
             </div>
             <div id="tradePaymentEndWrap" class="tp-date-field">
-                <label for="tradePaymentEnd" class="form-label mb-1">تا تاریخ</label>
-                <input id="tradePaymentEnd" type="date" class="form-control form-control-sm" dir="ltr" min="1821-03-21" max="2222-03-20">
-                <button type="button" id="tradePaymentEndJalali" class="btn btn-sm btn-outline-secondary tp-jalali-display d-none" aria-label="انتخاب تاریخ پایان شمسی" aria-haspopup="dialog" aria-expanded="false"></button>
-                <small id="tradePaymentEndEquivalent" class="text-muted d-block tp-date-equivalent" dir="ltr"></small>
+                <label for="tradePaymentEnd" class="tp-date-label">تا</label>
+                <div class="tp-date-input">
+                    <input id="tradePaymentEnd" type="date" class="form-control form-control-sm" dir="ltr" aria-label="تا تاریخ میلادی" min="1821-03-21" max="2222-03-20">
+                    <button type="button" id="tradePaymentEndJalali" class="btn btn-sm btn-outline-secondary tp-jalali-display d-none" aria-label="انتخاب تاریخ پایان شمسی" aria-haspopup="dialog" aria-expanded="false"></button>
+                    <small id="tradePaymentEndEquivalent" class="text-muted d-block tp-date-equivalent" dir="ltr"></small>
+                </div>
             </div>
-            <div class="tp-date-actions"><button type="button" id="tradePaymentApply" class="btn btn-sm btn-primary" disabled>تایید</button></div>
+            <button type="button" id="tradePaymentApply" class="btn btn-sm btn-primary" disabled><i class="fas fa-check" aria-hidden="true"></i> تایید</button>
         </div>
+        <button type="button" id="tradePaymentClear" class="btn btn-sm btn-outline-secondary d-none" disabled><i class="fas fa-times" aria-hidden="true"></i> حذف فیلتر</button>
     </div>
     <div id="tradePaymentFilterHelp" class="text-muted small mt-2" aria-live="polite"></div>
     <div id="tradePaymentFilterError" class="text-danger small mt-1" role="alert"></div>
