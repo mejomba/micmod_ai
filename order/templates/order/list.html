@@ -17,9 +17,7 @@
     <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
     <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
 
-    <style>
-
-    </style>
+    {% if request.user.base_group == 'trade' %}<link rel="stylesheet" href="{% static 'css/local/trade-payment-filters.css' %}">{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -156,8 +154,9 @@
         </span>
         </div>
 
+        {% include 'order/partial/trade_payment_filters.html' %}
     </div>
-    {% include 'order/partial/trade_payment_filters.html' %}
+    {% include 'order/partial/trade_payment_summary.html' %}
         <div class="main-content">
             <div class="page-content">
                 <div class="container-fluid">
@@ -181,7 +180,10 @@
 {% endblock content %}
 
 {% block extra_js %}
-{% if request.user.base_group == 'trade' %}<script src="{% static 'js/local/trade-payment-filters.js' %}"></script>{% endif %}
+{% if request.user.base_group == 'trade' %}
+<script src="{% static 'js/local/trade-payment-calendar.js' %}"></script>
+<script src="{% static 'js/local/trade-payment-filters.js' %}"></script>
+{% endif %}
 <script language="javascript">
 let extraData = { q: null, filter_type: null, filter_value: null, filter_stage: null,
     payment_filter: '', payment_start: '', payment_end: '' };

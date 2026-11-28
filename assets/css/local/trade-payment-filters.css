@@ -1,0 +1,25 @@
+/* Order payment controls follow the existing order filters and ff-card widget. */
+#tradePaymentPanel [data-payment-mode].active,
+#tradePaymentPanel [data-payment-calendar].active { color: #fff !important; background: var(--bs-primary, #2563eb); }
+#tradePaymentPanel [data-payment-mode].tp-pending { border-style: dashed; }
+#tradePaymentPanel .tp-date-field { min-width: 155px; }
+#tradePaymentPanel .tp-date-field input, #tradePaymentPanel .tp-jalali-display { width: 100%; }
+#tradePaymentPanel .tp-date-equivalent { min-height: 1.3em; text-align: center; }
+#tradePaymentPanel .tp-date-actions { padding-bottom: 1.3em; }
+#tradePaymentPanel .tp-jalali-display { text-align: center; white-space: nowrap; }
+#tradePaymentSummary.tp-summary { max-width: none; padding: 0.85rem 1rem; }
+#tradePaymentSummary .tp-summary-header { flex-wrap: wrap; gap: .5rem; margin-bottom: .6rem; }
+#tradePaymentSummary .tp-total { border: 1px solid #e5e7eb; border-radius: 8px; padding: .65rem .8rem; height: 100%; background: var(--bs-body-bg, #fff); }
+#tradePaymentSummary .tp-total-title { font-size: .84rem; font-weight: 600; margin-bottom: .45rem; display: flex; gap: .35rem; align-items: center; }
+#tradePaymentSummary .tp-total-amount { font-size: 1rem; font-variant-numeric: tabular-nums; }
+#tradePaymentSummary .tp-total-line + .tp-total-line { border-top: 1px solid #eff2f5; }
+.tp-calendar-popup { position: fixed; z-index: 1100; width: min(310px, calc(100vw - 16px)); background: var(--bs-body-bg, #fff); border: 1px solid #dbeafe; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.14); padding: 10px; direction: rtl; }
+.tp-calendar-popup[hidden] { display: none !important; }
+.tp-calendar-head, .tp-calendar-foot { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.tp-calendar-head { margin-bottom: 8px; }
+.tp-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; text-align: center; }
+.tp-calendar-grid .tp-day { padding: 5px 0; border: 1px solid transparent; border-radius: 6px; background: transparent; color: inherit; }
+.tp-calendar-grid .tp-day:hover, .tp-calendar-grid .tp-day:focus-visible { background: #eff6ff; color: #1d4ed8; }
+.tp-calendar-grid .tp-day.is-today { border-color: #2563eb; }
+.tp-calendar-grid .tp-day.is-selected { background: var(--bs-primary, #2563eb); color: #fff; }
+.tp-calendar-foot { border-top: 1px solid #e5e7eb; margin-top: 8px; padding-top: 8px; }
