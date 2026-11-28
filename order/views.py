@@ -16,6 +16,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q, BooleanField, Value, Func, IntegerField, Count, \
     DurationField
+from django.db.models import Prefetch
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Coalesce, Now
 from django.forms import modelformset_factory
@@ -52,6 +53,7 @@ from sepidar.models import Dl
 from tools.utils import is_ajax, parse_number
 from workflow.models import WorkFlow, FlowAdminGroup
 from changelog.models import ChangeLog
+from .trade_payment_schedule import render_payment_links, render_payment_schedule
 from .packing_error_messages import packing_error_payload
 from .packing_change_history import build_packing_change_history
 from .packing_workflow_timeline import build_packing_workflow_timeline
@@ -984,6 +986,16 @@ class OrderDataTableListView(AjaxDatatableView):
         #         ~Q(last_work_flow__current_state_name='پیش نویس')
         #     )
 
+        if user_group == 'trade':
+            qs = qs.select_related('currency').prefetch_related(
+                Prefetch(
+                    'order_payment_items',
+                    queryset=OrderPaymentItem.objects.filter(is_deleted=False).select_related(
+                        'payment__currency', 'currency'
+                    ).order_by('pay_date', 'pk'),
+                    to_attr='list_payment_items',
+                )
+            )
         return qs.distinct()
 
     def customize_row(self, row, obj):
@@ -1015,14 +1027,15 @@ class OrderDataTableListView(AjaxDatatableView):
         row['qi__quotation'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         row['estimated_arrive_date'] = obj.estimate_arrive_at
         row['comments'] = '<hr>'.join([f"{x.comment_content} <br> ({x.elapsed_time})" for x in obj.comments.filter(comment_title='R')])  # "R" is order error from trade user
-        row['payment'] = '<hr>'.join([
-                            (
-                                f"<a target='_blank' href='{reverse_lazy('order:order.payment.update', kwargs={'pk': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>"
-                                if x.payment
-                                else "<span class='text-muted'>بدون پرداخت</span>"
-                            )
-                            for x in obj.order_payment_items.select_related('payment').all()
-                        ])
+        if self.request.user.base_group != 'trade':
+            row['payment'] = '<hr>'.join([
+                                (
+                                    f"<a target='_blank' href='{reverse_lazy('order:order.payment.update', kwargs={'pk': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>"
+                                    if x.payment
+                                    else "<span class='text-muted'>بدون پرداخت</span>"
+                                )
+                                for x in obj.order_payment_items.select_related('payment').all()
+                            ])
         row['weight'] = f'{parse_number(obj.final_total_weight):,}'
         row['item__purchase_group'] = obj.final_purchase_group
         row['work_day'] = obj.trade_work_day
@@ -1074,16 +1087,17 @@ class OrderDataTableListView(AjaxDatatableView):
         # """)
 
     def customize_row_trade(self, row, obj):
-        from django.utils import timezone
-        tehran = timezone.tzinfo
+        items = obj.list_payment_items
+        row['payment'] = render_payment_links(
+            items, obj.currency,
+            lambda pk: reverse('order:order.payment.update', kwargs={'pk': pk}),
+        )
+        row['future_payments'], row['past_payments'] = render_payment_schedule(items, obj.currency, timezone.localdate())
 
         row['delay_reason__description'] = [d.description for d in obj.delay_reason.all()]
         try:
             t = getattr(obj.workflows.filter(state='تایید مدیر فروش', wf_status=3).order_by('id').first(), 'created_date', None)
             row['trade_state_time'] = timezone.localtime(t).strftime('%m/%d/%Y \n%H:%M') if t else '-'
-            row['payment'] = '<hr>'.join([
-                                             f"<a target=_blank href='{reverse_lazy('''order:order.payment.update''', kwargs={'''pk''': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>"
-                                             for x in obj.order_payment_items.select_related('payment').all()])
             row['gio'] = '<hr>'.join([
                 f"<a target=_blank href='{reverse_lazy('''order:quick_gio''', kwargs={'''pk''': x.gio.pk})}'>{x.quantity} in {x.gio.pk}</a>"
                 for x in obj.gio_items.select_related('gio').all()])
@@ -1301,6 +1315,8 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True,
                  'lookup_field': '__username__icontains'},
                 {'name': 'payment', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'پرداخت', },
+                {'name': 'future_payments', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'پرداخت‌های آینده', },
+                {'name': 'past_payments', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'پرداخت‌های گذشته', },
                 {'name': 'gio', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'GIO', },
                 {'name': 'packing', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'پکینگ', },
                 {'name': 'total_price', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'مبلغ کل', },
