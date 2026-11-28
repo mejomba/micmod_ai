@@ -32,6 +32,8 @@ from django.utils.safestring import mark_safe
 from django.utils.html import escape
 from django.views import View
 from django.views.generic import ListView
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_POST
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed
@@ -55,6 +57,7 @@ from workflow.models import WorkFlow, FlowAdminGroup
 from changelog.models import ChangeLog
 from .trade_payment_schedule import render_payment_links, render_payment_schedule
 from .trade_payment_filters import apply_payment_filter, payment_totals, PAYMENT_FILTERS
+from .trade_order_excel import EXPORT_FIELDS, PAYMENT_KEYS, selected_fields, build_order_export
 from .packing_error_messages import packing_error_payload
 from .packing_change_history import build_packing_change_history
 from .packing_workflow_timeline import build_packing_workflow_timeline
@@ -655,6 +658,12 @@ class TradeBuyFactorView(LoginRequiredMixin, View):
 class OrderListView(LoginRequiredMixin, ListView):
     model = Order
     template_name = 'order/list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.base_group == 'trade':
+            context['trade_export_fields'] = EXPORT_FIELDS
+        return context
 
 
 class OrderDataTableListView(AjaxDatatableView):
@@ -1385,6 +1394,62 @@ class OrderDataTableListView(AjaxDatatableView):
 
 
         return super().get_column_defs(request)
+
+
+
+@require_POST
+@csrf_protect
+def trade_order_excel(request):
+    """Reuse the table's server-side filters; do not export its current page."""
+    if not request.user.is_authenticated or getattr(request.user, 'base_group', None) != 'trade':
+        return JsonResponse({'error': 'دسترسی به خروجی اختصاصی بازرگانی مجاز نیست.'}, status=403)
+    try:
+        keys = request.POST.getlist('export_fields[]')
+        selected_fields(keys)
+        details = request.POST.get('export_payment_details') == '1'
+        view = OrderDataTableListView()
+        view.setup(request)
+        view.initialize(request)
+        params = view.read_parameters(request.POST)
+        qs = view.get_initial_queryset(request)
+        if view.payment_filter_error:
+            raise ValueError(view.payment_filter_error)
+        qs = view.prepare_queryset(params, qs)
+        # No datatable only() optimization: properties need complete order/item fields.
+        qs = qs.prefetch_related(None)
+        related = []
+        if {'sku', 'part_number', 'total_weight'}.intersection(keys):
+            related.extend(['item', 'item_trade'])
+        if 'status' in keys:
+            related.append('last_work_flow')
+        if 'creator_user' in keys:
+            related.append('creator_user')
+        if related:
+            qs = qs.select_related(*related)
+        if PAYMENT_KEYS.intersection(keys) or details:
+            qs = qs.prefetch_related(Prefetch(
+                'order_payment_items',
+                queryset=OrderPaymentItem.objects.filter(is_deleted=False).select_related(
+                    'payment__currency', 'currency'
+                ).order_by('pay_date', 'pk'),
+                to_attr='list_payment_items',
+            ))
+        if 'gio' in keys:
+            qs = qs.prefetch_related(Prefetch(
+                'gio_items', queryset=GIOItem.objects.filter(is_deleted=False).order_by('pk'),
+                to_attr='export_gio_items',
+            ))
+        if 'packing' in keys:
+            qs = qs.prefetch_related(Prefetch(
+                'packing_item_order', queryset=PackingItem.objects.filter(is_deleted=False).order_by('pk'),
+                to_attr='export_packing_items',
+            ))
+        output = build_order_export(qs.iterator(chunk_size=500), keys, view.payment_summary_date, details)
+    except (ValueError, KeyError, AssertionError) as exc:
+        return JsonResponse({'error': str(exc) if isinstance(exc, ValueError) else 'پارامترهای فیلتر یا ستون‌ها معتبر نیستند.'}, status=400)
+    response = HttpResponse(output.getvalue(), content_type=XLSX_CONTENT_TYPE)
+    response['Content-Disposition'] = 'attachment; filename="trade-orders-' + view.payment_summary_date.isoformat() + '.xlsx"'
+    return response
 
 
 class BazarOrderForBuyFactorDataTableListView(AjaxDatatableView):

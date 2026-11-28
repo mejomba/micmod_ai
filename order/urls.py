@@ -34,6 +34,7 @@ urlpatterns = [
     path('list/', views.OrderListView.as_view(), name='order.list'),
     path('list/action/', views.OrderAction.as_view(), name='order.list.action'),
     path('list/datatable/', views.OrderDataTableListView.as_view(), name='order.list.datatable'),
+    path('list/trade-excel/', views.trade_order_excel, name='order.list.trade_excel'),
     path('bazar/list/datatable/buy_factor/', views.BazarOrderForBuyFactorDataTableListView.as_view(), name='bazar.order.for.buyfactor.list.datatable'),
     path('bazar/list/datatable/', views.BazarOrderDataTableListView.as_view(), name='bazar.order.list.datatable'),
     path('new_bazar/list/datatable/', views.NewBazarOrderDataTableListView.as_view(), name='new_bazar_order.list.datatable'),

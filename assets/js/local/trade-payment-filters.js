@@ -135,9 +135,11 @@ const TradePaymentFilters = (() => {
             const draw = Number(data.draw);
             latestDraw = draw;
             resetSummary('در حال محاسبه خلاصه تمام نتایج…');
+            table.trigger('tradeExportPending');
             data.date_from = $(this).data('date_from');
             data.date_to = $(this).data('date_to');
             Object.assign(data, extraData);
+            const exportSnapshot = $.extend(true, {}, data);
             return $.ajax({
                 type: 'POST', url: url, data: data, dataType: 'json', cache: false,
                 headers: {'X-CSRFToken': panel.find('input[name="csrfmiddlewaretoken"]').val()}
@@ -150,6 +152,9 @@ const TradePaymentFilters = (() => {
                 }
                 callback(response);
                 renderSummary(response.payment_summary);
+                if (response.payment_summary && !response.payment_summary.error) {
+                    table.trigger('tradeExportReady', [exportSnapshot, response.payment_summary.order_count]);
+                }
             }).fail((xhr, reason) => {
                 if (draw !== latestDraw || reason === 'abort') return;
                 resetSummary('خطا در دریافت نتایج و خلاصه پرداخت؛ دوباره تلاش کنید.');

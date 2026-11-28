@@ -163,6 +163,7 @@
                     <div class="row">
                         <div class="col-12">
                             <div class="container-fluid">
+                                {% include 'order/partial/trade_order_export.html' %}
                                 <div class="table-responsive p-2">
                                     <table id="order_list" width="100%" class="m-table table-striped table-bordered w-100">
 
@@ -183,6 +184,7 @@
 {% if request.user.base_group == 'trade' %}
 <script src="{% static 'js/local/trade-payment-calendar.js' %}"></script>
 <script src="{% static 'js/local/trade-payment-filters.js' %}"></script>
+<script src="{% static 'js/local/trade-order-export.js' %}"></script>
 {% endif %}
 <script language="javascript">
 let extraData = { q: null, filter_type: null, filter_value: null, filter_stage: null,
@@ -208,6 +210,7 @@ $(document).ready(function() {
             ]
     };
     if (document.getElementById('tradePaymentPanel')) {
+        TradeOrderExport.setup($('#order_list'));
         TradePaymentFilters.setup($('#order_list'), extraData, tableOptions,
             "{% url 'order:order.list.datatable' %}");
     }
