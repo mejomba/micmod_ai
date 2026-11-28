@@ -22,14 +22,30 @@ Refer to dashboards/urls.py file for more pages.
 
 
 class DashboardsView(LoginRequiredMixin, TemplateView):
-    """Landing page with server-side, permission-scoped operational metrics."""
+    """Landing page; operational metrics are temporarily disabled by default."""
     template_name = 'pages/dashboards/index.html'
+    legacy_template_name = 'pages/dashboards/legacy_index.html'
+
+    def get_template_names(self):
+        # Preserve explicit non-home template overrides (e.g. the error route).
+        if (self.template_name == DashboardsView.template_name
+                and not getattr(settings, 'OPERATIONAL_DASHBOARD_ENABLED', False)):
+            return [self.legacy_template_name]
+        return super().get_template_names()
 
     def get_context_data(self, **kwargs):
+        context = KTLayout.init(super().get_context_data(**kwargs))
+
+        # Keep authentication and the complete theme/layout initialization, but
+        # bypass report imports, database queries and calculations while disabled.
+        if not getattr(settings, 'OPERATIONAL_DASHBOARD_ENABLED', False):
+            if self.template_name == DashboardsView.template_name:
+                # Restore the original vendors used by the legacy admin widgets.
+                KTTheme.addVendors(['amcharts', 'amcharts-maps', 'amcharts-stock'])
+            return context
+
         from dashboards.operational_reports import build_report
 
-        context = super().get_context_data(**kwargs)
-        context = KTLayout.init(context)
         context['report'] = build_report(
             self.request.user,
             days=self.request.GET.get('days', 30),
