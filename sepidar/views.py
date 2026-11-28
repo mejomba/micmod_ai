@@ -424,43 +424,160 @@ class SalesHistory(LoginRequiredMixin, View):
     template_name = 'sepidar/sales_history.html'
 
     def get(self, request):
+        from datetime import timedelta
+        from django.utils import timezone
+        from sepidar.sales_history_service import COLUMN_LABELS
+        import jdatetime
+        import logging
+
+        advanced_names = (
+            'customer_code', 'item_code', 'part', 'g_p',
+            'doc_type', 'fisicalyearref',
+        )
+        column_filters = {
+            f'col_{index}': (request.GET.get(f'col_{index}') or '').strip()[:120]
+            for index in range(len(COLUMN_LABELS))
+        }
+        all_keys = advanced_names + ('date_from', 'date_to') + tuple(column_filters)
+        has_search = (any((request.GET.get(key) or '').strip() for key in all_keys)
+                      or request.GET.get('all_dates') == '1')
+        recent_default = not has_search
+        # Default (including a clear-all action) shows only the last seven
+        # calendar days. An explicit search still covers full history unless
+        # the user selects a date range. all_dates=1 remains an explicit opt-in.
+        filters = request.GET.copy()
+        today = timezone.localdate()
+        from_date = today - timedelta(days=6)  # Seven days, including today.
+        if recent_default:
+            filters['date_from'] = from_date.isoformat()
+            filters['date_to'] = today.isoformat()
+
         context = {
             key: request.GET.get(key, '')
-            for key in (
-                'customer_code', 'item_code', 'part', 'g_p',
-                'doc_type', 'fisicalyearref',
-            )
+            for key in advanced_names + ('date_from', 'date_to')
         }
+        context['column_filters'] = column_filters
+        context['recent_default'] = recent_default
+        context['recent_from'] = jdatetime.date.fromgregorian(date=from_date).strftime('%Y/%m/%d')
+        context['recent_to'] = jdatetime.date.fromgregorian(date=today).strftime('%Y/%m/%d')
+        context['recent_30_from'] = jdatetime.date.fromgregorian(
+            date=today - timedelta(days=29)
+        ).strftime('%Y/%m/%d')
+        context['advanced_active'] = any((context.get(k) or '').strip() for k in advanced_names)
+        active_chips = []
+        for index, label in enumerate(COLUMN_LABELS):
+            key = f'col_{index}'
+            if column_filters[key]:
+                active_chips.append({'key': key, 'label': label, 'value': column_filters[key]})
+        other_labels = {
+            'customer_code': 'مشتری', 'item_code': 'کد کالا',
+            'part': 'کالا / پارت‌نامبر', 'g_p': 'گروه خرید',
+            'doc_type': 'نوع سند', 'fisicalyearref': 'سال مالی',
+            'date_from': 'از تاریخ', 'date_to': 'تا تاریخ',
+        }
+        for key, label in other_labels.items():
+            value = (context.get(key) or '').strip()
+            if value:
+                active_chips.append({'key': key, 'label': label, 'value': value})
+        context['active_chips'] = active_chips
 
+        # The page endpoint always retrieves a bounded SQL batch. Financial
+        # aggregation is fetched independently after the first rows render.
+        from sepidar.sales_history_service import get_sales_history_page
+        from sepidar.sales_history_summary import get_sales_history_summary
+        from django.core.cache import cache
+        import hashlib
+
+        ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        summary_request = ajax and request.GET.get('sh_summary') == '1'
+        data, truncated, error = [], False, ''
+        page = {'rows': [], 'row_count': 0,
+                'offsets': {'sepidar': 0, 'portal': 0},
+                'has_more': False, 'truncated': False,
+                'done': {'sepidar': True, 'portal': True}}
+        status = 200
         try:
-            # New opt-in mode; original callers of Dl.get_sales_history_list()
-            # still get their legacy Sepidar RawQuerySet.
-            result = Dl.get_sales_history_list(
-                request.GET,
-                include_portal=True
-            )
+            if summary_request:
+                # Cache only this user's exact filters; scroll offsets are not
+                # included in financial aggregation and don't change totals.
+                identity = getattr(getattr(request, 'user', None), 'pk', None)
+                identity = str(identity or 'anonymous')
+                key_data = repr((identity, sorted(
+                    (key, tuple(values)) for key, values in filters.lists()
+                    if key not in ('sh_summary', 'sh_page', 'sep_offset', 'portal_offset',
+                                   'sep_done', 'portal_done')
+                )))
+                cache_key = 'sales-history-summary:' + hashlib.sha256(
+                    key_data.encode('utf-8')
+                ).hexdigest()
+                summary = cache.get(cache_key)
+                if summary is None:
+                    summary = get_sales_history_summary(filters)
+                    cache.set(cache_key, summary, 90)
+                return JsonResponse({'summary': summary})
 
-            if result is None:
-                data, truncated = [], False
-            else:
-                data, truncated = result
+            def page_offset(key):
+                value = str(request.GET.get(key) or '0')
+                if not value.isascii() or not value.isdecimal() or len(value) > 4:
+                    raise ValueError('موقعیت اسکرول معتبر نیست.')
+                offset = int(value)
+                if offset > 3000:
+                    raise ValueError('موقعیت اسکرول معتبر نیست.')
+                return offset
+
+            def source_done(key):
+                value = str(request.GET.get(key) or '0')
+                if value not in ('0', '1'):
+                    raise ValueError('وضعیت صفحه‌بندی معتبر نیست.')
+                return value == '1'
+
+            page = get_sales_history_page(
+                filters,
+                sepidar_offset=page_offset('sep_offset') if ajax else 0,
+                portal_offset=page_offset('portal_offset') if ajax else 0,
+                sepidar_done=source_done('sep_done') if ajax else False,
+                portal_done=source_done('portal_done') if ajax else False,
+            )
+            data, truncated = page['rows'], page['truncated']
         except ValueError as exc:
-            return HttpResponseBadRequest(str(exc))
+            error, status = str(exc), 400
+        except Exception:
+            logging.getLogger(__name__).exception('Sales history query failed')
+            error, status = 'دریافت سوابق فروش با خطا مواجه شد. دوباره تلاش کنید یا به پشتیبانی اطلاع دهید.', 503
 
         context['list'] = data
         context['truncated'] = truncated
-        context['total_price'] = sum(
-            (
-                Decimal(str(row.get('Fee') or 0))
-                * Decimal(str(row.get('Quantity') or 0))
-            ) for row in data
-        )
-        context['total_quantity'] = sum(
-            Decimal(str(row.get('Quantity') or 0))
-            for row in data
-        )
+        context['report_error'] = error
+        context['row_count'] = page['row_count']
+        context['sales_page'] = {
+            'offsets': page['offsets'],
+            'has_more': page['has_more'],
+            'done': page.get('done', {'sepidar': False, 'portal': False}),
+            'truncated': page['truncated'],
+            'row_count': page['row_count'],
+        }
+        if ajax:
+            if error:
+                return JsonResponse({'error': error}, status=status)
+            from django.template.loader import render_to_string
+            return JsonResponse({
+                'rows_html': render_to_string(
+                    'sepidar/partial/sales_history_rows.html',
+                    {'list': data}, request=request,
+                ),
+                'row_count': page['row_count'],
+                'offsets': page['offsets'],
+                'has_more': page['has_more'],
+                'done': page.get('done', {'sepidar': False, 'portal': False}),
+                'truncated': truncated,
+                'active_chips': active_chips,
+                'recent_default': recent_default,
+                'recent_from': context['recent_from'],
+                'recent_to': context['recent_to'],
+                'recent_30_from': context['recent_30_from'],
+            })
+        return render(request, self.template_name, context, status=status)
 
-        return render(request, self.template_name, context)
 
 class BuyHistory(LoginRequiredMixin, View):
     def get(self, requset):

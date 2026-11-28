@@ -48,9 +48,6 @@
 .sh-report .sh-currency-chip strong {direction:ltr;font-size:14px;font-weight:850;color:#193a6e}
 .sh-report .sh-currency-chip span {color:#65748c;font-weight:600}
 .sh-report .sh-help {margin:0 0 17px;color:#7c611a;background:#fffaed;border:1px solid #f8e8bd;padding:11px 15px;border-radius:11px;font-size:12px;line-height:1.8}
-.sh-report .sh-table-panel-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:22px 22px 16px}
-.sh-report .sh-table-panel-heading h2 {font-size:17px;font-weight:850;margin:0}
-.sh-report .sh-table-panel-heading p {margin:5px 0 0;color:var(--sh-muted);font-size:12px}
 .sh-report .sh-table-tools {background:#f8faff;border-top:1px solid #ecf0f6;border-bottom:1px solid #ecf0f6;padding:14px 22px;display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
 .sh-report .sh-table-tools .sh-field {max-width:190px}
 .sh-report .sh-table-tools .sh-input {height:38px;min-width:160px}
@@ -135,10 +132,6 @@
 .sh-report .sh-currency-chip .sh-currency-prefix {color:#7b8ba3;font-size:10px}
 .sh-report .sh-currency-chip strong {direction:ltr;unicode-bidi:isolate;color:#163d72;font-size:13px;font-variant-numeric:tabular-nums}
 .sh-report .sh-help {font-size:11px;padding:7px 12px;margin:0 0 10px}
-.sh-report .sh-table-panel-heading {padding:9px 14px;gap:6px}
-.sh-report .sh-table-panel-heading h2 {font-size:14px}
-.sh-report .sh-table-panel-heading p {font-size:11px;margin:1px 0 0}
-.sh-report .sh-table-panel-heading .sh-button {padding:6px 10px;min-height:31px;font-size:11px}
 .sh-report .sh-table-tools {padding:7px 13px;align-items:center;gap:8px}
 .sh-report .sh-table-tools .sh-mini-field {max-width:160px}
 .sh-report .sh-table-tools .sh-input {height:31px;min-width:132px;padding:0 9px;font-size:12px}
@@ -258,7 +251,7 @@
 .sh-report .sh-unique-chip{display:inline-flex;align-items:baseline;gap:7px;padding:5px 9px;border:1px solid #e0e9f6;border-radius:8px;background:#fff;color:#50647f;font-size:11px;font-weight:750;white-space:nowrap}
 .sh-report .sh-unique-chip strong{color:#194e94;font-size:14px;font-weight:850;font-variant-numeric:tabular-nums}
 .sh-report .sh-unique-hint{color:#8897ad;font-size:10px;margin-right:auto}
-.sh-report .sh-table-scroll{position:relative;overflow:auto!important;max-height:min(68vh,750px);overscroll-behavior:contain;direction:rtl;scrollbar-gutter:stable}
+.sh-report .sh-table-scroll{position:relative;overflow:auto!important;max-height:min(68vh,750px);overscroll-behavior-x:contain;overscroll-behavior-y:auto;direction:rtl;scrollbar-gutter:stable}
 .sh-report .sh-table{min-width:2020px!important;table-layout:auto}
 .sh-report .sh-table thead tr.sh-label-head th{position:sticky!important;top:0!important;z-index:30;background:#eaf2fc!important;box-shadow:0 1px 0 #d7e2ef}
 .sh-report .sh-table thead tr.sh-search-head th{position:sticky!important;top:var(--sh-head-height,54px)!important;z-index:29;background:#f7faff!important;box-shadow:0 2px 0 #cadcf4}
@@ -438,20 +431,228 @@
 @media(max-width:960px){.sh-report .sh-finance-overview{grid-template-columns:1fr}}
 @media(max-width:600px){.sh-report .sh-finance-overview{margin:6px 5px 10px}.sh-report .sh-finance-group{padding:8px}}
 
+
+/* Search-first UX: keep per-column filters visible, collapse advanced filters. */
+.sh-report .sh-advanced-filters {margin:0 0 9px}
+.sh-report .sh-advanced-filters > summary {display:inline-flex;align-items:center;gap:9px;cursor:pointer;list-style:none;background:#fff;color:#25528c;border:1px solid #dce7f4;border-radius:10px;padding:9px 13px;font-size:12px;font-weight:800}
+.sh-report .sh-advanced-filters > summary::-webkit-details-marker {display:none}
+.sh-report .sh-advanced-filters > summary:before {content:'⚙';font-size:16px}
+.sh-report .sh-advanced-filters[open] > summary {background:#ebf3ff;border-color:#a9c8f3}
+.sh-report .sh-advanced-filters .sh-filters {margin-top:9px}
+.sh-report .sh-active-filters {display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 12px;min-height:26px}
+.sh-report .sh-period-chip,.sh-report .sh-filter-chip {display:inline-flex;gap:6px;align-items:center;background:#eaf2ff;color:#24518e;border:1px solid #ccdff7;border-radius:18px;padding:5px 10px;font-size:11px;font-weight:700;line-height:1.5}
+.sh-report .sh-filter-chip {cursor:pointer;background:#fff}
+.sh-report .sh-filter-chip:hover {background:#eef5ff}
+.sh-report .sh-filter-chip .sh-chip-remove {font-size:14px;color:#a33a3a}
+.sh-report .sh-state-message {display:flex;align-items:center;gap:8px;margin:8px 0;padding:10px 13px;border-radius:9px;background:#f0f6ff;border:1px solid #d9e6f8;color:#2c4a6f;font-size:12px}
+.sh-report .sh-state-message--error {background:#fff0ef;border-color:#f1cecc;color:#a23531}
+.sh-report #sh-fetching[hidden] {display:none!important}
+.sh-report .sh-top-detail {line-height:1.8}
+.sh-report .sh-table thead .sh-col-search:not(:placeholder-shown) {border-color:#8fb9f3;background:#f4f9ff}
+
+/* The disclosure must read as an actual interactive expandable button. */
+.sh-report .sh-advanced-filters>summary{display:flex!important;align-items:center;gap:10px;max-width:100%;width:fit-content;padding:11px 15px!important;background:#eaf2ff!important;border:1px solid #91b5e8!important;border-radius:11px!important;box-shadow:0 4px 12px rgba(37,99,235,.12)!important;color:#1e518f!important;cursor:pointer;transition:background .16s}
+.sh-report .sh-advanced-filters>summary:hover,.sh-report .sh-advanced-filters>summary:focus-visible{background:#dceaff!important;outline:2px solid #95bdf7;outline-offset:2px}
+.sh-report .sh-advanced-hint{font-size:10px;font-weight:650;color:#5b799c}
+.sh-report .sh-advanced-arrow{display:inline-block;flex:0 0 auto;width:10px;height:10px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .18s}
+.sh-report .sh-hint-close{display:none}
+.sh-report .sh-advanced-filters[open] .sh-advanced-arrow{transform:rotate(225deg)}
+.sh-report .sh-advanced-filters[open] .sh-hint-open{display:none}
+.sh-report .sh-advanced-filters[open] .sh-hint-close{display:inline}
+/* Initial page loading is separate from per-column AJAX search. */
+#sh-initial-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(247,250,255,.97);direction:rtl}
+#sh-initial-loading[hidden]{display:none!important}
+#sh-initial-loading .sh-initial-card{display:flex;flex-direction:column;align-items:center;gap:16px;padding:32px 44px;border:1px solid #dce7f7;border-radius:16px;background:#fff;box-shadow:0 12px 38px rgba(28,64,117,.1);color:#23476f;font-size:14px;font-weight:750}
+#sh-initial-loading .sh-initial-spinner{display:block;width:40px;height:40px;border:4px solid #dceafd;border-top-color:#2463eb;border-radius:50%;animation:sh-spin .75s linear infinite}
+@media(prefers-reduced-motion:reduce){#sh-initial-loading .sh-initial-spinner{animation:none;border-top-color:#2463eb}}
+/* Keep the progress indicator close to the active column, including during debounce. */
+.sh-report #sh-fetching{gap:9px}
+.sh-report .sh-spinner{display:inline-block;flex:0 0 auto;width:16px;height:16px;border:2px solid #bfd4f3;border-top-color:#2563eb;border-radius:50%;animation:sh-spin .7s linear infinite}
+/* Column loading indicator is a sibling of the search input, not an overlay on its native clear button. */
+@keyframes sh-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.sh-report .sh-spinner,.sh-report .sh-col-loader{animation:none;border-top-color:#20519f}}
+.sh-report #sh-query-status[hidden],.sh-report #sh-truncated-note[hidden]{display:none!important}
+.sh-report .sh-state-message--error{color:#b53a30;background:#fff1f0}
+@media(max-width:680px){.sh-report .sh-advanced-hint{display:none!important}}
+
+/* Unified date and advanced filters */
+.sh-report .sh-compact-form{grid-template-columns:repeat(12,minmax(0,1fr));gap:10px}
+.sh-report .sh-compact-form>.sh-mini-field{grid-row:auto;min-width:0}
+.sh-report .sh-compact-form>.sh-mini-field--customer{grid-column:span 3}
+.sh-report .sh-compact-form>.sh-mini-field--item{grid-column:span 2}
+.sh-report .sh-compact-form>.sh-mini-field--part{grid-column:span 3}
+.sh-report .sh-compact-form>.sh-mini-field--group{grid-column:span 2}
+.sh-report .sh-compact-form>.sh-mini-field--year{grid-column:span 2}
+.sh-report .sh-compact-form>.sh-mini-field--type{grid-column:span 5;grid-row:auto}
+.sh-report .sh-compact-form>.sh-mini-field--date{grid-column:span 2}
+.sh-report .sh-compact-form>.sh-filter-actions{grid-column:span 3;grid-row:auto;justify-self:end;align-self:end}
+.sh-report .sh-compact-form .sh-date-control .sh-input{width:100%;min-width:0;padding-left:35px}
+.sh-report .sh-compact-form>.sh-date-message,.sh-report .sh-compact-form>.sh-date-note{grid-column:1/-1}
+.sh-report .sh-compact-form>.sh-date-message:empty{display:none}
+.sh-report .sh-filter-actions .sh-button{height:33px;white-space:nowrap}
+.sh-jalali-popover .sh-cal-pickers{display:flex;align-items:center;gap:5px}
+.sh-jalali-popover .sh-cal-title{border:1px solid transparent;border-radius:7px;padding:5px 8px;background:transparent;color:#234d80;font-weight:800;font-size:13px;cursor:pointer}
+.sh-jalali-popover .sh-cal-title:hover,.sh-jalali-popover .sh-cal-title:focus-visible{border-color:#bcd4f4;background:#edf4ff}
+.sh-jalali-popover .sh-cal-choice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-height:270px;overflow-y:auto}
+.sh-jalali-popover .sh-cal-choice-grid.is-years{grid-template-columns:repeat(4,minmax(0,1fr))}
+.sh-jalali-popover .sh-cal-choice{border:1px solid #e0e8f3;border-radius:7px;background:#fff;min-height:38px;padding:6px 3px;color:#315477;cursor:pointer;font-size:12px}
+.sh-jalali-popover .sh-cal-choice:hover{background:#e9f2ff}
+.sh-jalali-popover .sh-cal-choice.is-selected{background:#2563eb;color:white;border-color:#2563eb}
+.sh-jalali-popover .sh-cal-year-range{font-weight:800;font-size:12px;color:#2d4f75}
+.sh-jalali-popover .sh-cal-nav:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:1100px){
+.sh-report .sh-compact-form{grid-template-columns:repeat(6,minmax(0,1fr))}
+.sh-report .sh-compact-form>.sh-mini-field--customer,.sh-report .sh-compact-form>.sh-mini-field--part{grid-column:span 3}
+.sh-report .sh-compact-form>.sh-mini-field--item,.sh-report .sh-compact-form>.sh-mini-field--group,.sh-report .sh-compact-form>.sh-mini-field--year{grid-column:span 2}
+.sh-report .sh-compact-form>.sh-mini-field--type{grid-column:span 6}
+.sh-report .sh-compact-form>.sh-mini-field--date{grid-column:span 2}
+.sh-report .sh-compact-form>.sh-filter-actions{grid-column:span 2}
+}
+@media(max-width:650px){
+.sh-report .sh-compact-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+.sh-report .sh-compact-form>.sh-mini-field{grid-column:span 2}
+.sh-report .sh-compact-form>.sh-mini-field--date{grid-column:span 1}
+.sh-report .sh-compact-form>.sh-filter-actions{grid-column:span 2;justify-self:stretch}
+.sh-report .sh-compact-form>.sh-filter-actions .sh-button{width:100%}
+.sh-report .sh-document-select{flex-wrap:wrap}
+}
+@media(max-width:380px){.sh-report .sh-compact-form>.sh-mini-field--date{grid-column:span 2}}
+
+/* Sales History filter form: grouped, readable and compact in RTL. */
+.sh-report .sh-advanced-filters .sh-filters{
+  margin-top:10px;border:1px solid #d2e2f4!important;border-radius:15px!important;
+  background:#f7faff!important;overflow:visible!important;
+  box-shadow:0 10px 28px rgba(35,72,124,.08)!important
+}
+.sh-report .sh-filters-toolbar{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  gap:12px;padding:15px 18px;background:#edf4ff;border-bottom:1px solid #dbe7f6;
+  border-radius:14px 14px 0 0
+}
+.sh-report .sh-filters-intro{display:flex;align-items:center;gap:11px;min-width:0;flex:1 1 290px}
+.sh-report .sh-filters-icon{
+  display:flex;align-items:center;justify-content:center;flex:0 0 38px;width:38px;height:38px;
+  font-size:28px;line-height:1;border-radius:10px;background:#fff;color:#2b60a5;border:1px solid #c9dbf4
+}
+.sh-report .sh-filters-intro h2{font-size:14px;line-height:1.5;font-weight:850;color:#214b81;margin:0 0 3px}
+.sh-report .sh-filters-intro p{font-size:11px;line-height:1.8;color:#536f91;margin:0}
+.sh-report .sh-filters-toolbar .sh-filters-reset{
+  min-height:35px;padding:7px 12px;border:1px solid #cbd8e9;color:#516887;
+  background:#fff;font-size:11px;flex-shrink:0;white-space:nowrap
+}
+.sh-report .sh-filters-toolbar .sh-filters-reset:hover{background:#fff0ef;color:#ab3939;border-color:#eab9b5}
+.sh-report .sh-compact-form{padding:13px 15px 16px;gap:9px;align-items:stretch}
+.sh-report .sh-compact-form>.sh-filter-group-title{
+  grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:3px 3px 2px;border:0;color:#2a527f;flex-wrap:wrap
+}
+.sh-report .sh-filter-group-title>span{font-size:12px;font-weight:850;display:inline-flex;align-items:center;gap:8px}
+.sh-report .sh-filter-group-title>span::before{content:'';display:inline-block;width:4px;height:15px;border-radius:3px;background:#447ee3}
+.sh-report .sh-filter-group-title small{font-size:10px;color:#7a8da6;font-weight:600}
+.sh-report .sh-filter-group-title--secondary{border-top:1px solid #dce6f3!important;margin-top:5px;padding-top:12px!important}
+.sh-report .sh-compact-form>.sh-mini-field{
+  background:#fff;border:1px solid #e0e8f4;border-radius:10px;padding:9px 10px;
+  gap:6px;min-height:79px;transition:border-color .15s,box-shadow .15s;
+}
+.sh-report .sh-compact-form>.sh-mini-field:focus-within{
+  border-color:#98baf0;box-shadow:0 0 0 2px rgba(76,126,215,.10)
+}
+.sh-report .sh-compact-form>.sh-mini-field label,
+.sh-report .sh-compact-form>.sh-mini-field legend{color:#3d5879;font-size:11.5px;font-weight:800;line-height:1.5;margin:0}
+.sh-report .sh-compact-form>.sh-mini-field--type{min-height:79px}
+.sh-report .sh-compact-form .sh-input,.sh-report .sh-compact-form .sh-select{
+  border-color:#d8e2ef;background:#fff;min-width:0;height:35px;font-size:12px
+}
+.sh-report .sh-compact-form .sh-radio span{min-height:34px}
+.sh-report .sh-compact-form>.sh-date-message{border-radius:8px}
+.sh-jalali-popover .sh-cal-pickers{flex:1;min-width:0;justify-content:center;flex-wrap:nowrap}
+.sh-jalali-popover .sh-cal-header .sh-cal-title{
+  padding:7px 10px;border-radius:8px;border:1px solid #dfebf9;
+  background:#f8fbff;white-space:nowrap
+}
+.sh-jalali-popover .sh-cal-header .sh-cal-title.is-active{
+  background:#deebff;color:#174e99;border-color:#8eb5ed;box-shadow:0 0 0 2px rgba(64,123,217,.1)
+}
+.sh-jalali-popover .sh-cal-view-label{font-size:11px;color:#57749a;font-weight:700;text-align:center;margin:3px 0 9px;line-height:1.8}
+.sh-jalali-popover .sh-cal-view-label small{font-size:10px;color:#788ba7}
+@media(max-width:650px){
+  .sh-report .sh-filters-toolbar{padding:12px}
+  .sh-report .sh-compact-form{padding:12px;gap:8px}
+  .sh-report .sh-filter-group-title small{width:100%;font-size:10px}
+  .sh-report .sh-filters-toolbar .sh-filters-reset{width:100%}
+  .sh-report .sh-compact-form>.sh-mini-field{min-height:70px}
+}
+
+/* A dedicated side slot keeps the native search-clear × and loading spinner apart. */
+.sh-report .sh-table thead tr.sh-search-head th .sh-col-filter-shell{
+  display:flex;align-items:center;gap:4px;width:100%;min-width:0;direction:rtl
+}
+.sh-report .sh-table thead tr.sh-search-head th .sh-col-filter-shell .sh-col-search{
+  flex:1 1 auto;width:100%!important;min-width:0!important;padding-inline:5px!important;
+}
+.sh-report .sh-table thead tr.sh-search-head th .sh-col-filter-shell .sh-col-loader{
+  display:none;flex:0 0 13px;width:13px;height:13px;
+  border:2px solid #bfd4f3;border-top-color:#2563eb;border-radius:50%;
+  animation:sh-spin .7s linear infinite;pointer-events:none
+}
+.sh-report .sh-table thead tr.sh-search-head th.sh-searching-column .sh-col-filter-shell .sh-col-loader{
+  display:block
+}
+@media(prefers-reduced-motion:reduce){
+.sh-report .sh-table thead tr.sh-search-head th .sh-col-filter-shell .sh-col-loader{animation:none}
+}
+
+/* Fast optional 30-day range: compact, clearly separate from the default chip. */
+.sh-report .sh-active-filters .sh-period-extend {
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid #b5ccea;background:#fff;color:#2c588f;
+  border-radius:18px;padding:5px 11px;min-height:29px;
+  font-size:11px;font-weight:750;cursor:pointer;line-height:1.5
+}
+.sh-report .sh-active-filters .sh-period-extend:hover,
+.sh-report .sh-active-filters .sh-period-extend:focus-visible {
+  color:#174785;background:#eaf2ff;border-color:#78a5e0;outline-offset:2px
+}
+
+/* Lazy rows: compact initial layout and an explicit load-more fallback. */
+.sh-report .sh-top{margin:0 0 4px!important;padding:0!important}
+.sh-report .sh-top-detail{margin:0;font-size:11px}
+.sh-report .sh-load-more{
+  background:#edf4ff;border:1px solid #a9c8f3;border-radius:9px;
+  color:#26599c;font-size:11px;font-weight:800;
+  padding:6px 13px;min-height:30px;cursor:pointer
+}
+.sh-report .sh-load-more:hover{background:#dceaff}
+.sh-report .sh-load-more[hidden]{display:none!important}
 </style>
 {% endblock extra_css %}
 
 {% block content %}
+<div id="sh-initial-loading" role="status" aria-live="polite" aria-label="در حال بارگذاری مرور فروش">
+  <div class="sh-initial-card"><span class="sh-initial-spinner" aria-hidden="true"></span><span>در حال بارگذاری اطلاعات مرور فروش…</span></div>
+</div>
 <div class="main-content sh-main-shell">
   <div class="page-content sh-main-page">
     <div class="container-fluid sh-report" id="sales-history-report">
       <header class="sh-top">
-        <h1 class="sh-title">مرور فروش</h1>
-        <p class="sh-top-detail"> جست‌وجو و فیلتر در جدول</p>
+        <p class="sh-top-detail">با فیلترهای بالای هر ستون، سوابق را در پرتال و سپیدار جست‌وجو کنید؛ جست‌وجو به نتایج دریافت‌شده محدود نیست.</p>
       </header>
 
-      <section class="sh-panel sh-filters" aria-label="فیلترهای اولیه دریافت اطلاعات">
+      <details class="sh-advanced-filters" {% if advanced_active %}open{% endif %}>
+        <summary><strong>فیلترهای پیشرفته</strong><span class="sh-advanced-hint sh-hint-open">برای مشاهده کلیک کنید</span><span class="sh-advanced-hint sh-hint-close">برای بستن کلیک کنید</span><span class="sh-advanced-arrow" aria-hidden="true"></span></summary>
+      <section class="sh-panel sh-filters" aria-label="فیلترهای پیشرفته دریافت اطلاعات">
+        <div class="sh-filters-toolbar">
+          <div class="sh-filters-intro">
+            <span class="sh-filters-icon" aria-hidden="true">⌕</span>
+            <div>
+              <h2>جست‌وجوی دقیق در سوابق فروش</h2>
+              <p>فیلترهای موردنظر را انتخاب کنید؛ نتایج به‌صورت خودکار و بدون بارگذاری دوباره صفحه نمایش داده می‌شوند.</p>
+            </div>
+          </div>
+          <button class="sh-button sh-filters-reset" id="sh-clear-all" type="button" title="پاک‌کردن تمام فیلترهای پیشرفته، تاریخ و ستون‌ها">✕ <span>پاک‌کردن تمام فیلترها</span></button>
+        </div>
         <form class="sh-compact-form" method="get" action="">
+          <div class="sh-filter-group-title"><span>مشخصات مشتری و کالا</span><small>برای جست‌وجو می‌توانید یک یا چند فیلتر را هم‌زمان انتخاب کنید</small></div>
           <div class="sh-mini-field sh-mini-field--customer">
             <label for="sh-customer">مشتری یا کد مشتری</label>
             <input id="sh-customer" class="sh-input" name="customer_code" value="{{ customer_code|default:'' }}" placeholder="نام یا کد مشتری">
@@ -485,6 +686,7 @@
               <option value="3" {% if fisicalyearref == '3' %}selected{% endif %}>۱۳۹۵</option>
             </select>
           </div>
+          <div class="sh-filter-group-title sh-filter-group-title--secondary"><span>نوع سند و بازه زمانی</span><small>برای محدودکردن نتایج، نوع سند یا بازه شمسی را مشخص کنید</small></div>
           <fieldset class="sh-mini-field sh-mini-field--type">
             <legend>نوع سند</legend>
             <div class="sh-document-select" aria-label="نوع سند">
@@ -493,31 +695,39 @@
               <label class="sh-radio"><input type="radio" name="doc_type" value="quotation" {% if doc_type == 'quotation' %}checked{% endif %}><span>فقط پیش‌فاکتور</span></label>
             </div>
           </fieldset>
-          <div class="sh-filter-actions">
-            <button class="sh-button sh-button-primary" type="submit">اعمال</button>
-            <a class="sh-button" href="{{ request.path }}">پاک‌کردن</a>
+          <div class="sh-mini-field sh-mini-field--date">
+            <label for="sh-date-from">از تاریخ (شمسی)</label>
+            <div class="sh-date-control"><input type="text" dir="ltr" inputmode="numeric" maxlength="10" class="sh-input" id="sh-date-from" autocomplete="off" value="{{ date_from|default:'' }}" placeholder="۱۴۰۵/۰۱/۰۱" aria-describedby="sh-date-message" aria-haspopup="dialog"><button class="sh-date-trigger" type="button" data-target="sh-date-from" aria-label="باز کردن تقویم تاریخ شروع" title="انتخاب تاریخ شروع">▦</button></div>
           </div>
+          <div class="sh-mini-field sh-mini-field--date">
+            <label for="sh-date-to">تا تاریخ (شمسی)</label>
+            <div class="sh-date-control"><input type="text" dir="ltr" inputmode="numeric" maxlength="10" class="sh-input" id="sh-date-to" autocomplete="off" value="{{ date_to|default:'' }}" placeholder="۱۴۰۵/۱۲/۲۹" aria-describedby="sh-date-message" aria-haspopup="dialog"><button class="sh-date-trigger" type="button" data-target="sh-date-to" aria-label="باز کردن تقویم تاریخ پایان" title="انتخاب تاریخ پایان">▦</button></div>
+          </div>
+          <div class="sh-date-message" id="sh-date-message" role="status"></div>
 
         </form>
       </section>
+      </details>
+      {{ column_filters|json_script:"sh-server-filters" }}
+      {{ sales_page|json_script:"sh-initial-page" }}
+      <div class="sh-active-filters" role="group" aria-label="فیلترهای فعال">
+        {% if recent_default %}
+          <span class="sh-period-chip" title="در ورود اولیه یا پس از پاک‌سازی فیلترها؛ جست‌وجوی جدید می‌تواند تمام تاریخچه را بررسی کند">نمایش خودکار ۷ روز اخیر: {{ recent_from }} تا {{ recent_to }}</span>
+          <button class="sh-period-extend" type="button" data-period="30" data-date-from="{{ recent_30_from }}" data-date-to="{{ recent_to }}" title="نمایش ۳۰ روز اخیر با فیلتر تاریخ">نمایش ۳۰ روز اخیر</button>
+        {% endif %}
+        {% for chip in active_chips %}
+          <button class="sh-filter-chip" type="button" data-filter-key="{{ chip.key }}" title="حذف این فیلتر">
+            {{ chip.label }}: {{ chip.value }} <span class="sh-chip-remove" aria-hidden="true">×</span>
+          </button>
+        {% endfor %}
+        <span class="sh-state-message" id="sh-fetching" role="status" aria-live="polite" hidden><span class="sh-spinner" aria-hidden="true"></span><span>در حال جست‌وجو در سوابق فروش پرتال و سپیدار…</span></span>
+      </div>
+      {% if report_error %}<div class="sh-state-message sh-state-message--error" role="alert">{{ report_error }}</div>{% endif %}
+      <div class="sh-state-message" role="status" aria-live="polite" id="sh-query-status" {% if recent_default or report_error %}hidden{% endif %}>{{ row_count }} ردیف دریافت شد.</div>
 
+      <div class="sh-help" id="sh-truncated-note" {% if not truncated %}hidden{% endif %}>توجه: گزارش در هر منبع به ۳۰۰۰ ردیف محدود است؛ خلاصه مالی نیز بر همین مبنا محاسبه شده است.</div>
 
-      {% if truncated %}
-        <div class="sh-help">توجه: نتایج به سقف دریافت ۳۰۰۰ ردیف از هر منبع رسیده‌اند. جدول و جمع‌ها فقط داده‌های دریافت‌شده را پوشش می‌دهند؛ فیلتر بازه تاریخ پایین نیز روی همین ردیف‌ها اجرا می‌شود.</div>
-      {% endif %}
-
-      <section class="sh-panel" aria-labelledby="sh-table-heading">
-        <div class="sh-table-panel-heading">
-          <div><h2 id="sh-table-heading">جدول جزئیات فروش</h2><p>۶ ستون ثابت، سربرگ ثابت، جست‌وجوی ستونی و بارگذاری تدریجی</p></div>
-          <button class="sh-button" id="sh-clear-table" type="button">پاک‌کردن فیلترهای جدول</button>
-        </div>
-        <div class="sh-table-tools">
-          <div class="sh-field sh-date-field"><label for="sh-date-from">از تاریخ (شمسی)</label><div class="sh-date-control"><input type="text" dir="ltr" inputmode="numeric" maxlength="10" class="sh-input" id="sh-date-from" autocomplete="off" placeholder="۱۴۰۵/۰۱/۰۱" aria-describedby="sh-date-message" aria-haspopup="dialog"><button class="sh-date-trigger" type="button" data-target="sh-date-from" aria-label="باز کردن تقویم تاریخ شروع" title="انتخاب تاریخ شروع">▦</button></div></div>
-          <div class="sh-field sh-date-field"><label for="sh-date-to">تا تاریخ (شمسی)</label><div class="sh-date-control"><input type="text" dir="ltr" inputmode="numeric" maxlength="10" class="sh-input" id="sh-date-to" autocomplete="off" placeholder="۱۴۰۵/۱۲/۲۹" aria-describedby="sh-date-message" aria-haspopup="dialog"><button class="sh-date-trigger" type="button" data-target="sh-date-to" aria-label="باز کردن تقویم تاریخ پایان" title="انتخاب تاریخ پایان">▦</button></div></div>
-          <button class="sh-button mt-8" id="sh-clear-date" type="button">حذف بازه تاریخ</button>
-          <span class="sh-date-note">بازه تاریخ و جست‌وجو روی همه داده‌های دریافت‌شده اعمال می‌شود، نه فقط ردیف‌های نمایان.</span>
-        </div>
-        <div class="sh-date-message" id="sh-date-message" role="status"></div>
+      <section class="sh-panel" aria-label="جدول جزئیات فروش">
                 <!-- Sales History v10: figures in a compact strip, NOT within table headers. -->
         <div class="sh-finance-overview" aria-label="خلاصه مالی نتایج فیلترشده">
           <div class="sh-finance-group">
@@ -556,50 +766,10 @@
             </tr>
           </thead>
           <tbody>
-          {% for item in list %}
-            <tr data-source="{{ item.source|default:'' }}"
-                data-doc-number="{{ item.Number|default_if_none:'' }}"
-                data-doc-year="{{ item.year_title|default_if_none:'' }}"
-                data-customer-code="{{ item.customer_code|default_if_none:'' }}"
-                data-item-code="{{ item.item_code|default_if_none:'' }}"
-                data-purchase-group="{{ item.purchase_group|default_if_none:'' }}"
-                data-sales-group="{{ item.sales_group|default_if_none:'' }}"
-                data-doc-type="{{ item.doc_type|default_if_none:'' }}"
-                data-row-date="{% if item.Date %}{{ item.Date|to_jalali:'%Y/%m/%d' }}{% endif %}"
-                data-row-fee="{{ item.Fee|default_if_none:0|unlocalize }}"
-                data-currency="{{ item.currency|default_if_none:'' }}"
-                data-row-price="{{ item.Price|default_if_none:0|unlocalize }}"
-                data-row-qty="{{ item.Quantity|default_if_none:0|unlocalize }}">
-              <td data-search="{{ item.source }}" data-sh-col="0">
-                {% if item.source == 'sepidar' %}<span class="sh-pill sh-pill--sepidar">سپیدار</span>{% else %}<span class="sh-pill sh-pill--portal">پرتال</span>{% endif %}
-              </td>
-              <td class="sh-number" data-sh-col="1" data-search="{{ item.Number|default_if_none:'' }}" data-order="{{ item.Number|default_if_none:'' }}">{{ item.Number|default_if_none:'—' }}</td>
-              <td title="{{ item.customer_title|default_if_none:'' }}" data-sh-col="2">{{ item.customer_title|default_if_none:'—' }}</td>
-              <td class="sh-number" data-sh-col="3" data-search="{{ item.customer_code|default_if_none:'' }}" data-order="{{ item.customer_code|default_if_none:'' }}">{{ item.customer_code|default_if_none:'—' }}</td>
-              <td class="sh-number" data-sh-col="4" data-search="{{ item.item_code|default_if_none:'' }}" data-order="{{ item.item_code|default_if_none:'' }}">{{ item.item_code|default_if_none:'—' }}</td>
-              <td title="{{ item.item_title|default_if_none:'' }}" data-sh-col="5">{{ item.item_title|default_if_none:'—' }}</td>
-              <td data-search="{{ item.doc_type }}">
-                {% if item.doc_type == 'invoice' %}<span class="sh-pill sh-pill--invoice">فاکتور</span>
-                {% elif item.doc_type == 'quotation' %}<span class="sh-pill sh-pill--quotation">پیش‌فاکتور</span>
-                {% elif item.doc_type == 'returned_invoice' %}<span class="sh-pill sh-pill--return">برگشت از فروش</span>
-                {% else %}{{ item.doc_type }}{% endif %}
-              </td>
-              <td class="sh-number" data-order="{{ item.Date|date:'Y-m-d' }}">{% if item.Date %}{{ item.Date|to_jalali:'%Y/%m/%d' }}{% else %}—{% endif %}</td>
-              <td>{{ item.sales_user_group|default_if_none:'—' }}</td>
-              <td data-search="{{ item.purchase_group|default_if_none:'' }}" data-order="{{ item.purchase_group|default_if_none:'' }}">{{ item.purchase_group|default_if_none:'—' }}</td>
-              <td data-search="{{ item.sales_group|default_if_none:'' }}" data-order="{{ item.sales_group|default_if_none:'' }}">{{ item.sales_group|default_if_none:'—' }}</td>
-              <td>{{ item.sales_type|default_if_none:'—' }}</td>
-              <td class="sh-number" data-search="{{ item.Quantity|default_if_none:0|unlocalize }}">{{ item.Quantity|default_if_none:0|floatformat:'-6'|intcomma }}</td>
-              <td class="sh-number sh-amount" data-search="{{ item.Fee|default_if_none:0|unlocalize }}">{{ item.Fee|default_if_none:0|floatformat:'-6'|intcomma }}</td>
-              <td class="sh-number sh-amount" data-search="{{ item.fee_after_discount|default_if_none:0|unlocalize }}">{{ item.fee_after_discount|default_if_none:0|floatformat:'-6'|intcomma }}</td>
-              <td class="sh-number sh-price" data-search="{{ item.Price|default_if_none:0|unlocalize }}">{{ item.Price|default_if_none:0|floatformat:'-6'|intcomma }}</td>
-              <td>{{ item.currency|default_if_none:'—' }}</td>
-              <td class="sh-number" data-search="{{ item.Rate|default_if_none:''|unlocalize }}">{% if item.Rate is not None %}{{ item.Rate|floatformat:'-4'|intcomma }}{% else %}<span class="sh-none">—</span>{% endif %}</td>
-            </tr>
-          {% endfor %}
-          </tbody>
+{% include 'sepidar/partial/sales_history_rows.html' %}
+</tbody>
         </table>
-        <p class="sh-caption" id="sh-table-caption"></p>
+        <p class="sh-caption" id="sh-table-caption">بارگذاری نتایج با اسکرول انجام می‌شود. خروجی کپی، Excel و چاپ فقط ردیف‌های بارگذاری‌شده را شامل می‌شوند.</p>
       </section>
     </div>
   </div>
@@ -607,6 +777,23 @@
 {% endblock content %}
 
 {% block extra_js %}
+<script>
+(function(){
+  'use strict';
+  var overlay=document.getElementById('sh-initial-loading');
+  function finishInitialLoading(){
+    // Wait for the browser's full load (images, scripts and styles) then paint
+    // the initialized report before removing the page-wide progress indicator.
+    window.requestAnimationFrame(function(){
+      window.requestAnimationFrame(function(){
+        if(overlay)overlay.hidden=true;
+      });
+    });
+  }
+  if(document.readyState==='complete')finishInitialLoading();
+  else window.addEventListener('load',finishInitialLoading,{once:true});
+})();
+</script>
 <script src="{% static 'libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
 <script src="{% static 'libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
@@ -716,7 +903,7 @@
     cal.setAttribute('aria-label','انتخاب تاریخ شمسی');
     cal.hidden=true;
     document.body.appendChild(cal);
-    var openInput=null, shownYear=null, shownMonth=null;
+    var openInput=null, shownYear=null, shownMonth=null, calendarMode='days', yearPageStart=1300;
     function repositionCalendar() {
       if(!openInput||cal.hidden)return;
       var box=openInput.getBoundingClientRect();
@@ -727,24 +914,54 @@
       var top=bottomSpace>=height+8?box.bottom+5:Math.max(10,box.top-height-6);
       cal.style.left=Math.round(left)+'px';cal.style.top=Math.round(top)+'px';
     }
+
+
+    function calendarHeaderHTML() {
+      var before,after;
+      if(calendarMode==='years'){
+        before='<button type="button" class="sh-cal-nav" data-year-shift="-12" aria-label="۱۲ سال قبل"'+(yearPageStart<=1300?' disabled':'')+'>‹</button>';
+        after='<button type="button" class="sh-cal-nav" data-year-shift="12" aria-label="۱۲ سال بعد"'+(yearPageStart+12>1600?' disabled':'')+'>›</button>';
+      }else if(calendarMode==='months'){
+        before='<button type="button" class="sh-cal-nav" data-year-nav="-1" aria-label="سال قبل"'+(shownYear<=1300?' disabled':'')+'>‹</button>';
+        after='<button type="button" class="sh-cal-nav" data-year-nav="1" aria-label="سال بعد"'+(shownYear>=1600?' disabled':'')+'>›</button>';
+      }else{
+        before='<button type="button" class="sh-cal-nav" data-nav="-1" aria-label="ماه قبل">‹</button>';
+        after='<button type="button" class="sh-cal-nav" data-nav="1" aria-label="ماه بعد">›</button>';
+      }
+      return '<div class="sh-cal-header">'+before+
+        '<div class="sh-cal-pickers">'+
+        '<button type="button" class="sh-cal-title'+(calendarMode==='months'?' is-active':'')+'" data-mode="months" aria-expanded="'+(calendarMode==='months')+'" aria-label="انتخاب ماه: '+months[shownMonth-1]+'">'+months[shownMonth-1]+' <span aria-hidden="true">▾</span></button>'+
+        '<button type="button" class="sh-cal-title'+(calendarMode==='years'?' is-active':'')+'" data-mode="years" aria-expanded="'+(calendarMode==='years')+'" aria-label="انتخاب سال: '+shownYear+'">'+shownYear+' <span aria-hidden="true">▾</span></button>'+
+        '</div>'+after+'</div>';
+    }
     function renderCalendar() {
-      var first=gregorianUTCForJalali(shownYear,shownMonth,1);
-      if(!first){cal.innerHTML='<p>امکان نمایش تقویم وجود ندارد.</p>';return;}
-      var firstCol=(first.getUTCDay()+1)%7;
-      var selected=jalaliKey(openInput.value);
-      var now=persianParts(new Date(),persianLocal);
-      var today=jDayNum(now.year,now.month,now.day);
-      var html='<div class="sh-cal-header">'+
-        '<button type="button" class="sh-cal-nav" data-nav="-1" aria-label="ماه قبل">›</button>'+
-        '<span class="sh-cal-title">'+months[shownMonth-1]+' '+shownYear+'</span>'+
-        '<button type="button" class="sh-cal-nav" data-nav="1" aria-label="ماه بعد">‹</button></div>'+
-        '<div class="sh-cal-grid">';
-      weekNames.forEach(function(w){html+='<span class="sh-cal-weekday">'+w+'</span>';});
-      for(var i=0;i<firstCol;i++)html+='<span class="sh-cal-empty"></span>';
-      var count=daysInJalaliMonth(shownYear,shownMonth);
-      for(var d=1;d<=count;d++){
-        var date=jDayNum(shownYear,shownMonth,d);
-        html+='<button type="button" class="sh-cal-day'+(date===today?' is-today':'')+(date===selected?' is-selected':'')+'" data-day="'+d+'" aria-label="'+isoJalali(shownYear,shownMonth,d)+'">'+d+'</button>';
+      var html=calendarHeaderHTML();
+      if(calendarMode==='days'){
+        var first=gregorianUTCForJalali(shownYear,shownMonth,1);
+        if(!first){cal.innerHTML='<p>امکان نمایش تقویم وجود ندارد.</p>';return;}
+        var firstCol=(first.getUTCDay()+1)%7;
+        var selected=jalaliKey(openInput.value);
+        var now=persianParts(new Date(),persianLocal);
+        var today=jDayNum(now.year,now.month,now.day);
+        html+='<div class="sh-cal-grid">';
+        weekNames.forEach(function(w){html+='<span class="sh-cal-weekday">'+w+'</span>';});
+        for(var i=0;i<firstCol;i++)html+='<span class="sh-cal-empty"></span>';
+        var count=daysInJalaliMonth(shownYear,shownMonth);
+        for(var d=1;d<=count;d++){
+          var key=jDayNum(shownYear,shownMonth,d);
+          html+='<button type="button" class="sh-cal-day'+(key===today?' is-today':'')+(key===selected?' is-selected':'')+'" data-day="'+d+'" aria-label="'+isoJalali(shownYear,shownMonth,d)+'">'+d+'</button>';
+        }
+      }else if(calendarMode==='months'){
+        html+='<p class="sh-cal-view-label">ماه موردنظر را انتخاب کنید</p><div class="sh-cal-choice-grid">';
+        months.forEach(function(m,i){
+          html+='<button type="button" class="sh-cal-choice'+(i+1===shownMonth?' is-selected':'')+'" data-select-month="'+(i+1)+'" aria-pressed="'+(i+1===shownMonth)+'">'+m+'</button>';
+        });
+      }else{
+        html+='<p class="sh-cal-view-label">سال موردنظر را انتخاب کنید <small>('+yearPageStart+' تا '+Math.min(1600,yearPageStart+11)+')</small></p>'+
+          '<div class="sh-cal-choice-grid is-years">';
+        for(var y=yearPageStart;y<=Math.min(1600,yearPageStart+11);y++){
+          html+='<button type="button" class="sh-cal-choice'+(y===shownYear?' is-selected':'')+'" data-select-year="'+y+'" aria-pressed="'+(y===shownYear)+'">'+y+'</button>';
+        }
       }
       html+='</div><div class="sh-cal-actions"><button type="button" data-action="today">امروز</button><button type="button" data-action="clear">پاک کردن</button><button type="button" data-action="close">بستن</button></div>';
       cal.innerHTML=html;
@@ -760,6 +977,8 @@
       if(Number.isFinite(parsed)){
         shownYear=Math.floor(parsed/10000);shownMonth=Math.floor((parsed%10000)/100);
       }else {shownYear=p.year;shownMonth=p.month;}
+      calendarMode='days';
+      yearPageStart=1300+12*Math.floor((shownYear-1300)/12);
       cal.hidden=false;
       renderCalendar();
     }
@@ -771,15 +990,37 @@
     }
     $('#sales-history-report .sh-date-trigger').on('click',function(ev){ev.preventDefault();showCalendar(document.getElementById(this.getAttribute('data-target')));});
     $(fromInput).add(toInput).on('click',function(){if(cal.hidden||openInput!==this)showCalendar(this);});
+
     cal.addEventListener('click',function(ev){
       var btn=ev.target.closest('button');if(!btn)return;
-      if(btn.hasAttribute('data-nav')){
+      if(btn.hasAttribute('data-mode')){
+        var targetMode=btn.getAttribute('data-mode');
+        calendarMode=calendarMode===targetMode?'days':targetMode;
+        if(calendarMode==='years')yearPageStart=1300+12*Math.floor((shownYear-1300)/12);
+        renderCalendar();
+      }else if(btn.hasAttribute('data-year-nav')){
+        shownYear=Math.max(1300,Math.min(1600,shownYear+Number(btn.getAttribute('data-year-nav'))));
+        renderCalendar();
+      }else if(btn.hasAttribute('data-year-shift')){
+        yearPageStart=Math.max(1300,Math.min(1600,yearPageStart+Number(btn.getAttribute('data-year-shift'))));
+        renderCalendar();
+      }else if(btn.hasAttribute('data-select-year')){
+        shownYear=Number(btn.getAttribute('data-select-year'));
+        calendarMode='days';
+        renderCalendar();
+      }else if(btn.hasAttribute('data-select-month')){
+        shownMonth=Number(btn.getAttribute('data-select-month'));
+        calendarMode='days';
+        renderCalendar();
+      }else if(btn.hasAttribute('data-nav')){
         shownMonth+=Number(btn.getAttribute('data-nav'));
         if(shownMonth<1){shownMonth=12;shownYear--;}else if(shownMonth>12){shownMonth=1;shownYear++;}
-        if(shownYear<1300)shownYear=1300;if(shownYear>1600)shownYear=1600;
+        if(shownYear<1300){shownYear=1300;shownMonth=1;}
+        if(shownYear>1600){shownYear=1600;shownMonth=12;}
         renderCalendar();
-      }else if(btn.hasAttribute('data-day'))setCalendarDate(isoJalali(shownYear,shownMonth,Number(btn.getAttribute('data-day'))));
-      else if(btn.getAttribute('data-action')==='today'){
+      }else if(btn.hasAttribute('data-day')){
+        setCalendarDate(isoJalali(shownYear,shownMonth,Number(btn.getAttribute('data-day'))));
+      }else if(btn.getAttribute('data-action')==='today'){
         var p=persianParts(new Date(),persianLocal);setCalendarDate(isoJalali(p.year,p.month,p.day));
       }else if(btn.getAttribute('data-action')==='clear')setCalendarDate('');
       else if(btn.getAttribute('data-action')==='close')hideCalendar();
@@ -799,17 +1040,23 @@
     var table = $.fn.dataTable.isDataTable(tableEl) ? $(tableEl).DataTable() : $(tableEl).DataTable({
       // DataTable فقط یک بار روی این جدول initialize می‌شود.
       orderCellsTop: true,
-      order: [[7, 'desc']],
-      pageLength: 60,
-      lengthChange: false, // نمایش تدریجی ۶۰ ردیف؛ همه نتایج برای جست‌وجو و خروجی‌گیری حفظ می‌شوند.
+      // SQL returns the globally sorted order. Browser-side sorting or
+      // filtering would apply only to loaded pages and would be misleading.
+      ordering: false,
+      order: [],
+      searching: false,
+      paging: false,
+      info: false,
+      pageLength: -1,
+      lengthChange: false,
       autoWidth: false,
       responsive: false,
       searchDelay: 150,
-      dom: "<'sh-dt-header'<'sh-dt-header-middle'f><'sh-dt-header-right'B>><'sh-table-scroll't><'sh-dt-footer'<'sh-dt-info'i>>",
+      dom: "<'sh-dt-header'<'sh-dt-header-middle'><'sh-dt-header-right'B>><'sh-table-scroll't><'sh-dt-footer'<'sh-dt-info'i>>",
       buttons: [
-        {extend:'copyHtml5',text:'کپی',exportOptions:{columns:':visible',modifier:{search:'applied',order:'applied',page:'all'},format:{header:cleanExportHeader}}},
-        {extend:'excelHtml5',text:'Excel',title:'sales_history',exportOptions:{columns:':visible',modifier:{search:'applied',order:'applied',page:'all'},format:{header:cleanExportHeader}}},
-        {extend:'print',text:'چاپ',title:'گزارش مرور فروش',exportOptions:{columns:':visible',modifier:{search:'applied',order:'applied',page:'all'},format:{header:cleanExportHeader}}},
+        {extend:'copyHtml5',text:'کپی (بارگذاری‌شده)',exportOptions:{columns:':visible',modifier:{search:'applied',order:'applied',page:'all'},format:{header:cleanExportHeader}}},
+        {extend:'excelHtml5',text:'Excel (بارگذاری‌شده)',title:'sales_history',exportOptions:{columns:':visible',modifier:{search:'applied',order:'applied',page:'all'},format:{header:cleanExportHeader}}},
+        {extend:'print',text:'چاپ (بارگذاری‌شده)',title:'گزارش مرور فروش',exportOptions:{columns:':visible',modifier:{search:'applied',order:'applied',page:'all'},format:{header:cleanExportHeader}}},
         {text:'ستون‌ها',className:'buttons-colvis',action:function(e,dt,node){toggleColumnPanel(node)}}
       ],
       language: {
@@ -820,7 +1067,7 @@
         infoFiltered:'(از _MAX_ ردیف دریافت‌شده)',
         infoEmpty:'هیچ ردیفی برای نمایش وجود ندارد',
         zeroRecords:'هیچ ردیفی با فیلترهای فعلی مطابقت ندارد',
-        emptyTable:'برای نمایش سوابق، فیلترهای اولیه را در بالا اعمال کنید.',
+        emptyTable:{% if report_error %}'دریافت اطلاعات ناموفق بود؛ لطفاً دوباره تلاش کنید.'{% elif recent_default %}'در ۷ روز اخیر سند فروشی پیدا نشد؛ با فیلترهای ستونی یا پیشرفته، تاریخچه را جست‌وجو کنید.'{% else %}'موردی مطابق فیلترهای شما پیدا نشد؛ برای جست‌وجوی گسترده‌تر، فیلترها را پاک کنید.'{% endif %},
         paginate:{first:'اول',last:'آخر',next:'بعدی',previous:'قبلی'},
         processing:'در حال پردازش...'
       }
@@ -1028,79 +1275,393 @@
       el.setAttribute('aria-label',el.title);
     }
 
-    function updateSummary() {
-      var totals=new Map(), totalQty=0n, sepidarCount=0, portalCount=0;
-      var distinct={document:new Set(),customer:new Set(),item:new Set(),purchase:new Set(),sales:new Set()};
-      table.rows({search:'applied',page:'all'}).nodes().each(function (tr) {
-        var source=String(tr.getAttribute('data-source')||'').trim().toLowerCase();
-        if(source==='sepidar')sepidarCount++;
-        else if(source==='portal')portalCount++;
-        var docNumber=normalizedUnique(tr.getAttribute('data-doc-number'));
-        if(docNumber)distinct.document.add([source,normalizedUnique(tr.getAttribute('data-doc-type')),normalizedUnique(tr.getAttribute('data-doc-year')),docNumber].join('|'));
-        ['customer','item','purchase','sales'].forEach(function(name){
-          var attr={'customer':'data-customer-code','item':'data-item-code','purchase':'data-purchase-group','sales':'data-sales-group'}[name];
-          var value=normalizedUnique(tr.getAttribute(attr));
-          if(value)distinct[name].add(value);
+    // Financial results are calculated by Django over the filtered source
+    // snapshot, never by traversing currently loaded DataTables rows.
+    var currentSummary=null, summaryController=null, summarySequence=0;
+    function updateSummary(){
+      if(!currentSummary)return;
+      var totals=new Map();
+      (currentSummary.currencies||[]).forEach(function(b){
+        totals.set(b.key,{
+          key:b.key,label:b.label,
+          value:BigInt(b.value),weight:BigInt(b.weight),
+          feeWeighted:BigInt(b.feeWeighted)
         });
-        var qty=scaledDecimal(tr.getAttribute('data-row-qty'));
-        var price=scaledDecimal(tr.getAttribute('data-row-price'));
-        var fee=scaledDecimal(tr.getAttribute('data-row-fee'));
-        totalQty+=qty;
-        var currency=normalizeCurrency(tr.getAttribute('data-currency'));
-        var bucket=totals.get(currency.key)||{key:currency.key,label:currency.label,value:0n,feeSum:0n,count:0,weight:0n,feeWeighted:0n};
-        bucket.value+=price;
-        bucket.feeSum+=fee;bucket.count++;
-        bucket.weight+=absolute(qty);
-        bucket.feeWeighted+=fee*absolute(qty);
-        totals.set(currency.key,bucket);
       });
-      write('sh-stat-quantity',formatScaled(totalQty));
-      write('sh-header-quantity','جمع: '+formatScaled(totalQty));
-      write('sh-count-sepidar',sepidarCount.toLocaleString('fa-IR'));
-      write('sh-count-portal',portalCount.toLocaleString('fa-IR'));
-      Object.keys(distinct).forEach(function(key){write('sh-distinct-'+key,distinct[key].size.toLocaleString('fa-IR'));});
-      updateHeaderMoney('sh-top-fee',totals,'avg','میانگین موزون');
-      updateHeaderMoney('sh-top-amount',totals,'total','جمع');
-      // No separate financial summary above the table. All totals are in column headers.
-
+      write('sh-header-quantity','جمع: '+formatScaled(BigInt(currentSummary.quantity_scaled||'0')));
+      write('sh-stat-quantity',formatScaled(BigInt(currentSummary.quantity_scaled||'0')));
+      write('sh-count-sepidar',Number(currentSummary.sources.sepidar||0).toLocaleString('fa-IR'));
+      write('sh-count-portal',Number(currentSummary.sources.portal||0).toLocaleString('fa-IR'));
+      Object.keys(currentSummary.distinct||{}).forEach(function(key){
+        write('sh-distinct-'+key,Number(currentSummary.distinct[key]).toLocaleString('fa-IR'));
+      });
+      updateHeaderMoney('sh-top-fee',totals,'avg','میانگین موزون در بک‌اند');
+      updateHeaderMoney('sh-top-amount',totals,'total','جمع در بک‌اند');
+      updateScrollStatus();
+      if(currentSummary.truncated && truncation)truncation.hidden=false;
+      requestAnimationFrame(refreshSticky);
     }
-
-    // جست‌وجو بالای تک‌تک ستون‌ها. ورودی‌ها نباید باعث مرتب‌سازی هدر شوند.
-    $('#sales-history-report thead .sh-col-search').on('mousedown click keydown', function (event) {
-      event.stopPropagation();
-    });
-    var columnTimers = Object.create(null);
-    $('#sales-history-report thead .sh-col-search').on('input change', function () {
-      var control = this, idx = control.getAttribute('data-col');
-      clearTimeout(columnTimers[idx]);
-      columnTimers[idx] = setTimeout(function () {
-        var column = table.column(Number(control.getAttribute('data-col')));
-        if (control.tagName === 'SELECT') {
-          // جست‌وجوی دقیق: invoice نباید returned_invoice را برگرداند.
-          column.search(control.value ? '^' + control.value + '$' : '', true, false).draw();
-        } else {
-          column.search(control.value || '', false, true).draw();
+    function resetSummary(){
+      currentSummary=null;
+      write('sh-top-fee','در حال محاسبه…');
+      write('sh-top-amount','در حال محاسبه…');
+      ['sh-header-quantity','sh-distinct-document','sh-distinct-customer',
+       'sh-distinct-item','sh-distinct-purchase','sh-distinct-sales'].forEach(function(id){
+        write(id,'—');
+      });
+      if(summaryController){summaryController.abort();summaryController=null;}
+      summarySequence++;
+    }
+    function fetchSummary(params){
+      if(summaryController)summaryController.abort();
+      var id=++summarySequence;
+      summaryController=new AbortController();
+      var query=new URLSearchParams(params.toString());
+      query.set('sh_summary','1');
+      return fetch(window.location.pathname+'?'+query.toString(),{
+        credentials:'same-origin',headers:{
+          'X-Requested-With':'XMLHttpRequest','Accept':'application/json'
+        },signal:summaryController.signal
+      }).then(function(r){
+        return r.json().then(function(data){
+          if(!r.ok)throw Error(data.error||'خطا در محاسبه خلاصه');
+          return data;
+        });
+      }).then(function(data){
+        if(id===summarySequence){
+          currentSummary=data.summary;
+          updateSummary();
         }
-      }, 140);
+      }).catch(function(err){
+        if(err.name!=='AbortError'&&id===summarySequence){
+          write('sh-top-fee','خلاصه در دسترس نیست');
+          write('sh-top-amount','خلاصه در دسترس نیست');
+        }
+      }).finally(function(){
+        if(id===summarySequence)summaryController=null;
+      });
+    }
+    // SQL-backed search uses AJAX, without navigating or recreating DataTable.
+    var initialColumnFilters={};
+    try{initialColumnFilters=JSON.parse(document.getElementById('sh-server-filters').textContent)||{};}catch(e){}
+    $('#sales-history-report thead .sh-col-search').each(function(){
+      this.value=initialColumnFilters['col_'+this.getAttribute('data-col')]||'';
+      // The browser owns the input's clear ×; the spinner has its own flex slot.
+      if(this.parentElement && this.parentElement.classList.contains('sh-col-filter-shell'))return;
+      var shell=document.createElement('div');
+      shell.className='sh-col-filter-shell';
+      this.parentNode.insertBefore(shell,this);
+      shell.appendChild(this);
+      var loader=document.createElement('span');
+      loader.className='sh-col-loader';
+      loader.setAttribute('aria-hidden','true');
+      shell.appendChild(loader);
     });
-
-    var dateTimer = null;
-    $(fromInput).add(toInput).on('input change', function () {
-      clearTimeout(dateTimer);
-      dateTimer = setTimeout(function () { updateDateInputs(); table.draw(); }, 160);
+    var advancedForm=document.querySelector('#sales-history-report .sh-compact-form');
+    var advancedNames=['customer_code','item_code','part','g_p','doc_type','fisicalyearref'];
+    var activeArea=document.querySelector('#sales-history-report .sh-active-filters');
+    var busy=document.getElementById('sh-fetching');
+    var state=document.getElementById('sh-query-status');
+    var truncation=document.getElementById('sh-truncated-note');
+    var timer=null,controller=null,sequence=0;
+    var initialPage={
+      offsets:{sepidar:0,portal:0},done:{sepidar:false,portal:false},
+      has_more:false,truncated:false,row_count:0
+    };
+    try{initialPage=JSON.parse(document.getElementById('sh-initial-page').textContent)||initialPage;}catch(e){}
+    var pageState=initialPage, scrollParams=new URLSearchParams(window.location.search);
+    var pendingScroll=false,loadedCount=Number(initialPage.row_count||0);
+    function getParams(){
+      var p=new URLSearchParams();
+      if(advancedForm){
+        var data=new FormData(advancedForm);
+        advancedNames.forEach(function(k){
+          var v=String(data.get(k)||'').trim();
+          if(v)p.set(k,v);
+        });
+      }
+      document.querySelectorAll('#sales-history-report thead .sh-col-search').forEach(function(el){
+        if(el.value.trim())p.set('col_'+el.dataset.col,el.value.trim());
+      });
+      if(fromInput.value.trim())p.set('date_from',fromInput.value.trim());
+      if(toInput.value.trim())p.set('date_to',toInput.value.trim());
+      // Preserve an explicit historical URL until the user searches or resets.
+      // Clearing filters calls search(emptyParams), removing all_dates atomically.
+      if(!p.toString() && new URLSearchParams(window.location.search).get('all_dates')==='1')
+        p.set('all_dates','1');
+      return p;
+    }
+    function message(text,isError){
+      if(!state)return;
+      state.hidden=!text;state.textContent=text||'';
+      state.classList.toggle('sh-state-message--error',!!isError);
+    }
+    function showColumnSpinner(field){
+      document.querySelectorAll('#sales-history-report .sh-searching-column').forEach(function(el){
+        el.classList.remove('sh-searching-column');
+      });
+      var th=field&&field.closest('th');
+      if(th)th.classList.add('sh-searching-column');
+    }
+    function setBusy(x){
+      if(busy)busy.hidden=!x;
+      tableEl.setAttribute('aria-busy',x?'true':'false');
+      if(!x)showColumnSpinner(null);
+    }
+    function refreshChips(data){
+      if(!activeArea)return;
+      activeArea.querySelectorAll('.sh-period-chip,.sh-period-extend,.sh-filter-chip').forEach(function(el){el.remove();});
+      if(data.recent_default){
+        var p=document.createElement('span');p.className='sh-period-chip';
+        p.textContent='نمایش خودکار ۷ روز اخیر: '+data.recent_from+' تا '+data.recent_to;
+        activeArea.insertBefore(p,busy);
+        var extend=document.createElement('button');
+        extend.type='button';extend.className='sh-period-extend';extend.dataset.period='30';
+        extend.dataset.dateFrom=data.recent_30_from;extend.dataset.dateTo=data.recent_to;
+        extend.textContent='نمایش ۳۰ روز اخیر';
+        extend.title='نمایش ۳۰ روز اخیر با فیلتر تاریخ';
+        activeArea.insertBefore(extend,busy);
+      }
+      (data.active_chips||[]).forEach(function(c){
+        var el=document.createElement('button');el.type='button';el.className='sh-filter-chip';
+        el.dataset.filterKey=c.key;el.title='حذف این فیلتر';
+        el.appendChild(document.createTextNode(c.label+': '+c.value+' '));
+        var x=document.createElement('span');x.className='sh-chip-remove';
+        x.textContent='×';x.setAttribute('aria-hidden','true');el.appendChild(x);
+        activeArea.insertBefore(el,busy);
+      });
+    }
+    function receiveResults(result,params,append){
+      var body=document.createElement('tbody');
+      body.innerHTML=result.rows_html||'';
+      var rows=Array.from(body.children).filter(function(el){return el.tagName==='TR';});
+      var horizontal=scrollArea?scrollArea.scrollLeft:0;
+      var vertical=scrollArea?scrollArea.scrollTop:0;
+      if(!append)table.clear();
+      if(rows.length)table.rows.add($(rows));
+      table.draw(false);
+      if(scrollArea){
+        scrollArea.scrollLeft=horizontal;
+        scrollArea.scrollTop=append?vertical:0;
+      }
+      pageState={
+        offsets:result.offsets||{sepidar:0,portal:0},
+        done:result.done||{sepidar:false,portal:false},
+        has_more:!!result.has_more,
+        truncated:!!result.truncated||(append&&!!pageState.truncated)
+      };
+      loadedCount=append?loadedCount+rows.length:rows.length;
+      scrollParams=new URLSearchParams(params.toString());
+      if(!append){
+        history.replaceState(history.state,'',window.location.pathname+
+          (params.toString()?'?'+params:''));
+        refreshChips(result);
+      }
+      if(truncation)truncation.hidden=!(pageState.truncated||currentSummary&&currentSummary.truncated);
+      if(!append){
+        message(loadedCount?'نمایش '+loadedCount.toLocaleString('fa-IR')+' ردیف دریافت‌شده':
+          result.recent_default?'در ۷ روز اخیر سابقه‌ای یافت نشد.':'هیچ نتیجه‌ای با فیلترهای فعلی پیدا نشد.',false);
+      }else{
+        message('نمایش '+loadedCount.toLocaleString('fa-IR')+' ردیف دریافت‌شده',false);
+      }
+      updateScrollStatus();
+      requestAnimationFrame(refreshSticky);
+    }
+    function getPageUrl(params,offsets){
+      var p=new URLSearchParams(params.toString());
+      p.set('sh_page','1');
+      p.set('sep_offset',String(offsets.sepidar||0));
+      p.set('portal_offset',String(offsets.portal||0));
+      p.set('sep_done',pageState.done&&pageState.done.sepidar?'1':'0');
+      p.set('portal_done',pageState.done&&pageState.done.portal?'1':'0');
+      return window.location.pathname+'?'+p.toString();
+    }
+    function search(explicitParams){
+      updateDateInputs();
+      if(invalidRange){setBusy(false);return;}
+      var params=explicitParams instanceof URLSearchParams ?
+        new URLSearchParams(explicitParams.toString()):getParams();
+      clearTimeout(timer);
+      if(controller)controller.abort();
+      pendingScroll=false;
+      resetSummary();
+      var id=++sequence;
+      controller=new AbortController();
+      setBusy(true);
+      pageState={offsets:{sepidar:0,portal:0},done:{sepidar:false,portal:false},
+        has_more:false,truncated:false};
+      fetch(getPageUrl(params,{sepidar:0,portal:0}),{
+        credentials:'same-origin',headers:{
+          'X-Requested-With':'XMLHttpRequest','Accept':'application/json'
+        },signal:controller.signal
+      }).then(function(r){
+        return r.json().then(function(data){
+          if(!r.ok)throw Error(data.error||'خطا در دریافت اطلاعات');
+          return data;
+        });
+      }).then(function(data){
+        if(id===sequence){
+          receiveResults(data,params,false);
+          fetchSummary(params);
+        }
+      }).catch(function(err){
+        if(err.name!=='AbortError'&&id===sequence)
+          message(err.message||'ارتباط با سرور برقرار نشد.',true);
+      }).finally(function(){
+        if(id===sequence){controller=null;setBusy(false);}
+      });
+    }
+    function loadNextPage(){
+      if(!scrollArea||!pageState.has_more||pendingScroll||controller)return;
+      pendingScroll=true;
+      var id=sequence,params=new URLSearchParams(scrollParams.toString());
+      controller=new AbortController();
+      setBusy(true);
+      fetch(getPageUrl(params,pageState.offsets),{
+        credentials:'same-origin',headers:{
+          'X-Requested-With':'XMLHttpRequest','Accept':'application/json'
+        },signal:controller.signal
+      }).then(function(r){
+        return r.json().then(function(data){
+          if(!r.ok)throw Error(data.error||'خطا در دریافت ردیف‌های بعدی');
+          return data;
+        });
+      }).then(function(data){
+        if(id===sequence)receiveResults(data,params,true);
+      }).catch(function(err){
+        if(err.name!=='AbortError'&&id===sequence)
+          message(err.message||'خطا در بارگذاری ردیف‌های بعدی',true);
+      }).finally(function(){
+        if(id===sequence){
+          controller=null;pendingScroll=false;setBusy(false);
+          updateScrollStatus();
+        }
+      });
+    }
+    function cancelPendingSearch(){
+      clearTimeout(timer);
+      if(controller){controller.abort();controller=null;sequence++;}
+      pendingScroll=false;
+      setBusy(false);
+    }
+    function columnSearchDelay(tag,value){
+      return tag==='SELECT'||!String(value||'').trim()?0:280;
+    }
+    function schedule(ms,origin){
+      clearTimeout(timer);
+      if(controller){controller.abort();controller=null;sequence++;}
+      showColumnSpinner(origin);
+      setBusy(true);
+      timer=setTimeout(search,ms);
+    }
+    $('#sales-history-report thead .sh-col-search').on('mousedown click keydown',function(e){
+      e.stopPropagation();
+      if(e.key==='Enter'){
+        e.preventDefault();clearTimeout(timer);showColumnSpinner(this);search();
+      }
+    }).on('focus',function(){
+      // Moving to an untouched field must not leave a spinner in the old field.
+      // The global busy message still represents any in-flight request.
+      showColumnSpinner(null);
+    }).on('input change',function(){
+      if(this.dataset.col==='7'&&this.value.trim()&&!/^\d{4}(?:\/\d{1,2}(?:\/\d{1,2})?)?$/.test(latinDigits(this.value.trim()))){
+        cancelPendingSearch();return;
+      }
+      schedule(columnSearchDelay(this.tagName,this.value),this);
     });
-    $('#sh-clear-date').on('click', function () {
-      clearTimeout(dateTimer);
-      fromInput.value = ''; toInput.value = '';
-      hideCalendar(); updateDateInputs(); table.draw();
+    $(fromInput).add(toInput).on('input change',function(ev){
+      updateDateInputs();
+      if(invalidRange)cancelPendingSearch();
+      else schedule(ev.type==='change'?0:520);
     });
-    $('#sh-clear-table').on('click', function () {
-      clearTimeout(dateTimer);
-      Object.keys(columnTimers).forEach(function (key) { clearTimeout(columnTimers[key]); });
-      $('#sales-history-report thead .sh-col-search').val('');
-      fromInput.value = ''; toInput.value = ''; hideCalendar();
-      table.columns().search(''); table.search(''); updateDateInputs(); table.draw();
+    function clearAllFilters(e){
+      if(e){e.preventDefault();e.stopPropagation();}
+      // One atomic reset of all filter sources (including DataTables'
+      // internal global/column search state); then exactly one AJAX request.
+      cancelPendingSearch();
+      if(advancedForm){
+        advancedForm.reset();
+        advancedForm.querySelectorAll('[name]').forEach(function(el){
+          if(el.type==='radio')el.checked=el.value==='';
+          else el.value='';
+        });
+      }
+      tableEl.querySelectorAll('thead .sh-col-search').forEach(function(el){
+        el.value='';
+      });
+      table.search('');
+      table.columns().search('');
+      fromInput.value='';toInput.value='';
+      hideCalendar();updateDateInputs();
+      showColumnSpinner(null);
+      search(new URLSearchParams());
+    }
+    $('#sh-clear-all').on('click',clearAllFilters);
+    if(activeArea)activeArea.addEventListener('click',function(e){
+      var period=e.target.closest('.sh-period-extend');
+      if(period){
+        // The server supplies dates in the project's timezone. Reuse the
+        // normal date filters so both databases are bounded before LIMIT.
+        fromInput.value=period.dataset.dateFrom||'';
+        toInput.value=period.dataset.dateTo||'';
+        updateDateInputs();
+        schedule(0);
+        return;
+      }
+      var chip=e.target.closest('.sh-filter-chip');if(!chip)return;
+      var key=chip.dataset.filterKey;
+      if(key.indexOf('col_')===0){
+        var field=document.querySelector('#sales-history-report thead [data-col="'+key.slice(4)+'"]');
+        if(field)field.value='';
+      }else if(key==='date_from')fromInput.value='';
+      else if(key==='date_to')toInput.value='';
+      else if(advancedForm)advancedForm.querySelectorAll('[name="'+key+'"]').forEach(function(el){
+        if(el.type==='radio')el.checked=el.value==='';else el.value='';
+      });
+      updateDateInputs();
+      schedule(0);
     });
+    if(advancedForm){
+      advancedForm.addEventListener('submit',function(e){e.preventDefault();schedule(0);});
+      advancedForm.addEventListener('input',function(e){
+        if(e.target===fromInput||e.target===toInput||e.target.type==='radio')return;
+        schedule(320);
+      });
+      advancedForm.addEventListener('change',function(e){
+        if(e.target===fromInput||e.target===toInput)return;
+        schedule(0);
+      });
+    }
+    // Scroll down the document first. Only at the page bottom should wheel
+    // motion enter the table. In reverse, unwind the table before the page.
+    // Kept pure so edge cases can be unit tested without a browser.
+    function wheelDestination(delta,pageAtEnd,tableTop,tableMax){
+      if(!delta||tableMax<=1)return 'page';
+      if(delta>0)return pageAtEnd&&tableTop<tableMax-1?'table':'page';
+      return tableTop>1?'table':'page';
+    }
+    document.addEventListener('wheel',function(e){
+      if(e.defaultPrevented||e.ctrlKey||e.shiftKey||!scrollArea)return;
+      if(!e.target.closest('#sales-history-report'))return;
+      if(e.target.closest('.sh-advanced-filters,.sh-jalali-popover,select,textarea,[role="dialog"]'))return;
+      var delta=e.deltaY*(e.deltaMode===1?20:e.deltaMode===2?scrollArea.clientHeight:1);
+      if(!delta)return;
+      var page=document.scrollingElement||document.documentElement;
+      var pageAtEnd=page.scrollTop+page.clientHeight>=page.scrollHeight-2;
+      var max=scrollArea.scrollHeight-scrollArea.clientHeight;
+      var destination=wheelDestination(delta,pageAtEnd,scrollArea.scrollTop,max);
+      if(destination==='page'){
+        // overflow-y:auto on the table would otherwise trap wheel movement.
+        if(scrollArea.contains(e.target)){
+          e.preventDefault();
+          window.scrollBy(0,delta);
+        }
+        return;
+      }
+      var before=scrollArea.scrollTop;
+      scrollArea.scrollTop=Math.max(0,Math.min(max,before+delta));
+      if(scrollArea.scrollTop!==before)e.preventDefault();
+    },{passive:false});
 
     // Sticky header and six RTL pinned columns: calculate real rendered widths,
     // so hiding a column never leaves empty space or an incorrect right offset.
@@ -1212,42 +1773,47 @@
       });
       setPinnedTotal(pinnedDesired);
     }
-    var CHUNK_SIZE=60, pendingScroll=false, scrollStatus=document.createElement('span');
+    var scrollStatus=document.createElement('span');
     scrollStatus.className='sh-scroll-status';scrollStatus.setAttribute('role','status');
     var footer=document.querySelector('#sales-history-report .sh-dt-footer');
-    if(footer)footer.appendChild(scrollStatus);
+    if(!footer){
+      footer=document.createElement('div');footer.className='sh-dt-footer';
+      tableEl.closest('.sh-panel').appendChild(footer);
+    }
+    var loadMore=document.createElement('button');
+    loadMore.type='button';loadMore.className='sh-load-more';
+    loadMore.textContent='بارگذاری ردیف‌های بیشتر';
+    loadMore.addEventListener('click',loadNextPage);
+    if(footer){footer.appendChild(scrollStatus);footer.appendChild(loadMore);}
     function updateScrollStatus(){
-      var filtered=table.rows({search:'applied',page:'all'}).count();
-      var displayed=Math.min(table.page.len(),filtered);
-      scrollStatus.textContent=filtered===0 ? 'نتیجه‌ای وجود ندارد' :
-        ('نمایش '+displayed.toLocaleString('fa-IR')+' از '+filtered.toLocaleString('fa-IR')+' ردیف · '+
-          (displayed<filtered?'برای ادامه پایین بروید':'پایان نتایج دریافت‌شده'));
+      var total=loadedCount;
+      var known=currentSummary?Number(currentSummary.row_count):null;
+      var summary=(known===null?' ردیف بارگذاری‌شده':' از '+known.toLocaleString('fa-IR')+' ردیف مطابق فیلتر');
+      scrollStatus.textContent=total===0?'نتیجه‌ای وجود ندارد':
+        ('نمایش '+total.toLocaleString('fa-IR')+summary+' · '+
+          (pageState.has_more?'با اسکرول ادامه دهید':'پایان نتایج'));
+      loadMore.hidden=!pageState.has_more;
+      loadMore.disabled=pendingScroll;
     }
     function loadIfNearEnd(){
-      if(!scrollArea||pendingScroll)return;
+      if(!scrollArea||pendingScroll||!pageState.has_more||controller)return;
       var remaining=scrollArea.scrollHeight-scrollArea.clientHeight-scrollArea.scrollTop;
       if(remaining>170)return;
-      var filtered=table.rows({search:'applied',page:'all'}).count();
-      var shown=table.page.len();
-      if(shown>=filtered)return;
-      pendingScroll=true;
-      // No network requests. DataTables reveals 60 more of the already-received rows.
-      table.page.len(Math.min(filtered,shown+CHUNK_SIZE)).draw(false);
-      pendingScroll=false;
+      loadNextPage();
     }
-    if(scrollArea){scrollArea.addEventListener('scroll',loadIfNearEnd,{passive:true});}
+    if(scrollArea)scrollArea.addEventListener('scroll',loadIfNearEnd,{passive:true});
     table.on('column-visibility.dt',function(){requestAnimationFrame(refreshSticky);});
     window.addEventListener('resize',function(){requestAnimationFrame(refreshSticky);});
     table.on('draw.dt',function(){
       updateSummary();updateScrollStatus();requestAnimationFrame(refreshSticky);
     });
     refreshSticky();updateScrollStatus();
-    // A short result set may not fill the viewport after filtering.
-    // Avoid forced loading while the user has not scrolled: redraw is demand driven.
-
+    // The initial HTML contains only 60 rows; fetch server summary separately.
+    // A short result set gets a manual load-more fallback below the table.
     updateDateInputs();
-    updateSummary();
-    requestAnimationFrame(refreshSticky); // Header height changes as currency / diversity totals render.
+    resetSummary();
+    fetchSummary(getParams());
+    requestAnimationFrame(refreshSticky);
   });
 })(jQuery);
 </script>

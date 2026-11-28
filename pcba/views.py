@@ -3,7 +3,7 @@ from decimal import Decimal
 import jdatetime
 from ajax_datatable import AjaxDatatableView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q, Sum
+from django.db.models import BigIntegerField, ExpressionWrapper, F, Q, Sum
 from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -459,12 +459,21 @@ def this_year_contract_cost(request):
         return JsonResponse({'this_year_contract_cost': sum_con}, safe=False)
     return JsonResponse({'error': 'Invalid'}, safe=False)
 
+def _assembled_pad_total(contracts):
+    """Count normal and IC pads across all customer boards, in the database."""
+    pad_expression = ExpressionWrapper(
+        (F('pad_count') + F('ic_pad_count')) * F('customer_total_board_count'),
+        output_field=BigIntegerField(),
+    )
+    return contracts.aggregate(total=Sum(pad_expression))['total'] or 0
+
+
 def today_pad_count(request):
     q = request.GET.get('q')
     if q == 'today_pad_count':
         today = timezone.now().date()
         contracts = Contract.objects.filter(created_date__date=today)
-        sum_con = sum([con.pad_count for con in contracts])
+        sum_con = _assembled_pad_total(contracts)
         return JsonResponse({'today_pad_count': sum_con},safe=False)
     return JsonResponse({'error': 'Invalid'}, safe=False)
 
@@ -474,7 +483,7 @@ def this_year_pad_count(request):
     if q == 'this_year_pad_count':
         this_year = timezone.now().year
         contracts = Contract.objects.filter(created_date__year=this_year)
-        sum_con = sum([con.pad_count for con in contracts])
+        sum_con = _assembled_pad_total(contracts)
         return JsonResponse({'this_year_pad_count': sum_con}, safe=False)
     return JsonResponse({'error': 'Invalid'}, safe=False)
 
