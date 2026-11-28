@@ -4,6 +4,7 @@ from io import BytesIO
 
 from openpyxl import Workbook
 from openpyxl.cell import WriteOnlyCell
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.filters import AutoFilter
@@ -153,10 +154,12 @@ def _order_value(order, key, rows, today):
 
 
 def _cell(sheet, value, *, header=False, numeric=False, date_cell=False):
-    cell = WriteOnlyCell(sheet, value=value)
     if isinstance(value, str):
+        value = ILLEGAL_CHARACTERS_RE.sub('', value)
         if len(value) > 32767:
             raise ValueError('طول یکی از سلول‌ها بیش از ظرفیت اکسل است؛ ستون جزئیات را حذف و شیت ردیف پرداخت را انتخاب کنید.')
+    cell = WriteOnlyCell(sheet, value=value)
+    if isinstance(value, str):
         # Force literal strings; preserve leading zeros and prevent formula injection.
         cell.data_type = 's'
     if header:

@@ -1449,6 +1449,7 @@ def trade_order_excel(request):
         return JsonResponse({'error': str(exc) if isinstance(exc, ValueError) else 'پارامترهای فیلتر یا ستون‌ها معتبر نیستند.'}, status=400)
     response = HttpResponse(output.getvalue(), content_type=XLSX_CONTENT_TYPE)
     response['Content-Disposition'] = 'attachment; filename="trade-orders-' + view.payment_summary_date.isoformat() + '.xlsx"'
+    response['Cache-Control'] = 'private, no-store'
     return response
 
 
