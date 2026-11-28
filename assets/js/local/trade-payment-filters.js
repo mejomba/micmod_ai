@@ -24,24 +24,29 @@ const TradePaymentFilters = (() => {
         };
 
         const calendar = TradePaymentCalendar.setup(() => {
-            error.text('');
+            updateInputs();
             if (latestSummary) renderSummary(latestSummary);
         });
         const isDated = value => ['date_range', 'due_until'].includes(value);
         function updateInputs() {
             const value = pendingMode;
+            const dateChanged = isDated(value) && (
+                (value === 'date_range' && start.val() !== extraData.payment_start) ||
+                end.val() !== extraData.payment_end
+            );
+            const needsApply = isDated(value) && (value !== extraData.payment_filter || dateChanged);
             $('#tradePaymentDateControls').toggleClass('d-none', !isDated(value));
             $('#tradePaymentStartWrap').toggleClass('d-none', value !== 'date_range');
             $('#tradePaymentEndWrap').toggleClass('d-none', !isDated(value));
             modeButtons.each(function () {
                 const applied = this.dataset.paymentMode === extraData.payment_filter;
-                const pending = this.dataset.paymentMode === pendingMode && !applied;
+                const pending = this.dataset.paymentMode === pendingMode && needsApply;
                 $(this).toggleClass('active bg-primary', applied).toggleClass('tp-pending', pending)
                     .attr('aria-pressed', String(applied));
             });
             $('#tradePaymentClear').toggleClass('d-none', !value && !extraData.payment_filter);
             $('#tradePaymentFilterHelp').text((hints[value] || '') +
-                (isDated(value) && value !== extraData.payment_filter ? ' برای اعمال تاریخ، تایید را بزنید.' : ''));
+                (needsApply ? ' تاریخ هنوز اعمال نشده است؛ برای اعمال، تایید را بزنید.' : ''));
             error.text('');
         }
 

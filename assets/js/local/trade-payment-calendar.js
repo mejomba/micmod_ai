@@ -8,7 +8,7 @@ function toJalaali(a,i,d){return"[object Date]"===Object.prototype.toString.call
         const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
         if (!match) return null;
         const [, y, m, d] = match.map(Number);
-        if (y < 1821 || y > 2221) return null;
+        if (y < 1821 || y > 2222) return null;
         const checked = new Date(Date.UTC(y,m-1,d));
         if (checked.getUTCFullYear() !== y || checked.getUTCMonth()+1 !== m || checked.getUTCDate() !== d) return null;
         const j = toJalaali(y,m,d);
