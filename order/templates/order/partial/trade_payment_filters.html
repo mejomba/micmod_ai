@@ -1,5 +1,6 @@
 {% if request.user.base_group == 'trade' %}
 <section id="tradePaymentPanel" class="border rounded p-3 mb-4" dir="rtl">
+    {% csrf_token %}
     <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
         <div>
             <label for="tradePaymentFilter" class="form-label fw-bold mb-1">فیلتر پرداخت</label>

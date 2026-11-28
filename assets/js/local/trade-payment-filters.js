@@ -104,7 +104,7 @@ const TradePaymentFilters = (() => {
             Object.assign(data, extraData);
             return $.ajax({
                 type: 'POST', url: url, data: data, dataType: 'json', cache: false,
-                headers: {'X-CSRFToken': getCSRFToken()}
+                headers: {'X-CSRFToken': panel.find('input[name="csrfmiddlewaretoken"]').val()}
             }).done(response => {
                 if (draw !== latestDraw) return;
                 if (Number(response.draw) !== draw) {
