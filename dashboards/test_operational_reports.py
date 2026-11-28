@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.http import Http404
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from changelog.models import ChangeLog
@@ -78,6 +78,7 @@ class OperationalScopeTests(TestCase):
         response = self.client.get(reverse('dashboards:index'))
         self.assertEqual(response.status_code, 302)
 
+    @override_settings(OPERATIONAL_DASHBOARD_ENABLED=True)
     @patch('dashboards.operational_reports.build_report')
     def test_home_passes_window_and_selected_user(self, mock_report):
         self.client.force_login(self.manager)
@@ -190,6 +191,7 @@ class OperationalTransitionTests(TestCase):
         self.assertEqual(row['purchase_count'], 0)
 
 
+@override_settings(OPERATIONAL_DASHBOARD_ENABLED=True)
 class OperationalPresentationTests(TestCase):
     """The first screen must explain the metrics without overwhelming users."""
 
