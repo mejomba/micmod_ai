@@ -38,6 +38,9 @@ class Contract(BaseModeWF):
     pad_cost = models.PositiveIntegerField(default=0, null=True, blank=True)
     ic_pad_cost = models.PositiveIntegerField(default=0, null=True, blank=True)
     total_cost = models.PositiveBigIntegerField(default=0, null=True, blank=True)
+    extra_total_cost = models.PositiveBigIntegerField(
+        default=0, verbose_name='هزینه‌های مازاد کل قرارداد'
+    )
     finish = models.BooleanField(default=False)
     contract_end_date = models.DateField(null=True, blank=True)
     assembly_type = models.CharField(max_length=10, choices=ASSEMBLY_TYPE_CHOICES, null=True, blank=True, verbose_name='نوع مونتاژ')
@@ -49,9 +52,38 @@ class Contract(BaseModeWF):
         return f'PCBA_{self.pk}'
 
     @property
+    def assembled_pads_per_board(self):
+        """Only assembled pads: normal + IC (not bare paste/glue pads)."""
+        return (self.pad_count or 0) + (self.ic_pad_count or 0)
+
+    @property
+    def total_pads_per_board(self):
+        """All three pad categories displayed on the contract form."""
+        return self.assembled_pads_per_board + (self.not_assembly_pad_count or 0)
+
+    @property
+    def annual_assembled_pad_count(self):
+        """Assembled pads represented by this contract's customer boards."""
+        return self.assembled_pads_per_board * (self.customer_total_board_count or 0)
+
+    @property
     def contract_cost(self):
-        total = (self.customer_total_board_count * self.pad_count * self.pad_cost) + self.first_setup_cost
-        return total
+        """Calculated contract amount, including IC, paste/glue and extras.
+
+        Paste/glue pads use the regular pad rate because no separate rate is
+        currently defined on Contract. Setup and extra costs are flat amounts
+        and must not be multiplied by the customer board count.
+        """
+        normal_and_paste = (
+            (self.pad_count or 0) + (self.not_assembly_pad_count or 0)
+        ) * (self.pad_cost or 0)
+        ic_assembly = (self.ic_pad_count or 0) * (self.ic_pad_cost or 0)
+        return (
+            (normal_and_paste + ic_assembly) * (self.customer_total_board_count or 0)
+            + (self.first_setup_cost or 0)
+            + (self.second_setup_cost or 0)
+            + (self.extra_total_cost or 0)
+        )
 
 
 class CustomerItemReceipt(BaseModeWF):

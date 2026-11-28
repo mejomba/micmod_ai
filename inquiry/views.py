@@ -749,8 +749,8 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
     load_sepidar = request.GET.get('load_sepidar')
     dict_ = request.GET or request.POST
     prev_value = dict_.get('prev_value')
-    sku = dict_.get('sku_c')
-    party_code = dict_.get('party_code_c')
+    sku = dict_.get('sku_c').strip()
+    party_code = dict_.get('party_code_c').strip()
     quantity = dict_.get('quantity') or 1
     price_setting = dict_.get('price_setting')
     currency = dict_.get('currency')
