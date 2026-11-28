@@ -4,15 +4,18 @@ from html import escape
 
 def payment_currency(item, order_currency):
     header = item.payment if item.payment_id else None
-    currency = (header.currency if header else None) or item.currency or order_currency
-    return currency.title_en if currency and currency.title_en else 'ارز نامشخص'
+    currency = (header.currency if header else None) or item.currency
+    return (currency.title_en if currency else order_currency) or 'ارز نامشخص'
 
 
 def payment_amount(item):
     # Keep fractional amounts, with grouping and no unnecessary trailing zeroes.
     from decimal import Decimal
     amount = Decimal(str(item.total_amount))
-    return format(amount, ',f').rstrip('0').rstrip('.') if amount.as_tuple().exponent < 0 else format(amount, ',f')
+    if not amount.is_finite():
+        return '—'
+    label = format(amount, ',f')
+    return label.rstrip('0').rstrip('.') if '.' in label else label
 
 
 def payment_label(item, order_currency):

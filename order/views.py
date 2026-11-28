@@ -987,7 +987,9 @@ class OrderDataTableListView(AjaxDatatableView):
         #     )
 
         if user_group == 'trade':
-            qs = qs.select_related('currency').prefetch_related(
+            # AjaxDatatable may defer non-column fields via only(); an annotation
+            # avoids a select_related/deferred-field conflict or extra currency queries.
+            qs = qs.annotate(list_order_currency_title=F('currency__title_en')).prefetch_related(
                 Prefetch(
                     'order_payment_items',
                     queryset=OrderPaymentItem.objects.filter(is_deleted=False).select_related(
@@ -1089,10 +1091,10 @@ class OrderDataTableListView(AjaxDatatableView):
     def customize_row_trade(self, row, obj):
         items = obj.list_payment_items
         row['payment'] = render_payment_links(
-            items, obj.currency,
+            items, obj.list_order_currency_title,
             lambda pk: reverse('order:order.payment.update', kwargs={'pk': pk}),
         )
-        row['future_payments'], row['past_payments'] = render_payment_schedule(items, obj.currency, timezone.localdate())
+        row['future_payments'], row['past_payments'] = render_payment_schedule(items, obj.list_order_currency_title, timezone.localdate())
 
         row['delay_reason__description'] = [d.description for d in obj.delay_reason.all()]
         try:

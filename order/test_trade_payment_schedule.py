@@ -43,7 +43,7 @@ class PaymentScheduleTests(TestCase):
 
     def test_today_and_future_paid(self):
         rows = [item(1, 28), item(2, 28, True), item(3, 29, True)]
-        future, past = render_payment_schedule(rows, currency('RMB'), TODAY)
+        future, past = render_payment_schedule(rows, 'RMB', TODAY)
         self.assertIn('text-warning', future)
         self.assertIn('text-success', future)
         self.assertIn('text-success', past)
@@ -65,7 +65,7 @@ class PaymentScheduleTests(TestCase):
             item(2, 29, header=SimpleNamespace(currency=None), cur=currency('EUR'), amount=0),
             item(3, 29, amount=1000.0),
         ]
-        future, _ = render_payment_schedule(rows, currency('<RMB>'), TODAY)
+        future, _ = render_payment_schedule(rows, '<RMB>', TODAY)
         self.assertIn('12.345 USD', future)
         self.assertIn('0 EUR', future)
         self.assertIn('1,000 &lt;RMB&gt;', future)
@@ -109,11 +109,12 @@ class PaymentScheduleWiringTests(TestCase):
     def test_prefetch_and_render_use_same_rows(self):
         source = self.method_source('get_initial_queryset')
         self.assertIn("if user_group == 'trade':", source)
+        self.assertIn("list_order_currency_title=F('currency__title_en')", source)
         self.assertIn("to_attr='list_payment_items'", source)
         self.assertIn("'payment__currency', 'currency'", source)
         trade = self.method_source('customize_row_trade')
         self.assertIn('obj.list_payment_items', trade)
-        self.assertIn('render_payment_schedule(items, obj.currency, timezone.localdate())', trade)
+        self.assertIn('render_payment_schedule(items, obj.list_order_currency_title, timezone.localdate())', trade)
         self.assertNotIn("obj.order_payment_items.select_related", trade)
         self.assertIn("row['gio']", trade)
         self.assertIn("row['packing']", trade)
