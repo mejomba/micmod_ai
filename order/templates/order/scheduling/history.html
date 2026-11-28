@@ -1,0 +1,11 @@
+{% extends 'partials/base.html' %}
+{% block title %}{% if fa %}تاریخچه پیش‌بینی{% else %}Forecast history{% endif %}{% endblock %}
+{% block content %}
+<div class="card p-4" dir="{% if fa %}rtl{% else %}ltr{% endif %}">
+<h2>{% if fa %}تاریخچه پیش‌بینی{% else %}Forecast history{% endif %} · {{ kind }} / {{ document_id }}</h2>
+{% if selected_panel %}{% include 'order/scheduling/panel.html' with show=selected_panel.show fa=selected_panel.fa kind=selected_panel.kind current=selected_panel.current summary=selected_panel.summary initial=selected_panel.initial calculated=selected_panel.calculated declared=selected_panel.declared actual=selected_panel.actual first=selected_panel.first method=selected_panel.method delta=selected_panel.delta declared_delta=selected_panel.declared_delta assumption_count=selected_panel.assumption_count received=selected_panel.received remaining=selected_panel.remaining backfill=selected_panel.backfill can_history=selected_panel.can_history shipments=selected_panel.shipments steps=selected_panel.steps assumptions=selected_panel.assumptions calendars=selected_panel.calendars historical=True object_id=document_id only %}{% endif %}
+<div class="table-responsive"><table class="table table-row-bordered"><thead><tr><th>{% if fa %}نسخه{% else %}Revision{% endif %}</th><th>{% if fa %}سیاست{% else %}Policy{% endif %}</th><th>{% if fa %}زمان محاسبه{% else %}Calculated at{% endif %}</th><th>{% if fa %}تاریخ مؤثر{% else %}Effective date{% endif %}</th><th>{% if fa %}منبع{% else %}Source{% endif %}</th><th>{% if fa %}وضعیت{% else %}Status{% endif %}</th><th>{% if fa %}دلیل{% else %}Reason{% endif %}</th></tr></thead><tbody>
+{% for r in rows %}<tr><td><a href="?revision={{ r.revision }}&page={{ page.number }}">{{ r.revision }}</a></td><td>v{{ r.version }}</td><td>{{ r.recorded }}</td><td>{{ r.effective }}</td><td>{{ r.source }}</td><td>{{ r.status }}</td><td>{{ r.reason }}</td></tr>{% empty %}<tr><td colspan="7">—</td></tr>{% endfor %}
+</tbody></table></div><div class="d-flex gap-3">{% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">«</a>{% endif %}{{ page.number }} / {{ page.paginator.num_pages }}{% if page.has_next %}<a href="?page={{ page.next_page_number }}">»</a>{% endif %}</div>
+</div>
+{% endblock %}

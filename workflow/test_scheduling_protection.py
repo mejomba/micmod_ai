@@ -1,0 +1,108 @@
+"""PostgreSQL-only database protections, including QuerySet and raw SQL writes."""
+from datetime import date
+from importlib import import_module
+from unittest import skipUnless
+from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
+from django.db import connection, IntegrityError, transaction
+from django.test import TestCase, TransactionTestCase, override_settings
+from django.utils import timezone
+from workflow.scheduling.models import (WorkflowSchedulePolicy, WorkflowCalendar,
+    WorkflowCalendarException, WorkflowStageTiming, WorkflowTimingRule,
+    WorkflowScheduleTransition, WorkflowForecast, WorkflowForecastStep, WorkflowForecastAnchor)
+from order.scheduling_seed import seed_policy
+from workflow.scheduling.policies import clone_policy
+from workflow.scheduling.write_scope import scheduling_write_scope
+
+
+@skipUnless(connection.vendor == 'postgresql','PostgreSQL trigger protection')
+class SchedulingProtectionTests(TestCase):
+    def setUp(self):
+        self.user=get_user_model().objects.create_superuser(username='protection_admin',password=None)
+        self.policy,_=seed_policy('order',user=self.user,publish=True)
+        self.calendar=self.policy.calendars.get(code='working')
+        self.stage=self.policy.stage_timings.get(workflow_key='order',stage_key='trade_approval')
+        self.rule=self.stage.rules.first()
+
+    def rejected(self, operation):
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            operation()
+
+    def test_published_policy_and_children_are_immutable(self):
+        self.rejected(lambda: WorkflowSchedulePolicy.objects.filter(pk=self.policy.pk).update(name='changed'))
+        self.rejected(lambda: WorkflowStageTiming.objects.filter(pk=self.stage.pk).update(default_duration=99))
+        self.rejected(lambda: WorkflowTimingRule.objects.filter(pk=self.rule.pk).delete())
+        self.rejected(lambda: WorkflowCalendarException.objects.bulk_create([
+            WorkflowCalendarException(calendar=self.calendar,date=date(2027,1,1))]))
+        self.rejected(lambda: WorkflowScheduleTransition.objects.filter(policy=self.policy).update(priority=99))
+        self.calendar.name='changed'
+        self.rejected(lambda: self.calendar.save(update_fields=['name']))
+        draft=clone_policy(self.policy.pk,user=self.user)
+        self.assertEqual(draft.status,'draft')
+        self.rejected(lambda: WorkflowSchedulePolicy.objects.filter(pk=draft.pk).update(
+            status='published',is_active=True,published_at=timezone.now()))
+        self.rejected(lambda: WorkflowSchedulePolicy.objects.filter(pk=draft.pk).update(version=99))
+        stage=draft.stage_timings.get(workflow_key='order',stage_key='trade_approval')
+        self.assertEqual(WorkflowStageTiming.objects.filter(pk=stage.pk).update(default_duration=5),1)
+        self.rejected(lambda: WorkflowStageTiming.objects.filter(pk=stage.pk).update(calendar_id=self.calendar.pk))
+
+    def test_raw_sql_is_guarded(self):
+        def mutate():
+            with connection.cursor() as cursor:
+                cursor.execute('UPDATE workflow_workflowcalendar SET name=%s WHERE id=%s',['bad',self.calendar.pk])
+        self.rejected(mutate)
+
+    def test_forecast_history_is_append_only(self):
+        now=timezone.now()
+        row=WorkflowForecast.objects.create(content_type=ContentType.objects.get_for_model(self.policy),
+            object_id=self.policy.pk,policy=self.policy,policy_version=self.policy.version,
+            source_stage='order.trade_approval',target_stage='packing.warehouse',as_of=now)
+        with scheduling_write_scope('detail_revision',row.pk):
+            step=WorkflowForecastStep.objects.create(forecast=row,sequence=1,workflow_key='order',stage_key='trade_approval')
+            anchor=WorkflowForecastAnchor.objects.create(forecast=row,stage_key='order.trade_approval',
+                anchor_type='actual',anchor_datetime=now)
+        self.rejected(lambda: WorkflowForecastStep.objects.create(forecast=row,sequence=2,workflow_key='order',stage_key='supplier_dispatch'))
+        self.rejected(lambda: WorkflowForecast.objects.filter(pk=row.pk).update(initial_estimated_at=now))
+        self.rejected(lambda: WorkflowForecastStep.objects.filter(pk=step.pk).update(standard_duration=10))
+        self.rejected(lambda: WorkflowForecastAnchor.objects.filter(pk=anchor.pk).delete())
+        self.assertEqual(WorkflowForecast.objects.filter(pk=row.pk).update(is_current=False),1)
+        self.rejected(lambda: WorkflowForecast.objects.filter(pk=row.pk).update(is_current=True))
+        with scheduling_write_scope('detail_revision',row.pk):
+            self.rejected(lambda: WorkflowForecastStep.objects.create(forecast=row,sequence=2,workflow_key='order',stage_key='supplier_dispatch'))
+        self.rejected(lambda: WorkflowForecast.objects.filter(pk=row.pk).delete())
+
+
+@skipUnless(connection.vendor == 'postgresql', 'PostgreSQL trigger protection')
+@override_settings(WORKFLOW_SCHEDULING_AUTO_ENABLED=False)
+class SchedulingGuardMigrationRoundTripTests(TransactionTestCase):
+    """Run the real forward and reverse DDL on the disposable test database."""
+
+    def test_uninstall_reinstall_preserves_data_and_guards(self):
+        migration = import_module('workflow.migrations.0013_scheduling_history_guards')
+        tables = (migration.POLICY, *migration.CONFIG, migration.FORECAST, *migration.DETAILS)
+        user = get_user_model().objects.create_superuser(username='guard_roundtrip_admin', password=None)
+        policy, _ = seed_policy('order', user=user, publish=True)
+        before = list(WorkflowSchedulePolicy.objects.filter(pk=policy.pk).values())
+
+        def installed_tables():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT c.relname FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid "
+                    "WHERE t.tgname='wf_sched_guard' AND NOT t.tgisinternal "
+                    "AND t.tgenabled IN ('O','A') AND c.oid IN "
+                    "(SELECT to_regclass(name) FROM unnest(%s::text[]) AS names(name))",
+                    [list(tables)],
+                )
+                return {row[0] for row in cursor.fetchall()}
+
+        self.assertEqual(installed_tables(), set(tables))
+        # Keep both directions in one transaction: a failure restores the
+        # original DDL, rather than leaving the test DB without its guards.
+        with connection.schema_editor(atomic=True) as editor:
+            migration.uninstall(None, editor)
+            self.assertEqual(installed_tables(), set())
+            migration.install(None, editor)
+            self.assertEqual(installed_tables(), set(tables))
+        self.assertEqual(list(WorkflowSchedulePolicy.objects.filter(pk=policy.pk).values()), before)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            WorkflowSchedulePolicy.objects.filter(pk=policy.pk).update(name='forbidden')

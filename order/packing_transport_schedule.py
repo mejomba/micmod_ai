@@ -28,7 +28,7 @@ MILESTONES = {
     'انبار': 'actual_arrival',
 }
 GLOBAL_VIEW_GROUPS = ('packing_viewer', 'packing_finance_viewer')
-SHIPMENT_LABELS = {'sea': 'دریایی', 'air': 'هوایی', 'express': 'اکسپرس'}
+SHIPMENT_LABELS = {'sea': 'دریایی', 'air': 'هوایی', 'express': 'اکسپرس', 'road': 'زمینی', 'rail': 'ریلی'}
 
 
 def workflow_destination(event):

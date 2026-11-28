@@ -27,6 +27,14 @@
 
 
 
+    {% if request.user.base_group != 'bazar' %}
+    <div class="d-flex flex-wrap align-items-end gap-2 border rounded p-3 mb-3">
+      <div><label for="forecast-status" class="form-label" data-key="forecast_status_label">وضعیت پیش‌بینی</label><select id="forecast-status" class="form-select form-select-sm">
+        <option value="" data-key="forecast_all">همه وضعیت‌ها</option><option value="estimated" data-key="forecast_estimated">پیش‌بینی‌شده</option><option value="provisional" data-key="forecast_provisional">مشروط</option><option value="incomplete" data-key="forecast_incomplete">ناقص</option><option value="declared" data-key="forecast_declared">اعلامی</option><option value="actual" data-key="forecast_actual">رسیده</option><option value="cancelled" data-key="forecast_cancelled">لغوشده</option><option value="missing" data-key="forecast_missing">بدون پیش‌بینی</option>
+      </select></div><div><label for="forecast-from" class="form-label" data-key="forecast_from">از تاریخ میلادی</label><input type="date" id="forecast-from" class="form-control form-control-sm"></div><div><label for="forecast-to" class="form-label" data-key="forecast_to">تا تاریخ میلادی</label><input type="date" id="forecast-to" class="form-control form-control-sm"></div>
+      <button type="button" class="btn btn-sm btn-light-primary" id="forecast-filter-apply" data-key="forecast_filter">فیلتر پیش‌بینی</button><button type="button" class="btn btn-sm btn-light" id="forecast-filter-clear" data-key="forecast_clear">پاک کردن</button>
+    </div>
+    {% endif %}
     <div class="border rounded mb-5 p-3">
     <div class="filter-box d-flex align-items-center gap-2 mb-3">
 
@@ -97,6 +105,7 @@
 {% endif %}
 <script language="javascript">
 let extraData = { q: null, filter_type: null, filter_value: null, filter_stage: null,
+    forecast_status: null, forecast_from: null, forecast_to: null,
     payment_filter: '', payment_start: '', payment_end: '' };
 let expertsLoaded = false;
 
@@ -126,6 +135,18 @@ $(document).ready(function() {
     AjaxDatatableViewUtils.initialize_table(
         $('#order_list'), "{% url 'order:order.list.datatable' %}", tableOptions, extraData
     );
+});
+
+$('#forecast-filter-apply').on('click', function () {
+    extraData.forecast_status = $('#forecast-status').val();
+    extraData.forecast_from = $('#forecast-from').val();
+    extraData.forecast_to = $('#forecast-to').val();
+    $('#order_list').DataTable().ajax.reload();
+});
+$('#forecast-filter-clear').on('click', function () {
+    $('#forecast-status,#forecast-from,#forecast-to').val('');
+    extraData.forecast_status = extraData.forecast_from = extraData.forecast_to = null;
+    $('#order_list').DataTable().ajax.reload();
 });
 
 function loadExperts() {

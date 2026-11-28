@@ -11,6 +11,7 @@ from .views import CustomerRequestOrderViewSet
 from .select2 import order_select2_search
 from .packing_sepidar_views import packing_sepidar_preview, packing_sepidar_send
 from .packing_transport_schedule import PackingTransportScheduleView
+from .gio_weight_views import update_gio_weight
 
 
 router = DefaultRouter()
@@ -70,6 +71,7 @@ urlpatterns = [
     #  quick gio
     path('quick_gio/', QuickGIOView.as_view(), name='quick_gio'),
     path('quick_gio/<int:pk>/', QuickGIOView.as_view(), name='quick_gio'),
+    path('quick_gio/<int:pk>/weight/', update_gio_weight, name='gio.weight'),
     path('quick_gio_datatable/', QuickGIODataTableListView.as_view(), name='quick_gio.datatable'),
 
     #  gioitem
@@ -105,6 +107,7 @@ urlpatterns = [
     path('get_wh_reserve_order/', views.get_wh_reserve_order, name='get_wh_reserve_order'),
     path('wh_packing_view/', views.wh_packing_view, name='wh_packing_view'),
     path('wh_packing_view/<int:sepidar_buy_factor_id>/', views.wh_packing_view, name='wh_packing_view'),
+    path('wh_packing_view/new/<int:sepidar_buy_factor_id>/', views.wh_packing_view2, name='wh_packing_view.new'),
     path('portal_reserve/<int:sku>/', views.portal_reserve_, name='portal_reserve_'),
     path('expert_list_api/', views.expert_list_api, name='expert_list_api'),
     path('my_orders/', views.my_orders, name='my_orders'),

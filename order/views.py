@@ -1023,7 +1023,8 @@ class OrderDataTableListView(AjaxDatatableView):
                     to_attr='list_payment_items',
                 )
             )
-        return qs.distinct()
+        from .forecast_presentation import annotate_order_forecasts, filter_order_forecasts
+        return filter_order_forecasts(annotate_order_forecasts(qs.distinct()), request.POST)
 
     def get_response_dict(self, request, paginator, draw_idx, start_pos):
         response = super().get_response_dict(request, paginator, draw_idx, start_pos)
@@ -1069,7 +1070,8 @@ class OrderDataTableListView(AjaxDatatableView):
         row['is_kasri'] = f'<span class="badge badge-success">بله</span>' if obj.is_kasri else f'<span class="badge badge-danger">خیر</span>'
         row['is_force_order'] = f'<span class="badge badge-success">بله</span>' if obj.is_force_order else f'<span class="badge badge-danger">خیر</span>'
         row['qi__quotation'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
-        row['estimated_arrive_date'] = obj.estimate_arrive_at
+        from .forecast_presentation import order_forecast_cells, is_farsi
+        row.update(order_forecast_cells(obj, is_farsi(self.request)))
         row['comments'] = '<hr>'.join([f"{x.comment_content} <br> ({x.elapsed_time})" for x in obj.comments.filter(comment_title='R')])  # "R" is order error from trade user
         if not can_view_order_payments(self.request.user):
             row['payment'] = '<hr>'.join([
@@ -1400,6 +1402,33 @@ class OrderDataTableListView(AjaxDatatableView):
             ]
 
 
+        # Keep the existing role-specific ordering and extend only lists that
+        # expose the foreign-order arrival column. Copy to avoid shared mutation.
+        from .forecast_presentation import is_farsi
+        fa = is_farsi(request)
+        columns = []
+        for column in self.column_defs:
+            column = dict(column)
+            if column.get('name') in ('forecast_source_code','forecast_status_code','forecast_delay'):
+                continue
+            if column.get('name') == 'estimated_arrive_date':
+                column.update(title='پیش‌بینی رسید کامل' if fa else 'Complete arrival', orderable=True, searchable=False)
+                columns.append(column)
+                columns.extend([
+                    {'name':'forecast_source_code','title':'منبع پیش‌بینی' if fa else 'Forecast source','visible':True,'orderable':True,'searchable':False},
+                    {'name':'forecast_status_code','title':'وضعیت پیش‌بینی' if fa else 'Forecast status','visible':True,'orderable':True,'searchable':False},
+                    {'name':'forecast_delay','title':'انحراف (روز)' if fa else 'Variance (days)','visible':True,'orderable':True,'searchable':False},
+                ])
+            else:
+                columns.append(column)
+        if request.user.base_group != 'bazar' and not any(c.get('name')=='estimated_arrive_date' for c in columns):
+            columns.extend([
+                {'name':'estimated_arrive_date','title':'پیش‌بینی رسید کامل' if fa else 'Complete arrival','visible':True,'orderable':True,'searchable':False},
+                {'name':'forecast_source_code','title':'منبع پیش‌بینی' if fa else 'Forecast source','visible':True,'orderable':True,'searchable':False},
+                {'name':'forecast_status_code','title':'وضعیت پیش‌بینی' if fa else 'Forecast status','visible':True,'orderable':True,'searchable':False},
+                {'name':'forecast_delay','title':'انحراف (روز)' if fa else 'Variance (days)','visible':True,'orderable':True,'searchable':False},
+            ])
+        self.column_defs = columns
         # Keep the base group's layout; add financial columns once for non-trade superusers.
         if can_view_order_payments(request.user) and request.user.base_group != 'trade':
             existing_names = {column['name'] for column in self.column_defs}
@@ -1987,6 +2016,9 @@ class GIOView(LoginRequiredMixin, BaseView):
             locked_gio = GIO.objects.select_for_update().get(pk=self.object.pk)
             if gio_is_locked(locked_gio):
                 return JsonResponse({'res': {'error': 'GIO is locked after Sepidar sending.'}}, status=409)
+            # The legacy ModelForm saves all columns, including excluded fields.
+            # Preserve an override saved concurrently before obtaining this lock.
+            self.object.manual_weight_kg = locked_gio.manual_weight_kg
         # if is_ajax(self.request):
         #     res = json.loads(self.request.body)
         #     # kwargs['quantity'] = res['quantity']
@@ -2006,6 +2038,8 @@ class GIOView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['app_name'] = self.request.resolver_match.app_name
+        if self.object:
+            context['gio_weight_summary'] = self.object.get_weight_summary()
         return context
 
 
@@ -3499,129 +3533,133 @@ def get_wh_reserve_order(request, *args, **kwargs):
         return JsonResponse(res)
 
 
-# def wh_packing_view(request, sepidar_buy_factor_id=-1, *args, **kwargs):
-#     template_name = 'order/wh_packing_list.html'
-#
-#     if request.method == 'POST':
-#         try:
-#             order_ids = request.GET.get('order_ids', '').split(',')
-#             receipt_quantity = json.loads(request.body)
-#             obj = {'receipt_quantity': receipt_quantity, "sepidar_buy_factor_id": sepidar_buy_factor_id, 'user': request.user.sepidar_code}
-#             res = SepidarApiCall.wh_receipt_from_bazar(obj, request)
-#             if "errors" in res:
-#                 return JsonResponse({'res': res['errors']}, status=500)
-#             else:
-#                 for order_id in order_ids:
-#                     Order.objects.filter(pk=order_id).update(is_wh=True, receipt_in_wh=True,
-#                                                              sepidar_wh_code=settings.SEPIDAR_CONST_DATA.get(
-#                                                                  'central_wh_id'))
-#                     if SepidarOrderDocument.objects.filter(order_id=order_id).exists():
-#                         order_document_obj = SepidarOrderDocument.objects.get(order=order_id)
-#                         data = order_document_obj.data
-#                         if data.get('bazar'):
-#                             data['bazar']['sepidar'].append(res['bazar']['sepidar'])
-#                         else:
-#                             data['bazar'] = {'sepidar': [res['bazar']['sepidar']]}
-#                         order_document_obj.data = data
-#                         order_document_obj.save()
-#                     else:
-#                         SepidarOrderDocument.objects.create(order_id=order_id, data=res)
-#
-#                 # تبدیل محل تامین به رسید شده در انبار
-#
-#                 # service = SupplyLocationService()
-#                 # wh_code = settings.SEPIDAR_CONST_DATA.get('central_wh_id')
-#                 #
-#                 # with transaction.atomic():
-#                 #     for order_id in order_ids:
-#                 #         # Order.objects.filter(pk=order_id).update(is_wh=True, receipt_in_wh=True, sepidar_wh_code=settings.SEPIDAR_CONST_DATA.get('central_wh_id'))
-#                 #         if not order_id:
-#                 #             continue
-#                 #         order = (
-#                 #             OrderBazar.objects
-#                 #             .select_for_update()
-#                 #             .get(pk=order_id)
-#                 #         )
-#                 #         order.receipt_in_wh = True
-#                 #         order.sepidar_wh_code = wh_code
-#                 #         order.save(update_fields=['receipt_in_wh', 'sepidar_wh_code'])
-#                 #
-#                 #         # تعداد رسیده‌ی این سفارش از همان payload
-#                 #         qty = float(receipt_quantity.get(str(order_id), 0) or 0)
-#                 #
-#                 #         service.migrate_bazar_order_to_warehouse(
-#                 #             order, wh_code, received_qty=order.quantity
-#                 #         )
-#
-#                 # if SepidarOrderDocument.objects.filter(order_id=order_id).exists():
-#                 #     order_document_obj = SepidarOrderDocument.objects.get(order=order_id)
-#                 #     data = order_document_obj.data
-#                 #     if data.get('bazar'):
-#                 #         data['bazar']['sepidar'].append(res['bazar']['sepidar'])
-#                 #     else:
-#                 #         data['bazar'] = {'sepidar': [res['bazar']['sepidar']]}
-#                 #     order_document_obj.data = data
-#                 #     order_document_obj.save()
-#                 # else:
-#                 #     SepidarOrderDocument.objects.create(order_id=order_id, data=res)
-#
-#                 return JsonResponse({'res': f'{res}'})
-#         except Exception as e:
-#             return JsonResponse({'res': str(e)}, status=500)
-#     else:
-#         if sepidar_buy_factor_id < 0:
-#             import ast
-#             orders = Order.objects.filter(buy_factors__isnull=False, is_deleted=False, is_bazar=True, receipt_in_wh=False).exclude(buy_factors=[])
-#             bazar_orders = OrderBazar.objects.filter(buy_factors__isnull=False, is_deleted=False, receipt_in_wh=False).exclude(buy_factors=[])
-#             trade_orders = PackingItem.objects.filter(packing__last_work_flow__current_state_name='انبار').select_related('order', 'packing__last_work_flow').distinct()
-#             for item in trade_orders:
-#                 print(item.order)
-#
-#             buy_factor_id_dict = dict()
-#             for order in bazar_orders:
-#                 for buy_factor in order.buy_factors:
-#                     for key, value in buy_factor.items():
-#                         key_tuple = ast.literal_eval(key)
-#                         # key_tuple = key_tuple[0]
-#                         if key_tuple in buy_factor_id_dict:
-#                             buy_factor_id_dict[key_tuple].append(order.pk)
-#                         else:
-#                             buy_factor_id_dict[key_tuple] = [order.pk]
-#
-#             for order in orders:
-#                 for buy_factor in order.buy_factors:
-#                     for key, value in buy_factor.items():
-#                         key_tuple = ast.literal_eval(key)
-#                         # key_tuple = key_tuple[0]
-#                         if key_tuple in buy_factor_id_dict:
-#                             buy_factor_id_dict[key_tuple].append(order.pk)
-#                         else:
-#                             buy_factor_id_dict[key_tuple] = [order.pk]
-#
-#             context = {"buy_factor_id_dict": buy_factor_id_dict}
-#             return render(request, template_name, context=context)
-#
-#         res = SepidarApiCall.get('inventorypurchaseinvoice', sepidar_buy_factor_id)
-#
-#         if res.ok:
-#             data = res.json()
-#             data_ = {
-#                 'vendor': data['fk_strs']['vendordlref'],
-#                 'items': [
-#                     {
-#                         'sku': row['sku'],
-#                         'partnumber': row['fk_strs']['itemref'],
-#                         'quantity': row['quantity'],
-#                         'remaining_quantity': row['remainingquantity'],
-#                         'id': row['inventorypurchaseinvoiceitemid']
-#                     } for row in data['inventorypurchaseinvoice_item']
-#                 ]
-#             }
-#             return JsonResponse({'res': data_})
-#         else:
-#             return JsonResponse({'res': res.json()})
-
 def wh_packing_view(request, sepidar_buy_factor_id=-1, *args, **kwargs):
+    template_name = 'order/wh_packing_list.html'
+
+    if request.method == 'POST':
+        try:
+            order_ids = request.GET.get('order_ids', '').split(',')
+            receipt_quantity = json.loads(request.body)
+            obj = {'receipt_quantity': receipt_quantity, "sepidar_buy_factor_id": sepidar_buy_factor_id, 'user': request.user.sepidar_code}
+            res = SepidarApiCall.wh_receipt_from_bazar(obj, request)
+            if "errors" in res:
+                return JsonResponse({'res': res['errors']}, status=500)
+            else:
+                for order_id in order_ids:
+                    Order.objects.filter(pk=order_id).update(is_wh=True, receipt_in_wh=True,
+                                                             sepidar_wh_code=settings.SEPIDAR_CONST_DATA.get(
+                                                                 'central_wh_id'))
+                    if SepidarOrderDocument.objects.filter(order_id=order_id).exists():
+                        order_document_obj = SepidarOrderDocument.objects.get(order=order_id)
+                        data = order_document_obj.data
+                        if data.get('bazar'):
+                            data['bazar']['sepidar'].append(res['bazar']['sepidar'])
+                        else:
+                            data['bazar'] = {'sepidar': [res['bazar']['sepidar']]}
+                        order_document_obj.data = data
+                        order_document_obj.save()
+                    else:
+                        SepidarOrderDocument.objects.create(order_id=order_id, data=res)
+
+                # تبدیل محل تامین به رسید شده در انبار
+
+                # service = SupplyLocationService()
+                # wh_code = settings.SEPIDAR_CONST_DATA.get('central_wh_id')
+                #
+                # with transaction.atomic():
+                #     for order_id in order_ids:
+                #         # Order.objects.filter(pk=order_id).update(is_wh=True, receipt_in_wh=True, sepidar_wh_code=settings.SEPIDAR_CONST_DATA.get('central_wh_id'))
+                #         if not order_id:
+                #             continue
+                #         order = (
+                #             OrderBazar.objects
+                #             .select_for_update()
+                #             .get(pk=order_id)
+                #         )
+                #         order.receipt_in_wh = True
+                #         order.sepidar_wh_code = wh_code
+                #         order.save(update_fields=['receipt_in_wh', 'sepidar_wh_code'])
+                #
+                #         # تعداد رسیده‌ی این سفارش از همان payload
+                #         qty = float(receipt_quantity.get(str(order_id), 0) or 0)
+                #
+                #         service.migrate_bazar_order_to_warehouse(
+                #             order, wh_code, received_qty=order.quantity
+                #         )
+
+                # if SepidarOrderDocument.objects.filter(order_id=order_id).exists():
+                #     order_document_obj = SepidarOrderDocument.objects.get(order=order_id)
+                #     data = order_document_obj.data
+                #     if data.get('bazar'):
+                #         data['bazar']['sepidar'].append(res['bazar']['sepidar'])
+                #     else:
+                #         data['bazar'] = {'sepidar': [res['bazar']['sepidar']]}
+                #     order_document_obj.data = data
+                #     order_document_obj.save()
+                # else:
+                #     SepidarOrderDocument.objects.create(order_id=order_id, data=res)
+
+                return JsonResponse({'res': f'{res}'})
+        except Exception as e:
+            return JsonResponse({'res': str(e)}, status=500)
+    else:
+        if sepidar_buy_factor_id < 0:
+            import ast
+            orders = Order.objects.filter(buy_factors__isnull=False, is_deleted=False, is_bazar=True, receipt_in_wh=False).exclude(buy_factors=[])
+            bazar_orders = OrderBazar.objects.filter(buy_factors__isnull=False, is_deleted=False, receipt_in_wh=False).exclude(buy_factors=[])
+            trade_orders = PackingItem.objects.filter(packing__last_work_flow__current_state_name='انبار').select_related('order', 'packing__last_work_flow').distinct()
+            for item in trade_orders:
+                print(item.order)
+
+            buy_factor_id_dict = dict()
+            for order in bazar_orders:
+                for buy_factor in order.buy_factors:
+                    for key, value in buy_factor.items():
+                        key_tuple = ast.literal_eval(key)
+                        # key_tuple = key_tuple[0]
+                        if key_tuple in buy_factor_id_dict:
+                            buy_factor_id_dict[key_tuple].append(order.pk)
+                        else:
+                            buy_factor_id_dict[key_tuple] = [order.pk]
+                    else:
+                        buy_factor_id_dict[key_tuple].append(1)
+
+            for order in orders:
+                for buy_factor in order.buy_factors:
+                    for key, value in buy_factor.items():
+                        key_tuple = ast.literal_eval(key)
+                        # key_tuple = key_tuple[0]
+                        if key_tuple in buy_factor_id_dict:
+                            buy_factor_id_dict[key_tuple].append(order.pk)
+                        else:
+                            buy_factor_id_dict[key_tuple] = [order.pk]
+                    else:
+                        buy_factor_id_dict[key_tuple].append(0)
+
+            context = {"buy_factor_id_dict": buy_factor_id_dict}
+            return render(request, template_name, context=context)
+
+        res = SepidarApiCall.get('inventorypurchaseinvoice', sepidar_buy_factor_id)
+
+        if res.ok:
+            data = res.json()
+            data_ = {
+                'vendor': data['fk_strs']['vendordlref'],
+                'items': [
+                    {
+                        'sku': row['sku'],
+                        'partnumber': row['fk_strs']['itemref'],
+                        'quantity': row['quantity'],
+                        'remaining_quantity': row['remainingquantity'],
+                        'id': row['inventorypurchaseinvoiceitemid']
+                    } for row in data['inventorypurchaseinvoice_item']
+                ]
+            }
+            return JsonResponse({'res': data_})
+        else:
+            return JsonResponse({'res': res.json()})
+
+def wh_packing_view2(request, sepidar_buy_factor_id=-1, *args, **kwargs):
 # این نسخه ای هست که با سفارش های جدید کار میکنه
     template_name = 'order/wh_packing_list.html'
 
@@ -3696,6 +3734,8 @@ def wh_packing_view(request, sepidar_buy_factor_id=-1, *args, **kwargs):
                             buy_factor_id_dict[key_tuple].append(order.pk)
                         else:
                             buy_factor_id_dict[key_tuple] = [order.pk]
+                    else:
+                        buy_factor_id_dict[key_tuple].append(1)
 
             for order in orders:
                 for buy_factor in order.buy_factors:
@@ -3706,6 +3746,8 @@ def wh_packing_view(request, sepidar_buy_factor_id=-1, *args, **kwargs):
                             buy_factor_id_dict[key_tuple].append(order.pk)
                         else:
                             buy_factor_id_dict[key_tuple] = [order.pk]
+                    else:
+                        buy_factor_id_dict[key_tuple].append(0)
 
             context = {"buy_factor_id_dict": buy_factor_id_dict}
             return render(request, template_name, context=context)
@@ -3897,7 +3939,10 @@ class QuickGIOView(LoginRequiredMixin, View):
             # A broken/incomplete plan must never be declared fully sent.
             group_statuses.append('preview_error')
         sepidar_response = gio_document_display(gio_object) if gio_object else {}
+        from .gio_weight_views import can_change_gio_weight
         context = {
+            'gio_weight_summary': gio_object.get_weight_summary() if gio_object else None,
+            'gio_can_change_weight': can_change_gio_weight(request.user, gio_object),
             'form': gio_form,
             'formset': gio_item_formset,
             'gios': (

@@ -1,0 +1,44 @@
+{% load jalali_tags %}
+{% load humanize %}
+{% load l10n %}
+{% for item in list %}
+            <tr data-source="{{ item.source|default:'' }}"
+                data-doc-number="{{ item.Number|default_if_none:'' }}"
+                data-doc-year="{{ item.year_title|default_if_none:'' }}"
+                data-customer-code="{{ item.customer_code|default_if_none:'' }}"
+                data-item-code="{{ item.item_code|default_if_none:'' }}"
+                data-purchase-group="{{ item.purchase_group|default_if_none:'' }}"
+                data-sales-group="{{ item.sales_group|default_if_none:'' }}"
+                data-doc-type="{{ item.doc_type|default_if_none:'' }}"
+                data-row-date="{% if item.Date %}{{ item.Date|to_jalali:'%Y/%m/%d' }}{% endif %}"
+                data-row-fee="{{ item.Fee|default_if_none:0|unlocalize }}"
+                data-currency="{{ item.currency|default_if_none:'' }}"
+                data-row-price="{{ item.Price|default_if_none:0|unlocalize }}"
+                data-row-qty="{{ item.Quantity|default_if_none:0|unlocalize }}">
+              <td data-search="{{ item.source }}" data-sh-col="0">
+                {% if item.source == 'sepidar' %}<span class="sh-pill sh-pill--sepidar">سپیدار</span>{% else %}<span class="sh-pill sh-pill--portal">پرتال</span>{% endif %}
+              </td>
+              <td class="sh-number" data-sh-col="1" data-search="{{ item.Number|default_if_none:'' }}" data-order="{{ item.Number|default_if_none:'' }}">{{ item.Number|default_if_none:'—' }}</td>
+              <td title="{{ item.customer_title|default_if_none:'' }}" data-sh-col="2">{{ item.customer_title|default_if_none:'—' }}</td>
+              <td class="sh-number" data-sh-col="3" data-search="{{ item.customer_code|default_if_none:'' }}" data-order="{{ item.customer_code|default_if_none:'' }}">{{ item.customer_code|default_if_none:'—' }}</td>
+              <td class="sh-number" data-sh-col="4" data-search="{{ item.item_code|default_if_none:'' }}" data-order="{{ item.item_code|default_if_none:'' }}">{{ item.item_code|default_if_none:'—' }}</td>
+              <td title="{{ item.item_title|default_if_none:'' }}" data-sh-col="5">{{ item.item_title|default_if_none:'—' }}</td>
+              <td data-search="{{ item.doc_type }}">
+                {% if item.doc_type == 'invoice' %}<span class="sh-pill sh-pill--invoice">فاکتور</span>
+                {% elif item.doc_type == 'quotation' %}<span class="sh-pill sh-pill--quotation">پیش‌فاکتور</span>
+                {% elif item.doc_type == 'returned_invoice' %}<span class="sh-pill sh-pill--return">برگشت از فروش</span>
+                {% else %}{{ item.doc_type }}{% endif %}
+              </td>
+              <td class="sh-number" data-order="{{ item.Date|date:'Y-m-d' }}">{% if item.Date %}{{ item.Date|to_jalali:'%Y/%m/%d' }}{% else %}—{% endif %}</td>
+              <td>{{ item.sales_user_group|default_if_none:'—' }}</td>
+              <td data-search="{{ item.purchase_group|default_if_none:'' }}" data-order="{{ item.purchase_group|default_if_none:'' }}">{{ item.purchase_group|default_if_none:'—' }}</td>
+              <td data-search="{{ item.sales_group|default_if_none:'' }}" data-order="{{ item.sales_group|default_if_none:'' }}">{{ item.sales_group|default_if_none:'—' }}</td>
+              <td>{{ item.sales_type|default_if_none:'—' }}</td>
+              <td class="sh-number" data-search="{{ item.Quantity|default_if_none:0|unlocalize }}">{{ item.Quantity|default_if_none:0|floatformat:'-6'|intcomma }}</td>
+              <td class="sh-number sh-amount" data-search="{{ item.Fee|default_if_none:0|unlocalize }}">{{ item.Fee|default_if_none:0|floatformat:'-6'|intcomma }}</td>
+              <td class="sh-number sh-amount" data-search="{{ item.fee_after_discount|default_if_none:0|unlocalize }}">{{ item.fee_after_discount|default_if_none:0|floatformat:'-6'|intcomma }}</td>
+              <td class="sh-number sh-price" data-search="{{ item.Price|default_if_none:0|unlocalize }}">{{ item.Price|default_if_none:0|floatformat:'-6'|intcomma }}</td>
+              <td>{{ item.currency|default_if_none:'—' }}</td>
+              <td class="sh-number" data-search="{{ item.Rate|default_if_none:''|unlocalize }}">{% if item.Rate is not None %}{{ item.Rate|floatformat:'-4'|intcomma }}{% else %}<span class="sh-none">—</span>{% endif %}</td>
+            </tr>
+          {% endfor %}

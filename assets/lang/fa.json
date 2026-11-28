@@ -1134,5 +1134,20 @@
     "packing_size_format_invalid": "سایز باید شامل سه عدد مثبت با جداکننده *، x یا × باشد (مثلاً 40*30*20).",
     "packing_export_excel": "دریافت خروجی اکسل",
     "packing_volume_calculation_hint": "حجم از حاصل‌ضرب طول، عرض و ارتفاع تقسیم بر ۱٬۰۰۰٬۰۰۰ محاسبه می‌شود.",
-    "packing_overview_note": "حجم بر اساس حاصل‌ضرب طول، عرض و ارتفاع تقسیم بر ۱٬۰۰۰٬۰۰۰ محاسبه می‌شود؛ مقادیر دستی تأییدشده حفظ می‌شوند."
+    "packing_overview_note": "حجم بر اساس حاصل‌ضرب طول، عرض و ارتفاع تقسیم بر ۱٬۰۰۰٬۰۰۰ محاسبه می‌شود؛ مقادیر دستی تأییدشده حفظ می‌شوند.",
+  "scheduling_settings": "تنظیمات",
+  "workflow_scheduling_management": "مدیریت زمان‌بندی گردش کار",
+  "forecast_status_label": "وضعیت پیش‌بینی",
+  "forecast_all": "همه وضعیت‌ها",
+  "forecast_estimated": "پیش‌بینی‌شده",
+  "forecast_provisional": "مشروط",
+  "forecast_incomplete": "ناقص",
+  "forecast_declared": "اعلامی",
+  "forecast_actual": "رسیده",
+  "forecast_cancelled": "لغوشده",
+  "forecast_missing": "بدون پیش‌بینی",
+  "forecast_from": "از تاریخ میلادی",
+  "forecast_to": "تا تاریخ میلادی",
+  "forecast_filter": "فیلتر پیش‌بینی",
+  "forecast_clear": "پاک کردن"
 }

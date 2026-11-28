@@ -1,0 +1,20 @@
+{% load i18n %}
+{% get_current_language as gio_language %}
+<div class="d-flex flex-wrap align-items-center gap-4" data-gio-weight-summary>
+    <div>
+        <div class="text-muted fs-8">{% if gio_language == 'en' %}Calculated weight{% else %}وزن محاسباتی کالاها{% endif %}</div>
+        <strong dir="ltr" data-weight-calculated>{{ gio_weight_summary.calculated_weight_kg|default_if_none:"—" }}</strong> kg
+    </div>
+    <div>
+        <div class="text-muted fs-8">{% if gio_language == 'en' %}Effective weight{% else %}وزن کل مؤثر GIO{% endif %}</div>
+        <strong dir="ltr" data-weight-effective>{{ gio_weight_summary.effective_weight_kg|default_if_none:"—" }}</strong> kg
+    </div>
+    <div>
+        <div class="text-muted fs-8">{% if gio_language == 'en' %}Source{% else %}منبع وزن{% endif %}</div>
+        <strong data-weight-source data-manual="{% if gio_language == 'en' %}Manual{% else %}اعلامی کاربر{% endif %}" data-auto="{% if gio_language == 'en' %}Calculated{% else %}محاسباتی{% endif %}">{% if gio_weight_summary.is_overridden %}{% if gio_language == 'en' %}Manual{% else %}اعلامی کاربر{% endif %}{% else %}{% if gio_language == 'en' %}Calculated{% else %}محاسباتی{% endif %}{% endif %}</strong>
+    </div>
+    <div class="text-warning fs-8" data-weight-warning {% if not gio_weight_summary.missing_row_ids %}hidden{% endif %}>
+        {% if gio_language == 'en' %}Incomplete weight: rows missing a valid quantity or unit weight{% else %}وزن ناقص: تعداد یا وزن واحد برخی ردیف‌ها نامعتبر یا نامشخص است{% endif %}
+        (<span data-weight-missing>{{ gio_weight_summary.missing_row_ids|length }}</span>)
+    </div>
+</div>

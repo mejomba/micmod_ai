@@ -86,6 +86,7 @@ urlpatterns = [
     path('factor/', include('factor.urls')),
     path('pcba/', include('pcba.urls')),
     path('order/', include('order.urls')),
+    path('workflow/scheduling/', include('workflow.scheduling.urls')),
     path('transportation/', include('transportation.urls')),
     path('guides/', include('guides.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

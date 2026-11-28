@@ -7,3 +7,7 @@ class OrderConfig(AppConfig):
 
     def ready(self):
         import order.signals
+        from .scheduling_adapters import register_bindings
+        register_bindings()
+        from .scheduling_events import connect
+        connect()

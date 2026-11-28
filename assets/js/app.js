@@ -2,7 +2,14 @@
     "use strict";
     var e, t, a, o = localStorage.getItem("Dason-language"), r = "en";
 
+    function syncSchedulingLanguage(lang) {
+        if (lang === "fa" || lang === "en") {
+            document.cookie = "portal_scheduling_language=" + lang + "; Path=/; SameSite=Lax" + (location.protocol === "https:" ? "; Secure" : "");
+        }
+    }
+    syncSchedulingLanguage(o || r);
     function d(t) {
+        syncSchedulingLanguage(t);
         document.getElementById("header-lang-img") && ("fa" == t ? document.getElementById("header-lang-img").src = "/static/images/flags/iran.jpg" :"en" == t ? document.getElementById("header-lang-img").src = "/static/images/flags/us.jpg" : "sp" == t ? document.getElementById("header-lang-img").src = "/static/images/flags/spain.jpg" : "gr" == t ? document.getElementById("header-lang-img").src = "/static/images/flags/germany.jpg" : "it" == t ? document.getElementById("header-lang-img").src = "/static/images/flags/italy.jpg" : "ru" == t && (document.getElementById("header-lang-img").src = "/static/images/flags/russia.jpg"), localStorage.setItem("Dason-language", t), null == (o = localStorage.getItem("Dason-language")) && d(r), n.getJSON("/static/lang/" + o + ".json", function (t) {
             n("html").attr("lang", o), n.each(t, function (t, e) {
                 "head" === t && n(document).attr("title", e.title), n("[data-key='" + t + "']").text(e)

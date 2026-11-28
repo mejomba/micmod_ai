@@ -13,6 +13,92 @@
         .item_customer_receipt_list{
             transition: all 0.3s ease;
         }
+        /* A single compact, responsive summary at the end of the form. */
+        .pcba-contract-summary {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0;
+            margin: 1rem 0 .5rem;
+            padding: .7rem 1rem;
+            border: 1px solid #dae6f1;
+            border-radius: .85rem;
+            background: #f7fafd;
+            direction: rtl;
+        }
+        .pcba-contract-summary-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            min-width: 0;
+            padding: .5rem .9rem;
+        }
+        .pcba-contract-summary-item + .pcba-contract-summary-item {
+            border-right: 1px solid #dae6f1;
+        }
+        .pcba-contract-summary-label {
+            display: flex;
+            align-items: center;
+            gap: .55rem;
+            min-width: 0;
+            color: #45546a;
+            font-weight: 650;
+            font-size: .88rem;
+        }
+        .pcba-contract-summary-icon {
+            width: 2rem;
+            height: 2rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border-radius: .6rem;
+            color: #3668c6;
+            background: #e8effc;
+            font-size: 1rem;
+        }
+        .pcba-contract-summary-item--cost .pcba-contract-summary-icon {
+            color: #177d64;
+            background: #e4f4ed;
+        }
+        .pcba-contract-summary-value {
+            display: inline-flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: .35rem;
+            color: #183c77;
+            min-width: 0;
+            font-size: 1.3rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+        }
+        .pcba-contract-summary-item--cost .pcba-contract-summary-value {
+            color: #12694f;
+        }
+        .pcba-contract-summary-value strong {
+            overflow-wrap: anywhere;
+            unicode-bidi: isolate;
+            font: inherit;
+        }
+        .pcba-contract-summary-value small {
+            font-size: .7rem;
+            font-weight: 600;
+            color: #66788c;
+        }
+        @media (max-width: 767px) {
+            .pcba-contract-summary {
+                grid-template-columns: 1fr;
+                padding: .3rem .65rem;
+            }
+            .pcba-contract-summary-item { padding: .65rem .4rem; }
+            .pcba-contract-summary-item + .pcba-contract-summary-item {
+                border-right: 0;
+                border-top: 1px solid #dae6f1;
+            }
+            .pcba-contract-summary-value { font-size: 1.15rem; }
+        }
+
         .nav-pills .nav-link.active,
         .nav-pills .show > .nav-link{
             background-color: #061b66 !important;
@@ -50,21 +136,44 @@
                     </div>
                 </div>
                 <div class="col mt-3">
-                    <div class="row row-cols-5">
-                        {% render_field_by_order form form.customer_sheet_count form.customer_board_count form.customer_total_board_count form.pad_count form.ic_pad_count label='on-border' %}
-                    </div>
-                </div>
-
-
-                <div class="col mt-3">
-                    <div class="row row-cols-7">
-                        {% render_field_by_order form form.not_assembly_pad_count form.first_setup_time form.second_setup_time form.first_setup_cost form.second_setup_cost label='on-border' %}
+                    <div class="row row-cols-1 row-cols-md-3 row-cols-xl-6">
+                        {% render_field_by_order form form.customer_sheet_count form.customer_board_count form.customer_total_board_count form.pad_count form.ic_pad_count form.not_assembly_pad_count label='on-border' %}
                     </div>
                 </div>
 
                 <div class="col mt-3">
-                    <div class="row row-cols-5">
-                        {% render_field_by_order form form.pad_cost form.ic_pad_cost form.total_cost form.finish form.contract_end_date form.assembly_type form.image_1 label='on-border' %}
+                    <div class="row row-cols-1 row-cols-md-3 row-cols-xl-5">
+                        {% render_field_by_order form form.first_setup_time form.second_setup_time form.first_setup_cost form.second_setup_cost label='on-border' %}
+                    </div>
+                </div>
+
+                <div class="col mt-3">
+                    <div class="row row-cols-1 row-cols-md-3 row-cols-xl-5">
+                        {% render_field_by_order form form.pad_cost form.ic_pad_cost form.total_cost form.extra_total_cost form.finish form.contract_end_date form.assembly_type form.image_1 label='on-border' %}
+                    </div>
+                    {# Compact totals directly beneath the contract price fields. #}
+                    <div class="pcba-contract-summary" role="group" aria-label="خلاصه محاسبات قرارداد">
+                        <div class="pcba-contract-summary-item pcba-contract-summary-item--pads"
+                             title="مجموع پدهای معمولی، IC و خمیر قلع یا چسب بدون مونتاژ، به ازای هر برد">
+                            <span class="pcba-contract-summary-label">
+                                <span class="pcba-contract-summary-icon" aria-hidden="true">∑</span>
+                                جمع پدهای هر برد
+                            </span>
+                            <span class="pcba-contract-summary-value" aria-live="polite">
+                                <strong id="pcba-total-pads-per-board" dir="ltr">{{ form.instance.total_pads_per_board|intcomma }}</strong>
+                                <small>پد</small>
+                            </span>
+                        </div>
+                        <div class="pcba-contract-summary-item pcba-contract-summary-item--cost"
+                             title="جمع پدهای معمولی و خمیر قلع/چسب با نرخ پد معمولی، پدهای IC با نرخ IC، به اضافه هزینه‌های راه‌اندازی و مازاد">
+                            <span class="pcba-contract-summary-label">
+                                <span class="pcba-contract-summary-icon" aria-hidden="true">﷼</span>
+                                جمع مبلغ قرارداد
+                            </span>
+                            <span class="pcba-contract-summary-value" aria-live="polite">
+                                <strong id="pcba-calculated-contract-cost" dir="ltr">{{ form.instance.contract_cost|default_if_none:0|intcomma }}</strong>
+                            </span>
+                        </div>
                     </div>
                 </div>
             <div class="" dir="ltr" id="image-wrapper">
@@ -74,10 +183,6 @@
                         </a>
                     {% endfor %}
 
-            </div>
-            <div class="mt-5">
-                <span class="font-size-16 bold ">جمع مبلغ قرارداد:</span>
-                <span class="badge badge-light-secondary text-black font-size-14">{{ form.instance.contract_cost|default_if_none:0|intcomma }}</span>
             </div>
                 {{ form.errors }}
 
@@ -126,7 +231,7 @@
 	</div>
 	<div class="card-body py-0 px-4">
 		<div class="tab-content">
-			<div class="tab-pane fade show active" id="kt_tab_pane_1_4" role="tabpanel" aria-labelledby="kt_tab_pane_1_4">
+			<div class="tab-pane fade" id="kt_tab_pane_1_4" role="tabpanel" aria-labelledby="kt_tab_pane_1_4">
 				<div class="bg-white row rounded pt-10 position-relative ">
 {#        <h4 class="position-absolute" style="top: -10px">رسید کالای مشتری</h4>#}
         {% if form.instance.pk %}
@@ -335,7 +440,7 @@
         {% endif %}
     </div>
 			</div>
-			<div class="tab-pane fade" id="kt_tab_pane_3_4" role="tabpanel" aria-labelledby="kt_tab_pane_3_4">
+			<div class="tab-pane fade show active" id="kt_tab_pane_3_4" role="tabpanel" aria-labelledby="kt_tab_pane_3_4">
 				<div class="bg-white row rounded pt-10 position-relative ">
         <div class="col-12">
 {#            <h4 class="position-absolute" style="top: -10px">فعالیت های روز تولید</h4>#}
@@ -503,6 +608,7 @@
     <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
     <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/pcba_contract_calculations.js' %}"></script>
 
     <script>
     try {
@@ -716,6 +822,7 @@
         customer_board_count_val = parseFloat(customer_board_count.value) || 0
 
         total_board_count.value = customer_board_count_val * customer_sheet_count_val
+        total_board_count.dispatchEvent(new Event('input', { bubbles: true }));
     }
     customer_sheet_count.addEventListener('input', calculateBoardCount);
     customer_board_count.addEventListener('input', calculateBoardCount)
@@ -818,6 +925,8 @@
                         document.getElementById('id_customer_sheet_count').value = data.data.customer_sheet_count;
                         document.getElementById('id_ic_pad_count').value = data.data.ic_pad_count;
                         document.getElementById('id_pad_count').value = data.data.pad_count;
+                        document.getElementById('id_pad_count').dispatchEvent(new Event('input', { bubbles: true }));
+                        document.getElementById('id_ic_pad_count').dispatchEvent(new Event('input', { bubbles: true }));
                     } else if (data.error) {
                         alert(data.error);
                     } else {

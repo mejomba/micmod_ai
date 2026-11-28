@@ -4,6 +4,7 @@
 {% load accounts_tag %}
 {% load core_tags %}
 {% load order_tags %}
+{% load forecast_tags %}
 {% load jalali_tags %}
 
 {% block title %}Packing{% endblock title %}
@@ -2646,6 +2647,9 @@ input.pk-carton-size-invalid{border-color:#dc3545!important}
                 {% endif %}
             </div>
 
+            {% if packing_object and not is_assignee_only %}
+                {% arrival_forecast_panel packing_object 'packing' %}
+            {% endif %}
             {% if packing_object %}
             <section id="pk-overview-panel" class="pk-ov-panel" role="tabpanel"
                      aria-labelledby="pk-tab-overview" tabindex="0" hidden>

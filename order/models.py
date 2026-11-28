@@ -163,7 +163,7 @@ class Order(BaseModeWF):
     ORDER_STATUS = [('1', _("draft")), ('2', _("started")), ('3', _("co-conf")), ('4', _("supp-sent")), ('5', _("sup-conf")),
                     ('6', _("pre-paid")), ('7', _("gio")), ('8', _("has-packing")), ('9', _("partial-arrived")),
                     ('10', _("total-arrived")), ('11', _("has-error")), ('12', _("completed")), ('13', _("canceled")), ]
-    TRANSPORTATION_CHOICE = [("express", "express"), ("air", "air"), ("sea", "sea"), ]
+    TRANSPORTATION_CHOICE = [("express", "express"), ("air", "air"), ("sea", "sea"), ("road", "road"), ("rail", "rail"), ]
     BUY_OPERATOR_CHOICE = (("me", _("me")), ("mac", _("mac")), ("luise", _("luise")))
     PAY_OPERATOR_CHOICE = (("mac", _("mac")), ("luise", _("luise")), ("iranpaid", _("iranpaid")))
 
@@ -417,11 +417,11 @@ class Order(BaseModeWF):
                     last_number = self.__class__.objects.exclude(number__isnull=True).latest('number').number or 0
                     self.order_number = f'A{year}-{last_number + 1}'
                     self.number = last_number + 1
-                except Exception as e:
+                except self.__class__.DoesNotExist:
+                    # An empty order table is normal (e.g. the first order).
                     last_number = 0
                     self.order_number = f'A{year}-{last_number + 1}'
                     self.number = last_number + 1
-                    print(e)
         else:
             try:
                 self.version += 1
@@ -1036,7 +1036,7 @@ class Packing(BaseModeWF):
         42: "انبار کالای معیوب",
     }
 
-    SHIPMENT_TYPE = [("express", "express"), ("air", "air"), ("sea", "sea"), ]
+    SHIPMENT_TYPE = [("express", "express"), ("air", "air"), ("sea", "sea"), ("road", "road"), ("rail", "rail"), ]
     WH_DESTINATION_CHOICE = [(2, _("central")), (3, _("resalat")), ]
     packing_number = models.CharField(_('packing_number'), max_length=255, null=True, blank=True)
     order_registration_number = models.CharField(
@@ -1598,6 +1598,56 @@ class GIOSepidarManualDocumentEntry(models.Model):
 
 
 class GIO(BaseModeWF):
+    # NULL means automatic. A manual zero is distinct from NULL.
+    manual_weight_kg = models.DecimalField(
+        'Manual GIO weight (kg)', max_digits=18, decimal_places=6,
+        null=True, blank=True, validators=[MinValueValidator(0)],
+    )
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(manual_weight_kg__isnull=True) | models.Q(manual_weight_kg__gte=0),
+                name='order_gio_manual_weight_nonneg',
+            ),
+        ]
+
+    def get_weight_summary(self):
+        from .gio_weight import summarize_weights
+        if not self.pk:
+            return summarize_weights([], self.manual_weight_kg)
+        rows = self.gioitems.filter(is_deleted=False).select_related(
+            'order__item', 'order__item_trade',
+        ).order_by('pk')
+        cache = {}
+        def row_weights():
+            for row in rows:
+                order = row.order
+                item = order.final_item if order and not order.is_deleted else None
+                if item is None or item.is_deleted:
+                    yield row.pk, row.quantity, None
+                    continue
+                if item.pk not in cache:
+                    cache[item.pk] = item.weight
+                yield row.pk, row.quantity, cache[item.pk]
+        return summarize_weights(row_weights(), self.manual_weight_kg)
+
+    @property
+    def calculated_weight_kg(self):
+        return self.get_weight_summary().calculated_weight_kg
+
+    @property
+    def total_weight_kg(self):
+        return self.get_weight_summary().effective_weight_kg
+
+    @property
+    def effective_weight_kg(self):
+        return self.total_weight_kg
+
+    @property
+    def weight_is_overridden(self):
+        return self.manual_weight_kg is not None
+
     quantity = models.FloatField(_('quantity'), default=0, null=True, blank=True)
     gio_date = models.DateField(_('gio_date'))
     description = models.TextField(_('description'), null=True, blank=True)

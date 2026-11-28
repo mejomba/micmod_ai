@@ -207,3 +207,18 @@ class FlowAdminGroup(models.Model):
             return n.group_name
         else:
             return None
+
+
+# Register scheduling models with the existing workflow Django app.
+from .scheduling.models import (  # noqa: E402,F401
+    WorkflowSchedulePolicy,
+    WorkflowCalendar,
+    WorkflowCalendarException,
+    WorkflowStageTiming,
+    WorkflowTimingRule,
+    WorkflowScheduleTransition,
+    WorkflowForecast,
+    WorkflowForecastStep,
+    WorkflowForecastAnchor,
+    WorkflowForecastRefresh,
+)

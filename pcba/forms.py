@@ -46,7 +46,7 @@ class ContractForm(CustomBaseModelForm):
         fields = ['customer_party_id', 'goods_code_fk', 'project_name_en', 'customer_board_count',
                   'customer_sheet_count', 'customer_total_board_count', 'first_setup_time', 'second_setup_time',
                   'pad_count', 'ic_pad_count', 'first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost',
-                  'total_cost', 'not_assembly_pad_count', 'finish', 'contract_end_date', 'assembly_type'
+                  'total_cost', 'extra_total_cost', 'not_assembly_pad_count', 'finish', 'contract_end_date', 'assembly_type'
                   ]
 
     def __init__(self, *args, **kwargs):
@@ -86,9 +86,9 @@ class ContractForm(CustomBaseModelForm):
         if request and not request.user.is_superuser and 'pcba_admin' not in user_groups:
             # if 'pcba_user' in user_groups:
             self.make_hidden(
-                ['first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost', 'total_cost', 'finish'])
+                ['first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost', 'total_cost', 'extra_total_cost', 'finish'])
             self.make_disable(
-                ['first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost', 'total_cost', 'finish'])
+                ['first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost', 'total_cost', 'extra_total_cost', 'finish'])
 
 
 class ItemReceiptForm(CustomBaseModelForm):
