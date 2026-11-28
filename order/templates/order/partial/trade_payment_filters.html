@@ -1,4 +1,4 @@
-{% if request.user.base_group == 'trade' %}
+{% if can_view_order_payments %}
 <div id="tradePaymentPanel" class="border-top pt-3 mt-3" dir="rtl">
     {% csrf_token %}
     <div class="d-flex flex-wrap align-items-center gap-1" role="group" aria-label="فیلترهای پرداخت">

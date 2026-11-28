@@ -1,4 +1,4 @@
-{% if request.user.base_group == 'trade' %}
+{% if can_view_order_payments %}
 <div id="tradeOrderExport" class="mb-3" dir="rtl" data-url="{% url 'order:order.list.trade_excel' %}">
     <div class="d-flex flex-wrap align-items-center gap-2">
         <button id="tradeOrderExportToggle" type="button" class="btn btn-sm btn-light-success" aria-expanded="false" aria-controls="tradeOrderExportOptions" disabled>

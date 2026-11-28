@@ -97,7 +97,7 @@ class PaymentScheduleWiringTests(TestCase):
                       and node.name == name)
         return ast.get_source_segment(self.source, method)
 
-    def test_columns_only_in_trade_and_before_gio(self):
+    def test_trade_columns_before_gio_and_superuser_columns_supported(self):
         source = self.method_source('get_column_defs')
         trade = source.split("elif self.request.user.base_group == 'trade':")[1].split(
             "elif self.request.user.base_group == 'mac':")[0]
@@ -108,13 +108,15 @@ class PaymentScheduleWiringTests(TestCase):
 
     def test_prefetch_and_render_use_same_rows(self):
         source = self.method_source('get_initial_queryset')
-        self.assertIn("if user_group == 'trade':", source)
+        self.assertIn('if can_view_order_payments(request.user):', source)
         self.assertIn("list_order_currency_title=F('currency__title_en')", source)
         self.assertIn("to_attr='list_payment_items'", source)
         self.assertIn("'payment__currency', 'currency'", source)
         trade = self.method_source('customize_row_trade')
-        self.assertIn('obj.list_payment_items', trade)
-        self.assertIn('render_payment_schedule(items, obj.list_order_currency_title, timezone.localdate())', trade)
-        self.assertNotIn("obj.order_payment_items.select_related", trade)
+        payments = self.method_source('customize_payment_columns')
+        self.assertIn('self.customize_payment_columns(row, obj)', trade)
+        self.assertIn('obj.list_payment_items', payments)
+        self.assertIn('render_payment_schedule(items, obj.list_order_currency_title, timezone.localdate())', payments)
+        self.assertNotIn("obj.order_payment_items.select_related", payments)
         self.assertIn("row['gio']", trade)
         self.assertIn("row['packing']", trade)

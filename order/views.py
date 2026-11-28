@@ -58,6 +58,7 @@ from changelog.models import ChangeLog
 from .trade_payment_schedule import render_payment_links, render_payment_schedule
 from .trade_payment_filters import apply_payment_filter, payment_totals, PAYMENT_FILTERS
 from .trade_order_excel import EXPORT_FIELDS, PAYMENT_KEYS, selected_fields, build_order_export
+from .order_list_access import can_view_order_payments, visible_order_filters
 from .packing_error_messages import packing_error_payload
 from .packing_change_history import build_packing_change_history
 from .packing_workflow_timeline import build_packing_workflow_timeline
@@ -661,7 +662,9 @@ class OrderListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if self.request.user.base_group == 'trade':
+        context['order_list_filters'] = visible_order_filters(self.request.user)
+        context['can_view_order_payments'] = can_view_order_payments(self.request.user)
+        if context['can_view_order_payments']:
             context['trade_export_fields'] = EXPORT_FIELDS
         return context
 
@@ -869,7 +872,7 @@ class OrderDataTableListView(AjaxDatatableView):
             qs = qs.filter(delay_reason__isnull=False, is_deleted=False, sales_admin_cancel=False)
 
         elif q == 'has_error':
-            if request.user.groups.filter(name='sales_user'):
+            if request.user.is_superuser or request.user.groups.filter(name='sales_user'):
                 qs = qs.filter(
                     comments__comment_title='R', last_work_flow__current_state_name__in=['پیش نویس', 'تایید مدیر فروش']
                     , is_deleted=False, sales_admin_cancel=False
@@ -996,7 +999,7 @@ class OrderDataTableListView(AjaxDatatableView):
         #         ~Q(last_work_flow__current_state_name='پیش نویس')
         #     )
 
-        if user_group == 'trade':
+        if can_view_order_payments(request.user):
             self.payment_filter_mode = request.POST.get('payment_filter', '')
             self.payment_filter_error = ''
             self.payment_summary_date = timezone.localdate()
@@ -1024,7 +1027,7 @@ class OrderDataTableListView(AjaxDatatableView):
 
     def get_response_dict(self, request, paginator, draw_idx, start_pos):
         response = super().get_response_dict(request, paginator, draw_idx, start_pos)
-        if request.user.base_group == 'trade':
+        if can_view_order_payments(request.user):
             # The library's paginator.object_list is the fully filtered, unsliced queryset
             # (including global and column searches).
             if self.payment_filter_error:
@@ -1068,7 +1071,7 @@ class OrderDataTableListView(AjaxDatatableView):
         row['qi__quotation'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         row['estimated_arrive_date'] = obj.estimate_arrive_at
         row['comments'] = '<hr>'.join([f"{x.comment_content} <br> ({x.elapsed_time})" for x in obj.comments.filter(comment_title='R')])  # "R" is order error from trade user
-        if self.request.user.base_group != 'trade':
+        if not can_view_order_payments(self.request.user):
             row['payment'] = '<hr>'.join([
                                 (
                                     f"<a target='_blank' href='{reverse_lazy('order:order.payment.update', kwargs={'pk': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>"
@@ -1117,6 +1120,8 @@ class OrderDataTableListView(AjaxDatatableView):
             self.customize_row_sales(row, obj)
         elif base_group == 'mac':
             self.customize_row_mac(row, obj)
+        if base_group != 'trade' and can_view_order_payments(self.request.user):
+            self.customize_payment_columns(row, obj)
 
         # row['edit'] = mark_safe(f"""
         # <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="/order/packingitem/update/1/" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
@@ -1127,7 +1132,7 @@ class OrderDataTableListView(AjaxDatatableView):
         # </a>
         # """)
 
-    def customize_row_trade(self, row, obj):
+    def customize_payment_columns(self, row, obj):
         items = obj.list_payment_items
         row['payment'] = render_payment_links(
             items, obj.list_order_currency_title,
@@ -1135,6 +1140,8 @@ class OrderDataTableListView(AjaxDatatableView):
         )
         row['future_payments'], row['past_payments'] = render_payment_schedule(items, obj.list_order_currency_title, timezone.localdate())
 
+    def customize_row_trade(self, row, obj):
+        self.customize_payment_columns(row, obj)
         row['delay_reason__description'] = [d.description for d in obj.delay_reason.all()]
         try:
             t = getattr(obj.workflows.filter(state='تایید مدیر فروش', wf_status=3).order_by('id').first(), 'created_date', None)
@@ -1393,6 +1400,18 @@ class OrderDataTableListView(AjaxDatatableView):
             ]
 
 
+        # Keep the base group's layout; add financial columns once for non-trade superusers.
+        if can_view_order_payments(request.user) and request.user.base_group != 'trade':
+            existing_names = {column['name'] for column in self.column_defs}
+            payment_columns = [
+                dict(name='payment', orderable=False, searchable=False, visible=True, title='پرداخت'),
+                dict(name='future_payments', orderable=False, searchable=False, visible=True, title='پرداخت‌های آینده'),
+                dict(name='past_payments', orderable=False, searchable=False, visible=True, title='پرداخت‌های گذشته'),
+            ]
+            self.column_defs = list(self.column_defs) + [
+                column for column in payment_columns if column['name'] not in existing_names
+            ]
+
         return super().get_column_defs(request)
 
 
@@ -1401,7 +1420,7 @@ class OrderDataTableListView(AjaxDatatableView):
 @csrf_protect
 def trade_order_excel(request):
     """Reuse the table's server-side filters; do not export its current page."""
-    if not request.user.is_authenticated or getattr(request.user, 'base_group', None) != 'trade':
+    if not request.user.is_authenticated or not can_view_order_payments(request.user):
         return JsonResponse({'error': 'دسترسی به خروجی اختصاصی بازرگانی مجاز نیست.'}, status=403)
     try:
         keys = request.POST.getlist('export_fields[]')

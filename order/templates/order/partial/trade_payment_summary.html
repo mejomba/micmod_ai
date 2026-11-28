@@ -1,4 +1,4 @@
-{% if request.user.base_group == 'trade' %}
+{% if can_view_order_payments %}
 <section id="tradePaymentSummary" class="ff-card tp-summary mb-4" dir="rtl">
     <div class="ff-header tp-summary-header">
         <div class="ff-title-row">
