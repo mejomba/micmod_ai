@@ -3601,6 +3601,8 @@ def wh_packing_view2(request, sepidar_buy_factor_id=-1, *args, **kwargs):
                             buy_factor_id_dict[key_tuple].append(order.pk)
                         else:
                             buy_factor_id_dict[key_tuple] = [order.pk]
+                    else:
+                        buy_factor_id_dict[key_tuple].append(1)
 
             for order in orders:
                 for buy_factor in order.buy_factors:
@@ -3611,6 +3613,8 @@ def wh_packing_view2(request, sepidar_buy_factor_id=-1, *args, **kwargs):
                             buy_factor_id_dict[key_tuple].append(order.pk)
                         else:
                             buy_factor_id_dict[key_tuple] = [order.pk]
+                    else:
+                        buy_factor_id_dict[key_tuple].append(0)
 
             context = {"buy_factor_id_dict": buy_factor_id_dict}
             return render(request, template_name, context=context)

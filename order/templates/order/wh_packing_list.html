@@ -151,7 +151,7 @@
     }
 
     function wh_receipt_from_bazar(event, sepidar_buy_factor_id, order_ids=null){
-        const version = sepidar_buy_factor_id.pop();
+        const version = order_ids.pop();
         let url_;
         if (version === 0){
             url_ = `${sepidar_buy_factor_id}/?send_to_sepidar=1&order_ids=${order_ids}`
