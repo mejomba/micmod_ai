@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.translation import get_language
 from django.views.decorators.http import require_http_methods, require_POST
+from _keenthemes import KTLayout
 
 from .configuration import normalize_condition
 from .engine import SchedulingError
@@ -27,6 +28,11 @@ RESOURCES = {
     'rule': (WorkflowTimingRule, RuleForm, 'stage_timing__policy'),
     'transition': (WorkflowScheduleTransition, TransitionForm, 'policy'),
 }
+
+
+def _render_page(request, template_name, context):
+    """Initialize the full portal layout for every scheduling page render."""
+    return render(request, template_name, KTLayout.init(context))
 
 
 def _fa(request):
@@ -72,7 +78,7 @@ def index(request):
     workflow = request.GET.get('workflow')
     if workflow:
         qs = qs.filter(workflow_key=workflow)
-    return render(request,'workflow/scheduling/index.html', {'page':Paginator(qs,30).get_page(request.GET.get('page')),
+    return _render_page(request,'workflow/scheduling/index.html', {'page':Paginator(qs,30).get_page(request.GET.get('page')),
         'workflows': WorkflowSchedulePolicy.objects.order_by('workflow_key').values_list('workflow_key',flat=True).distinct(),
         'selected':workflow, 'fa':_fa(request)})
 
@@ -102,7 +108,7 @@ def _detail(request, policy, **extra):
     eligible = select_policy(policy.workflow_key,policy.code)
     can_refresh = bool(eligible and eligible.pk==policy.pk and policy.code=='central-arrival'
         and policy.workflow_key in ('order','packing') and request.user.has_perm('workflow.publish_schedule_policy'))
-    return render(request,'workflow/scheduling/detail.html',dict(policy=policy,sections=sections,fa=fa,can_refresh=can_refresh,
+    return _render_page(request,'workflow/scheduling/detail.html',dict(policy=policy,sections=sections,fa=fa,can_refresh=can_refresh,
         can_edit=policy.status=='draft' and request.user.has_perm('workflow.change_workflowschedulepolicy'),
         can_publish=policy.status=='draft' and request.user.has_perm('workflow.publish_schedule_policy'),
         can_clone=request.user.has_perm('workflow.add_workflowschedulepolicy'),
@@ -168,7 +174,7 @@ def edit(request,pk,kind,row_id=None):
                 form.add_error(None, _error(exc) if isinstance(exc,ValidationError) else 'Duplicate or invalid configuration.')
         meta = [{'key':key,'label':label_field(key,spec,fa),'kind':spec.kind,'choices':list(spec.choices)}
                 for key,spec in binding.fields.items()]
-        return render(request,'workflow/scheduling/edit.html', {'policy':policy,'kind':kind,'form':form,'fa':fa,
+        return _render_page(request,'workflow/scheduling/edit.html', {'policy':policy,'kind':kind,'form':form,'fa':fa,
             'field_metadata':meta,'condition_editor':kind in ('rule','transition')})
 
 
@@ -269,7 +275,7 @@ def history(request,kind,document_id):
         selected = get_object_or_404(qs,revision=number)
     from order.forecast_presentation import panel_context
     selected_panel = panel_context(instance,kind,request.user,fa,revision=selected) if selected else None
-    return render(request,'order/scheduling/history.html',dict(page=page,
+    return _render_page(request,'order/scheduling/history.html',dict(page=page,
         rows=[revision_summary(r,fa) for r in page],fa=fa,kind=kind,document_id=document_id,selected_panel=selected_panel))
 
 

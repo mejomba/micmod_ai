@@ -220,3 +220,18 @@ class SchedulingPortalTests(TestCase):
         for name in ('estimated_arrive_date', 'forecast_source_code', 'forecast_status_code',
                      'forecast_delay', 'future_payments', 'past_payments'):
             self.assertEqual(columns.count(name), 1)
+
+    def test_scheduling_pages_initialize_layout_without_prior_page_visit(self):
+        from unittest.mock import patch
+        from _keenthemes.libs.theme import KTTheme
+
+        for url in (self.url('index'), self.url('detail', self.draft.pk),
+                    self.url('add', self.draft.pk, 'rule'),
+                    self.url('history', 'order', self.order.pk)):
+            with self.subTest(url=url), patch.object(KTTheme, 'htmlAttributes', {}), \
+                    patch.object(KTTheme, 'htmlClasses', {}):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, 'id="kt_app_body"')
+                self.assertContains(response, 'id="kt_app_sidebar"')
+                self.assertContains(response, 'data-kt-app-sidebar-enabled="true"')
