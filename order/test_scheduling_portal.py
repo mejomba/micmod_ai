@@ -168,3 +168,70 @@ class SchedulingPortalTests(TestCase):
         csrf_client.force_login(self.admin)
         self.assertEqual(csrf_client.post(self.url('clone',self.policy.pk)).status_code,403)
         self.assertEqual(WorkflowSchedulePolicy.objects.count(),2)
+
+    def test_order_list_payment_and_forecast_filters_share_summary_and_export(self):
+        from datetime import date
+        from io import BytesIO
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from ajax_datatable import AjaxDatatableView
+        from django.core.paginator import Paginator
+        from django.test import RequestFactory
+        from openpyxl import load_workbook
+        from micmod_base.base import Currency
+        from order.models import OrderPaymentItem
+        from order.views import OrderDataTableListView, trade_order_excel
+
+        today = date(2026, 11, 28)
+        currency = Currency.objects.create(title='Merge test USD', title_en='USD')
+        Order.objects.filter(pk=self.order.pk).update(order_number='MERGE-MATCH', currency=currency)
+        forecast, _ = recalculate('order', self.order.pk, reason='backfill')
+        other = Order.objects.create(order_number='MERGE-NO-FORECAST', quantity=10, currency=currency)
+        OrderPaymentItem.objects.bulk_create([
+            OrderPaymentItem(order=self.order, pay_date=date(2026, 11, 29), total_amount=25),
+            OrderPaymentItem(order=other, pay_date=date(2026, 11, 29), total_amount=90),
+        ])
+        # The forecast filter excludes the other order despite its future payment.
+        request = RequestFactory().post('/order/list/trade-excel/', {
+            'q': 'active', 'payment_filter': 'scheduled',
+            'forecast_status': forecast.forecast_status,
+            'export_fields[]': ['order_number', 'scheduled'],
+            'draw': '1', 'start': '0', 'length': '1',
+            'columns[0][name]': 'order_number', 'columns[0][searchable]': 'true',
+            'columns[0][orderable]': 'true', 'columns[0][search][value]': 'MERGE-',
+            'order[0][column]': '0', 'order[0][dir]': 'asc',
+        })
+        request.user = SimpleNamespace(is_authenticated=True, base_group='trade', is_superuser=True)
+        request._dont_enforce_csrf_checks = True
+        view = OrderDataTableListView()
+        view.setup(request)
+        with patch('order.views.timezone.localdate', return_value=today):
+            qs = view.get_initial_queryset(request).filter(pk__in=[self.order.pk, other.pk])
+            self.assertEqual(list(qs.values_list('pk', flat=True)), [self.order.pk])
+            with patch.object(AjaxDatatableView, 'get_response_dict', return_value={'draw': 1, 'data': []}):
+                summary = view.get_response_dict(request, Paginator(qs, 1), 1, 0)['payment_summary']
+            self.assertEqual(summary['order_count'], 1)
+            self.assertEqual(summary['totals']['scheduled'], [{'currency': 'USD', 'amount': '25', 'count': 1}])
+            response = trade_order_excel(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(load_workbook(BytesIO(response.content))['Orders'].values)[1:],
+                         [('MERGE-MATCH', '25 USD')])
+        columns = [column['name'] for column in view.get_column_defs(request)]
+        for name in ('estimated_arrive_date', 'forecast_source_code', 'forecast_status_code',
+                     'forecast_delay', 'future_payments', 'past_payments'):
+            self.assertEqual(columns.count(name), 1)
+
+    def test_scheduling_pages_initialize_layout_without_prior_page_visit(self):
+        from unittest.mock import patch
+        from _keenthemes.libs.theme import KTTheme
+
+        for url in (self.url('index'), self.url('detail', self.draft.pk),
+                    self.url('add', self.draft.pk, 'rule'),
+                    self.url('history', 'order', self.order.pk)):
+            with self.subTest(url=url), patch.object(KTTheme, 'htmlAttributes', {}), \
+                    patch.object(KTTheme, 'htmlClasses', {}):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, 'id="kt_app_body"')
+                self.assertContains(response, 'id="kt_app_sidebar"')
+                self.assertContains(response, 'data-kt-app-sidebar-enabled="true"')

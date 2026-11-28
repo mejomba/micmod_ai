@@ -1,0 +1,24 @@
+{% if can_view_order_payments %}
+<section id="tradePaymentSummary" class="ff-card tp-summary mb-4" dir="rtl">
+    <div class="ff-header tp-summary-header">
+        <div class="ff-title-row">
+            <div class="ff-icon" aria-hidden="true"><i class="fas fa-wallet text-primary"></i></div>
+            <div>
+                <div class="ff-title">خلاصه پرداخت سفارش‌ها</div>
+                <div class="ff-subtitle">تمام سفارش‌های منطبق با فیلترها، در همه صفحات جدول</div>
+            </div>
+        </div>
+        <div class="ff-count-wrap"><span class="ff-count-val" id="tradePaymentOrderCount">—</span><span class="ff-count-label">سفارش منطبق</span></div>
+    </div>
+    <hr class="ff-divider mb-2">
+    <p class="ff-subtitle mb-2">جمع تمام ردیف‌های پرداخت سفارش‌های منطبق (حتی خارج از شرط تاریخ فیلتر)، به تفکیک ارز؛ مستقل از صفحه‌بندی جدول.</p>
+    <div id="tradePaymentStatus" class="small mb-2 text-muted" role="status" aria-live="polite">در حال دریافت خلاصه…</div>
+    <div id="tradePaymentTotals" class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-2 d-none">
+        <div class="col"><div class="tp-total tp-paid"><div class="tp-total-title text-success"><i class="fas fa-check-circle" aria-hidden="true"></i> کل پرداخت شده</div><div data-payment-total="paid"></div></div></div>
+        <div class="col"><div class="tp-total tp-overdue"><div class="tp-total-title text-danger"><i class="fas fa-exclamation-circle" aria-hidden="true"></i> منقضی شده و پرداخت نشده</div><div data-payment-total="overdue"></div></div></div>
+        <div class="col"><div class="tp-total tp-today"><div class="tp-total-title text-warning"><i class="fas fa-clock" aria-hidden="true"></i> سررسید امروز و پرداخت نشده</div><div data-payment-total="today"></div></div></div>
+        <div class="col"><div class="tp-total tp-scheduled"><div class="tp-total-title text-primary"><i class="fas fa-calendar-alt" aria-hidden="true"></i> برنامه‌ریزی شده و پرداخت نشده</div><div data-payment-total="scheduled"></div></div></div>
+    </div>
+    <div id="tradePaymentUndated" class="small text-warning mt-2 d-none"></div>
+</section>
+{% endif %}

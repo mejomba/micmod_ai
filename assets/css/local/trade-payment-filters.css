@@ -1,0 +1,98 @@
+/* Order payment controls follow the existing order filters and ff-card widget. */
+#tradePaymentPanel [data-payment-mode].active,
+#tradePaymentPanel [data-payment-calendar].active { color: #fff !important; background: var(--bs-primary, #2563eb); }
+#tradePaymentPanel [data-payment-mode].tp-pending { border-style: dashed; }
+/* One compact toolbar: controls share the top baseline, equivalents sit below dates. */
+#tradePaymentPanel .tp-filter-toolbar {
+    --tp-control-height: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: .35rem .4rem;
+}
+#tradePaymentPanel .tp-filter-heading {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tp-control-height);
+    white-space: nowrap;
+    margin-inline-end: .25rem;
+}
+#tradePaymentPanel .tp-filter-toolbar .btn,
+#tradePaymentPanel .tp-date-field input {
+    min-height: var(--tp-control-height);
+    box-sizing: border-box;
+    font-size: .8rem;
+    line-height: 1.35;
+}
+#tradePaymentPanel .tp-filter-toolbar .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .25rem;
+    padding: .25rem .5rem;
+    white-space: nowrap;
+}
+#tradePaymentPanel .tp-date-controls {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: .35rem .45rem;
+    max-width: 100%;
+    padding-inline-start: .45rem;
+    border-inline-start: 1px solid var(--bs-border-color, #dee2e6);
+}
+#tradePaymentPanel .tp-calendar-switch { flex: 0 0 auto; }
+#tradePaymentPanel .tp-calendar-switch .btn { padding-inline: .45rem; }
+#tradePaymentPanel .tp-date-field {
+    display: flex;
+    align-items: flex-start;
+    gap: .3rem;
+    max-width: 100%;
+}
+#tradePaymentPanel .tp-date-label {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tp-control-height);
+    font-size: .8rem;
+    font-weight: 600;
+    margin: 0;
+}
+#tradePaymentPanel .tp-date-input { width: 138px; min-width: 0; }
+#tradePaymentPanel .tp-date-field input,
+#tradePaymentPanel .tp-jalali-display { width: 100%; }
+#tradePaymentPanel .tp-date-field input { padding: .2rem .35rem; }
+#tradePaymentPanel .tp-jalali-display { text-align: center; }
+#tradePaymentPanel .tp-date-equivalent {
+    font-size: .7rem;
+    line-height: 1.25;
+    text-align: center;
+    white-space: nowrap;
+    padding-top: 2px;
+}
+#tradePaymentPanel .tp-date-equivalent:empty { display: none !important; }
+#tradePaymentPanel #tradePaymentFilterHelp:empty,
+#tradePaymentPanel #tradePaymentFilterError:empty { display: none; }
+@media (max-width: 575.98px) {
+    #tradePaymentPanel .tp-date-controls {
+        flex-basis: 100%;
+        border-inline-start: 0;
+        padding-inline-start: 0;
+    }
+    #tradePaymentPanel .tp-date-input { width: 138px; max-width: 100%; }
+}
+#tradePaymentSummary.tp-summary { max-width: none; padding: 0.85rem 1rem; }
+#tradePaymentSummary .tp-summary-header { flex-wrap: wrap; gap: .5rem; margin-bottom: .6rem; }
+#tradePaymentSummary .tp-total { border: 1px solid #e5e7eb; border-radius: 8px; padding: .65rem .8rem; height: 100%; background: var(--bs-body-bg, #fff); }
+#tradePaymentSummary .tp-total-title { font-size: .84rem; font-weight: 600; margin-bottom: .45rem; display: flex; gap: .35rem; align-items: center; }
+#tradePaymentSummary .tp-total-amount { font-size: 1rem; font-variant-numeric: tabular-nums; }
+#tradePaymentSummary .tp-total-line + .tp-total-line { border-top: 1px solid #eff2f5; }
+.tp-calendar-popup { position: fixed; z-index: 1100; width: min(310px, calc(100vw - 16px)); background: var(--bs-body-bg, #fff); border: 1px solid #dbeafe; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.14); padding: 10px; direction: rtl; }
+.tp-calendar-popup[hidden] { display: none !important; }
+.tp-calendar-head, .tp-calendar-foot { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.tp-calendar-head { margin-bottom: 8px; }
+.tp-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; text-align: center; }
+.tp-calendar-grid .tp-day { padding: 5px 0; border: 1px solid transparent; border-radius: 6px; background: transparent; color: inherit; }
+.tp-calendar-grid .tp-day:hover, .tp-calendar-grid .tp-day:focus-visible { background: #eff6ff; color: #1d4ed8; }
+.tp-calendar-grid .tp-day.is-today { border-color: #2563eb; }
+.tp-calendar-grid .tp-day.is-selected { background: var(--bs-primary, #2563eb); color: #fff; }
+.tp-calendar-foot { border-top: 1px solid #e5e7eb; margin-top: 8px; padding-top: 8px; }

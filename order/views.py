@@ -16,6 +16,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q, BooleanField, Value, Func, IntegerField, Count, \
     DurationField
+from django.db.models import Prefetch
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Coalesce, Now
 from django.forms import modelformset_factory
@@ -31,6 +32,8 @@ from django.utils.safestring import mark_safe
 from django.utils.html import escape
 from django.views import View
 from django.views.generic import ListView
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_POST
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed
@@ -52,6 +55,10 @@ from sepidar.models import Dl
 from tools.utils import is_ajax, parse_number
 from workflow.models import WorkFlow, FlowAdminGroup
 from changelog.models import ChangeLog
+from .trade_payment_schedule import render_payment_links, render_payment_schedule
+from .trade_payment_filters import apply_payment_filter, payment_totals, PAYMENT_FILTERS
+from .trade_order_excel import EXPORT_FIELDS, PAYMENT_KEYS, selected_fields, build_order_export
+from .order_list_access import can_view_order_payments, visible_order_filters
 from .packing_error_messages import packing_error_payload
 from .packing_change_history import build_packing_change_history
 from .packing_workflow_timeline import build_packing_workflow_timeline
@@ -653,6 +660,14 @@ class OrderListView(LoginRequiredMixin, ListView):
     model = Order
     template_name = 'order/list.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['order_list_filters'] = visible_order_filters(self.request.user)
+        context['can_view_order_payments'] = can_view_order_payments(self.request.user)
+        if context['can_view_order_payments']:
+            context['trade_export_fields'] = EXPORT_FIELDS
+        return context
+
 
 class OrderDataTableListView(AjaxDatatableView):
     model = Order
@@ -857,7 +872,7 @@ class OrderDataTableListView(AjaxDatatableView):
             qs = qs.filter(delay_reason__isnull=False, is_deleted=False, sales_admin_cancel=False)
 
         elif q == 'has_error':
-            if request.user.groups.filter(name='sales_user'):
+            if request.user.is_superuser or request.user.groups.filter(name='sales_user'):
                 qs = qs.filter(
                     comments__comment_title='R', last_work_flow__current_state_name__in=['پیش نویس', 'تایید مدیر فروش']
                     , is_deleted=False, sales_admin_cancel=False
@@ -984,8 +999,49 @@ class OrderDataTableListView(AjaxDatatableView):
         #         ~Q(last_work_flow__current_state_name='پیش نویس')
         #     )
 
+        if can_view_order_payments(request.user):
+            self.payment_filter_mode = request.POST.get('payment_filter', '')
+            self.payment_filter_error = ''
+            self.payment_summary_date = timezone.localdate()
+            try:
+                qs = apply_payment_filter(
+                    qs, self.payment_filter_mode,
+                    request.POST.get('payment_start'), request.POST.get('payment_end'),
+                    self.payment_summary_date,
+                )
+            except ValueError as exc:
+                self.payment_filter_error = str(exc)
+                qs = qs.none()
+            # AjaxDatatable may defer non-column fields via only(); an annotation
+            # avoids a select_related/deferred-field conflict or extra currency queries.
+            qs = qs.annotate(list_order_currency_title=F('currency__title_en')).prefetch_related(
+                Prefetch(
+                    'order_payment_items',
+                    queryset=OrderPaymentItem.objects.filter(is_deleted=False).select_related(
+                        'payment__currency', 'currency'
+                    ).order_by('pay_date', 'pk'),
+                    to_attr='list_payment_items',
+                )
+            )
         from .forecast_presentation import annotate_order_forecasts, filter_order_forecasts
         return filter_order_forecasts(annotate_order_forecasts(qs.distinct()), request.POST)
+
+    def get_response_dict(self, request, paginator, draw_idx, start_pos):
+        response = super().get_response_dict(request, paginator, draw_idx, start_pos)
+        if can_view_order_payments(request.user):
+            # The library's paginator.object_list is the fully filtered, unsliced queryset
+            # (including global and column searches).
+            if self.payment_filter_error:
+                response['payment_summary'] = {'error': self.payment_filter_error}
+            else:
+                summary = payment_totals(paginator.object_list, self.payment_summary_date)
+                summary['filter_label'] = PAYMENT_FILTERS.get(self.payment_filter_mode, 'همه وضعیت‌های پرداخت')
+                if self.payment_filter_mode == 'date_range':
+                    summary['filter_label'] += ' | ' + request.POST['payment_start'] + ' تا ' + request.POST['payment_end']
+                elif self.payment_filter_mode == 'due_until':
+                    summary['filter_label'] += ' | تا ' + request.POST['payment_end']
+                response['payment_summary'] = summary
+        return response
 
     def customize_row(self, row, obj):
         # row['order_method'] = f'<span>{obj.order_method}</span>'
@@ -1017,14 +1073,15 @@ class OrderDataTableListView(AjaxDatatableView):
         from .forecast_presentation import order_forecast_cells, is_farsi
         row.update(order_forecast_cells(obj, is_farsi(self.request)))
         row['comments'] = '<hr>'.join([f"{x.comment_content} <br> ({x.elapsed_time})" for x in obj.comments.filter(comment_title='R')])  # "R" is order error from trade user
-        row['payment'] = '<hr>'.join([
-                            (
-                                f"<a target='_blank' href='{reverse_lazy('order:order.payment.update', kwargs={'pk': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>"
-                                if x.payment
-                                else "<span class='text-muted'>بدون پرداخت</span>"
-                            )
-                            for x in obj.order_payment_items.select_related('payment').all()
-                        ])
+        if not can_view_order_payments(self.request.user):
+            row['payment'] = '<hr>'.join([
+                                (
+                                    f"<a target='_blank' href='{reverse_lazy('order:order.payment.update', kwargs={'pk': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>"
+                                    if x.payment
+                                    else "<span class='text-muted'>بدون پرداخت</span>"
+                                )
+                                for x in obj.order_payment_items.select_related('payment').all()
+                            ])
         row['weight'] = f'{parse_number(obj.final_total_weight):,}'
         row['item__purchase_group'] = obj.final_purchase_group
         row['work_day'] = obj.trade_work_day
@@ -1065,6 +1122,8 @@ class OrderDataTableListView(AjaxDatatableView):
             self.customize_row_sales(row, obj)
         elif base_group == 'mac':
             self.customize_row_mac(row, obj)
+        if base_group != 'trade' and can_view_order_payments(self.request.user):
+            self.customize_payment_columns(row, obj)
 
         # row['edit'] = mark_safe(f"""
         # <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="/order/packingitem/update/1/" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
@@ -1075,17 +1134,20 @@ class OrderDataTableListView(AjaxDatatableView):
         # </a>
         # """)
 
-    def customize_row_trade(self, row, obj):
-        from django.utils import timezone
-        tehran = timezone.tzinfo
+    def customize_payment_columns(self, row, obj):
+        items = obj.list_payment_items
+        row['payment'] = render_payment_links(
+            items, obj.list_order_currency_title,
+            lambda pk: reverse('order:order.payment.update', kwargs={'pk': pk}),
+        )
+        row['future_payments'], row['past_payments'] = render_payment_schedule(items, obj.list_order_currency_title, timezone.localdate())
 
+    def customize_row_trade(self, row, obj):
+        self.customize_payment_columns(row, obj)
         row['delay_reason__description'] = [d.description for d in obj.delay_reason.all()]
         try:
             t = getattr(obj.workflows.filter(state='تایید مدیر فروش', wf_status=3).order_by('id').first(), 'created_date', None)
             row['trade_state_time'] = timezone.localtime(t).strftime('%m/%d/%Y \n%H:%M') if t else '-'
-            row['payment'] = '<hr>'.join([
-                                             f"<a target=_blank href='{reverse_lazy('''order:order.payment.update''', kwargs={'''pk''': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>"
-                                             for x in obj.order_payment_items.select_related('payment').all()])
             row['gio'] = '<hr>'.join([
                 f"<a target=_blank href='{reverse_lazy('''order:quick_gio''', kwargs={'''pk''': x.gio.pk})}'>{x.quantity} in {x.gio.pk}</a>"
                 for x in obj.gio_items.select_related('gio').all()])
@@ -1303,6 +1365,8 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True,
                  'lookup_field': '__username__icontains'},
                 {'name': 'payment', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'پرداخت', },
+                {'name': 'future_payments', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'پرداخت‌های آینده', },
+                {'name': 'past_payments', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'پرداخت‌های گذشته', },
                 {'name': 'gio', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'GIO', },
                 {'name': 'packing', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'پکینگ', },
                 {'name': 'total_price', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'مبلغ کل', },
@@ -1365,7 +1429,76 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name':'forecast_delay','title':'انحراف (روز)' if fa else 'Variance (days)','visible':True,'orderable':True,'searchable':False},
             ])
         self.column_defs = columns
+        # Keep the base group's layout; add financial columns once for non-trade superusers.
+        if can_view_order_payments(request.user) and request.user.base_group != 'trade':
+            existing_names = {column['name'] for column in self.column_defs}
+            payment_columns = [
+                dict(name='payment', orderable=False, searchable=False, visible=True, title='پرداخت'),
+                dict(name='future_payments', orderable=False, searchable=False, visible=True, title='پرداخت‌های آینده'),
+                dict(name='past_payments', orderable=False, searchable=False, visible=True, title='پرداخت‌های گذشته'),
+            ]
+            self.column_defs = list(self.column_defs) + [
+                column for column in payment_columns if column['name'] not in existing_names
+            ]
+
         return super().get_column_defs(request)
+
+
+
+@require_POST
+@csrf_protect
+def trade_order_excel(request):
+    """Reuse the table's server-side filters; do not export its current page."""
+    if not request.user.is_authenticated or not can_view_order_payments(request.user):
+        return JsonResponse({'error': 'دسترسی به خروجی اختصاصی بازرگانی مجاز نیست.'}, status=403)
+    try:
+        keys = request.POST.getlist('export_fields[]')
+        selected_fields(keys)
+        details = request.POST.get('export_payment_details') == '1'
+        view = OrderDataTableListView()
+        view.setup(request)
+        view.initialize(request)
+        params = view.read_parameters(request.POST)
+        qs = view.get_initial_queryset(request)
+        if view.payment_filter_error:
+            raise ValueError(view.payment_filter_error)
+        qs = view.prepare_queryset(params, qs)
+        # No datatable only() optimization: properties need complete order/item fields.
+        qs = qs.prefetch_related(None)
+        related = []
+        if {'sku', 'part_number', 'total_weight'}.intersection(keys):
+            related.extend(['item', 'item_trade'])
+        if 'status' in keys:
+            related.append('last_work_flow')
+        if 'creator_user' in keys:
+            related.append('creator_user')
+        if related:
+            qs = qs.select_related(*related)
+        if PAYMENT_KEYS.intersection(keys) or details:
+            qs = qs.prefetch_related(Prefetch(
+                'order_payment_items',
+                queryset=OrderPaymentItem.objects.filter(is_deleted=False).select_related(
+                    'payment__currency', 'currency'
+                ).order_by('pay_date', 'pk'),
+                to_attr='list_payment_items',
+            ))
+        if 'gio' in keys:
+            qs = qs.prefetch_related(Prefetch(
+                'gio_items', queryset=GIOItem.objects.filter(is_deleted=False).order_by('pk'),
+                to_attr='export_gio_items',
+            ))
+        if 'packing' in keys:
+            qs = qs.prefetch_related(Prefetch(
+                'packing_item_order', queryset=PackingItem.objects.filter(is_deleted=False).order_by('pk'),
+                to_attr='export_packing_items',
+            ))
+        output = build_order_export(qs.iterator(chunk_size=500), keys, view.payment_summary_date, details)
+    except (ValueError, KeyError, AssertionError) as exc:
+        return JsonResponse({'error': str(exc) if isinstance(exc, ValueError) else 'پارامترهای فیلتر یا ستون‌ها معتبر نیستند.'}, status=400)
+    response = HttpResponse(output.getvalue(), content_type=XLSX_CONTENT_TYPE)
+    response['Content-Disposition'] = 'attachment; filename="trade-orders-' + view.payment_summary_date.isoformat() + '.xlsx"'
+    response['Cache-Control'] = 'private, no-store'
+    return response
 
 
 class BazarOrderForBuyFactorDataTableListView(AjaxDatatableView):
