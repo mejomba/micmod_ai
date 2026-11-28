@@ -157,6 +157,7 @@
         </div>
 
     </div>
+    {% include 'order/partial/trade_payment_filters.html' %}
         <div class="main-content">
             <div class="page-content">
                 <div class="container-fluid">
@@ -180,18 +181,17 @@
 {% endblock content %}
 
 {% block extra_js %}
+{% if request.user.base_group == 'trade' %}<script src="{% static 'js/local/trade-payment-filters.js' %}"></script>{% endif %}
 <script language="javascript">
-let extraData = { q: null, filter_type: null, filter_value: null, filter_stage: null };
+let extraData = { q: null, filter_type: null, filter_value: null, filter_stage: null,
+    payment_filter: '', payment_start: '', payment_end: '' };
 let expertsLoaded = false;
 
 $(document).ready(function() {
     const url = new URL(window.location);
     extraData.q = url.searchParams.get("q");
 
-    AjaxDatatableViewUtils.initialize_table(
-        $('#order_list'),
-        "{% url 'order:order.list.datatable' %}",
-        {
+    const tableOptions = {
             processing: true,
             autoWidth: false,
             full_row_select: false,
@@ -204,8 +204,13 @@ $(document).ready(function() {
                 'csvHtml5',
                 'pdfHtml5'
             ]
-        },
-        extraData
+    };
+    if (document.getElementById('tradePaymentPanel')) {
+        TradePaymentFilters.setup($('#order_list'), extraData, tableOptions,
+            "{% url 'order:order.list.datatable' %}");
+    }
+    AjaxDatatableViewUtils.initialize_table(
+        $('#order_list'), "{% url 'order:order.list.datatable' %}", tableOptions, extraData
     );
 });
 
@@ -289,7 +294,7 @@ $('#clearFilterBtn').on('click', function () {
 });
 </script>
     <script>
-      document.getElementById('filter-orders').addEventListener('change', function () {
+      document.getElementById('filter-orders')?.addEventListener('change', function () {
         const selected = this.value;
         const url = new URL(window.location);
 

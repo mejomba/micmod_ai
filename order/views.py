@@ -54,6 +54,7 @@ from tools.utils import is_ajax, parse_number
 from workflow.models import WorkFlow, FlowAdminGroup
 from changelog.models import ChangeLog
 from .trade_payment_schedule import render_payment_links, render_payment_schedule
+from .trade_payment_filters import apply_payment_filter, payment_totals, PAYMENT_FILTERS
 from .packing_error_messages import packing_error_payload
 from .packing_change_history import build_packing_change_history
 from .packing_workflow_timeline import build_packing_workflow_timeline
@@ -987,6 +988,18 @@ class OrderDataTableListView(AjaxDatatableView):
         #     )
 
         if user_group == 'trade':
+            self.payment_filter_mode = request.POST.get('payment_filter', '')
+            self.payment_filter_error = ''
+            self.payment_summary_date = timezone.localdate()
+            try:
+                qs = apply_payment_filter(
+                    qs, self.payment_filter_mode,
+                    request.POST.get('payment_start'), request.POST.get('payment_end'),
+                    self.payment_summary_date,
+                )
+            except ValueError as exc:
+                self.payment_filter_error = str(exc)
+                qs = qs.none()
             # AjaxDatatable may defer non-column fields via only(); an annotation
             # avoids a select_related/deferred-field conflict or extra currency queries.
             qs = qs.annotate(list_order_currency_title=F('currency__title_en')).prefetch_related(
@@ -999,6 +1012,19 @@ class OrderDataTableListView(AjaxDatatableView):
                 )
             )
         return qs.distinct()
+
+    def get_response_dict(self, request, paginator, draw_idx, start_pos):
+        response = super().get_response_dict(request, paginator, draw_idx, start_pos)
+        if request.user.base_group == 'trade':
+            # The library's paginator.object_list is the fully filtered, unsliced queryset
+            # (including global and column searches).
+            if self.payment_filter_error:
+                response['payment_summary'] = {'error': self.payment_filter_error}
+            else:
+                summary = payment_totals(paginator.object_list, self.payment_summary_date)
+                summary['filter_label'] = PAYMENT_FILTERS.get(self.payment_filter_mode, 'همه وضعیت‌های پرداخت')
+                response['payment_summary'] = summary
+        return response
 
     def customize_row(self, row, obj):
         # row['order_method'] = f'<span>{obj.order_method}</span>'
