@@ -172,3 +172,16 @@ class TradePaymentFiltersTests(TestCase):
         with patch.object(AjaxDatatableView, 'get_response_dict', return_value={'draw': 1, 'data': []}):
             response = view.get_response_dict(view.request, Paginator(self.queryset(), 10), 1, 0)
         self.assertNotIn('payment_summary', response)
+
+    def test_superuser_sales_gets_payment_filter_and_summary(self):
+        view = self.trade_view()
+        view.request.user.base_group = 'sales'
+        view.request.user.is_superuser = True
+        with patch('order.views.timezone.localdate', return_value=TODAY):
+            qs = view.get_initial_queryset(view.request).filter(pk__in=self.ids)
+        self.assertEqual(qs.count(), 3)
+        self.assertIn('list_order_currency_title', qs.query.annotations)
+        with patch.object(AjaxDatatableView, 'get_response_dict', return_value={'draw': 1, 'data': []}):
+            response = view.get_response_dict(view.request, Paginator(qs, 1), 1, 0)
+        self.assertEqual(response['payment_summary']['order_count'], 3)
+        self.assertEqual(self.amounts(response['payment_summary'], 'scheduled'), {'RMB': 86})

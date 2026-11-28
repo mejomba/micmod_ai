@@ -60,3 +60,21 @@ class TradeExcelFilterTests(TestCase):
             ('EXPORT-MATCH-A', '100 RMB'), ('EXPORT-MATCH-B', '100 RMB'),
         ])
         self.assertIn('attachment', response['Content-Disposition'])
+
+    def test_superuser_nontrade_can_export_with_payment_filter(self):
+        request = RequestFactory().post('/order/list/trade-excel/', {
+            'export_fields[]': ['order_number', 'scheduled'],
+            'q': 'active', 'payment_filter': 'scheduled', 'draw': '3', 'start': '0', 'length': '1',
+            'columns[0][name]': 'order_number', 'columns[0][searchable]': 'true',
+            'columns[0][orderable]': 'true', 'columns[0][search][value]': 'EXPORT-MATCH',
+            'order[0][column]': '0', 'order[0][dir]': 'asc',
+        })
+        request.user = SimpleNamespace(is_authenticated=True, base_group='sales', is_superuser=True)
+        request._dont_enforce_csrf_checks = True
+        with patch('order.views.timezone.localdate', return_value=date(2026, 11, 28)):
+            response = trade_order_excel(request)
+        self.assertEqual(response.status_code, 200)
+        wb = load_workbook(BytesIO(response.content))
+        self.assertEqual(list(wb['Orders'].values)[1:], [
+            ('EXPORT-MATCH-A', '100 RMB'), ('EXPORT-MATCH-B', '100 RMB'),
+        ])
