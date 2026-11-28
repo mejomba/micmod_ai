@@ -67,6 +67,7 @@ const TradePaymentFilters = (() => {
         function renderSummary(summary) {
             if (!summary || summary.error) {
                 resetSummary(summary && summary.error ? summary.error : 'خلاصه پرداخت دریافت نشد.');
+                if (summary && summary.error) error.text(summary.error);
                 return;
             }
             orderCount.text('(' + summary.order_count.toLocaleString('fa-IR') + ' سفارش در تمام صفحات)');

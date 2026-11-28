@@ -1023,6 +1023,10 @@ class OrderDataTableListView(AjaxDatatableView):
             else:
                 summary = payment_totals(paginator.object_list, self.payment_summary_date)
                 summary['filter_label'] = PAYMENT_FILTERS.get(self.payment_filter_mode, 'همه وضعیت‌های پرداخت')
+                if self.payment_filter_mode == 'date_range':
+                    summary['filter_label'] += ' | ' + request.POST['payment_start'] + ' تا ' + request.POST['payment_end']
+                elif self.payment_filter_mode == 'due_until':
+                    summary['filter_label'] += ' | تا ' + request.POST['payment_end']
                 response['payment_summary'] = summary
         return response
 
